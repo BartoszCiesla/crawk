@@ -35,6 +35,10 @@ struct Args {
     /// Show verbose output including crate root, module path, and analysis info
     #[arg(short = 'v', long = "verbose")]
     verbose: bool,
+
+    /// Expand grouped imports into individual paths (e.g., a::b::{x, y} -> a::b::x, a::b::y)
+    #[arg(short = 'e', long = "expand")]
+    expand: bool,
 }
 
 fn main() {
@@ -108,6 +112,7 @@ fn main() {
         args.include_tests,
         args.verbose,
         &initial_module_path,
+        args.expand,
     );
 
     if use_statements.is_empty() {
@@ -192,6 +197,7 @@ fn collect_use_statements(
     include_tests: bool,
     verbose: bool,
     module_path: &[String],
+    expand: bool,
 ) {
     let content = match fs::read_to_string(path) {
         Ok(content) => content,
@@ -222,6 +228,7 @@ fn collect_use_statements(
         src_dir,
         include_tests,
         in_test_module: false,
+        expand,
     };
     visitor.visit_file(&file);
 
@@ -244,6 +251,7 @@ fn collect_use_statements(
                     include_tests,
                     verbose,
                     &submodule_module_path,
+                    expand,
                 );
             }
         }
@@ -318,6 +326,7 @@ struct UseVisitor<'a> {
     src_dir: PathBuf,
     include_tests: bool,
     in_test_module: bool,
+    expand: bool,
 }
 
 impl<'a> Visit<'a> for UseVisitor<'a> {
@@ -332,8 +341,16 @@ impl<'a> Visit<'a> for UseVisitor<'a> {
                 // Expand globs to explicit items
                 expanded_tree = self.expand_globs(&expanded_tree);
 
-                let use_string = format!("{};", use_tree_to_string(&expanded_tree));
-                self.use_statements.insert(use_string);
+                if self.expand {
+                    // Expand groups into individual paths
+                    let expanded_paths = expand_use_tree_to_paths(&expanded_tree);
+                    for path in expanded_paths {
+                        self.use_statements.insert(format!("{};", path));
+                    }
+                } else {
+                    let use_string = format!("{};", use_tree_to_string(&expanded_tree));
+                    self.use_statements.insert(use_string);
+                }
             }
         }
 
@@ -697,3 +714,32 @@ fn use_tree_to_string(tree: &UseTree) -> String {
     }
 }
 
+fn expand_use_tree_to_paths(tree: &UseTree) -> Vec<String> {
+    match tree {
+        UseTree::Path(path) => {
+            let prefix = path.ident.to_string();
+            let suffixes = expand_use_tree_to_paths(&path.tree);
+
+            suffixes
+                .into_iter()
+                .map(|suffix| format!("{}::{}", prefix, suffix))
+                .collect()
+        }
+        UseTree::Name(name) => {
+            vec![name.ident.to_string()]
+        }
+        UseTree::Rename(rename) => {
+            vec![format!("{} as {}", rename.ident, rename.rename)]
+        }
+        UseTree::Glob(_) => {
+            vec!["*".to_string()]
+        }
+        UseTree::Group(group) => {
+            let mut all_paths = Vec::new();
+            for item in &group.items {
+                all_paths.extend(expand_use_tree_to_paths(item));
+            }
+            all_paths
+        }
+    }
+}
