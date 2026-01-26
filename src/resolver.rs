@@ -238,11 +238,213 @@ pub fn resolve_module_path_to_file(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
+    use tempfile::TempDir;
 
     #[test]
     fn test_get_src_dir() {
         let path = PathBuf::from("/home/user/project/src/module.rs");
         let src_dir = get_src_dir(&path);
         assert!(src_dir.ends_with("src"));
+    }
+
+    #[test]
+    fn test_find_module_by_path_single_file() {
+        let temp_dir = TempDir::new().unwrap();
+        let src_dir = temp_dir.path().join("src");
+        fs::create_dir(&src_dir).unwrap();
+
+        // Create utils.rs
+        fs::write(src_dir.join("utils.rs"), "pub fn foo() {}").unwrap();
+
+        let result = find_module_by_path(&src_dir, &["utils".to_string()]);
+        assert!(result.is_some());
+        assert_eq!(result.unwrap().file_name().unwrap(), "utils.rs");
+    }
+
+    #[test]
+    fn test_find_module_by_path_mod_rs() {
+        let temp_dir = TempDir::new().unwrap();
+        let src_dir = temp_dir.path().join("src");
+        fs::create_dir(&src_dir).unwrap();
+
+        // Create utils/mod.rs
+        let utils_dir = src_dir.join("utils");
+        fs::create_dir(&utils_dir).unwrap();
+        fs::write(utils_dir.join("mod.rs"), "pub fn foo() {}").unwrap();
+
+        let result = find_module_by_path(&src_dir, &["utils".to_string()]);
+        assert!(result.is_some());
+        assert_eq!(result.unwrap().file_name().unwrap(), "mod.rs");
+    }
+
+    #[test]
+    fn test_find_module_by_path_nested() {
+        let temp_dir = TempDir::new().unwrap();
+        let src_dir = temp_dir.path().join("src");
+        fs::create_dir(&src_dir).unwrap();
+
+        // Create utils/mod.rs
+        let utils_dir = src_dir.join("utils");
+        fs::create_dir(&utils_dir).unwrap();
+        fs::write(utils_dir.join("mod.rs"), "pub fn foo() {}").unwrap();
+
+        // Create utils/helper.rs
+        fs::write(utils_dir.join("helper.rs"), "pub fn bar() {}").unwrap();
+
+        let result = find_module_by_path(&src_dir, &["utils".to_string(), "helper".to_string()]);
+        assert!(result.is_some());
+        assert_eq!(result.unwrap().file_name().unwrap(), "helper.rs");
+    }
+
+    #[test]
+    fn test_find_module_by_path_not_found() {
+        let temp_dir = TempDir::new().unwrap();
+        let src_dir = temp_dir.path().join("src");
+        fs::create_dir(&src_dir).unwrap();
+
+        let result = find_module_by_path(&src_dir, &["nonexistent".to_string()]);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_find_module_by_path_empty() {
+        let temp_dir = TempDir::new().unwrap();
+        let src_dir = temp_dir.path().join("src");
+        fs::create_dir(&src_dir).unwrap();
+
+        let result = find_module_by_path(&src_dir, &[]);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_find_submodule_from_mod_rs() {
+        let temp_dir = TempDir::new().unwrap();
+        let src_dir = temp_dir.path().join("src");
+        fs::create_dir(&src_dir).unwrap();
+
+        // Create utils/mod.rs
+        let utils_dir = src_dir.join("utils");
+        fs::create_dir(&utils_dir).unwrap();
+        let parent_path = utils_dir.join("mod.rs");
+        fs::write(&parent_path, "pub mod helper;").unwrap();
+
+        // Create utils/helper.rs
+        fs::write(utils_dir.join("helper.rs"), "pub fn foo() {}").unwrap();
+
+        let result = find_submodule(&parent_path, "helper");
+        assert!(result.is_some());
+        assert_eq!(result.unwrap().file_name().unwrap(), "helper.rs");
+    }
+
+    #[test]
+    fn test_find_submodule_from_regular_file() {
+        let temp_dir = TempDir::new().unwrap();
+        let src_dir = temp_dir.path().join("src");
+        fs::create_dir(&src_dir).unwrap();
+
+        // Create utils.rs
+        let parent_path = src_dir.join("utils.rs");
+        fs::write(&parent_path, "pub mod helper;").unwrap();
+
+        // Create utils/helper.rs
+        let utils_dir = src_dir.join("utils");
+        fs::create_dir(&utils_dir).unwrap();
+        fs::write(utils_dir.join("helper.rs"), "pub fn foo() {}").unwrap();
+
+        let result = find_submodule(&parent_path, "helper");
+        assert!(result.is_some());
+        assert_eq!(result.unwrap().file_name().unwrap(), "helper.rs");
+    }
+
+    #[test]
+    fn test_find_submodule_not_found() {
+        let temp_dir = TempDir::new().unwrap();
+        let src_dir = temp_dir.path().join("src");
+        fs::create_dir(&src_dir).unwrap();
+
+        // Create utils/mod.rs
+        let utils_dir = src_dir.join("utils");
+        fs::create_dir(&utils_dir).unwrap();
+        let parent_path = utils_dir.join("mod.rs");
+        fs::write(&parent_path, "").unwrap();
+
+        let result = find_submodule(&parent_path, "nonexistent");
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_resolve_module_path_to_file_simple() {
+        let temp_dir = TempDir::new().unwrap();
+        let src_dir = temp_dir.path().join("src");
+        fs::create_dir(&src_dir).unwrap();
+
+        // Create utils.rs
+        fs::write(src_dir.join("utils.rs"), "pub fn foo() {}").unwrap();
+
+        let result = resolve_module_path_to_file(
+            &src_dir,
+            &["crate".to_string(), "utils".to_string()],
+            false,
+        );
+        assert!(result.is_some());
+        assert_eq!(result.unwrap().file_name().unwrap(), "utils.rs");
+    }
+
+    #[test]
+    fn test_resolve_module_path_to_file_nested() {
+        let temp_dir = TempDir::new().unwrap();
+        let src_dir = temp_dir.path().join("src");
+        fs::create_dir(&src_dir).unwrap();
+
+        // Create utils/mod.rs
+        let utils_dir = src_dir.join("utils");
+        fs::create_dir(&utils_dir).unwrap();
+        fs::write(utils_dir.join("mod.rs"), "pub mod helper;").unwrap();
+
+        // Create utils/helper.rs
+        fs::write(utils_dir.join("helper.rs"), "pub fn foo() {}").unwrap();
+
+        let result = resolve_module_path_to_file(
+            &src_dir,
+            &["crate".to_string(), "utils".to_string(), "helper".to_string()],
+            false,
+        );
+        assert!(result.is_some());
+        assert_eq!(result.unwrap().file_name().unwrap(), "helper.rs");
+    }
+
+    #[test]
+    fn test_resolve_module_path_to_file_empty() {
+        let temp_dir = TempDir::new().unwrap();
+        let src_dir = temp_dir.path().join("src");
+        fs::create_dir(&src_dir).unwrap();
+
+        let result = resolve_module_path_to_file(&src_dir, &[], false);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_resolve_module_path_to_file_no_crate_prefix() {
+        let temp_dir = TempDir::new().unwrap();
+        let src_dir = temp_dir.path().join("src");
+        fs::create_dir(&src_dir).unwrap();
+
+        let result = resolve_module_path_to_file(&src_dir, &["utils".to_string()], false);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_resolve_module_path_to_file_not_found() {
+        let temp_dir = TempDir::new().unwrap();
+        let src_dir = temp_dir.path().join("src");
+        fs::create_dir(&src_dir).unwrap();
+
+        let result = resolve_module_path_to_file(
+            &src_dir,
+            &["crate".to_string(), "nonexistent".to_string()],
+            false,
+        );
+        assert!(result.is_none());
     }
 }

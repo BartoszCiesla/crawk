@@ -222,3 +222,168 @@ fn extract_use_names(tree: &UseTree, items: &mut Vec<String>) {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use syn::parse_quote;
+
+    #[test]
+    fn test_is_internal_use_crate() {
+        let tree: UseTree = parse_quote!(crate::foo);
+        assert!(is_internal_use(&tree));
+    }
+
+    #[test]
+    fn test_is_internal_use_self() {
+        let tree: UseTree = parse_quote!(self::foo);
+        assert!(is_internal_use(&tree));
+    }
+
+    #[test]
+    fn test_is_internal_use_super() {
+        let tree: UseTree = parse_quote!(super::foo);
+        assert!(is_internal_use(&tree));
+    }
+
+    #[test]
+    fn test_is_internal_use_external() {
+        let tree: UseTree = parse_quote!(std::collections::HashMap);
+        assert!(!is_internal_use(&tree));
+    }
+
+    #[test]
+    fn test_is_internal_use_group_with_internal() {
+        let tree: UseTree = parse_quote!({crate::foo, std::bar});
+        assert!(is_internal_use(&tree));
+    }
+
+    #[test]
+    fn test_is_internal_use_glob() {
+        let tree: UseTree = parse_quote!(std::*);
+        assert!(!is_internal_use(&tree));
+    }
+
+    #[test]
+    fn test_expand_use_tree_self() {
+        let tree: UseTree = parse_quote!(self::foo::Bar);
+        let module_path = vec!["utils".to_string()];
+        let expanded = expand_use_tree(&tree, &module_path);
+        let expanded_str = crate::formatter::use_tree_to_string(&expanded);
+        assert_eq!(expanded_str, "crate::utils::foo::Bar");
+    }
+
+    #[test]
+    fn test_expand_use_tree_super() {
+        let tree: UseTree = parse_quote!(super::sibling::Item);
+        let module_path = vec!["parent".to_string(), "child".to_string()];
+        let expanded = expand_use_tree(&tree, &module_path);
+        let expanded_str = crate::formatter::use_tree_to_string(&expanded);
+        assert_eq!(expanded_str, "crate::parent::sibling::Item");
+    }
+
+    #[test]
+    fn test_expand_use_tree_crate() {
+        let tree: UseTree = parse_quote!(crate::foo::Bar);
+        let module_path = vec!["utils".to_string()];
+        let expanded = expand_use_tree(&tree, &module_path);
+        let expanded_str = crate::formatter::use_tree_to_string(&expanded);
+        assert_eq!(expanded_str, "crate::foo::Bar");
+    }
+
+    #[test]
+    fn test_expand_use_tree_group() {
+        let tree: UseTree = parse_quote!(self::{foo, bar});
+        let module_path = vec!["utils".to_string()];
+        let expanded = expand_use_tree(&tree, &module_path);
+        let expanded_str = crate::formatter::use_tree_to_string(&expanded);
+        assert_eq!(expanded_str, "crate::utils::{foo, bar}");
+    }
+
+    #[test]
+    fn test_is_test_module_cfg_test() {
+        let item: syn::ItemMod = parse_quote! {
+            #[cfg(test)]
+            mod tests {
+            }
+        };
+        assert!(is_test_module(&item));
+    }
+
+    #[test]
+    fn test_is_test_module_name_test() {
+        let item: syn::ItemMod = parse_quote! {
+            mod test {
+            }
+        };
+        assert!(is_test_module(&item));
+    }
+
+    #[test]
+    fn test_is_test_module_name_tests() {
+        let item: syn::ItemMod = parse_quote! {
+            mod tests {
+            }
+        };
+        assert!(is_test_module(&item));
+    }
+
+    #[test]
+    fn test_is_test_module_regular() {
+        let item: syn::ItemMod = parse_quote! {
+            mod regular_module {
+            }
+        };
+        assert!(!is_test_module(&item));
+    }
+
+    #[test]
+    fn test_extract_public_items_from_test_file() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+
+        let mut temp_file = NamedTempFile::new().unwrap();
+        writeln!(
+            temp_file,
+            r#"
+pub struct PublicStruct;
+struct PrivateStruct;
+pub fn public_function() {{}}
+fn private_function() {{}}
+pub const PUBLIC_CONST: i32 = 42;
+const PRIVATE_CONST: i32 = 42;
+pub enum PublicEnum {{ A, B }}
+enum PrivateEnum {{ X, Y }}
+pub type PublicType = String;
+type PrivateType = String;
+pub mod public_module {{}}
+mod private_module {{}}
+pub trait PublicTrait {{}}
+trait PrivateTrait {{}}
+pub use std::collections::HashMap;
+"#
+        )
+        .unwrap();
+
+        let items = extract_public_items(temp_file.path()).unwrap();
+
+        assert!(items.contains(&"PublicStruct".to_string()));
+        assert!(items.contains(&"public_function".to_string()));
+        assert!(items.contains(&"PUBLIC_CONST".to_string()));
+        assert!(items.contains(&"PublicEnum".to_string()));
+        assert!(items.contains(&"PublicType".to_string()));
+        assert!(items.contains(&"public_module".to_string()));
+        assert!(items.contains(&"PublicTrait".to_string()));
+        assert!(items.contains(&"HashMap".to_string()));
+
+        assert!(!items.contains(&"PrivateStruct".to_string()));
+        assert!(!items.contains(&"private_function".to_string()));
+        assert!(!items.contains(&"PRIVATE_CONST".to_string()));
+    }
+
+    #[test]
+    fn test_extract_public_items_nonexistent_file() {
+        let result = extract_public_items(Path::new("/nonexistent/file.rs"));
+        assert!(result.is_none());
+    }
+}

@@ -78,3 +78,278 @@ pub fn collect_use_statements(
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+    use tempfile::TempDir;
+
+    #[test]
+    fn test_collect_use_statements_basic() {
+        let temp_dir = TempDir::new().unwrap();
+        let src_dir = temp_dir.path().join("src");
+        fs::create_dir(&src_dir).unwrap();
+
+        let utils_rs = src_dir.join("utils.rs");
+        let mut file = fs::File::create(&utils_rs).unwrap();
+        writeln!(
+            file,
+            r#"
+use crate::foo::Bar;
+use self::helper::Thing;
+use super::parent::Item;
+use std::collections::HashMap;
+"#
+        )
+        .unwrap();
+
+        let mut use_statements = HashSet::new();
+        collect_use_statements(
+            &utils_rs,
+            &mut use_statements,
+            false,
+            false,
+            &["utils".to_string()],
+            false,
+            None,
+        );
+
+        // Should include internal uses but not external (std)
+        assert!(use_statements.contains("foo::Bar"));
+        assert!(use_statements.contains("utils::helper::Thing"));
+        assert!(!use_statements.contains("std::collections::HashMap"));
+    }
+
+    #[test]
+    fn test_collect_use_statements_with_expand() {
+        let temp_dir = TempDir::new().unwrap();
+        let src_dir = temp_dir.path().join("src");
+        fs::create_dir(&src_dir).unwrap();
+
+        let utils_rs = src_dir.join("utils.rs");
+        let mut file = fs::File::create(&utils_rs).unwrap();
+        writeln!(
+            file,
+            r#"
+use crate::foo::{{Bar, Baz}};
+"#
+        )
+        .unwrap();
+
+        let mut use_statements = HashSet::new();
+        collect_use_statements(
+            &utils_rs,
+            &mut use_statements,
+            false,
+            false,
+            &["utils".to_string()],
+            true,
+            None,
+        );
+
+        // Should expand the group
+        assert!(use_statements.contains("foo::Bar"));
+        assert!(use_statements.contains("foo::Baz"));
+    }
+
+    #[test]
+    fn test_collect_use_statements_with_depth() {
+        let temp_dir = TempDir::new().unwrap();
+        let src_dir = temp_dir.path().join("src");
+        fs::create_dir(&src_dir).unwrap();
+
+        let utils_rs = src_dir.join("utils.rs");
+        let mut file = fs::File::create(&utils_rs).unwrap();
+        writeln!(
+            file,
+            r#"
+use crate::foo::bar::baz::Thing;
+"#
+        )
+        .unwrap();
+
+        let mut use_statements = HashSet::new();
+        collect_use_statements(
+            &utils_rs,
+            &mut use_statements,
+            false,
+            false,
+            &["utils".to_string()],
+            false,
+            Some(2),
+        );
+
+        // Should truncate to depth 2
+        assert!(use_statements.contains("foo::bar"));
+    }
+
+    #[test]
+    fn test_collect_use_statements_excludes_tests() {
+        let temp_dir = TempDir::new().unwrap();
+        let src_dir = temp_dir.path().join("src");
+        fs::create_dir(&src_dir).unwrap();
+
+        let utils_rs = src_dir.join("utils.rs");
+        let mut file = fs::File::create(&utils_rs).unwrap();
+        writeln!(
+            file,
+            r#"
+use crate::foo::Bar;
+
+#[cfg(test)]
+mod tests {{
+    use crate::test::TestHelper;
+}}
+"#
+        )
+        .unwrap();
+
+        let mut use_statements = HashSet::new();
+        collect_use_statements(
+            &utils_rs,
+            &mut use_statements,
+            false,
+            false,
+            &["utils".to_string()],
+            false,
+            None,
+        );
+
+        // Should include main use but not test use
+        assert!(use_statements.contains("foo::Bar"));
+        assert!(!use_statements.contains("test::TestHelper"));
+    }
+
+    #[test]
+    fn test_collect_use_statements_includes_tests() {
+        let temp_dir = TempDir::new().unwrap();
+        let src_dir = temp_dir.path().join("src");
+        fs::create_dir(&src_dir).unwrap();
+
+        let utils_rs = src_dir.join("utils.rs");
+        let mut file = fs::File::create(&utils_rs).unwrap();
+        writeln!(
+            file,
+            r#"
+use crate::foo::Bar;
+
+#[cfg(test)]
+mod tests {{
+    use crate::test::TestHelper;
+}}
+"#
+        )
+        .unwrap();
+
+        let mut use_statements = HashSet::new();
+        collect_use_statements(
+            &utils_rs,
+            &mut use_statements,
+            true,
+            false,
+            &["utils".to_string()],
+            false,
+            None,
+        );
+
+        // Should include both main use and test use
+        assert!(use_statements.contains("foo::Bar"));
+        assert!(use_statements.contains("test::TestHelper"));
+    }
+
+    #[test]
+    fn test_collect_use_statements_with_submodules() {
+        let temp_dir = TempDir::new().unwrap();
+        let src_dir = temp_dir.path().join("src");
+        fs::create_dir(&src_dir).unwrap();
+
+        // Create utils/mod.rs
+        let utils_dir = src_dir.join("utils");
+        fs::create_dir(&utils_dir).unwrap();
+        let utils_mod_rs = utils_dir.join("mod.rs");
+        let mut file = fs::File::create(&utils_mod_rs).unwrap();
+        writeln!(
+            file,
+            r#"
+pub mod helper;
+use crate::foo::Bar;
+"#
+        )
+        .unwrap();
+
+        // Create utils/helper.rs
+        let helper_rs = utils_dir.join("helper.rs");
+        let mut file = fs::File::create(&helper_rs).unwrap();
+        writeln!(
+            file,
+            r#"
+use crate::baz::Qux;
+"#
+        )
+        .unwrap();
+
+        let mut use_statements = HashSet::new();
+        collect_use_statements(
+            &utils_mod_rs,
+            &mut use_statements,
+            false,
+            false,
+            &["utils".to_string()],
+            false,
+            None,
+        );
+
+        // Should include uses from both parent and submodule
+        assert!(use_statements.contains("foo::Bar"));
+        assert!(use_statements.contains("baz::Qux"));
+    }
+
+    #[test]
+    fn test_collect_use_statements_invalid_file() {
+        let temp_dir = TempDir::new().unwrap();
+        let src_dir = temp_dir.path().join("src");
+        fs::create_dir(&src_dir).unwrap();
+
+        let nonexistent = src_dir.join("nonexistent.rs");
+
+        let mut use_statements = HashSet::new();
+        collect_use_statements(
+            &nonexistent,
+            &mut use_statements,
+            false,
+            false,
+            &["utils".to_string()],
+            false,
+            None,
+        );
+
+        // Should handle gracefully and return empty
+        assert!(use_statements.is_empty());
+    }
+
+    #[test]
+    fn test_collect_use_statements_invalid_syntax() {
+        let temp_dir = TempDir::new().unwrap();
+        let src_dir = temp_dir.path().join("src");
+        fs::create_dir(&src_dir).unwrap();
+
+        let utils_rs = src_dir.join("utils.rs");
+        let mut file = fs::File::create(&utils_rs).unwrap();
+        writeln!(file, "this is not valid rust syntax {{{{").unwrap();
+
+        let mut use_statements = HashSet::new();
+        collect_use_statements(
+            &utils_rs,
+            &mut use_statements,
+            false,
+            false,
+            &["utils".to_string()],
+            false,
+            None,
+        );
+
+        // Should handle gracefully and return empty
+        assert!(use_statements.is_empty());
+    }
+}

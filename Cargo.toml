@@ -33,3 +33,6 @@ codegen-units = 1
 panic = 'abort'
 strip = "symbols"
 
+
+[dev-dependencies]
+tempfile = "3.8"

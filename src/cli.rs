@@ -86,3 +86,61 @@ impl UseArgs {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_validate_depth_valid() {
+        assert_eq!(validate_depth("1").unwrap(), 1);
+        assert_eq!(validate_depth("5").unwrap(), 5);
+        assert_eq!(validate_depth("100").unwrap(), 100);
+    }
+
+    #[test]
+    fn test_validate_depth_zero_rejected() {
+        let result = validate_depth("0");
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "depth must be at least 1");
+    }
+
+    #[test]
+    fn test_validate_depth_invalid_number() {
+        let result = validate_depth("abc");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("not a valid number"));
+    }
+
+    #[test]
+    fn test_validate_depth_negative() {
+        let result = validate_depth("-1");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_module_components_single() {
+        let args = UseArgs {
+            module_path: "foo".to_string(),
+            include_tests: false,
+            path: None,
+            verbose: false,
+            expand: false,
+            depth: None,
+        };
+        assert_eq!(args.module_components(), vec!["foo"]);
+    }
+
+    #[test]
+    fn test_module_components_nested() {
+        let args = UseArgs {
+            module_path: "foo::bar::baz".to_string(),
+            include_tests: false,
+            path: None,
+            verbose: false,
+            expand: false,
+            depth: None,
+        };
+        assert_eq!(args.module_components(), vec!["foo", "bar", "baz"]);
+    }
+}
