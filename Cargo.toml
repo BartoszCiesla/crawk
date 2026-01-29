@@ -9,6 +9,8 @@ description = "Dependency crawler for Rust. It crawls so you don't have to untan
 license = "Apache-2.0"
 
 [dependencies]
+syn = { version = "2.0", features = ["full", "parsing", "visit"] }
+walkdir = "2.4"
 
 [lints.rust]
 unsafe_code = "deny"
