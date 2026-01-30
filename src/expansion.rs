@@ -200,6 +200,50 @@ pub fn extract_public_items(file_path: &Path) -> Option<Vec<String>> {
     Some(public_items)
 }
 
+/// Check if a syn::Path represents an internal crate reference (crate::, self::, or super::)
+pub fn is_internal_path(path: &syn::Path) -> bool {
+    if let Some(first_segment) = path.segments.first() {
+        let ident = first_segment.ident.to_string();
+        ident == "crate" || ident == "self" || ident == "super"
+    } else {
+        false
+    }
+}
+
+/// Expand a syn::Path (from expressions) to a full path string, resolving self/super
+pub fn expand_path_to_string(path: &syn::Path, module_path: &[String]) -> String {
+    let segments: Vec<String> = path.segments.iter().map(|s| s.ident.to_string()).collect();
+
+    if segments.is_empty() {
+        return String::new();
+    }
+
+    let first = &segments[0];
+    let rest = &segments[1..];
+
+    if first == "crate" {
+        // crate::foo::bar -> crate::foo::bar
+        segments.join("::")
+    } else if first == "self" {
+        // self::foo -> crate::module_path::foo
+        let mut result = vec!["crate".to_string()];
+        result.extend(module_path.iter().cloned());
+        result.extend(rest.iter().cloned());
+        result.join("::")
+    } else if first == "super" {
+        // super::foo -> crate::parent_path::foo
+        let mut result = vec!["crate".to_string()];
+        if !module_path.is_empty() {
+            result.extend(module_path[..module_path.len() - 1].iter().cloned());
+        }
+        result.extend(rest.iter().cloned());
+        result.join("::")
+    } else {
+        // External path, return as-is
+        segments.join("::")
+    }
+}
+
 /// Extract names from a use tree (for pub use re-exports)
 fn extract_use_names(tree: &UseTree, items: &mut Vec<String>) {
     match tree {
@@ -385,5 +429,57 @@ pub use std::collections::HashMap;
     fn test_extract_public_items_nonexistent_file() {
         let result = extract_public_items(Path::new("/nonexistent/file.rs"));
         assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_is_internal_path_crate() {
+        let path: syn::Path = parse_quote!(crate::foo::bar);
+        assert!(is_internal_path(&path));
+    }
+
+    #[test]
+    fn test_is_internal_path_self() {
+        let path: syn::Path = parse_quote!(self::foo);
+        assert!(is_internal_path(&path));
+    }
+
+    #[test]
+    fn test_is_internal_path_super() {
+        let path: syn::Path = parse_quote!(super::foo);
+        assert!(is_internal_path(&path));
+    }
+
+    #[test]
+    fn test_is_internal_path_external() {
+        let path: syn::Path = parse_quote!(std::collections::HashMap);
+        assert!(!is_internal_path(&path));
+    }
+
+    #[test]
+    fn test_expand_path_to_string_crate() {
+        let path: syn::Path = parse_quote!(crate::foo::bar);
+        let result = expand_path_to_string(&path, &["utils".to_string()]);
+        assert_eq!(result, "crate::foo::bar");
+    }
+
+    #[test]
+    fn test_expand_path_to_string_self() {
+        let path: syn::Path = parse_quote!(self::helper::Thing);
+        let result = expand_path_to_string(&path, &["utils".to_string()]);
+        assert_eq!(result, "crate::utils::helper::Thing");
+    }
+
+    #[test]
+    fn test_expand_path_to_string_super() {
+        let path: syn::Path = parse_quote!(super::sibling::Item);
+        let result = expand_path_to_string(&path, &["parent".to_string(), "child".to_string()]);
+        assert_eq!(result, "crate::parent::sibling::Item");
+    }
+
+    #[test]
+    fn test_expand_path_to_string_external() {
+        let path: syn::Path = parse_quote!(std::collections::HashMap);
+        let result = expand_path_to_string(&path, &["utils".to_string()]);
+        assert_eq!(result, "std::collections::HashMap");
     }
 }

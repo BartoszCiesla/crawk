@@ -1,4 +1,4 @@
-use crate::expansion::{expand_use_tree, extract_public_items, is_internal_use, is_test_module};
+use crate::expansion::{expand_path_to_string, expand_use_tree, extract_public_items, is_internal_path, is_internal_use, is_test_module};
 use crate::formatter::{expand_use_tree_to_paths, strip_crate_prefix, truncate_path, use_tree_to_string};
 use crate::resolver::resolve_module_path_to_file;
 use proc_macro2::Span;
@@ -64,9 +64,109 @@ impl<'a> Visit<'a> for UseVisitor<'a> {
         // Restore previous state
         self.in_test_module = was_in_test;
     }
+
+    fn visit_expr_path(&mut self, node: &'a syn::ExprPath) {
+        // Skip paths inside test modules unless include_tests is true
+        if !self.in_test_module || self.include_tests {
+            self.process_path(&node.path);
+        }
+
+        visit::visit_expr_path(self, node);
+    }
+
+    /// Visit type paths - captures type annotations like `let x: crate::Foo`,
+    /// function parameters, return types, struct field types, generic bounds, etc.
+    fn visit_type_path(&mut self, node: &'a syn::TypePath) {
+        if !self.in_test_module || self.include_tests {
+            // TypePath has an optional qself (qualified self) and a path
+            // e.g., <T as crate::Trait>::Item or just crate::Foo
+            self.process_path(&node.path);
+
+            // Also check the qself if present (e.g., <crate::Foo as Trait>::Item)
+            if let Some(qself) = &node.qself {
+                // The type in qself will be visited recursively
+                visit::visit_type(&mut *self, &qself.ty);
+            }
+        }
+
+        visit::visit_type_path(self, node);
+    }
+
+    /// Visit pattern structs - captures struct patterns in match arms
+    /// e.g., `match x { crate::Foo { field } => ... }`
+    fn visit_pat_struct(&mut self, node: &'a syn::PatStruct) {
+        if !self.in_test_module || self.include_tests {
+            self.process_path(&node.path);
+        }
+
+        visit::visit_pat_struct(self, node);
+    }
+
+    /// Visit pattern tuple structs - captures tuple struct patterns
+    /// e.g., `match x { crate::Foo(a, b) => ... }`
+    fn visit_pat_tuple_struct(&mut self, node: &'a syn::PatTupleStruct) {
+        if !self.in_test_module || self.include_tests {
+            self.process_path(&node.path);
+        }
+
+        visit::visit_pat_tuple_struct(self, node);
+    }
+
+    /// Visit struct expressions - captures struct literal construction
+    /// e.g., `crate::Foo { field: value }`
+    fn visit_expr_struct(&mut self, node: &'a syn::ExprStruct) {
+        if !self.in_test_module || self.include_tests {
+            self.process_path(&node.path);
+        }
+
+        visit::visit_expr_struct(self, node);
+    }
+
+    /// Visit trait bounds - captures trait bounds in generics
+    /// e.g., `fn foo<T: crate::MyTrait>()`
+    fn visit_trait_bound(&mut self, node: &'a syn::TraitBound) {
+        if !self.in_test_module || self.include_tests {
+            self.process_path(&node.path);
+        }
+
+        visit::visit_trait_bound(self, node);
+    }
+
+    /// Visit impl items - captures impl blocks
+    /// e.g., `impl crate::Trait for Foo` or `impl crate::Foo`
+    fn visit_item_impl(&mut self, node: &'a syn::ItemImpl) {
+        if !self.in_test_module || self.include_tests {
+            // Check the trait being implemented (if any)
+            if let Some((_, trait_path, _)) = &node.trait_ {
+                self.process_path(trait_path);
+            }
+        }
+
+        visit::visit_item_impl(self, node);
+    }
+
+    /// Visit macro invocations - captures macro paths
+    /// e.g., `crate::my_macro!()`
+    fn visit_macro(&mut self, node: &'a syn::Macro) {
+        if !self.in_test_module || self.include_tests {
+            self.process_path(&node.path);
+        }
+
+        visit::visit_macro(self, node);
+    }
 }
 
 impl<'a> UseVisitor<'a> {
+    /// Process a path and add it to use_statements if it's an internal crate path
+    fn process_path(&mut self, path: &syn::Path) {
+        if is_internal_path(path) {
+            let expanded = expand_path_to_string(path, &self.module_path);
+            let truncated = truncate_path(&expanded, self.depth);
+            let without_crate = strip_crate_prefix(&truncated);
+            self.use_statements.insert(without_crate);
+        }
+    }
+
     fn expand_globs(&self, tree: &UseTree) -> UseTree {
         self.expand_globs_with_path(tree, &[])
     }
