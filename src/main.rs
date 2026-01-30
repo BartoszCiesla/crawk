@@ -21,8 +21,8 @@ enum Cargo {
 #[derive(Parser, Debug)]
 #[command(about = "List internal crate use statements from a Rust module")]
 struct Args {
-    /// Name of the module to analyze
-    module_name: String,
+    /// Module path to analyze (e.g., "utils" or "foo::bar::baz")
+    module_path: String,
 
     /// Include test modules in the analysis
     #[arg(short = 't', long = "include-tests")]
@@ -71,32 +71,39 @@ fn main() {
         std::process::exit(1);
     }
 
-    // Find the module file
-    let module_path = match find_module(&src_dir, &args.module_name) {
+    // Parse the module path (e.g., "foo::bar::baz" -> ["foo", "bar", "baz"])
+    let module_components: Vec<String> = args
+        .module_path
+        .split("::")
+        .map(|s| s.to_string())
+        .collect();
+
+    // Find the module file by navigating through the module hierarchy
+    let module_file_path = match find_module_by_path(&src_dir, &module_components) {
         Some(path) => path,
         None => {
-            eprintln!("Error: Module '{}' not found", args.module_name);
+            eprintln!("Error: Module '{}' not found", args.module_path);
             std::process::exit(1);
         }
     };
 
     if args.verbose {
         println!("Crate root: {}", crate_root.display());
-        println!("Analyzing module: {}", args.module_name);
-        println!("Module path: {}", module_path.display());
+        println!("Analyzing module: {}", args.module_path);
+        println!("Module file: {}", module_file_path.display());
         if !args.include_tests {
             println!("(excluding tests - use --include-tests to include them)");
         }
         println!();
     }
 
-    // Determine the initial module path
-    let initial_module_path = get_module_path(&src_dir, &module_path, &args.module_name);
+    // The initial module path is the module components themselves
+    let initial_module_path = module_components;
 
     // Collect all use statements from the module and its submodules
     let mut use_statements = HashSet::new();
     collect_use_statements(
-        &module_path,
+        &module_file_path,
         &mut use_statements,
         args.include_tests,
         args.verbose,
@@ -116,6 +123,55 @@ fn main() {
     }
 }
 
+fn find_module_by_path(src_dir: &Path, module_path: &[String]) -> Option<PathBuf> {
+    if module_path.is_empty() {
+        return None;
+    }
+
+    // Start from src_dir
+    let mut current_dir = src_dir.to_path_buf();
+
+    // Navigate through each component
+    for (index, module_name) in module_path.iter().enumerate() {
+        let is_last = index == module_path.len() - 1;
+
+        // Try to find the module in the current directory
+
+        // Option 1: module_name.rs in current directory
+        let file_path = current_dir.join(format!("{}.rs", module_name));
+        if file_path.exists() {
+            if is_last {
+                return Some(file_path);
+            }
+            // For non-last components, need to check if there's a directory with the same name
+            let module_dir = current_dir.join(module_name);
+            if module_dir.is_dir() {
+                current_dir = module_dir;
+                continue;
+            } else {
+                // No directory to continue into
+                return None;
+            }
+        }
+
+        // Option 2: module_name/mod.rs
+        let mod_file_path = current_dir.join(module_name).join("mod.rs");
+        if mod_file_path.exists() {
+            if is_last {
+                return Some(mod_file_path);
+            }
+            // Continue into this module's directory
+            current_dir = current_dir.join(module_name);
+            continue;
+        }
+
+        // Module not found
+        return None;
+    }
+
+    None
+}
+
 fn get_src_dir(path: &Path) -> PathBuf {
     let mut current = path;
     while let Some(parent) = current.parent() {
@@ -128,76 +184,6 @@ fn get_src_dir(path: &Path) -> PathBuf {
     std::env::current_dir()
         .unwrap_or_default()
         .join("src")
-}
-
-fn get_module_path(src_dir: &Path, module_file_path: &Path, module_name: &str) -> Vec<String> {
-    // If the module is main.rs or lib.rs, it's the crate root
-    if let Some(file_name) = module_file_path.file_name() {
-        if file_name == "main.rs" || file_name == "lib.rs" {
-            return vec![];
-        }
-    }
-
-    // Build the module path from the file system structure
-    let mut path_components = Vec::new();
-
-    // Get the relative path from src_dir to the module file
-    if let Ok(relative_path) = module_file_path.strip_prefix(src_dir) {
-        for component in relative_path.components() {
-            if let Some(component_str) = component.as_os_str().to_str() {
-                // Skip "mod.rs" in the path
-                if component_str == "mod.rs" {
-                    continue;
-                }
-                // Remove .rs extension
-                if let Some(module_part) = component_str.strip_suffix(".rs") {
-                    path_components.push(module_part.to_string());
-                } else {
-                    path_components.push(component_str.to_string());
-                }
-            }
-        }
-    } else {
-        // Fallback: just use the module name
-        path_components.push(module_name.to_string());
-    }
-
-    path_components
-}
-
-fn find_module(base_dir: &Path, module_name: &str) -> Option<PathBuf> {
-    // Check for module_name.rs
-    let file_path = base_dir.join(format!("{}.rs", module_name));
-    if file_path.exists() {
-        return Some(file_path);
-    }
-
-    // Check for module_name/mod.rs
-    let mod_path = base_dir.join(module_name).join("mod.rs");
-    if mod_path.exists() {
-        return Some(mod_path);
-    }
-
-    // Check in main.rs or lib.rs for inline modules
-    for entry_file in &["main.rs", "lib.rs"] {
-        let entry_path = base_dir.join(entry_file);
-        if entry_path.exists() {
-            if let Ok(content) = fs::read_to_string(&entry_path) {
-                if let Ok(file) = syn::parse_file(&content) {
-                    for item in &file.items {
-                        if let Item::Mod(item_mod) = item {
-                            if item_mod.ident == module_name {
-                                // Found inline module in entry file
-                                return Some(entry_path);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    None
 }
 
 fn collect_use_statements(
@@ -346,7 +332,7 @@ impl<'a> Visit<'a> for UseVisitor<'a> {
                 // Expand globs to explicit items
                 expanded_tree = self.expand_globs(&expanded_tree);
 
-                let use_string = format!("use {};", use_tree_to_string(&expanded_tree));
+                let use_string = format!("{};", use_tree_to_string(&expanded_tree));
                 self.use_statements.insert(use_string);
             }
         }
