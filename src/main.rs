@@ -7,6 +7,15 @@ use std::path::{Path, PathBuf};
 use syn::visit::{self, Visit};
 use syn::{Item, UseTree};
 
+fn validate_depth(s: &str) -> Result<usize, String> {
+    let value: usize = s.parse().map_err(|_| format!("'{}' is not a valid number", s))?;
+    if value < 1 {
+        Err(String::from("depth must be at least 1"))
+    } else {
+        Ok(value)
+    }
+}
+
 #[derive(Parser, Debug)]
 #[command(
     name = "crawk",
@@ -39,6 +48,10 @@ struct Args {
     /// Expand grouped imports into individual paths (e.g., a::b::{x, y} -> a::b::x, a::b::y)
     #[arg(short = 'e', long = "expand")]
     expand: bool,
+
+    /// Limit module depth from crate root (e.g., --depth 1 shows crate::x, --depth 2 shows crate::x::y)
+    #[arg(short = 'd', long = "depth", value_parser = validate_depth)]
+    depth: Option<usize>,
 }
 
 fn main() {
@@ -113,6 +126,7 @@ fn main() {
         args.verbose,
         &initial_module_path,
         args.expand,
+        args.depth,
     );
 
     if use_statements.is_empty() {
@@ -198,6 +212,7 @@ fn collect_use_statements(
     verbose: bool,
     module_path: &[String],
     expand: bool,
+    depth: Option<usize>,
 ) {
     let content = match fs::read_to_string(path) {
         Ok(content) => content,
@@ -229,6 +244,8 @@ fn collect_use_statements(
         include_tests,
         in_test_module: false,
         expand,
+        depth,
+        verbose,
     };
     visitor.visit_file(&file);
 
@@ -252,6 +269,7 @@ fn collect_use_statements(
                     verbose,
                     &submodule_module_path,
                     expand,
+                    depth,
                 );
             }
         }
@@ -327,6 +345,8 @@ struct UseVisitor<'a> {
     include_tests: bool,
     in_test_module: bool,
     expand: bool,
+    depth: Option<usize>,
+    verbose: bool,
 }
 
 impl<'a> Visit<'a> for UseVisitor<'a> {
@@ -345,11 +365,15 @@ impl<'a> Visit<'a> for UseVisitor<'a> {
                     // Expand groups into individual paths
                     let expanded_paths = expand_use_tree_to_paths(&expanded_tree);
                     for path in expanded_paths {
-                        self.use_statements.insert(format!("{};", path));
+                        let truncated = truncate_path(&path, self.depth);
+                        let without_crate = strip_crate_prefix(&truncated);
+                        self.use_statements.insert(format!("{};", without_crate));
                     }
                 } else {
-                    let use_string = format!("{};", use_tree_to_string(&expanded_tree));
-                    self.use_statements.insert(use_string);
+                    let use_string = use_tree_to_string(&expanded_tree);
+                    let truncated = truncate_path(&use_string, self.depth);
+                    let without_crate = strip_crate_prefix(&truncated);
+                    self.use_statements.insert(format!("{};", without_crate));
                 }
             }
         }
@@ -416,13 +440,46 @@ impl<'a> UseVisitor<'a> {
     }
 
     fn resolve_glob_items(&self, module_path: &[String]) -> Option<UseTree> {
+        if self.verbose {
+            eprintln!("Debug: Attempting to resolve glob for path: {:?}", module_path);
+        }
+
         // Resolve the module path to a file
-        let module_file = self.resolve_module_path_to_file(module_path)?;
+        let module_file = match self.resolve_module_path_to_file(module_path) {
+            Some(f) => {
+                if self.verbose {
+                    eprintln!("Debug: Resolved glob path to file: {}", f.display());
+                }
+                f
+            }
+            None => {
+                if self.verbose {
+                    eprintln!("Debug: Failed to resolve module path to file");
+                }
+                return None;
+            }
+        };
 
         // Parse the file and extract public items
-        let public_items = self.extract_public_items(&module_file)?;
+        let public_items = match self.extract_public_items(&module_file) {
+            Some(items) => {
+                if self.verbose {
+                    eprintln!("Debug: Found {} public items in module", items.len());
+                }
+                items
+            }
+            None => {
+                if self.verbose {
+                    eprintln!("Debug: Failed to extract public items from file");
+                }
+                return None;
+            }
+        };
 
         if public_items.is_empty() {
+            if self.verbose {
+                eprintln!("Debug: No public items found in module");
+            }
             return None;
         }
 
@@ -444,41 +501,83 @@ impl<'a> UseVisitor<'a> {
 
     fn resolve_module_path_to_file(&self, module_path: &[String]) -> Option<PathBuf> {
         if module_path.is_empty() {
+            if self.verbose {
+                eprintln!("Debug: Module path is empty");
+            }
             return None;
         }
 
         // First element should be "crate" for internal uses
         if module_path[0] != "crate" {
+            if self.verbose {
+                eprintln!("Debug: Module path doesn't start with 'crate': {:?}", module_path);
+            }
             return None;
         }
 
         // Start from src_dir
         let mut current_path = self.src_dir.clone();
 
+        if self.verbose {
+            eprintln!("Debug: Starting from src_dir: {}", current_path.display());
+        }
+
         // Navigate through the module path (skip "crate" at index 0)
-        for module_name in &module_path[1..] {
-            // Try module_name.rs
-            let file_path = current_path.join(format!("{}.rs", module_name));
-            if file_path.exists() {
-                current_path = file_path;
-                continue;
+        for (idx, module_name) in module_path[1..].iter().enumerate() {
+            let is_last = idx == module_path.len() - 2; // -2 because we skip "crate" at index 0
+
+            if self.verbose {
+                eprintln!("Debug: Looking for module '{}' in {} (is_last={})", module_name, current_path.display(), is_last);
             }
 
             // Try module_name/mod.rs
-            let mod_path = current_path.join(module_name).join("mod.rs");
+            let mod_dir = current_path.join(module_name);
+            let mod_path = mod_dir.join("mod.rs");
             if mod_path.exists() {
-                current_path = mod_path;
+                if self.verbose {
+                    eprintln!("Debug: Found {}", mod_path.display());
+                }
+                if is_last {
+                    // This is the final module, return the mod.rs file
+                    current_path = mod_path;
+                } else {
+                    // Not the final module, continue in the module directory
+                    current_path = mod_dir;
+                }
                 continue;
             }
 
-            // Try to navigate into a directory
-            let dir_path = current_path.join(module_name);
-            if dir_path.is_dir() {
-                current_path = dir_path;
+            // Try module_name.rs
+            let file_path = current_path.join(format!("{}.rs", module_name));
+            if file_path.exists() {
+                if self.verbose {
+                    eprintln!("Debug: Found {}", file_path.display());
+                }
+                if is_last {
+                    // This is the final module, return the .rs file
+                    current_path = file_path;
+                } else {
+                    // Not the final module, need to navigate into module_name/ directory
+                    let module_dir = current_path.join(module_name);
+                    if module_dir.is_dir() {
+                        if self.verbose {
+                            eprintln!("Debug: Navigating into companion directory {}", module_dir.display());
+                        }
+                        current_path = module_dir;
+                    } else {
+                        if self.verbose {
+                            eprintln!("Debug: No companion directory found for {}", file_path.display());
+                        }
+                        return None;
+                    }
+                }
                 continue;
             }
 
             // Module not found
+            if self.verbose {
+                eprintln!("Debug: Module '{}' not found at index {}", module_name, idx);
+            }
             return None;
         }
 
@@ -486,13 +585,22 @@ impl<'a> UseVisitor<'a> {
         if current_path.is_dir() {
             let mod_path = current_path.join("mod.rs");
             if mod_path.exists() {
+                if self.verbose {
+                    eprintln!("Debug: Final path is directory, using mod.rs: {}", mod_path.display());
+                }
                 return Some(mod_path);
             }
         }
 
         if current_path.is_file() {
+            if self.verbose {
+                eprintln!("Debug: Final resolved file: {}", current_path.display());
+            }
             Some(current_path)
         } else {
+            if self.verbose {
+                eprintln!("Debug: Final path is not a file: {}", current_path.display());
+            }
             None
         }
     }
@@ -711,6 +819,32 @@ fn use_tree_to_string(tree: &UseTree) -> String {
                 .collect();
             format!("{{{}}}", items.join(", "))
         }
+    }
+}
+
+fn strip_crate_prefix(path: &str) -> String {
+    path.strip_prefix("crate::").unwrap_or(path).to_string()
+}
+
+fn truncate_path(path: &str, depth: Option<usize>) -> String {
+    let depth = match depth {
+        Some(d) => d,
+        None => return path.to_string(), // No truncation
+    };
+
+    // Split by :: to get components
+    let parts: Vec<&str> = path.split("::").collect();
+
+    // If the path starts with "crate", count from there
+    if parts.first() == Some(&"crate") {
+        // depth 1 means crate::x, depth 2 means crate::x::y, etc.
+        // So we need depth + 1 components (including "crate")
+        let take_count = (depth + 1).min(parts.len());
+        parts.iter().take(take_count).map(|s| s.to_string()).collect::<Vec<_>>().join("::")
+    } else {
+        // For non-crate paths, just take the first 'depth' components
+        let take_count = depth.min(parts.len());
+        parts.iter().take(take_count).map(|s| s.to_string()).collect::<Vec<_>>().join("::")
     }
 }
 
