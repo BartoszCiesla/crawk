@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 
 /// Get the src directory from a given path
+#[must_use]
 pub fn get_src_dir(path: &Path) -> PathBuf {
     let mut current = path;
     while let Some(parent) = current.parent() {
@@ -14,6 +15,7 @@ pub fn get_src_dir(path: &Path) -> PathBuf {
 }
 
 /// Find a module file by navigating through module path components
+#[must_use]
 pub fn find_module_by_path(src_dir: &Path, module_path: &[String]) -> Option<PathBuf> {
     if module_path.is_empty() {
         return None;
@@ -39,7 +41,7 @@ pub fn find_module_by_path(src_dir: &Path, module_path: &[String]) -> Option<Pat
         }
 
         // Try module_name.rs
-        let file_path = current_dir.join(format!("{}.rs", module_name));
+        let file_path = current_dir.join(format!("{module_name}.rs"));
         if file_path.exists() {
             if is_last {
                 return Some(file_path);
@@ -49,10 +51,10 @@ pub fn find_module_by_path(src_dir: &Path, module_path: &[String]) -> Option<Pat
             if module_dir.is_dir() {
                 current_dir = module_dir;
                 continue;
-            } else {
-                // No directory to continue into
-                return None;
             }
+
+            // No directory to continue into
+            return None;
         }
 
         // Module not found
@@ -63,6 +65,7 @@ pub fn find_module_by_path(src_dir: &Path, module_path: &[String]) -> Option<Pat
 }
 
 /// Find a submodule file relative to a parent module file
+#[must_use]
 pub fn find_submodule(parent_path: &Path, submodule_name: &str) -> Option<PathBuf> {
     let parent_dir = parent_path.parent()?;
 
@@ -71,7 +74,7 @@ pub fn find_submodule(parent_path: &Path, submodule_name: &str) -> Option<PathBu
         let base_dir = parent_dir;
 
         // Check for submodule_name.rs in same directory
-        let file_path = base_dir.join(format!("{}.rs", submodule_name));
+        let file_path = base_dir.join(format!("{submodule_name}.rs"));
         if file_path.exists() {
             return Some(file_path);
         }
@@ -87,7 +90,7 @@ pub fn find_submodule(parent_path: &Path, submodule_name: &str) -> Option<PathBu
         let module_dir = parent_dir.join(module_name);
 
         // Check for module_name/submodule_name.rs
-        let file_path = module_dir.join(format!("{}.rs", submodule_name));
+        let file_path = module_dir.join(format!("{submodule_name}.rs"));
         if file_path.exists() {
             return Some(file_path);
         }
@@ -102,7 +105,9 @@ pub fn find_submodule(parent_path: &Path, submodule_name: &str) -> Option<PathBu
     None
 }
 
+#[allow(clippy::doc_link_with_quotes)]
 /// Resolve a module path (e.g., ["crate", "foo", "bar"]) to a file system path
+#[must_use]
 pub fn resolve_module_path_to_file(
     src_dir: &Path,
     module_path: &[String],
@@ -118,17 +123,12 @@ pub fn resolve_module_path_to_file(
     // First element should be "crate" for internal uses
     if module_path[0] != "crate" {
         if verbose {
-            eprintln!(
-                "Debug: Module path doesn't start with 'crate': {:?}",
-                module_path
-            );
+            eprintln!("Debug: Module path doesn't start with 'crate': {module_path:?}");
         }
         return None;
     }
-
     // Start from src_dir
     let mut current_path = src_dir.to_path_buf();
-
     if verbose {
         eprintln!("Debug: Starting from src_dir: {}", current_path.display());
     }
@@ -164,7 +164,7 @@ pub fn resolve_module_path_to_file(
         }
 
         // Try module_name.rs
-        let file_path = current_path.join(format!("{}.rs", module_name));
+        let file_path = current_path.join(format!("{module_name}.rs"));
         if file_path.exists() {
             if verbose {
                 eprintln!("Debug: Found {}", file_path.display());
@@ -198,7 +198,7 @@ pub fn resolve_module_path_to_file(
 
         // Module not found
         if verbose {
-            eprintln!("Debug: Module '{}' not found at index {}", module_name, idx);
+            eprintln!("Debug: Module '{module_name}' not found at index {idx}");
         }
         return None;
     }
@@ -234,6 +234,7 @@ pub fn resolve_module_path_to_file(
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use std::fs;

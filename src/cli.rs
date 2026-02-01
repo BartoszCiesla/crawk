@@ -5,7 +5,7 @@ use std::path::PathBuf;
 pub fn validate_depth(s: &str) -> Result<usize, String> {
     let value: usize = s
         .parse()
-        .map_err(|_| format!("'{}' is not a valid number", s))?;
+        .map_err(|_| format!("'{s}' is not a valid number"))?;
     if value < 1 {
         Err(String::from("depth must be at least 1"))
     } else {
@@ -66,28 +66,32 @@ pub struct UseArgs {
 
 impl UseArgs {
     /// Parse module path into components
+    #[must_use]
     pub fn module_components(&self) -> Vec<String> {
         self.module_path
             .split("::")
-            .map(|s| s.to_string())
+            .map(ToString::to_string)
             .collect()
     }
 
     /// Get the crate root directory
+    #[must_use]
     pub fn crate_root(&self) -> PathBuf {
-        if let Some(path) = &self.path {
-            if !path.exists() {
-                eprintln!("Error: Provided path '{}' does not exist", path.display());
-                std::process::exit(1);
-            }
-            path.clone()
-        } else {
-            std::env::current_dir().expect("Failed to get current directory")
-        }
+        self.path.as_ref().map_or_else(
+            || std::env::current_dir().expect("Failed to get current directory"),
+            |path| {
+                if !path.exists() {
+                    eprintln!("Error: Provided path '{}' does not exist", path.display());
+                    std::process::exit(1);
+                }
+                path.clone()
+            },
+        )
     }
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

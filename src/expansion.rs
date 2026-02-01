@@ -4,6 +4,7 @@ use std::path::Path;
 use syn::{Item, UseTree};
 
 /// Expand self and super references in a UseTree to absolute paths
+#[must_use]
 pub fn expand_use_tree(tree: &UseTree, module_path: &[String]) -> UseTree {
     match tree {
         UseTree::Path(path) => {
@@ -92,6 +93,7 @@ fn build_expanded_path(module_path: &[String], rest: &UseTree) -> UseTree {
 }
 
 /// Check if a UseTree represents an internal crate use (self, super, or crate)
+#[must_use]
 pub fn is_internal_use(tree: &UseTree) -> bool {
     match tree {
         UseTree::Path(path) => {
@@ -109,12 +111,13 @@ pub fn is_internal_use(tree: &UseTree) -> bool {
         UseTree::Glob(_) => false,
         UseTree::Group(group) => {
             // Check if any item in the group is internal
-            group.items.iter().any(|item| is_internal_use(item))
+            group.items.iter().any(is_internal_use)
         }
     }
 }
 
 /// Check if a module is a test module
+#[must_use]
 pub fn is_test_module(item_mod: &syn::ItemMod) -> bool {
     let module_name = item_mod.ident.to_string();
 
@@ -125,12 +128,12 @@ pub fn is_test_module(item_mod: &syn::ItemMod) -> bool {
 
     // Check for #[cfg(test)] attribute
     for attr in &item_mod.attrs {
-        if attr.path().is_ident("cfg") {
-            if let Ok(meta_list) = attr.meta.require_list() {
-                let tokens = meta_list.tokens.to_string();
-                if tokens == "test" {
-                    return true;
-                }
+        if attr.path().is_ident("cfg")
+            && let Ok(meta_list) = attr.meta.require_list()
+        {
+            let tokens = meta_list.tokens.to_string();
+            if tokens == "test" {
+                return true;
             }
         }
     }
@@ -139,6 +142,7 @@ pub fn is_test_module(item_mod: &syn::ItemMod) -> bool {
 }
 
 /// Extract public items from a module file
+#[must_use]
 pub fn extract_public_items(file_path: &Path) -> Option<Vec<String>> {
     let content = fs::read_to_string(file_path).ok()?;
     let file = syn::parse_file(&content).ok()?;
@@ -201,6 +205,7 @@ pub fn extract_public_items(file_path: &Path) -> Option<Vec<String>> {
 }
 
 /// Check if a syn::Path represents an internal crate reference (crate::, self::, or super::)
+#[must_use]
 pub fn is_internal_path(path: &syn::Path) -> bool {
     if let Some(first_segment) = path.segments.first() {
         let ident = first_segment.ident.to_string();
@@ -211,6 +216,7 @@ pub fn is_internal_path(path: &syn::Path) -> bool {
 }
 
 /// Expand a syn::Path (from expressions) to a full path string, resolving self/super
+#[must_use]
 pub fn expand_path_to_string(path: &syn::Path, module_path: &[String]) -> String {
     let segments: Vec<String> = path.segments.iter().map(|s| s.ident.to_string()).collect();
 
@@ -268,6 +274,7 @@ fn extract_use_names(tree: &UseTree, items: &mut Vec<String>) {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use syn::parse_quote;

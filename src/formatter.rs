@@ -1,6 +1,7 @@
 use syn::UseTree;
 
 /// Convert a UseTree to its string representation
+#[must_use]
 pub fn use_tree_to_string(tree: &UseTree) -> String {
     match tree {
         UseTree::Path(path) => {
@@ -12,17 +13,14 @@ pub fn use_tree_to_string(tree: &UseTree) -> String {
         }
         UseTree::Glob(_) => "*".to_string(),
         UseTree::Group(group) => {
-            let items: Vec<String> = group
-                .items
-                .iter()
-                .map(|item| use_tree_to_string(item))
-                .collect();
+            let items: Vec<String> = group.items.iter().map(use_tree_to_string).collect();
             format!("{{{}}}", items.join(", "))
         }
     }
 }
 
 /// Expand a UseTree into individual paths (flattens groups)
+#[must_use]
 pub fn expand_use_tree_to_paths(tree: &UseTree) -> Vec<String> {
     match tree {
         UseTree::Path(path) => {
@@ -31,7 +29,7 @@ pub fn expand_use_tree_to_paths(tree: &UseTree) -> Vec<String> {
 
             suffixes
                 .into_iter()
-                .map(|suffix| format!("{}::{}", prefix, suffix))
+                .map(|suffix| format!("{prefix}::{suffix}"))
                 .collect()
         }
         UseTree::Name(name) => {
@@ -54,15 +52,16 @@ pub fn expand_use_tree_to_paths(tree: &UseTree) -> Vec<String> {
 }
 
 /// Remove "crate::" prefix from a path
+#[must_use]
 pub fn strip_crate_prefix(path: &str) -> String {
     path.strip_prefix("crate::").unwrap_or(path).to_string()
 }
 
 /// Truncate a path to a specified depth from crate root
+#[must_use]
 pub fn truncate_path(path: &str, depth: Option<usize>) -> String {
-    let depth = match depth {
-        Some(d) => d,
-        None => return path.to_string(), // No truncation
+    let Some(depth) = depth else {
+        return path.to_string();
     };
 
     // Split by :: to get components
@@ -76,7 +75,7 @@ pub fn truncate_path(path: &str, depth: Option<usize>) -> String {
         parts
             .iter()
             .take(take_count)
-            .map(|s| s.to_string())
+            .map(ToString::to_string)
             .collect::<Vec<_>>()
             .join("::")
     } else {
@@ -85,7 +84,7 @@ pub fn truncate_path(path: &str, depth: Option<usize>) -> String {
         parts
             .iter()
             .take(take_count)
-            .map(|s| s.to_string())
+            .map(ToString::to_string)
             .collect::<Vec<_>>()
             .join("::")
     }

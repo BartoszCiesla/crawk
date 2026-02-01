@@ -78,6 +78,7 @@ pub fn collect_use_statements(
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use std::io::Write;
@@ -93,12 +94,12 @@ mod tests {
         let mut file = fs::File::create(&utils_rs).unwrap();
         writeln!(
             file,
-            r#"
+            r"
 use crate::foo::Bar;
 use self::helper::Thing;
 use super::parent::Item;
 use std::collections::HashMap;
-"#
+"
         )
         .unwrap();
 
@@ -129,9 +130,9 @@ use std::collections::HashMap;
         let mut file = fs::File::create(&utils_rs).unwrap();
         writeln!(
             file,
-            r#"
+            r"
 use crate::foo::{{Bar, Baz}};
-"#
+"
         )
         .unwrap();
 
@@ -161,9 +162,9 @@ use crate::foo::{{Bar, Baz}};
         let mut file = fs::File::create(&utils_rs).unwrap();
         writeln!(
             file,
-            r#"
+            r"
 use crate::foo::bar::baz::Thing;
-"#
+"
         )
         .unwrap();
 
@@ -192,14 +193,14 @@ use crate::foo::bar::baz::Thing;
         let mut file = fs::File::create(&utils_rs).unwrap();
         writeln!(
             file,
-            r#"
+            r"
 use crate::foo::Bar;
 
 #[cfg(test)]
 mod tests {{
     use crate::test::TestHelper;
 }}
-"#
+"
         )
         .unwrap();
 
@@ -229,14 +230,14 @@ mod tests {{
         let mut file = fs::File::create(&utils_rs).unwrap();
         writeln!(
             file,
-            r#"
+            r"
 use crate::foo::Bar;
 
 #[cfg(test)]
 mod tests {{
     use crate::test::TestHelper;
 }}
-"#
+"
         )
         .unwrap();
 
@@ -269,10 +270,10 @@ mod tests {{
         let mut file = fs::File::create(&utils_mod_rs).unwrap();
         writeln!(
             file,
-            r#"
+            r"
 pub mod helper;
 use crate::foo::Bar;
-"#
+"
         )
         .unwrap();
 
@@ -281,9 +282,9 @@ use crate::foo::Bar;
         let mut file = fs::File::create(&helper_rs).unwrap();
         writeln!(
             file,
-            r#"
+            r"
 use crate::baz::Qux;
-"#
+"
         )
         .unwrap();
 
@@ -361,7 +362,7 @@ use crate::baz::Qux;
         let mut file = fs::File::create(&utils_rs).unwrap();
         writeln!(
             file,
-            r#"
+            r"
 fn example() {{
     crate::foo::bar::do_something();
     let x = crate::config::VALUE;
@@ -371,7 +372,7 @@ fn example() {{
     // External paths should not be collected
     std::mem::drop(x);
 }}
-"#
+"
         )
         .unwrap();
 
@@ -407,11 +408,11 @@ fn example() {{
         let mut file = fs::File::create(&utils_rs).unwrap();
         writeln!(
             file,
-            r#"
+            r"
 fn example() {{
     crate::foo::bar::baz::deep_function();
 }}
-"#
+"
         )
         .unwrap();
 
@@ -441,7 +442,7 @@ fn example() {{
         let mut file = fs::File::create(&utils_rs).unwrap();
         writeln!(
             file,
-            r#"
+            r"
 fn production_code() {{
     crate::foo::production_fn();
 }}
@@ -452,7 +453,7 @@ mod tests {{
         crate::test_utils::helper();
     }}
 }}
-"#
+"
         )
         .unwrap();
 
@@ -482,7 +483,7 @@ mod tests {{
         let mut file = fs::File::create(&utils_rs).unwrap();
         writeln!(
             file,
-            r#"
+            r"
 // Type annotations in various places
 fn example(param: crate::types::ParamType) -> crate::types::ReturnType {{
     let x: crate::types::LocalType = todo!();
@@ -499,7 +500,7 @@ type Alias = crate::types::AliasedType;
 const CONST: crate::types::ConstType = todo!();
 
 static STATIC: crate::types::StaticType = todo!();
-"#
+"
         )
         .unwrap();
 
@@ -535,7 +536,7 @@ static STATIC: crate::types::StaticType = todo!();
         let mut file = fs::File::create(&utils_rs).unwrap();
         writeln!(
             file,
-            r#"
+            r"
 fn example(x: i32) {{
     // Struct pattern in match
     match x {{
@@ -552,7 +553,7 @@ fn example(x: i32) {{
     if let crate::patterns::OptionLike {{ value }} = todo!() {{
     }}
 }}
-"#
+"
         )
         .unwrap();
 
@@ -633,7 +634,7 @@ fn example() {{
         let mut file = fs::File::create(&utils_rs).unwrap();
         writeln!(
             file,
-            r#"
+            r"
 // Trait bounds in various places
 fn generic_fn<T: crate::traits::MyTrait>(_t: T) {{}}
 
@@ -649,7 +650,7 @@ struct GenericStruct<T: crate::traits::StructBound> {{
 trait LocalTrait: crate::traits::SuperTrait {{}}
 
 fn multi_bound<T: crate::traits::First + crate::traits::Second>(_t: T) {{}}
-"#
+"
         )
         .unwrap();
 
@@ -683,7 +684,7 @@ fn multi_bound<T: crate::traits::First + crate::traits::Second>(_t: T) {{}}
         let mut file = fs::File::create(&utils_rs).unwrap();
         writeln!(
             file,
-            r#"
+            r"
 struct LocalStruct;
 
 // Impl trait for local struct
@@ -695,7 +696,7 @@ impl crate::traits::Displayable for LocalStruct {{
 impl crate::traits::Serializable for LocalStruct {{
     fn serialize(&self) {{}}
 }}
-"#
+"
         )
         .unwrap();
 
@@ -725,14 +726,14 @@ impl crate::traits::Serializable for LocalStruct {{
         let mut file = fs::File::create(&utils_rs).unwrap();
         writeln!(
             file,
-            r#"
+            r"
 fn example() {{
     // Macro invocations with crate paths
     crate::macros::my_macro!();
     crate::macros::another_macro!(arg1, arg2);
     self::local_macro!();
 }}
-"#
+"
         )
         .unwrap();
 

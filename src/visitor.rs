@@ -12,6 +12,7 @@ use std::path::PathBuf;
 use syn::UseTree;
 use syn::visit::{self, Visit};
 
+#[allow(clippy::struct_excessive_bools)]
 pub struct UseVisitor<'a> {
     pub use_statements: &'a mut HashSet<String>,
     pub module_path: Vec<String>,
@@ -161,7 +162,7 @@ impl<'a> Visit<'a> for UseVisitor<'a> {
     }
 }
 
-impl<'a> UseVisitor<'a> {
+impl UseVisitor<'_> {
     /// Process a path and add it to use_statements if it's an internal crate path
     fn process_path(&mut self, path: &syn::Path) {
         if is_internal_path(path) {
@@ -192,11 +193,8 @@ impl<'a> UseVisitor<'a> {
             UseTree::Glob(_glob) => {
                 // accumulated_path contains the module path (e.g., ["crate", "foo", "bar"])
                 // Need to resolve this to a file and get public items
-                if let Some(items) = self.resolve_glob_items(accumulated_path) {
-                    items
-                } else {
-                    tree.clone()
-                }
+                self.resolve_glob_items(accumulated_path)
+                    .unwrap_or_else(|| tree.clone())
             }
             UseTree::Group(group) => {
                 let expanded_items: syn::punctuated::Punctuated<UseTree, syn::Token![,]> = group
@@ -215,43 +213,35 @@ impl<'a> UseVisitor<'a> {
 
     fn resolve_glob_items(&self, module_path: &[String]) -> Option<UseTree> {
         if self.verbose {
-            eprintln!(
-                "Debug: Attempting to resolve glob for path: {:?}",
-                module_path
-            );
+            eprintln!("Debug: Attempting to resolve glob for path: {module_path:?}",);
         }
 
         // Resolve the module path to a file
-        let module_file =
-            match resolve_module_path_to_file(&self.src_dir, module_path, self.verbose) {
-                Some(f) => {
-                    if self.verbose {
-                        eprintln!("Debug: Resolved glob path to file: {}", f.display());
-                    }
-                    f
-                }
-                None => {
-                    if self.verbose {
-                        eprintln!("Debug: Failed to resolve module path to file");
-                    }
-                    return None;
-                }
-            };
+        let module_file = if let Some(f) =
+            resolve_module_path_to_file(&self.src_dir, module_path, self.verbose)
+        {
+            if self.verbose {
+                eprintln!("Debug: Resolved glob path to file: {}", f.display());
+            }
+            f
+        } else {
+            if self.verbose {
+                eprintln!("Debug: Failed to resolve module path to file");
+            }
+            return None;
+        };
 
         // Parse the file and extract public items
-        let public_items = match extract_public_items(&module_file) {
-            Some(items) => {
-                if self.verbose {
-                    eprintln!("Debug: Found {} public items in module", items.len());
-                }
-                items
+        let public_items = if let Some(items) = extract_public_items(&module_file) {
+            if self.verbose {
+                eprintln!("Debug: Found {} public items in module", items.len());
             }
-            None => {
-                if self.verbose {
-                    eprintln!("Debug: Failed to extract public items from file");
-                }
-                return None;
+            items
+        } else {
+            if self.verbose {
+                eprintln!("Debug: Failed to extract public items from file");
             }
+            return None;
         };
 
         if public_items.is_empty() {
