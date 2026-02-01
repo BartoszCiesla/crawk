@@ -207,12 +207,10 @@ pub fn extract_public_items(file_path: &Path) -> Option<Vec<String>> {
 /// Check if a syn::Path represents an internal crate reference (crate::, self::, or super::)
 #[must_use]
 pub fn is_internal_path(path: &syn::Path) -> bool {
-    if let Some(first_segment) = path.segments.first() {
+    path.segments.first().is_some_and(|first_segment| {
         let ident = first_segment.ident.to_string();
         ident == "crate" || ident == "self" || ident == "super"
-    } else {
-        false
-    }
+    })
 }
 
 /// Expand a syn::Path (from expressions) to a full path string, resolving self/super
@@ -396,7 +394,7 @@ mod tests {
         let mut temp_file = NamedTempFile::new().unwrap();
         writeln!(
             temp_file,
-            r#"
+            r"
 pub struct PublicStruct;
 struct PrivateStruct;
 pub fn public_function() {{}}
@@ -412,7 +410,7 @@ mod private_module {{}}
 pub trait PublicTrait {{}}
 trait PrivateTrait {{}}
 pub use std::collections::HashMap;
-"#
+"
         )
         .unwrap();
 

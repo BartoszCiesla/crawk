@@ -2,6 +2,13 @@ use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 /// Validates that depth is at least 1
+/// Validate that the depth argument is a positive integer
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - The input is not a valid number
+/// - The depth value is less than 1
 pub fn validate_depth(s: &str) -> Result<usize, String> {
     let value: usize = s
         .parse()
@@ -75,10 +82,19 @@ impl UseArgs {
     }
 
     /// Get the crate root directory
+    ///
+    /// # Panics
+    ///
+    /// Panics if the current directory cannot be determined when no path is provided
     #[must_use]
     pub fn crate_root(&self) -> PathBuf {
         self.path.as_ref().map_or_else(
-            || std::env::current_dir().expect("Failed to get current directory"),
+            || {
+                std::env::current_dir().unwrap_or_else(|_| {
+                    eprintln!("Error: Failed to get current directory");
+                    std::process::exit(1);
+                })
+            },
             |path| {
                 if !path.exists() {
                     eprintln!("Error: Provided path '{}' does not exist", path.display());

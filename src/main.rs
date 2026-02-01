@@ -11,12 +11,12 @@ fn main() {
 
     // Dispatch to the appropriate subcommand
     match command.command {
-        ModuleCommands::Use(args) => handle_use_command(args),
+        ModuleCommands::Use(args) => handle_use_command(&args),
     }
 }
 
 /// Handle the 'use' subcommand
-fn handle_use_command(args: crawk::cli::UseArgs) {
+fn handle_use_command(args: &crawk::cli::UseArgs) {
     // Get crate root and validate it exists
     let crate_root = args.crate_root();
     let src_dir = crate_root.join("src");
@@ -33,12 +33,9 @@ fn handle_use_command(args: crawk::cli::UseArgs) {
     let module_components = args.module_components();
 
     // Find the module file by navigating through the module hierarchy
-    let module_file_path = match find_module_by_path(&src_dir, &module_components) {
-        Some(path) => path,
-        None => {
-            eprintln!("Error: Module '{}' not found", args.module_path);
-            std::process::exit(1);
-        }
+    let Some(module_file_path) = find_module_by_path(&src_dir, &module_components) else {
+        eprintln!("Error: Module '{}' not found", args.module_path);
+        std::process::exit(1);
     };
 
     // Print verbose information if requested
@@ -73,7 +70,7 @@ fn handle_use_command(args: crawk::cli::UseArgs) {
         let mut sorted_uses: Vec<_> = use_statements.into_iter().collect();
         sorted_uses.sort();
         for use_stmt in sorted_uses {
-            println!("{}", use_stmt);
+            println!("{use_stmt}");
         }
     }
 }

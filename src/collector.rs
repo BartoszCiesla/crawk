@@ -6,6 +6,7 @@ use syn::Item;
 use syn::visit::Visit;
 
 /// Collect use statements from a module file and all its submodules
+#[allow(clippy::implicit_hasher)]
 pub fn collect_use_statements(
     path: &Path,
     use_statements: &mut HashSet<String>,
