@@ -1,13 +1,12 @@
 use clap::Parser;
-use crawk::cli::{Cargo, ModuleCommand, ModuleCommands};
+use crawk::cli::{ModuleCommand, ModuleCommands};
 use crawk::collector::collect_use_statements;
 use crawk::resolver::find_module_by_path;
 use std::collections::HashSet;
-use std::env;
 
 fn main() {
     // Parse command-line arguments
-    let command = parse_command();
+    let command = ModuleCommand::parse();
 
     // Dispatch to the appropriate subcommand
     match command.command {
@@ -72,21 +71,5 @@ fn handle_use_command(args: &crawk::cli::UseArgs) {
         for use_stmt in sorted_uses {
             println!("{use_stmt}");
         }
-    }
-}
-
-/// Parse command-line arguments, handling both cargo subcommand and standalone invocations
-fn parse_command() -> ModuleCommand {
-    if env::args().nth(1).as_deref() == Some("module") {
-        // Invoked as: cargo module <subcommand> <args>
-        match Cargo::try_parse() {
-            Ok(Cargo::Module(cmd)) => cmd,
-            Err(e) => {
-                e.exit();
-            }
-        }
-    } else {
-        // Invoked directly as: crawk <subcommand> <args>
-        ModuleCommand::parse()
     }
 }
