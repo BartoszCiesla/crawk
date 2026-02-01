@@ -1,11 +1,16 @@
-use crate::expansion::{expand_path_to_string, expand_use_tree, extract_public_items, is_internal_path, is_internal_use, is_test_module};
-use crate::formatter::{expand_use_tree_to_paths, strip_crate_prefix, truncate_path, use_tree_to_string};
+use crate::expansion::{
+    expand_path_to_string, expand_use_tree, extract_public_items, is_internal_path,
+    is_internal_use, is_test_module,
+};
+use crate::formatter::{
+    expand_use_tree_to_paths, strip_crate_prefix, truncate_path, use_tree_to_string,
+};
 use crate::resolver::resolve_module_path_to_file;
 use proc_macro2::Span;
 use std::collections::HashSet;
 use std::path::PathBuf;
-use syn::visit::{self, Visit};
 use syn::UseTree;
+use syn::visit::{self, Visit};
 
 pub struct UseVisitor<'a> {
     pub use_statements: &'a mut HashSet<String>,
@@ -210,24 +215,28 @@ impl<'a> UseVisitor<'a> {
 
     fn resolve_glob_items(&self, module_path: &[String]) -> Option<UseTree> {
         if self.verbose {
-            eprintln!("Debug: Attempting to resolve glob for path: {:?}", module_path);
+            eprintln!(
+                "Debug: Attempting to resolve glob for path: {:?}",
+                module_path
+            );
         }
 
         // Resolve the module path to a file
-        let module_file = match resolve_module_path_to_file(&self.src_dir, module_path, self.verbose) {
-            Some(f) => {
-                if self.verbose {
-                    eprintln!("Debug: Resolved glob path to file: {}", f.display());
+        let module_file =
+            match resolve_module_path_to_file(&self.src_dir, module_path, self.verbose) {
+                Some(f) => {
+                    if self.verbose {
+                        eprintln!("Debug: Resolved glob path to file: {}", f.display());
+                    }
+                    f
                 }
-                f
-            }
-            None => {
-                if self.verbose {
-                    eprintln!("Debug: Failed to resolve module path to file");
+                None => {
+                    if self.verbose {
+                        eprintln!("Debug: Failed to resolve module path to file");
+                    }
+                    return None;
                 }
-                return None;
-            }
-        };
+            };
 
         // Parse the file and extract public items
         let public_items = match extract_public_items(&module_file) {

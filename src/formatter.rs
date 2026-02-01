@@ -105,9 +105,18 @@ mod tests {
     #[test]
     fn test_truncate_path() {
         assert_eq!(truncate_path("crate::foo::bar::baz", Some(1)), "crate::foo");
-        assert_eq!(truncate_path("crate::foo::bar::baz", Some(2)), "crate::foo::bar");
-        assert_eq!(truncate_path("crate::foo::bar::baz", Some(3)), "crate::foo::bar::baz");
-        assert_eq!(truncate_path("crate::foo::bar::baz", None), "crate::foo::bar::baz");
+        assert_eq!(
+            truncate_path("crate::foo::bar::baz", Some(2)),
+            "crate::foo::bar"
+        );
+        assert_eq!(
+            truncate_path("crate::foo::bar::baz", Some(3)),
+            "crate::foo::bar::baz"
+        );
+        assert_eq!(
+            truncate_path("crate::foo::bar::baz", None),
+            "crate::foo::bar::baz"
+        );
     }
 
     #[test]

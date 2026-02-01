@@ -1,7 +1,7 @@
+use clap::Parser;
 use crawk::cli::{Cargo, ModuleCommand, ModuleCommands};
 use crawk::collector::collect_use_statements;
 use crawk::resolver::find_module_by_path;
-use clap::Parser;
 use std::collections::HashSet;
 use std::env;
 

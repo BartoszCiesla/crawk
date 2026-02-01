@@ -2,8 +2,8 @@ use crate::resolver::{find_submodule, get_src_dir};
 use std::collections::HashSet;
 use std::fs;
 use std::path::Path;
-use syn::visit::Visit;
 use syn::Item;
+use syn::visit::Visit;
 
 /// Collect use statements from a module file and all its submodules
 pub fn collect_use_statements(

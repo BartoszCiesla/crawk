@@ -10,9 +10,7 @@ pub fn get_src_dir(path: &Path) -> PathBuf {
         current = parent;
     }
     // Fallback: assume current directory has src
-    std::env::current_dir()
-        .unwrap_or_default()
-        .join("src")
+    std::env::current_dir().unwrap_or_default().join("src")
 }
 
 /// Find a module file by navigating through module path components
@@ -407,7 +405,11 @@ mod tests {
 
         let result = resolve_module_path_to_file(
             &src_dir,
-            &["crate".to_string(), "utils".to_string(), "helper".to_string()],
+            &[
+                "crate".to_string(),
+                "utils".to_string(),
+                "helper".to_string(),
+            ],
             false,
         );
         assert!(result.is_some());
