@@ -1,0 +1,81 @@
+default_stages: [pre-commit, pre-push]
+default_install_hook_types: [pre-commit, pre-push, commit-msg]
+repos:
+  # Standard pre-commit hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: mixed-line-ending
+      - id: check-shebang-scripts-are-executable
+        exclude: '\.rs$'
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-toml
+      - id: check-json
+  # Standard pre-commit hooks
+  - repo: https://github.com/google/yamlfmt
+    rev: v0.20.0
+    hooks:
+      - id: yamlfmt
+  # Standard pre-commit hooks for spelling checks
+  # Under NixOs there's problem installing typos executable via prek (either as typos-src or typos-docker).
+  # By default, typos exec is downloaded from GH artifacts which does not work under NixOS. As a workaround
+  # that executable is replaced with the symlink to the typos installed in the system (via Nix or cargo).
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.41.0
+    hooks:
+      - id: typos
+  # Commit message linting - requires .gitlint config for conventional commits
+  - repo: https://github.com/jorisroovers/gitlint
+    rev: v0.19.1
+    hooks:
+      - id: gitlint
+        stages: [commit-msg]
+  # Rust project-specific local hooks
+  - repo: local
+    hooks:
+      - id: cargo-check
+        name: cargo check
+        entry: cargo
+        language: system
+        args: ["check"]
+        types: [rust, cargo]
+        pass_filenames: false
+        stages: [pre-push]
+      - id: cargo-fmt-check
+        name: cargo format check
+        entry: cargo
+        language: system
+        args: ["fmt", "--", "--check"]
+        types: [rust]
+        pass_filenames: false
+      - id: cargo-clippy
+        name: cargo clippy
+        entry: cargo
+        language: system
+        args: ["clippy", "--all-targets", "--all-features", "--", "-D", "warnings"]
+        types: [rust, cargo]
+        pass_filenames: false
+        stages: [pre-push]
+      - id: cargo-nextest
+        name: cargo nextest run
+        entry: cargo
+        language: system
+        args: ["nextest", "run", "--all-features"]
+        types: [rust, cargo]
+        pass_filenames: false
+        stages: [pre-push]
+      - id: cargo-sort-check
+        name: cargo sort check
+        entry: cargo
+        language: system
+        args: ["sort", "--check", "--workspace"]
+        types: [cargo, cargo-lock]
+        pass_filenames: false
+      - id: cargo-machete
+        name: cargo machete (unused dependencies)
+        entry: cargo
+        language: system
+        args: ["machete"]
+        types: [cargo, cargo-lock]
+        pass_filenames: false
