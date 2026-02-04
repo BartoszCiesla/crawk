@@ -15,5 +15,6 @@ exit_code: 0
 ----- stdout -----
 *
 cli
+consts
 
 ----- stderr -----

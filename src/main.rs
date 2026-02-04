@@ -1,16 +1,16 @@
 use clap::Parser;
-use crawk::cli::{ModuleCommand, ModuleCommands};
+use crawk::cli::{CrawkArgs, CrawkCommands};
 use crawk::collector::collect_use_statements;
 use crawk::resolver::find_module_by_path;
 use std::collections::HashSet;
 
 fn main() {
     // Parse command-line arguments
-    let command = ModuleCommand::parse();
+    let command = CrawkArgs::parse();
 
     // Dispatch to the appropriate subcommand
     match command.command {
-        ModuleCommands::Use(args) => handle_use_command(&args),
+        CrawkCommands::Use(args) => handle_use_command(&args),
     }
 }
 

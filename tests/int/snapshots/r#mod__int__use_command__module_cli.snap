@@ -10,5 +10,6 @@ success: true
 exit_code: 0
 ----- stdout -----
 cli
+consts::{BUILD_TARGET, BUILD_TIMESTAMP, BUILD_USER, CARGO_BIN_NAME, CARGO_PKG_HOMEPAGE, LONG_VERSION_MESSAGE, SDK_VERSION, VERSION_MESSAGE}
 
 ----- stderr -----

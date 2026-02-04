@@ -13,5 +13,13 @@ exit_code: 0
 ----- stdout -----
 *
 cli
+consts::BUILD_TARGET
+consts::BUILD_TIMESTAMP
+consts::BUILD_USER
+consts::CARGO_BIN_NAME
+consts::CARGO_PKG_HOMEPAGE
+consts::LONG_VERSION_MESSAGE
+consts::SDK_VERSION
+consts::VERSION_MESSAGE
 
 ----- stderr -----

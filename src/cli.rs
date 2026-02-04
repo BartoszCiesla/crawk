@@ -1,3 +1,7 @@
+use crate::consts::{
+    BUILD_TARGET, BUILD_TIMESTAMP, BUILD_USER, CARGO_BIN_NAME, CARGO_PKG_HOMEPAGE,
+    LONG_VERSION_MESSAGE, SDK_VERSION, VERSION_MESSAGE,
+};
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
@@ -20,26 +24,52 @@ pub fn validate_depth(s: &str) -> Result<usize, String> {
     }
 }
 
-#[derive(Parser, Debug)]
-#[command(
-    name = "crawk",
-    bin_name = "cargo",
-    about = "Analyze Rust module dependencies and structure"
-)]
-pub enum Cargo {
-    #[command(name = "module", subcommand_required = true)]
-    Module(ModuleCommand),
+/// Generate after help message
+/// # Arguments
+/// * `long_help` - Whether to generate the long help message
+/// # Returns
+/// A formatted after help message string
+fn generate_after_help(long_help: bool) -> String {
+    let after_help = format!(
+        "Run '{CARGO_BIN_NAME} --help' for full help message.\n\
+         Run '{CARGO_BIN_NAME} COMMAND --help' for more information on a command.\n\n"
+    );
+
+    if long_help {
+        let timestamp =
+            &BUILD_TIMESTAMP[0..BUILD_TIMESTAMP.rfind('.').unwrap_or(BUILD_TIMESTAMP.len())];
+        let build_info =
+            format!("Built on {timestamp}Z for {BUILD_TARGET} ({SDK_VERSION}) by {BUILD_USER}");
+
+        format!(
+            "{after_help}For more about the tool head to {CARGO_PKG_HOMEPAGE}\n\n\
+             {build_info}\n"
+        )
+    } else {
+        after_help
+    }
 }
 
 #[derive(Parser, Debug, Clone)]
-#[command(about = "Analyze Rust module dependencies and structure")]
-pub struct ModuleCommand {
+#[command(
+    version = VERSION_MESSAGE,
+    long_version = LONG_VERSION_MESSAGE,
+    after_help = generate_after_help(false),
+    after_long_help = generate_after_help(true)
+)]
+#[clap(verbatim_doc_comment)]
+/// Analyze Rust module dependencies and structure
+///
+/// crawk analyzes your Rust codebase and reveals every module dependency — not
+/// just `use` statements, but every type annotation, trait bound, struct literal,
+/// and macro invocation that ties your code together.
+pub struct CrawkArgs {
     #[command(subcommand)]
-    pub command: ModuleCommands,
+    pub command: CrawkCommands,
 }
 
 #[derive(Subcommand, Debug, Clone)]
-pub enum ModuleCommands {
+pub enum CrawkCommands {
     /// List internal crate use statements from a module
     Use(UseArgs),
 }
