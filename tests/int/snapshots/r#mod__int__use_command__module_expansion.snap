@@ -1,0 +1,13 @@
+---
+source: tests/int/use_command.rs
+info:
+  program: crawk
+  args:
+    - use
+    - expansion
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+----- stderr -----

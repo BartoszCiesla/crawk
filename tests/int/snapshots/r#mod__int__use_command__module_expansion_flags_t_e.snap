@@ -1,0 +1,17 @@
+---
+source: tests/int/use_command.rs
+info:
+  program: crawk
+  args:
+    - use
+    - expansion
+    - "-t"
+    - "-e"
+---
+success: true
+exit_code: 0
+----- stdout -----
+*
+formatter::use_tree_to_string
+
+----- stderr -----

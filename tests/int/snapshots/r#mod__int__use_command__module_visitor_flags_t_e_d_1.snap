@@ -1,0 +1,21 @@
+---
+source: tests/int/use_command.rs
+info:
+  program: crawk
+  args:
+    - use
+    - visitor
+    - "-t"
+    - "-e"
+    - "-d"
+    - "1"
+---
+success: true
+exit_code: 0
+----- stdout -----
+expansion
+formatter
+resolver
+visitor
+
+----- stderr -----

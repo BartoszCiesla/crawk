@@ -1,0 +1,20 @@
+---
+source: tests/int/use_command.rs
+info:
+  program: crawk
+  args:
+    - use
+    - collector
+    - "-t"
+    - "-e"
+---
+success: true
+exit_code: 0
+----- stdout -----
+*
+expansion::is_test_module
+resolver::find_submodule
+resolver::get_src_dir
+visitor::UseVisitor
+
+----- stderr -----

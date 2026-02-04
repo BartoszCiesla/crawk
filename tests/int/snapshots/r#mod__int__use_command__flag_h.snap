@@ -1,0 +1,27 @@
+---
+source: tests/int/use_command.rs
+info:
+  program: crawk
+  args:
+    - use
+    - "-h"
+---
+success: true
+exit_code: 0
+----- stdout -----
+List internal crate use statements from a module
+
+Usage: crawk use [OPTIONS] <MODULE_PATH>
+
+Arguments:
+  <MODULE_PATH>  Module path to analyze (e.g., "utils" or "foo::bar::baz")
+
+Options:
+  -t, --include-tests  Include test modules in the analysis
+  -p, --path <PATH>    Path to the crate root directory (defaults to current directory)
+  -v, --verbose        Show verbose output including crate root, module path, and analysis info
+  -e, --expand         Expand grouped imports into individual paths (e.g., a::b::{x, y} -> a::b::x, a::b::y)
+  -d, --depth <DEPTH>  Limit module depth from crate root (e.g., --depth 1 shows crate::x, --depth 2 shows crate::x::y)
+  -h, --help           Print help
+
+----- stderr -----
