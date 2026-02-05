@@ -10,6 +10,7 @@ repos:
         exclude: '\.rs$'
       - id: end-of-file-fixer
       - id: trailing-whitespace
+        exclude: '^tests/int/snapshots/'
       - id: check-toml
       - id: check-json
   # Standard pre-commit hooks
