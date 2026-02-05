@@ -70,18 +70,23 @@ pub struct CrawkArgs {
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum CrawkCommands {
-    /// List internal crate use statements from a module
+    /// Analyze a module and list its internal crate `use` statements
+    ///
+    /// Inspects the given module's source and reports all `use` paths that
+    /// reference other modules within the same crate.
+    #[clap(verbatim_doc_comment)]
     Use(UseArgs),
 }
 
 #[derive(Parser, Debug, Clone)]
-#[command(about = "List internal crate use statements from a module")]
 pub struct UseArgs {
-    /// Module path to analyze (e.g., "utils" or "foo::bar::baz")
+    /// Module path relative to the crate root (e.g., "utils" or "foo::bar::baz")
+    #[clap(verbatim_doc_comment)]
     pub module_path: String,
 
-    /// Include test modules in the analysis
-    #[arg(short = 't', long = "include-tests")]
+    /// Include modules defined in `#[cfg(test)]` blocks (excluded by default)
+    #[clap(verbatim_doc_comment)]
+    #[arg(short = 't', long = "include-tests", default_value_t = false)]
     pub include_tests: bool,
 
     /// Path to the crate root directory (defaults to current directory)
@@ -92,11 +97,17 @@ pub struct UseArgs {
     #[arg(short = 'v', long = "verbose")]
     pub verbose: bool,
 
-    /// Expand grouped imports into individual paths (e.g., a::b::{x, y} -> a::b::x, a::b::y)
-    #[arg(short = 'e', long = "expand")]
+    /// Expand grouped imports into individual paths
+    ///
+    /// e.g., a::{x, y} becomes a::x, a::y
+    #[clap(verbatim_doc_comment)]
+    #[arg(short = 'e', long = "expand", default_value_t = false)]
     pub expand: bool,
 
-    /// Limit module depth from crate root (e.g., --depth 1 shows crate::x, --depth 2 shows crate::x::y)
+    /// Limit displayed module path depth from the crate root
+    ///
+    /// e.g., --depth 1 shows x, --depth 2 shows x::y
+    #[clap(verbatim_doc_comment)]
     #[arg(short = 'd', long = "depth", value_parser = validate_depth)]
     pub depth: Option<usize>,
 }
