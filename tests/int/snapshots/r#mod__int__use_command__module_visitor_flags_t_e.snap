@@ -22,6 +22,5 @@ formatter::strip_crate_prefix
 formatter::truncate_path
 formatter::use_tree_to_string
 resolver::resolve_module_path_to_file
-visitor
 
 ----- stderr -----

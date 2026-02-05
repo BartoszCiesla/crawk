@@ -12,7 +12,6 @@ success: true
 exit_code: 0
 ----- stdout -----
 *
-cli
 consts::BUILD_TARGET
 consts::BUILD_TIMESTAMP
 consts::BUILD_USER

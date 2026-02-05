@@ -16,6 +16,5 @@ exit_code: 0
 expansion
 formatter
 resolver
-visitor
 
 ----- stderr -----

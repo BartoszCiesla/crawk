@@ -205,12 +205,17 @@ pub fn extract_public_items(file_path: &Path) -> Option<Vec<String>> {
 }
 
 /// Check if a syn::Path represents an internal crate reference (crate::, self::, or super::)
+///
+/// A bare `self` (single segment) is a method receiver, not a module path,
+/// so it is excluded. Internal module paths always have at least two segments
+/// (e.g., `self::foo`, `crate::bar`, `super::baz`).
 #[must_use]
 pub fn is_internal_path(path: &syn::Path) -> bool {
-    path.segments.first().is_some_and(|first_segment| {
-        let ident = first_segment.ident.to_string();
-        ident == "crate" || ident == "self" || ident == "super"
-    })
+    path.segments.len() > 1
+        && path.segments.first().is_some_and(|first_segment| {
+            let ident = first_segment.ident.to_string();
+            ident == "crate" || ident == "self" || ident == "super"
+        })
 }
 
 /// Expand a syn::Path (from expressions) to a full path string, resolving self/super
