@@ -1,30 +1,38 @@
 use clap::Parser;
-use crawk::cli::{CrawkArgs, CrawkCommands};
 use crawk::collector::collect_use_statements;
 use crawk::resolver::find_module_by_path;
+use crawk::{
+    cli::UseArgs,
+    cli::{CrawkArgs, CrawkCommands},
+};
 use owo_colors::OwoColorize;
 use std::collections::HashSet;
-use std::fmt;
+use std::fmt::Result;
 use std::path::Path;
-use tracing::{Level, error, info};
-use tracing_subscriber::EnvFilter;
-use tracing_subscriber::fmt::FmtContext;
-use tracing_subscriber::fmt::format::{FormatEvent, FormatFields};
-use tracing_subscriber::registry::LookupSpan;
+use std::process::exit;
+use tracing::{Level, Subscriber, error, info};
+use tracing_subscriber::{
+    EnvFilter,
+    fmt::{
+        FmtContext,
+        format::{FormatEvent, FormatFields, Writer},
+    },
+    registry::LookupSpan,
+};
 
 struct MinimalFormat;
 
 impl<S, N> FormatEvent<S, N> for MinimalFormat
 where
-    S: tracing::Subscriber + for<'a> LookupSpan<'a>,
+    S: Subscriber + for<'a> LookupSpan<'a>,
     N: for<'a> FormatFields<'a> + 'static,
 {
     fn format_event(
         &self,
         ctx: &FmtContext<'_, S, N>,
-        mut writer: tracing_subscriber::fmt::format::Writer<'_>,
+        mut writer: Writer<'_>,
         event: &tracing::Event<'_>,
-    ) -> fmt::Result {
+    ) -> Result {
         let level = *event.metadata().level();
         let colored_level = match level {
             Level::ERROR => level.as_str().red().to_string(),
@@ -62,7 +70,7 @@ fn main() {
 }
 
 /// Handle the 'use' subcommand
-fn handle_use_command(crate_root: &Path, args: &crawk::cli::UseArgs) {
+fn handle_use_command(crate_root: &Path, args: &UseArgs) {
     let src_dir = crate_root.join("src");
 
     if !src_dir.exists() {
@@ -70,7 +78,7 @@ fn handle_use_command(crate_root: &Path, args: &crawk::cli::UseArgs) {
             "Not a Rust project directory (src/ not found in {})",
             crate_root.display()
         );
-        std::process::exit(1);
+        exit(1);
     }
 
     // Parse the module path into components
@@ -79,7 +87,7 @@ fn handle_use_command(crate_root: &Path, args: &crawk::cli::UseArgs) {
     // Find the module file by navigating through the module hierarchy
     let Some(module_file_path) = find_module_by_path(&src_dir, &module_components) else {
         error!("Module '{}' not found", args.module_path);
-        std::process::exit(1);
+        exit(1);
     };
 
     info!("Crate root: {}", crate_root.display());
