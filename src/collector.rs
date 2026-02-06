@@ -82,13 +82,14 @@ pub fn collect_use_statements(
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
+    use crate::consts::DEFAULT_SRC_DIR;
     use std::io::Write;
     use tempfile::TempDir;
 
     #[test]
     fn test_collect_use_statements_basic() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         let utils_rs = src_dir.join("utils.rs");
@@ -124,7 +125,7 @@ use std::collections::HashMap;
     #[test]
     fn test_collect_use_statements_with_expand() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         let utils_rs = src_dir.join("utils.rs");
@@ -156,7 +157,7 @@ use crate::foo::{{Bar, Baz}};
     #[test]
     fn test_collect_use_statements_with_depth() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         let utils_rs = src_dir.join("utils.rs");
@@ -187,7 +188,7 @@ use crate::foo::bar::baz::Thing;
     #[test]
     fn test_collect_use_statements_excludes_tests() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         let utils_rs = src_dir.join("utils.rs");
@@ -224,7 +225,7 @@ mod tests {{
     #[test]
     fn test_collect_use_statements_includes_tests() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         let utils_rs = src_dir.join("utils.rs");
@@ -261,7 +262,7 @@ mod tests {{
     #[test]
     fn test_collect_use_statements_with_submodules() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         // Create utils/mod.rs
@@ -308,7 +309,7 @@ use crate::baz::Qux;
     #[test]
     fn test_collect_use_statements_invalid_file() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         let nonexistent = src_dir.join("nonexistent.rs");
@@ -331,7 +332,7 @@ use crate::baz::Qux;
     #[test]
     fn test_collect_use_statements_invalid_syntax() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         let utils_rs = src_dir.join("utils.rs");
@@ -356,7 +357,7 @@ use crate::baz::Qux;
     #[test]
     fn test_collect_full_path_function_calls() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         let utils_rs = src_dir.join("utils.rs");
@@ -402,7 +403,7 @@ fn example() {{
     #[test]
     fn test_collect_full_path_with_depth() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         let utils_rs = src_dir.join("utils.rs");
@@ -436,7 +437,7 @@ fn example() {{
     #[test]
     fn test_collect_full_path_excludes_tests() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         let utils_rs = src_dir.join("utils.rs");
@@ -477,7 +478,7 @@ mod tests {{
     #[test]
     fn test_collect_type_annotations() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         let utils_rs = src_dir.join("utils.rs");
@@ -530,7 +531,7 @@ static STATIC: crate::types::StaticType = todo!();
     #[test]
     fn test_collect_struct_patterns() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         let utils_rs = src_dir.join("utils.rs");
@@ -578,7 +579,7 @@ fn example(x: i32) {{
     #[test]
     fn test_collect_struct_literals() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         let utils_rs = src_dir.join("utils.rs");
@@ -628,7 +629,7 @@ fn example() {{
     #[test]
     fn test_collect_trait_bounds() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         let utils_rs = src_dir.join("utils.rs");
@@ -678,7 +679,7 @@ fn multi_bound<T: crate::traits::First + crate::traits::Second>(_t: T) {{}}
     #[test]
     fn test_collect_impl_blocks() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         let utils_rs = src_dir.join("utils.rs");
@@ -720,7 +721,7 @@ impl crate::traits::Serializable for LocalStruct {{
     #[test]
     fn test_collect_macro_invocations() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         let utils_rs = src_dir.join("utils.rs");
@@ -758,7 +759,7 @@ fn example() {{
     #[test]
     fn test_collect_all_constructs_combined() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         let utils_rs = src_dir.join("utils.rs");

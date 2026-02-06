@@ -11,6 +11,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 *
+consts::{MODULE_NAME_TEST, MODULE_NAME_TESTS, PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER}
 formatter::use_tree_to_string
 
 ----- stderr -----

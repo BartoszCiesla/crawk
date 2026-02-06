@@ -1,3 +1,4 @@
+use crate::consts::PATH_QUALIFIER_CRATE;
 use syn::UseTree;
 
 /// Convert a UseTree to its string representation
@@ -54,7 +55,9 @@ pub fn expand_use_tree_to_paths(tree: &UseTree) -> Vec<String> {
 /// Remove "crate::" prefix from a path
 #[must_use]
 pub fn strip_crate_prefix(path: &str) -> String {
-    path.strip_prefix("crate::").unwrap_or(path).to_string()
+    path.strip_prefix(format!("{PATH_QUALIFIER_CRATE}::").as_str())
+        .unwrap_or(path)
+        .to_string()
 }
 
 /// Truncate a path to a specified depth from crate root
@@ -68,7 +71,7 @@ pub fn truncate_path(path: &str, depth: Option<usize>) -> String {
     let parts: Vec<&str> = path.split("::").collect();
 
     // If the path starts with "crate", count from there
-    if parts.first() == Some(&"crate") {
+    if parts.first() == Some(&PATH_QUALIFIER_CRATE) {
         // depth 1 means crate::x, depth 2 means crate::x::y, etc.
         // So we need depth + 1 components (including "crate")
         let take_count = (depth + 1).min(parts.len());

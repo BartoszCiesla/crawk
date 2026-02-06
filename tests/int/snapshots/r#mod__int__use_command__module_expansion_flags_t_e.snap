@@ -12,6 +12,11 @@ success: true
 exit_code: 0
 ----- stdout -----
 *
+consts::MODULE_NAME_TEST
+consts::MODULE_NAME_TESTS
+consts::PATH_QUALIFIER_CRATE
+consts::PATH_QUALIFIER_SELF
+consts::PATH_QUALIFIER_SUPER
 formatter::use_tree_to_string
 
 ----- stderr -----

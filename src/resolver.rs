@@ -1,3 +1,4 @@
+use crate::consts::{DEFAULT_SRC_DIR, MODULE_FILE_NAME, PATH_QUALIFIER_CRATE};
 use std::path::{Path, PathBuf};
 
 /// Get the src directory from a given path
@@ -5,13 +6,15 @@ use std::path::{Path, PathBuf};
 pub fn get_src_dir(path: &Path) -> PathBuf {
     let mut current = path;
     while let Some(parent) = current.parent() {
-        if parent.ends_with("src") {
+        if parent.ends_with(DEFAULT_SRC_DIR) {
             return parent.to_path_buf();
         }
         current = parent;
     }
     // Fallback: assume current directory has src
-    std::env::current_dir().unwrap_or_default().join("src")
+    std::env::current_dir()
+        .unwrap_or_default()
+        .join(DEFAULT_SRC_DIR)
 }
 
 /// Find a module file by navigating through module path components
@@ -30,7 +33,7 @@ pub fn find_module_by_path(src_dir: &Path, module_path: &[String]) -> Option<Pat
 
         // Try module_name/mod.rs
         let mod_dir = current_dir.join(module_name);
-        let mod_path = mod_dir.join("mod.rs");
+        let mod_path = mod_dir.join(MODULE_FILE_NAME);
         if mod_path.exists() {
             if is_last {
                 return Some(mod_path);
@@ -70,7 +73,7 @@ pub fn find_submodule(parent_path: &Path, submodule_name: &str) -> Option<PathBu
     let parent_dir = parent_path.parent()?;
 
     // If parent is mod.rs, look in the same directory
-    if parent_path.file_name()? == "mod.rs" {
+    if parent_path.file_name()? == MODULE_FILE_NAME {
         let base_dir = parent_dir;
 
         // Check for submodule_name.rs in same directory
@@ -80,7 +83,7 @@ pub fn find_submodule(parent_path: &Path, submodule_name: &str) -> Option<PathBu
         }
 
         // Check for submodule_name/mod.rs
-        let mod_path = base_dir.join(submodule_name).join("mod.rs");
+        let mod_path = base_dir.join(submodule_name).join(MODULE_FILE_NAME);
         if mod_path.exists() {
             return Some(mod_path);
         }
@@ -96,7 +99,7 @@ pub fn find_submodule(parent_path: &Path, submodule_name: &str) -> Option<PathBu
         }
 
         // Check for module_name/submodule_name/mod.rs
-        let mod_path = module_dir.join(submodule_name).join("mod.rs");
+        let mod_path = module_dir.join(submodule_name).join(MODULE_FILE_NAME);
         if mod_path.exists() {
             return Some(mod_path);
         }
@@ -121,7 +124,7 @@ pub fn resolve_module_path_to_file(
     }
 
     // First element should be "crate" for internal uses
-    if module_path[0] != "crate" {
+    if module_path[0] != PATH_QUALIFIER_CRATE {
         if verbose {
             eprintln!("Debug: Module path doesn't start with 'crate': {module_path:?}");
         }
@@ -148,7 +151,7 @@ pub fn resolve_module_path_to_file(
 
         // Try module_name/mod.rs
         let mod_dir = current_path.join(module_name);
-        let mod_path = mod_dir.join("mod.rs");
+        let mod_path = mod_dir.join(MODULE_FILE_NAME);
         if mod_path.exists() {
             if verbose {
                 eprintln!("Debug: Found {}", mod_path.display());
@@ -205,7 +208,7 @@ pub fn resolve_module_path_to_file(
 
     // If current_path is a directory, look for mod.rs
     if current_path.is_dir() {
-        let mod_path = current_path.join("mod.rs");
+        let mod_path = current_path.join(MODULE_FILE_NAME);
         if mod_path.exists() {
             if verbose {
                 eprintln!(
@@ -244,13 +247,13 @@ mod tests {
     fn test_get_src_dir() {
         let path = PathBuf::from("/home/user/project/src/module.rs");
         let src_dir = get_src_dir(&path);
-        assert!(src_dir.ends_with("src"));
+        assert!(src_dir.ends_with(DEFAULT_SRC_DIR));
     }
 
     #[test]
     fn test_find_module_by_path_single_file() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         // Create utils.rs
@@ -264,29 +267,29 @@ mod tests {
     #[test]
     fn test_find_module_by_path_mod_rs() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         // Create utils/mod.rs
         let utils_dir = src_dir.join("utils");
         fs::create_dir(&utils_dir).unwrap();
-        fs::write(utils_dir.join("mod.rs"), "pub fn foo() {}").unwrap();
+        fs::write(utils_dir.join(MODULE_FILE_NAME), "pub fn foo() {}").unwrap();
 
         let result = find_module_by_path(&src_dir, &["utils".to_string()]);
         assert!(result.is_some());
-        assert_eq!(result.unwrap().file_name().unwrap(), "mod.rs");
+        assert_eq!(result.unwrap().file_name().unwrap(), MODULE_FILE_NAME);
     }
 
     #[test]
     fn test_find_module_by_path_nested() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         // Create utils/mod.rs
         let utils_dir = src_dir.join("utils");
         fs::create_dir(&utils_dir).unwrap();
-        fs::write(utils_dir.join("mod.rs"), "pub fn foo() {}").unwrap();
+        fs::write(utils_dir.join(MODULE_FILE_NAME), "pub fn foo() {}").unwrap();
 
         // Create utils/helper.rs
         fs::write(utils_dir.join("helper.rs"), "pub fn bar() {}").unwrap();
@@ -299,7 +302,7 @@ mod tests {
     #[test]
     fn test_find_module_by_path_not_found() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         let result = find_module_by_path(&src_dir, &["nonexistent".to_string()]);
@@ -309,7 +312,7 @@ mod tests {
     #[test]
     fn test_find_module_by_path_empty() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         let result = find_module_by_path(&src_dir, &[]);
@@ -319,13 +322,13 @@ mod tests {
     #[test]
     fn test_find_submodule_from_mod_rs() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         // Create utils/mod.rs
         let utils_dir = src_dir.join("utils");
         fs::create_dir(&utils_dir).unwrap();
-        let parent_path = utils_dir.join("mod.rs");
+        let parent_path = utils_dir.join(MODULE_FILE_NAME);
         fs::write(&parent_path, "pub mod helper;").unwrap();
 
         // Create utils/helper.rs
@@ -339,7 +342,7 @@ mod tests {
     #[test]
     fn test_find_submodule_from_regular_file() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         // Create utils.rs
@@ -359,13 +362,13 @@ mod tests {
     #[test]
     fn test_find_submodule_not_found() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         // Create utils/mod.rs
         let utils_dir = src_dir.join("utils");
         fs::create_dir(&utils_dir).unwrap();
-        let parent_path = utils_dir.join("mod.rs");
+        let parent_path = utils_dir.join(MODULE_FILE_NAME);
         fs::write(&parent_path, "").unwrap();
 
         let result = find_submodule(&parent_path, "nonexistent");
@@ -375,7 +378,7 @@ mod tests {
     #[test]
     fn test_resolve_module_path_to_file_simple() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         // Create utils.rs
@@ -383,7 +386,7 @@ mod tests {
 
         let result = resolve_module_path_to_file(
             &src_dir,
-            &["crate".to_string(), "utils".to_string()],
+            &[PATH_QUALIFIER_CRATE.to_string(), "utils".to_string()],
             false,
         );
         assert!(result.is_some());
@@ -393,13 +396,13 @@ mod tests {
     #[test]
     fn test_resolve_module_path_to_file_nested() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         // Create utils/mod.rs
         let utils_dir = src_dir.join("utils");
         fs::create_dir(&utils_dir).unwrap();
-        fs::write(utils_dir.join("mod.rs"), "pub mod helper;").unwrap();
+        fs::write(utils_dir.join(MODULE_FILE_NAME), "pub mod helper;").unwrap();
 
         // Create utils/helper.rs
         fs::write(utils_dir.join("helper.rs"), "pub fn foo() {}").unwrap();
@@ -407,7 +410,7 @@ mod tests {
         let result = resolve_module_path_to_file(
             &src_dir,
             &[
-                "crate".to_string(),
+                PATH_QUALIFIER_CRATE.to_string(),
                 "utils".to_string(),
                 "helper".to_string(),
             ],
@@ -420,7 +423,7 @@ mod tests {
     #[test]
     fn test_resolve_module_path_to_file_empty() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         let result = resolve_module_path_to_file(&src_dir, &[], false);
@@ -430,7 +433,7 @@ mod tests {
     #[test]
     fn test_resolve_module_path_to_file_no_crate_prefix() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         let result = resolve_module_path_to_file(&src_dir, &["utils".to_string()], false);
@@ -440,12 +443,12 @@ mod tests {
     #[test]
     fn test_resolve_module_path_to_file_not_found() {
         let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
+        let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
         let result = resolve_module_path_to_file(
             &src_dir,
-            &["crate".to_string(), "nonexistent".to_string()],
+            &[PATH_QUALIFIER_CRATE.to_string(), "nonexistent".to_string()],
             false,
         );
         assert!(result.is_none());

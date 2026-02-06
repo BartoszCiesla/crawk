@@ -1,3 +1,7 @@
+use crate::consts::{
+    MODULE_NAME_TEST, MODULE_NAME_TESTS, PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF,
+    PATH_QUALIFIER_SUPER,
+};
 use proc_macro2::Span;
 use std::fs;
 use std::path::Path;
@@ -10,12 +14,12 @@ pub fn expand_use_tree(tree: &UseTree, module_path: &[String]) -> UseTree {
         UseTree::Path(path) => {
             let ident_str = path.ident.to_string();
 
-            if ident_str == "self" {
+            if ident_str == PATH_QUALIFIER_SELF {
                 // Replace self with crate::module::path
                 if module_path.is_empty() {
                     // self at crate root becomes crate
                     UseTree::Path(syn::UsePath {
-                        ident: syn::Ident::new("crate", path.ident.span()),
+                        ident: syn::Ident::new(PATH_QUALIFIER_CRATE, path.ident.span()),
                         colon2_token: path.colon2_token,
                         tree: Box::new(expand_use_tree(&path.tree, module_path)),
                     })
@@ -23,7 +27,7 @@ pub fn expand_use_tree(tree: &UseTree, module_path: &[String]) -> UseTree {
                     // Build crate::module::path::rest
                     build_expanded_path(module_path, &path.tree)
                 }
-            } else if ident_str == "super" {
+            } else if ident_str == PATH_QUALIFIER_SUPER {
                 // Replace super with parent module path
                 if module_path.is_empty() {
                     // super at crate root is invalid, but keep as-is
@@ -37,7 +41,7 @@ pub fn expand_use_tree(tree: &UseTree, module_path: &[String]) -> UseTree {
                     let parent_path = &module_path[..module_path.len() - 1];
                     build_expanded_path(parent_path, &path.tree)
                 }
-            } else if ident_str == "crate" {
+            } else if ident_str == PATH_QUALIFIER_CRATE {
                 // crate stays as crate
                 UseTree::Path(syn::UsePath {
                     ident: path.ident.clone(),
@@ -86,7 +90,7 @@ fn build_expanded_path(module_path: &[String], rest: &UseTree) -> UseTree {
 
     // Wrap with crate at the top
     UseTree::Path(syn::UsePath {
-        ident: syn::Ident::new("crate", Span::call_site()),
+        ident: syn::Ident::new(PATH_QUALIFIER_CRATE, Span::call_site()),
         colon2_token: syn::Token![::](Span::call_site()),
         tree: Box::new(result),
     })
@@ -98,15 +102,21 @@ pub fn is_internal_use(tree: &UseTree) -> bool {
     match tree {
         UseTree::Path(path) => {
             let ident = path.ident.to_string();
-            ident == "self" || ident == "super" || ident == "crate"
+            ident == PATH_QUALIFIER_SELF
+                || ident == PATH_QUALIFIER_SUPER
+                || ident == PATH_QUALIFIER_CRATE
         }
         UseTree::Name(name) => {
             let ident = name.ident.to_string();
-            ident == "self" || ident == "super" || ident == "crate"
+            ident == PATH_QUALIFIER_SELF
+                || ident == PATH_QUALIFIER_SUPER
+                || ident == PATH_QUALIFIER_CRATE
         }
         UseTree::Rename(rename) => {
             let ident = rename.ident.to_string();
-            ident == "self" || ident == "super" || ident == "crate"
+            ident == PATH_QUALIFIER_SELF
+                || ident == PATH_QUALIFIER_SUPER
+                || ident == PATH_QUALIFIER_CRATE
         }
         UseTree::Glob(_) => false,
         UseTree::Group(group) => {
@@ -122,7 +132,7 @@ pub fn is_test_module(item_mod: &syn::ItemMod) -> bool {
     let module_name = item_mod.ident.to_string();
 
     // Check if module name is "test" or "tests"
-    if module_name == "test" || module_name == "tests" {
+    if module_name == MODULE_NAME_TEST || module_name == MODULE_NAME_TESTS {
         return true;
     }
 
@@ -132,7 +142,7 @@ pub fn is_test_module(item_mod: &syn::ItemMod) -> bool {
             && let Ok(meta_list) = attr.meta.require_list()
         {
             let tokens = meta_list.tokens.to_string();
-            if tokens == "test" {
+            if tokens == MODULE_NAME_TEST {
                 return true;
             }
         }
@@ -214,7 +224,9 @@ pub fn is_internal_path(path: &syn::Path) -> bool {
     path.segments.len() > 1
         && path.segments.first().is_some_and(|first_segment| {
             let ident = first_segment.ident.to_string();
-            ident == "crate" || ident == "self" || ident == "super"
+            ident == PATH_QUALIFIER_SELF
+                || ident == PATH_QUALIFIER_SUPER
+                || ident == PATH_QUALIFIER_CRATE
         })
 }
 
@@ -230,18 +242,18 @@ pub fn expand_path_to_string(path: &syn::Path, module_path: &[String]) -> String
     let first = &segments[0];
     let rest = &segments[1..];
 
-    if first == "crate" {
+    if first == PATH_QUALIFIER_CRATE {
         // crate::foo::bar -> crate::foo::bar
         segments.join("::")
-    } else if first == "self" {
+    } else if first == PATH_QUALIFIER_SELF {
         // self::foo -> crate::module_path::foo
-        let mut result = vec!["crate".to_string()];
+        let mut result = vec![PATH_QUALIFIER_CRATE.to_string()];
         result.extend(module_path.iter().cloned());
         result.extend(rest.iter().cloned());
         result.join("::")
-    } else if first == "super" {
+    } else if first == PATH_QUALIFIER_SUPER {
         // super::foo -> crate::parent_path::foo
-        let mut result = vec!["crate".to_string()];
+        let mut result = vec![PATH_QUALIFIER_CRATE.to_string()];
         if !module_path.is_empty() {
             result.extend(module_path[..module_path.len() - 1].iter().cloned());
         }

@@ -11,6 +11,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 *
+consts::DEFAULT_SRC_DIR
 expansion::is_test_module
 resolver::{find_submodule, get_src_dir}
 visitor::UseVisitor

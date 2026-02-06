@@ -12,5 +12,6 @@ success: true
 exit_code: 0
 ----- stdout -----
 *
+consts::PATH_QUALIFIER_CRATE
 
 ----- stderr -----
