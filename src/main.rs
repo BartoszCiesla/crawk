@@ -3,21 +3,22 @@ use crawk::cli::{CrawkArgs, CrawkCommands};
 use crawk::collector::collect_use_statements;
 use crawk::resolver::find_module_by_path;
 use std::collections::HashSet;
+use std::path::Path;
 
 fn main() {
     // Parse command-line arguments
     let command = CrawkArgs::parse();
+    // Get crate root and validate it exists
+    let crate_root = command.crate_root();
 
     // Dispatch to the appropriate subcommand
     match command.command {
-        CrawkCommands::Use(args) => handle_use_command(&args),
+        CrawkCommands::Use(ref args) => handle_use_command(command.verbose(), &crate_root, args),
     }
 }
 
 /// Handle the 'use' subcommand
-fn handle_use_command(args: &crawk::cli::UseArgs) {
-    // Get crate root and validate it exists
-    let crate_root = args.crate_root();
+fn handle_use_command(verbose: bool, crate_root: &Path, args: &crawk::cli::UseArgs) {
     let src_dir = crate_root.join("src");
 
     if !src_dir.exists() {
@@ -38,7 +39,7 @@ fn handle_use_command(args: &crawk::cli::UseArgs) {
     };
 
     // Print verbose information if requested
-    if args.verbose {
+    if verbose {
         println!("Crate root: {}", crate_root.display());
         println!("Analyzing module: {}", args.module_path);
         println!("Module file: {}", module_file_path.display());
@@ -54,7 +55,7 @@ fn handle_use_command(args: &crawk::cli::UseArgs) {
         &module_file_path,
         &mut use_statements,
         args.include_tests,
-        args.verbose,
+        verbose,
         &module_components,
         args.expand,
         args.depth,
@@ -62,7 +63,7 @@ fn handle_use_command(args: &crawk::cli::UseArgs) {
 
     // Output results
     if use_statements.is_empty() {
-        if args.verbose {
+        if verbose {
             println!("No internal crate use statements found.");
         }
     } else {

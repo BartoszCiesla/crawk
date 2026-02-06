@@ -18,8 +18,6 @@ Arguments:
 
 Options:
   -t, --include-tests  Include modules defined in `#[cfg(test)]` blocks (excluded by default)
-  -p, --path <PATH>    Path to the crate root directory (defaults to current directory)
-  -v, --verbose        Show verbose output including crate root, module path, and analysis info
   -e, --expand         Expand grouped imports into individual paths
   -d, --depth <DEPTH>  Limit displayed module path depth from the crate root
   -h, --help           Print help (see more with '--help')

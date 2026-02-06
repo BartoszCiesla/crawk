@@ -64,8 +64,56 @@ fn generate_after_help(long_help: bool) -> String {
 /// just `use` statements, but every type annotation, trait bound, struct literal,
 /// and macro invocation that ties your code together.
 pub struct CrawkArgs {
+    #[clap(flatten)]
+    options: CrawkOptions,
+
     #[command(subcommand)]
     pub command: CrawkCommands,
+}
+
+#[derive(Parser, Debug, Clone)]
+pub struct CrawkOptions {
+    /// Specify path to the crate root directory (defaults to current directory)
+    #[arg(short = 'p', long = "path")]
+    path: Option<PathBuf>,
+
+    /// Show additional information about the analysis
+    #[arg(short = 'v', long = "verbose")]
+    verbose: bool,
+}
+
+impl CrawkArgs {
+    /// Get the crate root directory
+    ///
+    /// # Panics
+    ///
+    /// Panics if the current directory cannot be determined when no path is provided
+    #[must_use]
+    pub fn crate_root(&self) -> PathBuf {
+        self.options.path.as_ref().map_or_else(
+            || {
+                std::env::current_dir().unwrap_or_else(|_| {
+                    eprintln!("Error: Failed to get current directory");
+                    std::process::exit(1);
+                })
+            },
+            |path| {
+                if !path.exists() {
+                    eprintln!("Error: Provided path '{}' does not exist", path.display());
+                    std::process::exit(1);
+                }
+                path.clone()
+            },
+        )
+    }
+
+    /// Get the verbose flag value
+    /// # Returns
+    /// True if verbose output is enabled, false otherwise
+    #[must_use]
+    pub const fn verbose(&self) -> bool {
+        self.options.verbose
+    }
 }
 
 #[derive(Subcommand, Debug, Clone)]
@@ -88,14 +136,6 @@ pub struct UseArgs {
     #[clap(verbatim_doc_comment)]
     #[arg(short = 't', long = "include-tests", default_value_t = false)]
     pub include_tests: bool,
-
-    /// Path to the crate root directory (defaults to current directory)
-    #[arg(short = 'p', long = "path")]
-    pub path: Option<PathBuf>,
-
-    /// Show verbose output including crate root, module path, and analysis info
-    #[arg(short = 'v', long = "verbose")]
-    pub verbose: bool,
 
     /// Expand grouped imports into individual paths
     ///
@@ -120,30 +160,6 @@ impl UseArgs {
             .split("::")
             .map(ToString::to_string)
             .collect()
-    }
-
-    /// Get the crate root directory
-    ///
-    /// # Panics
-    ///
-    /// Panics if the current directory cannot be determined when no path is provided
-    #[must_use]
-    pub fn crate_root(&self) -> PathBuf {
-        self.path.as_ref().map_or_else(
-            || {
-                std::env::current_dir().unwrap_or_else(|_| {
-                    eprintln!("Error: Failed to get current directory");
-                    std::process::exit(1);
-                })
-            },
-            |path| {
-                if !path.exists() {
-                    eprintln!("Error: Provided path '{}' does not exist", path.display());
-                    std::process::exit(1);
-                }
-                path.clone()
-            },
-        )
     }
 }
 
@@ -184,8 +200,6 @@ mod tests {
         let args = UseArgs {
             module_path: "foo".to_string(),
             include_tests: false,
-            path: None,
-            verbose: false,
             expand: false,
             depth: None,
         };
@@ -197,8 +211,6 @@ mod tests {
         let args = UseArgs {
             module_path: "foo::bar::baz".to_string(),
             include_tests: false,
-            path: None,
-            verbose: false,
             expand: false,
             depth: None,
         };
