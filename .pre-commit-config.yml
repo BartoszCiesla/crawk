@@ -40,7 +40,7 @@ repos:
         entry: cargo
         language: system
         args: ["check"]
-        types: [rust, cargo]
+        types_or: [rust, cargo]
         pass_filenames: false
         stages: [pre-push]
       - id: cargo-fmt-check
@@ -55,7 +55,7 @@ repos:
         entry: cargo
         language: system
         args: ["clippy", "--all-targets", "--all-features", "--", "-D", "warnings"]
-        types: [rust, cargo]
+        types_or: [rust, cargo]
         pass_filenames: false
         stages: [pre-push]
       - id: cargo-nextest
@@ -63,7 +63,7 @@ repos:
         entry: cargo
         language: system
         args: ["nextest", "run", "--all-features"]
-        types: [rust, cargo]
+        types_or: [rust, cargo]
         pass_filenames: false
         stages: [pre-push]
       - id: cargo-sort-check
@@ -71,12 +71,12 @@ repos:
         entry: cargo
         language: system
         args: ["sort", "--check", "--workspace"]
-        types: [cargo, cargo-lock]
+        types_or: [cargo, cargo-lock]
         pass_filenames: false
       - id: cargo-machete
         name: cargo machete (unused dependencies)
         entry: cargo
         language: system
         args: ["machete"]
-        types: [cargo, cargo-lock]
+        types_or: [cargo, cargo-lock]
         pass_filenames: false
