@@ -8,7 +8,6 @@ use std::fmt;
 use std::path::Path;
 use tracing::{Level, error, info};
 use tracing_subscriber::EnvFilter;
-use tracing_subscriber::filter::LevelFilter;
 use tracing_subscriber::fmt::FmtContext;
 use tracing_subscriber::fmt::format::{FormatEvent, FormatFields};
 use tracing_subscriber::registry::LookupSpan;
@@ -44,14 +43,9 @@ fn main() {
     // Parse command-line arguments
     let command = CrawkArgs::parse();
 
-    // Initialize tracing subscriber based on verbose flag
-    let level = if command.verbose() {
-        LevelFilter::DEBUG
-    } else {
-        LevelFilter::WARN
-    };
+    // Initialize tracing subscriber based on verbosity level
     let filter = EnvFilter::builder()
-        .with_default_directive(level.into())
+        .with_default_directive(command.verbosity().into())
         .from_env_lossy();
     tracing_subscriber::fmt()
         .with_env_filter(filter)

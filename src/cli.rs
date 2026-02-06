@@ -2,9 +2,10 @@ use crate::consts::{
     BUILD_TARGET, BUILD_TIMESTAMP, BUILD_USER, CARGO_BIN_NAME, CARGO_PKG_HOMEPAGE,
     LONG_VERSION_MESSAGE, SDK_VERSION, VERSION_MESSAGE,
 };
-use clap::{Parser, Subcommand};
+use clap::{ArgAction, Parser, Subcommand};
 use std::path::PathBuf;
 use tracing::error;
+use tracing_subscriber::filter::LevelFilter;
 
 /// Validates that depth is at least 1
 /// Validate that the depth argument is a positive integer
@@ -78,9 +79,9 @@ pub struct CrawkOptions {
     #[arg(short = 'p', long = "path")]
     path: Option<PathBuf>,
 
-    /// Show additional information about the analysis
-    #[arg(short = 'v', long = "verbose")]
-    verbose: bool,
+    /// Increase output verbosity (-v for info, -vv for debug)
+    #[arg(short = 'v', long = "verbose", action = ArgAction::Count)]
+    verbose: u8,
 }
 
 impl CrawkArgs {
@@ -108,12 +109,16 @@ impl CrawkArgs {
         )
     }
 
-    /// Get the verbose flag value
+    /// Get the log level filter based on verbosity
     /// # Returns
-    /// True if verbose output is enabled, false otherwise
+    /// LevelFilter: WARN (default), INFO (-v), or DEBUG (-vv)
     #[must_use]
-    pub const fn verbose(&self) -> bool {
-        self.options.verbose
+    pub const fn verbosity(&self) -> LevelFilter {
+        match self.options.verbose {
+            0 => LevelFilter::WARN,
+            1 => LevelFilter::INFO,
+            _ => LevelFilter::DEBUG,
+        }
     }
 }
 

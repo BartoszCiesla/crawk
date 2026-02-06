@@ -19,7 +19,7 @@ Commands:
 
 Options:
   -p, --path <PATH>  Specify path to the crate root directory (defaults to current directory)
-  -v, --verbose      Show additional information about the analysis
+  -v, --verbose...   Increase output verbosity (-v for info, -vv for debug)
   -h, --help         Print help (see more with '--help')
   -V, --version      Print version
 
