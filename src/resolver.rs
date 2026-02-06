@@ -1,5 +1,6 @@
 use crate::consts::{DEFAULT_SRC_DIR, MODULE_FILE_NAME, PATH_QUALIFIER_CRATE};
 use std::path::{Path, PathBuf};
+use tracing::debug;
 
 /// Get the src directory from a given path
 #[must_use]
@@ -111,51 +112,37 @@ pub fn find_submodule(parent_path: &Path, submodule_name: &str) -> Option<PathBu
 #[allow(clippy::doc_link_with_quotes)]
 /// Resolve a module path (e.g., ["crate", "foo", "bar"]) to a file system path
 #[must_use]
-pub fn resolve_module_path_to_file(
-    src_dir: &Path,
-    module_path: &[String],
-    verbose: bool,
-) -> Option<PathBuf> {
+pub fn resolve_module_path_to_file(src_dir: &Path, module_path: &[String]) -> Option<PathBuf> {
     if module_path.is_empty() {
-        if verbose {
-            eprintln!("Debug: Module path is empty");
-        }
+        debug!("Module path is empty");
         return None;
     }
 
     // First element should be "crate" for internal uses
     if module_path[0] != PATH_QUALIFIER_CRATE {
-        if verbose {
-            eprintln!("Debug: Module path doesn't start with 'crate': {module_path:?}");
-        }
+        debug!("Module path doesn't start with 'crate': {module_path:?}");
         return None;
     }
     // Start from src_dir
     let mut current_path = src_dir.to_path_buf();
-    if verbose {
-        eprintln!("Debug: Starting from src_dir: {}", current_path.display());
-    }
+    debug!("Starting from src_dir: {}", current_path.display());
 
     // Navigate through the module path (skip "crate" at index 0)
     for (idx, module_name) in module_path[1..].iter().enumerate() {
         let is_last = idx == module_path.len() - 2; // -2 because we skip "crate" at index 0
 
-        if verbose {
-            eprintln!(
-                "Debug: Looking for module '{}' in {} (is_last={})",
-                module_name,
-                current_path.display(),
-                is_last
-            );
-        }
+        debug!(
+            "Looking for module '{}' in {} (is_last={})",
+            module_name,
+            current_path.display(),
+            is_last
+        );
 
         // Try module_name/mod.rs
         let mod_dir = current_path.join(module_name);
         let mod_path = mod_dir.join(MODULE_FILE_NAME);
         if mod_path.exists() {
-            if verbose {
-                eprintln!("Debug: Found {}", mod_path.display());
-            }
+            debug!("Found {}", mod_path.display());
             if is_last {
                 // This is the final module, return the mod.rs file
                 current_path = mod_path;
@@ -169,9 +156,7 @@ pub fn resolve_module_path_to_file(
         // Try module_name.rs
         let file_path = current_path.join(format!("{module_name}.rs"));
         if file_path.exists() {
-            if verbose {
-                eprintln!("Debug: Found {}", file_path.display());
-            }
+            debug!("Found {}", file_path.display());
             if is_last {
                 // This is the final module, return the .rs file
                 current_path = file_path;
@@ -179,20 +164,13 @@ pub fn resolve_module_path_to_file(
                 // Not the final module, need to navigate into module_name/ directory
                 let module_dir = current_path.join(module_name);
                 if module_dir.is_dir() {
-                    if verbose {
-                        eprintln!(
-                            "Debug: Navigating into companion directory {}",
-                            module_dir.display()
-                        );
-                    }
+                    debug!(
+                        "Navigating into companion directory {}",
+                        module_dir.display()
+                    );
                     current_path = module_dir;
                 } else {
-                    if verbose {
-                        eprintln!(
-                            "Debug: No companion directory found for {}",
-                            file_path.display()
-                        );
-                    }
+                    debug!("No companion directory found for {}", file_path.display());
                     return None;
                 }
             }
@@ -200,9 +178,7 @@ pub fn resolve_module_path_to_file(
         }
 
         // Module not found
-        if verbose {
-            eprintln!("Debug: Module '{module_name}' not found at index {idx}");
-        }
+        debug!("Module '{module_name}' not found at index {idx}");
         return None;
     }
 
@@ -210,28 +186,19 @@ pub fn resolve_module_path_to_file(
     if current_path.is_dir() {
         let mod_path = current_path.join(MODULE_FILE_NAME);
         if mod_path.exists() {
-            if verbose {
-                eprintln!(
-                    "Debug: Final path is directory, using mod.rs: {}",
-                    mod_path.display()
-                );
-            }
+            debug!(
+                "Final path is directory, using mod.rs: {}",
+                mod_path.display()
+            );
             return Some(mod_path);
         }
     }
 
     if current_path.is_file() {
-        if verbose {
-            eprintln!("Debug: Final resolved file: {}", current_path.display());
-        }
+        debug!("Final resolved file: {}", current_path.display());
         Some(current_path)
     } else {
-        if verbose {
-            eprintln!(
-                "Debug: Final path is not a file: {}",
-                current_path.display()
-            );
-        }
+        debug!("Final path is not a file: {}", current_path.display());
         None
     }
 }
@@ -387,7 +354,6 @@ mod tests {
         let result = resolve_module_path_to_file(
             &src_dir,
             &[PATH_QUALIFIER_CRATE.to_string(), "utils".to_string()],
-            false,
         );
         assert!(result.is_some());
         assert_eq!(result.unwrap().file_name().unwrap(), "utils.rs");
@@ -414,7 +380,6 @@ mod tests {
                 "utils".to_string(),
                 "helper".to_string(),
             ],
-            false,
         );
         assert!(result.is_some());
         assert_eq!(result.unwrap().file_name().unwrap(), "helper.rs");
@@ -426,7 +391,7 @@ mod tests {
         let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
-        let result = resolve_module_path_to_file(&src_dir, &[], false);
+        let result = resolve_module_path_to_file(&src_dir, &[]);
         assert!(result.is_none());
     }
 
@@ -436,7 +401,7 @@ mod tests {
         let src_dir = temp_dir.path().join(DEFAULT_SRC_DIR);
         fs::create_dir(&src_dir).unwrap();
 
-        let result = resolve_module_path_to_file(&src_dir, &["utils".to_string()], false);
+        let result = resolve_module_path_to_file(&src_dir, &["utils".to_string()]);
         assert!(result.is_none());
     }
 
@@ -449,7 +414,6 @@ mod tests {
         let result = resolve_module_path_to_file(
             &src_dir,
             &[PATH_QUALIFIER_CRATE.to_string(), "nonexistent".to_string()],
-            false,
         );
         assert!(result.is_none());
     }

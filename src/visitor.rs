@@ -11,6 +11,7 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 use syn::UseTree;
 use syn::visit::{self, Visit};
+use tracing::debug;
 
 #[allow(clippy::struct_excessive_bools)]
 pub struct UseVisitor<'a> {
@@ -21,7 +22,6 @@ pub struct UseVisitor<'a> {
     pub in_test_module: bool,
     pub expand: bool,
     pub depth: Option<usize>,
-    pub verbose: bool,
 }
 
 impl<'a> Visit<'a> for UseVisitor<'a> {
@@ -212,42 +212,28 @@ impl UseVisitor<'_> {
     }
 
     fn resolve_glob_items(&self, module_path: &[String]) -> Option<UseTree> {
-        if self.verbose {
-            eprintln!("Debug: Attempting to resolve glob for path: {module_path:?}",);
-        }
+        debug!("Attempting to resolve glob for path: {module_path:?}");
 
         // Resolve the module path to a file
-        let module_file = if let Some(f) =
-            resolve_module_path_to_file(&self.src_dir, module_path, self.verbose)
-        {
-            if self.verbose {
-                eprintln!("Debug: Resolved glob path to file: {}", f.display());
-            }
+        let module_file = if let Some(f) = resolve_module_path_to_file(&self.src_dir, module_path) {
+            debug!("Resolved glob path to file: {}", f.display());
             f
         } else {
-            if self.verbose {
-                eprintln!("Debug: Failed to resolve module path to file");
-            }
+            debug!("Failed to resolve module path to file");
             return None;
         };
 
         // Parse the file and extract public items
         let public_items = if let Some(items) = extract_public_items(&module_file) {
-            if self.verbose {
-                eprintln!("Debug: Found {} public items in module", items.len());
-            }
+            debug!("Found {} public items in module", items.len());
             items
         } else {
-            if self.verbose {
-                eprintln!("Debug: Failed to extract public items from file");
-            }
+            debug!("Failed to extract public items from file");
             return None;
         };
 
         if public_items.is_empty() {
-            if self.verbose {
-                eprintln!("Debug: No public items found in module");
-            }
+            debug!("No public items found in module");
             return None;
         }
 

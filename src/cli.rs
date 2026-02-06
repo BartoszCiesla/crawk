@@ -4,6 +4,7 @@ use crate::consts::{
 };
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
+use tracing::error;
 
 /// Validates that depth is at least 1
 /// Validate that the depth argument is a positive integer
@@ -93,13 +94,13 @@ impl CrawkArgs {
         self.options.path.as_ref().map_or_else(
             || {
                 std::env::current_dir().unwrap_or_else(|_| {
-                    eprintln!("Error: Failed to get current directory");
+                    error!("Failed to get current directory");
                     std::process::exit(1);
                 })
             },
             |path| {
                 if !path.exists() {
-                    eprintln!("Error: Provided path '{}' does not exist", path.display());
+                    error!("Provided path '{}' does not exist", path.display());
                     std::process::exit(1);
                 }
                 path.clone()

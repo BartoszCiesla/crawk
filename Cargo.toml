@@ -14,6 +14,9 @@ syn = { version = "2.0", features = ["full", "parsing", "visit"] }
 clap = { version = "4.5", features = ["derive", "cargo"] }
 proc-macro2 = "1.0"
 const_format = "0.2"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
+owo-colors = "4.2.3"
 
 [build-dependencies]
 anyhow = "1.0.100"

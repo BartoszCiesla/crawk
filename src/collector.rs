@@ -4,6 +4,7 @@ use std::fs;
 use std::path::Path;
 use syn::Item;
 use syn::visit::Visit;
+use tracing::warn;
 
 /// Collect use statements from a module file and all its submodules
 #[allow(clippy::implicit_hasher)]
@@ -11,7 +12,6 @@ pub fn collect_use_statements(
     path: &Path,
     use_statements: &mut HashSet<String>,
     include_tests: bool,
-    verbose: bool,
     module_path: &[String],
     expand: bool,
     depth: Option<usize>,
@@ -19,9 +19,7 @@ pub fn collect_use_statements(
     let content = match fs::read_to_string(path) {
         Ok(content) => content,
         Err(e) => {
-            if verbose {
-                eprintln!("Warning: Failed to read {}: {}", path.display(), e);
-            }
+            warn!("Failed to read {}: {}", path.display(), e);
             return;
         }
     };
@@ -29,9 +27,7 @@ pub fn collect_use_statements(
     let file = match syn::parse_file(&content) {
         Ok(file) => file,
         Err(e) => {
-            if verbose {
-                eprintln!("Warning: Failed to parse {}: {}", path.display(), e);
-            }
+            warn!("Failed to parse {}: {}", path.display(), e);
             return;
         }
     };
@@ -47,7 +43,6 @@ pub fn collect_use_statements(
         in_test_module: false,
         expand,
         depth,
-        verbose,
     };
     visitor.visit_file(&file);
 
@@ -68,7 +63,6 @@ pub fn collect_use_statements(
                     &submodule_path,
                     use_statements,
                     include_tests,
-                    verbose,
                     &submodule_module_path,
                     expand,
                     depth,
@@ -110,7 +104,6 @@ use std::collections::HashMap;
             &utils_rs,
             &mut use_statements,
             false,
-            false,
             &["utils".to_string()],
             false,
             None,
@@ -143,7 +136,6 @@ use crate::foo::{{Bar, Baz}};
             &utils_rs,
             &mut use_statements,
             false,
-            false,
             &["utils".to_string()],
             true,
             None,
@@ -174,7 +166,6 @@ use crate::foo::bar::baz::Thing;
         collect_use_statements(
             &utils_rs,
             &mut use_statements,
-            false,
             false,
             &["utils".to_string()],
             false,
@@ -210,7 +201,6 @@ mod tests {{
         collect_use_statements(
             &utils_rs,
             &mut use_statements,
-            false,
             false,
             &["utils".to_string()],
             false,
@@ -248,7 +238,6 @@ mod tests {{
             &utils_rs,
             &mut use_statements,
             true,
-            false,
             &["utils".to_string()],
             false,
             None,
@@ -295,7 +284,6 @@ use crate::baz::Qux;
             &utils_mod_rs,
             &mut use_statements,
             false,
-            false,
             &["utils".to_string()],
             false,
             None,
@@ -318,7 +306,6 @@ use crate::baz::Qux;
         collect_use_statements(
             &nonexistent,
             &mut use_statements,
-            false,
             false,
             &["utils".to_string()],
             false,
@@ -343,7 +330,6 @@ use crate::baz::Qux;
         collect_use_statements(
             &utils_rs,
             &mut use_statements,
-            false,
             false,
             &["utils".to_string()],
             false,
@@ -382,7 +368,6 @@ fn example() {{
         collect_use_statements(
             &utils_rs,
             &mut use_statements,
-            false,
             false,
             &["utils".to_string()],
             false,
@@ -423,7 +408,6 @@ fn example() {{
             &utils_rs,
             &mut use_statements,
             false,
-            false,
             &["utils".to_string()],
             false,
             Some(2),
@@ -463,7 +447,6 @@ mod tests {{
         collect_use_statements(
             &utils_rs,
             &mut use_statements,
-            false,
             false,
             &["utils".to_string()],
             false,
@@ -510,7 +493,6 @@ static STATIC: crate::types::StaticType = todo!();
         collect_use_statements(
             &utils_rs,
             &mut use_statements,
-            false,
             false,
             &["utils".to_string()],
             false,
@@ -564,7 +546,6 @@ fn example(x: i32) {{
             &utils_rs,
             &mut use_statements,
             false,
-            false,
             &["utils".to_string()],
             false,
             None,
@@ -614,7 +595,6 @@ fn example() {{
             &utils_rs,
             &mut use_statements,
             false,
-            false,
             &["utils".to_string()],
             false,
             None,
@@ -661,7 +641,6 @@ fn multi_bound<T: crate::traits::First + crate::traits::Second>(_t: T) {{}}
             &utils_rs,
             &mut use_statements,
             false,
-            false,
             &["utils".to_string()],
             false,
             None,
@@ -707,7 +686,6 @@ impl crate::traits::Serializable for LocalStruct {{
             &utils_rs,
             &mut use_statements,
             false,
-            false,
             &["utils".to_string()],
             false,
             None,
@@ -743,7 +721,6 @@ fn example() {{
         collect_use_statements(
             &utils_rs,
             &mut use_statements,
-            false,
             false,
             &["utils".to_string()],
             false,
@@ -793,7 +770,6 @@ fn generic<T: crate::traits::Bound>(param: crate::types::Param) {{
         collect_use_statements(
             &utils_rs,
             &mut use_statements,
-            false,
             false,
             &["utils".to_string()],
             false,
