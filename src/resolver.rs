@@ -1,4 +1,4 @@
-use crate::consts::{DEFAULT_SRC_DIR, MODULE_FILE_NAME, PATH_QUALIFIER_CRATE};
+use crate::constants::{DEFAULT_SRC_DIR, MODULE_FILE_NAME, PATH_QUALIFIER_CRATE};
 use std::path::{Path, PathBuf};
 use tracing::debug;
 

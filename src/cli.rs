@@ -1,8 +1,5 @@
-use crate::consts::{
-    BUILD_TARGET, BUILD_TIMESTAMP, BUILD_USER, CARGO_BIN_NAME, CARGO_PKG_HOMEPAGE,
-    LONG_VERSION_MESSAGE, SDK_VERSION, VERSION_MESSAGE,
-};
 use clap::{ArgAction, Parser, Subcommand};
+use crawk::version;
 use std::path::PathBuf;
 use tracing::error;
 use tracing_subscriber::filter::LevelFilter;
@@ -32,19 +29,23 @@ pub fn validate_depth(s: &str) -> Result<usize, String> {
 /// # Returns
 /// A formatted after help message string
 fn generate_after_help(long_help: bool) -> String {
+    let name = version::NAME;
     let after_help = format!(
-        "Run '{CARGO_BIN_NAME} --help' for full help message.\n\
-         Run '{CARGO_BIN_NAME} COMMAND --help' for more information on a command.\n\n"
+        "Run '{name} --help' for full help message.\n\
+         Run '{name} COMMAND --help' for more information on a command.\n\n"
     );
 
     if long_help {
-        let timestamp =
-            &BUILD_TIMESTAMP[0..BUILD_TIMESTAMP.rfind('.').unwrap_or(BUILD_TIMESTAMP.len())];
-        let build_info =
-            format!("Built on {timestamp}Z for {BUILD_TARGET} ({SDK_VERSION}) by {BUILD_USER}");
+        let timestamp = version::BUILD_TIMESTAMP;
+        let timestamp = &timestamp[0..timestamp.rfind('.').unwrap_or(timestamp.len())];
+        let target = version::BUILD_TARGET;
+        let rustc = version::RUSTC_VERSION;
+        let user = version::BUILD_USER;
+        let homepage = version::HOMEPAGE;
+        let build_info = format!("Built on {timestamp}Z for {target} ({rustc}) by {user}");
 
         format!(
-            "{after_help}For more about the tool head to {CARGO_PKG_HOMEPAGE}\n\n\
+            "{after_help}For more about the tool head to {homepage}\n\n\
              {build_info}\n"
         )
     } else {
@@ -54,8 +55,8 @@ fn generate_after_help(long_help: bool) -> String {
 
 #[derive(Parser, Debug, Clone)]
 #[command(
-    version = VERSION_MESSAGE,
-    long_version = LONG_VERSION_MESSAGE,
+    version = version::VERSION,
+    long_version = version::LONG_VERSION_MESSAGE,
     after_help = generate_after_help(false),
     after_long_help = generate_after_help(true)
 )]

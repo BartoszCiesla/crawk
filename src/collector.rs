@@ -1,4 +1,6 @@
+use crate::expansion::is_test_module;
 use crate::resolver::{find_submodule, get_src_dir};
+use crate::visitor::UseVisitor;
 use std::collections::HashSet;
 use std::fs;
 use std::path::Path;
@@ -35,7 +37,7 @@ pub fn collect_use_statements(
     // Get src directory for module resolution
     let src_dir = get_src_dir(path);
 
-    let mut visitor = crate::visitor::UseVisitor {
+    let mut visitor = UseVisitor {
         use_statements,
         module_path: module_path.to_vec(),
         src_dir,
@@ -50,7 +52,7 @@ pub fn collect_use_statements(
     for item in &file.items {
         if let Item::Mod(item_mod) = item {
             // Skip test modules unless include_tests is true
-            if !include_tests && crate::expansion::is_test_module(item_mod) {
+            if !include_tests && is_test_module(item_mod) {
                 continue;
             }
 
@@ -76,7 +78,7 @@ pub fn collect_use_statements(
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
-    use crate::consts::DEFAULT_SRC_DIR;
+    use crate::constants::DEFAULT_SRC_DIR;
     use std::io::Write;
     use tempfile::TempDir;
 

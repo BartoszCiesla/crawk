@@ -1,4 +1,4 @@
-use crate::consts::PATH_QUALIFIER_CRATE;
+use crate::constants::PATH_QUALIFIER_CRATE;
 use syn::UseTree;
 
 /// Convert a UseTree to its string representation

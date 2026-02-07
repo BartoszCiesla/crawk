@@ -1,12 +1,9 @@
+mod cli;
+
 use clap::Parser;
-use crawk::collector::collect_use_statements;
-use crawk::resolver::find_module_by_path;
-use crawk::{
-    cli::UseArgs,
-    cli::{CrawkArgs, CrawkCommands},
-};
+use cli::{CrawkArgs, CrawkCommands, UseArgs};
+use crawk::{AnalysisOptions, Analyzer, version};
 use owo_colors::OwoColorize;
-use std::collections::HashSet;
 use std::fmt::Result;
 use std::fs::File;
 use std::path::Path;
@@ -91,47 +88,44 @@ fn main() {
 
 /// Handle the 'use' subcommand
 fn handle_use_command(crate_root: &Path, args: &UseArgs) {
-    let src_dir = crate_root.join("src");
+    // Create analyzer and validate crate root
+    let analyzer = Analyzer::new(crate_root);
 
-    if !src_dir.exists() {
-        error!(
-            "Not a Rust project directory (src/ not found in {})",
-            crate_root.display()
-        );
+    if let Err(e) = analyzer.validate() {
+        error!("{e}");
         exit(1);
     }
 
     // Parse the module path into components
     let module_components = args.module_components();
 
-    // Find the module file by navigating through the module hierarchy
-    let Some(module_file_path) = find_module_by_path(&src_dir, &module_components) else {
-        error!("Module '{}' not found", args.module_path);
-        exit(1);
-    };
-
+    info!("Running {} v{}", version::NAME, version::VERSION);
     info!("Crate root: {}", crate_root.display());
     info!("Analyzing module: {}", args.module_path);
-    info!("Module file: {}", module_file_path.display());
 
-    // Collect all use statements from the module and its submodules
-    let mut use_statements = HashSet::new();
-    collect_use_statements(
-        &module_file_path,
-        &mut use_statements,
-        args.include_tests,
-        &module_components,
-        args.expand,
-        args.depth,
-    );
+    // Configure analysis options
+    let options = AnalysisOptions {
+        include_tests: args.include_tests,
+        expand_groups: args.expand,
+        max_depth: args.depth,
+    };
+
+    // Analyze the module
+    let result = match analyzer.analyze_module(&module_components, &options) {
+        Ok(result) => result,
+        Err(e) => {
+            error!("{e}");
+            exit(1);
+        }
+    };
+
+    info!("Module file: {}", result.source_file().display());
 
     // Output results
-    if use_statements.is_empty() {
+    if result.is_empty() {
         info!("No internal crate use statements found.");
     } else {
-        let mut sorted_uses: Vec<_> = use_statements.into_iter().collect();
-        sorted_uses.sort();
-        for use_stmt in sorted_uses {
+        for use_stmt in result.into_sorted_vec() {
             println!("{use_stmt}");
         }
     }

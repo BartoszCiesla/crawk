@@ -12,8 +12,8 @@ success: true
 exit_code: 0
 ----- stdout -----
 *
-consts::DEFAULT_SRC_DIR
-consts::MODULE_FILE_NAME
-consts::PATH_QUALIFIER_CRATE
+constants::DEFAULT_SRC_DIR
+constants::MODULE_FILE_NAME
+constants::PATH_QUALIFIER_CRATE
 
 ----- stderr -----

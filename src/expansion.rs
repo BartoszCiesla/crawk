@@ -1,4 +1,4 @@
-use crate::consts::{
+use crate::constants::{
     MODULE_NAME_TEST, MODULE_NAME_TESTS, PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF,
     PATH_QUALIFIER_SUPER,
 };
