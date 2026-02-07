@@ -82,6 +82,10 @@ pub struct CrawkOptions {
     /// Increase output verbosity (-v for info, -vv for debug)
     #[arg(short = 'v', long = "verbose", action = ArgAction::Count)]
     verbose: u8,
+
+    /// Write logs to specified file (INFO level, or DEBUG with -vv)
+    #[arg(short = 'l', long = "log-file")]
+    log_file: Option<PathBuf>,
 }
 
 impl CrawkArgs {
@@ -117,6 +121,23 @@ impl CrawkArgs {
         match self.options.verbose {
             0 => LevelFilter::WARN,
             1 => LevelFilter::INFO,
+            _ => LevelFilter::DEBUG,
+        }
+    }
+
+    /// Get the log file path if specified
+    #[must_use]
+    pub const fn log_file(&self) -> Option<&PathBuf> {
+        self.options.log_file.as_ref()
+    }
+
+    /// Get the log level filter for file logging
+    /// # Returns
+    /// LevelFilter: INFO (default), or DEBUG (-vv)
+    #[must_use]
+    pub const fn file_verbosity(&self) -> LevelFilter {
+        match self.options.verbose {
+            0 | 1 => LevelFilter::INFO,
             _ => LevelFilter::DEBUG,
         }
     }

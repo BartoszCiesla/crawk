@@ -8,6 +8,7 @@ use crawk::{
 use owo_colors::OwoColorize;
 use std::collections::HashSet;
 use std::fmt::Result;
+use std::fs::File;
 use std::path::Path;
 use std::process::exit;
 use tracing::{Level, Subscriber, error, info};
@@ -51,14 +52,33 @@ fn main() {
     // Parse command-line arguments
     let command = CrawkArgs::parse();
 
-    // Initialize tracing subscriber based on verbosity level
-    let filter = EnvFilter::builder()
-        .with_default_directive(command.verbosity().into())
-        .from_env_lossy();
-    tracing_subscriber::fmt()
-        .with_env_filter(filter)
-        .event_format(MinimalFormat)
-        .init();
+    // Initialize tracing subscriber based on verbosity level and log file option
+    if let Some(log_file_path) = command.log_file() {
+        let file = File::create(log_file_path).unwrap_or_else(|e| {
+            eprintln!(
+                "Failed to create log file '{}': {e}",
+                log_file_path.display()
+            );
+            exit(1);
+        });
+
+        let filter = EnvFilter::builder()
+            .with_default_directive(command.file_verbosity().into())
+            .from_env_lossy();
+        tracing_subscriber::fmt()
+            .with_env_filter(filter)
+            .with_writer(file)
+            .with_ansi(false)
+            .init();
+    } else {
+        let filter = EnvFilter::builder()
+            .with_default_directive(command.verbosity().into())
+            .from_env_lossy();
+        tracing_subscriber::fmt()
+            .with_env_filter(filter)
+            .event_format(MinimalFormat)
+            .init();
+    }
 
     // Get crate root and validate it exists
     let crate_root = command.crate_root();
@@ -93,9 +113,6 @@ fn handle_use_command(crate_root: &Path, args: &UseArgs) {
     info!("Crate root: {}", crate_root.display());
     info!("Analyzing module: {}", args.module_path);
     info!("Module file: {}", module_file_path.display());
-    if !args.include_tests {
-        info!("(excluding tests - use --include-tests to include them)");
-    }
 
     // Collect all use statements from the module and its submodules
     let mut use_statements = HashSet::new();

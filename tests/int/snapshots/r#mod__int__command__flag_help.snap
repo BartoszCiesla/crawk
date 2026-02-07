@@ -27,6 +27,9 @@ Options:
   -v, --verbose...
           Increase output verbosity (-v for info, -vv for debug)
 
+  -l, --log-file <LOG_FILE>
+          Write logs to specified file (INFO level, or DEBUG with -vv)
+
   -h, --help
           Print help (see a summary with '-h')
 
