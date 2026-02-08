@@ -4,16 +4,11 @@ info:
   program: crawk
   args:
     - use
-    - formatter
-    - "-t"
-    - "-e"
-    - "-d"
-    - "1"
+    - "module::format"
 ---
 success: true
 exit_code: 0
 ----- stdout -----
-*
-constants
+constants::PATH_QUALIFIER_CRATE
 
 ----- stderr -----

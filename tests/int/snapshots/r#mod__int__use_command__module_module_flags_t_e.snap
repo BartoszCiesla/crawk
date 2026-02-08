@@ -1,0 +1,26 @@
+---
+source: tests/int/use_command.rs
+info:
+  program: crawk
+  args:
+    - use
+    - module
+    - "-t"
+    - "-e"
+---
+success: true
+exit_code: 0
+----- stdout -----
+constants::DEFAULT_SRC_DIR
+constants::MODULE_FILE_NAME
+constants::MODULE_NAME_TEST
+constants::MODULE_NAME_TESTS
+constants::PATH_QUALIFIER_CRATE
+constants::PATH_QUALIFIER_SELF
+constants::PATH_QUALIFIER_SUPER
+module::expand
+module::format
+module::format::use_tree_to_string
+module::locate
+
+----- stderr -----

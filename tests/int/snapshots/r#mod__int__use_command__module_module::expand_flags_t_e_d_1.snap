@@ -4,16 +4,16 @@ info:
   program: crawk
   args:
     - use
-    - resolver
+    - "module::expand"
     - "-t"
     - "-e"
+    - "-d"
+    - "1"
 ---
 success: true
 exit_code: 0
 ----- stdout -----
-*
-constants::DEFAULT_SRC_DIR
-constants::MODULE_FILE_NAME
-constants::PATH_QUALIFIER_CRATE
+constants
+module
 
 ----- stderr -----

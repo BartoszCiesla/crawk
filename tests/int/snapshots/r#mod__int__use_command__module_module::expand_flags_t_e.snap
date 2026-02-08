@@ -4,19 +4,21 @@ info:
   program: crawk
   args:
     - use
-    - expansion
+    - "module::expand"
     - "-t"
     - "-e"
 ---
 success: true
 exit_code: 0
 ----- stdout -----
-*
 constants::MODULE_NAME_TEST
 constants::MODULE_NAME_TESTS
 constants::PATH_QUALIFIER_CRATE
 constants::PATH_QUALIFIER_SELF
 constants::PATH_QUALIFIER_SUPER
-formatter::use_tree_to_string
+module::expand
+module::format
+module::format::use_tree_to_string
+module::locate
 
 ----- stderr -----

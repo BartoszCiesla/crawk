@@ -18,11 +18,12 @@ fn should_use_command_short_help_match(help_flag: &str) {
 
 #[test_case("cli"; "for cli module")]
 #[test_case("collector"; "for collector module")]
-#[test_case("expansion"; "for expansion module")]
-#[test_case("formatter"; "for formatter module")]
 #[test_case("lib"; "for lib module")]
 #[test_case("main"; "for main module")]
-#[test_case("resolver"; "for resolver module")]
+#[test_case("module"; "for module module")]
+#[test_case("module::expand"; "for module::expand module")]
+#[test_case("module::format"; "for module::format module")]
+#[test_case("module::locate"; "for module::locate module")]
 #[test_case("visitor"; "for visitor module")]
 fn should_use_command_provide_output(module: &str) {
     let snapshot_name = format!("module_{module}");
@@ -31,7 +32,7 @@ fn should_use_command_provide_output(module: &str) {
 }
 
 #[test_matrix(
-  ["cli", "collector", "expansion", "formatter", "lib", "main", "resolver", "visitor"],
+  ["cli", "collector", "lib", "main", "module", "module::expand", "module::format", "module::locate", "visitor"],
   [&["-t"],
    &["-t", "-e"],
    &["-t", "-e", "-d", "1"]

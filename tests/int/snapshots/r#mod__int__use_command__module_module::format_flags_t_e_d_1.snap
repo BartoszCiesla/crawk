@@ -4,7 +4,7 @@ info:
   program: crawk
   args:
     - use
-    - expansion
+    - "module::format"
     - "-t"
     - "-e"
     - "-d"
@@ -13,8 +13,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-*
 constants
-formatter
+module
 
 ----- stderr -----

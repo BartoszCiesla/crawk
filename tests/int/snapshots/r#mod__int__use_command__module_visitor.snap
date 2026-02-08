@@ -9,8 +9,8 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-expansion::{expand_path_to_string, expand_use_tree, extract_public_items, is_internal_path, is_internal_use, is_test_module}
-formatter::{expand_use_tree_to_paths, strip_crate_prefix, truncate_path, use_tree_to_string}
-resolver::resolve_module_path_to_file
+module::expand::{expand_path_to_string, expand_use_tree, extract_public_items, is_internal_path, is_internal_use, is_test_module}
+module::format::{expand_use_tree_to_paths, strip_crate_prefix, truncate_path, use_tree_to_string}
+module::locate::resolve_module_path_to_file
 
 ----- stderr -----

@@ -4,13 +4,13 @@ info:
   program: crawk
   args:
     - use
-    - formatter
+    - "module::locate"
     - "-t"
 ---
 success: true
 exit_code: 0
 ----- stdout -----
-*
-constants::PATH_QUALIFIER_CRATE
+constants::{DEFAULT_SRC_DIR, MODULE_FILE_NAME, PATH_QUALIFIER_CRATE}
+module::{expand, format, locate}
 
 ----- stderr -----

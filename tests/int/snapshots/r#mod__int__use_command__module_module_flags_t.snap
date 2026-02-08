@@ -4,13 +4,16 @@ info:
   program: crawk
   args:
     - use
-    - resolver
+    - module
     - "-t"
 ---
 success: true
 exit_code: 0
 ----- stdout -----
-*
+constants::PATH_QUALIFIER_CRATE
 constants::{DEFAULT_SRC_DIR, MODULE_FILE_NAME, PATH_QUALIFIER_CRATE}
+constants::{MODULE_NAME_TEST, MODULE_NAME_TESTS, PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER}
+module::format::use_tree_to_string
+module::{expand, format, locate}
 
 ----- stderr -----

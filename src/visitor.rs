@@ -1,11 +1,11 @@
-use crate::expansion::{
+use crate::module::expand::{
     expand_path_to_string, expand_use_tree, extract_public_items, is_internal_path,
     is_internal_use, is_test_module,
 };
-use crate::formatter::{
+use crate::module::format::{
     expand_use_tree_to_paths, strip_crate_prefix, truncate_path, use_tree_to_string,
 };
-use crate::resolver::resolve_module_path_to_file;
+use crate::module::locate::resolve_module_path_to_file;
 use proc_macro2::Span;
 use std::collections::HashSet;
 use std::path::PathBuf;

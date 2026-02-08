@@ -15,8 +15,7 @@ exit_code: 0
 ----- stdout -----
 *
 constants
-expansion
-resolver
+module
 visitor
 
 ----- stderr -----

@@ -335,7 +335,7 @@ mod tests {
         let tree: UseTree = parse_quote!(self::foo::Bar);
         let module_path = vec!["utils".to_string()];
         let expanded = expand_use_tree(&tree, &module_path);
-        let expanded_str = crate::formatter::use_tree_to_string(&expanded);
+        let expanded_str = crate::module::format::use_tree_to_string(&expanded);
         assert_eq!(expanded_str, "crate::utils::foo::Bar");
     }
 
@@ -344,7 +344,7 @@ mod tests {
         let tree: UseTree = parse_quote!(super::sibling::Item);
         let module_path = vec!["parent".to_string(), "child".to_string()];
         let expanded = expand_use_tree(&tree, &module_path);
-        let expanded_str = crate::formatter::use_tree_to_string(&expanded);
+        let expanded_str = crate::module::format::use_tree_to_string(&expanded);
         assert_eq!(expanded_str, "crate::parent::sibling::Item");
     }
 
@@ -353,7 +353,7 @@ mod tests {
         let tree: UseTree = parse_quote!(crate::foo::Bar);
         let module_path = vec!["utils".to_string()];
         let expanded = expand_use_tree(&tree, &module_path);
-        let expanded_str = crate::formatter::use_tree_to_string(&expanded);
+        let expanded_str = crate::module::format::use_tree_to_string(&expanded);
         assert_eq!(expanded_str, "crate::foo::Bar");
     }
 
@@ -362,7 +362,7 @@ mod tests {
         let tree: UseTree = parse_quote!(self::{foo, bar});
         let module_path = vec!["utils".to_string()];
         let expanded = expand_use_tree(&tree, &module_path);
-        let expanded_str = crate::formatter::use_tree_to_string(&expanded);
+        let expanded_str = crate::module::format::use_tree_to_string(&expanded);
         assert_eq!(expanded_str, "crate::utils::{foo, bar}");
     }
 

@@ -13,8 +13,6 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-expansion
-formatter
-resolver
+module
 
 ----- stderr -----

@@ -4,16 +4,13 @@ info:
   program: crawk
   args:
     - use
-    - collector
+    - "module::format"
     - "-t"
 ---
 success: true
 exit_code: 0
 ----- stdout -----
-*
-constants::DEFAULT_SRC_DIR
-module::expand::is_test_module
-module::locate::{find_submodule, get_src_dir}
-visitor::UseVisitor
+constants::PATH_QUALIFIER_CRATE
+module::{expand, format, locate}
 
 ----- stderr -----

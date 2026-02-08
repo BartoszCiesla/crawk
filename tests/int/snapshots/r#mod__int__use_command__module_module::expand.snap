@@ -4,16 +4,11 @@ info:
   program: crawk
   args:
     - use
-    - resolver
-    - "-t"
-    - "-e"
-    - "-d"
-    - "1"
+    - "module::expand"
 ---
 success: true
 exit_code: 0
 ----- stdout -----
-*
-constants
+constants::{MODULE_NAME_TEST, MODULE_NAME_TESTS, PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER}
 
 ----- stderr -----

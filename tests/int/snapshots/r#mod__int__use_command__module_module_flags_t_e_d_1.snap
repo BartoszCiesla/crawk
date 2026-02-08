@@ -4,11 +4,16 @@ info:
   program: crawk
   args:
     - use
-    - resolver
+    - module
+    - "-t"
+    - "-e"
+    - "-d"
+    - "1"
 ---
 success: true
 exit_code: 0
 ----- stdout -----
-constants::{DEFAULT_SRC_DIR, MODULE_FILE_NAME, PATH_QUALIFIER_CRATE}
+constants
+module
 
 ----- stderr -----

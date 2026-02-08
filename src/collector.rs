@@ -1,5 +1,5 @@
-use crate::expansion::is_test_module;
-use crate::resolver::{find_submodule, get_src_dir};
+use crate::module::expand::is_test_module;
+use crate::module::locate::{find_submodule, get_src_dir};
 use crate::visitor::UseVisitor;
 use std::collections::HashSet;
 use std::fs;

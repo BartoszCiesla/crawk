@@ -11,16 +11,16 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-expansion::expand_path_to_string
-expansion::expand_use_tree
-expansion::extract_public_items
-expansion::is_internal_path
-expansion::is_internal_use
-expansion::is_test_module
-formatter::expand_use_tree_to_paths
-formatter::strip_crate_prefix
-formatter::truncate_path
-formatter::use_tree_to_string
-resolver::resolve_module_path_to_file
+module::expand::expand_path_to_string
+module::expand::expand_use_tree
+module::expand::extract_public_items
+module::expand::is_internal_path
+module::expand::is_internal_use
+module::expand::is_test_module
+module::format::expand_use_tree_to_paths
+module::format::strip_crate_prefix
+module::format::truncate_path
+module::format::use_tree_to_string
+module::locate::resolve_module_path_to_file
 
 ----- stderr -----

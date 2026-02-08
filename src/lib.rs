@@ -35,9 +35,7 @@ use std::path::{Path, PathBuf};
 
 mod collector;
 mod constants;
-mod expansion;
-mod formatter;
-mod resolver;
+mod module;
 pub mod version;
 mod visitor;
 
@@ -258,7 +256,7 @@ impl Analyzer {
     pub fn find_module(&self, module_path: &[impl AsRef<str>]) -> Option<PathBuf> {
         let path_strings: Vec<String> =
             module_path.iter().map(|s| s.as_ref().to_string()).collect();
-        resolver::find_module_by_path(&self.src_dir, &path_strings)
+        module::locate::find_module_by_path(&self.src_dir, &path_strings)
     }
 
     /// Analyze dependencies for a specific module.
@@ -299,7 +297,7 @@ impl Analyzer {
         let module_path_display = path_strings.join("::");
 
         // Find the module file
-        let source_file = resolver::find_module_by_path(&self.src_dir, &path_strings).ok_or(
+        let source_file = module::locate::find_module_by_path(&self.src_dir, &path_strings).ok_or(
             AnalysisError::ModuleNotFound {
                 module_path: module_path_display,
             },
