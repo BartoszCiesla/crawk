@@ -29,6 +29,8 @@
 //! - **Depth limiting**: Truncate paths to a maximum depth for high-level views
 
 use std::collections::HashSet;
+use std::error::Error;
+use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::path::{Path, PathBuf};
 
 mod collector;
@@ -154,8 +156,8 @@ pub enum AnalysisError {
     },
 }
 
-impl std::fmt::Display for AnalysisError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Display for AnalysisError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         match self {
             Self::ModuleNotFound { module_path } => {
                 write!(f, "module not found: {module_path}")
@@ -167,7 +169,7 @@ impl std::fmt::Display for AnalysisError {
     }
 }
 
-impl std::error::Error for AnalysisError {}
+impl Error for AnalysisError {}
 
 /// Analyzer for Rust module dependencies.
 ///
