@@ -4,7 +4,7 @@ info:
   program: crawk
   args:
     - use
-    - visitor
+    - "analysis::visit"
     - "-t"
     - "-e"
     - "-d"

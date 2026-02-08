@@ -4,13 +4,13 @@ info:
   program: crawk
   args:
     - use
-    - collector
+    - "analysis::collect"
 ---
 success: true
 exit_code: 0
 ----- stdout -----
+analysis::visit::UseVisitor
 module::expand::is_test_module
 module::locate::{find_submodule, get_src_dir}
-visitor::UseVisitor
 
 ----- stderr -----

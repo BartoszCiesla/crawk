@@ -1,0 +1,32 @@
+---
+source: tests/int/use_command.rs
+info:
+  program: crawk
+  args:
+    - use
+    - analysis
+    - "-t"
+    - "-e"
+---
+success: true
+exit_code: 0
+----- stdout -----
+analysis::collect
+analysis::visit
+analysis::visit::UseVisitor
+constants::DEFAULT_SRC_DIR
+module::expand::expand_path_to_string
+module::expand::expand_use_tree
+module::expand::extract_public_items
+module::expand::is_internal_path
+module::expand::is_internal_use
+module::expand::is_test_module
+module::format::expand_use_tree_to_paths
+module::format::strip_crate_prefix
+module::format::truncate_path
+module::format::use_tree_to_string
+module::locate::find_submodule
+module::locate::get_src_dir
+module::locate::resolve_module_path_to_file
+
+----- stderr -----

@@ -16,15 +16,16 @@ fn should_use_command_short_help_match(help_flag: &str) {
     assert_cmd_snapshot!(snapshot_name, crawk().arg("use").arg(help_flag));
 }
 
+#[test_case("analysis"; "for analysis module")]
+#[test_case("analysis::collect"; "for analysis::collect module")]
+#[test_case("analysis::visit"; "for analysis::visit module")]
 #[test_case("cli"; "for cli module")]
-#[test_case("collector"; "for collector module")]
 #[test_case("lib"; "for lib module")]
 #[test_case("main"; "for main module")]
 #[test_case("module"; "for module module")]
 #[test_case("module::expand"; "for module::expand module")]
 #[test_case("module::format"; "for module::format module")]
 #[test_case("module::locate"; "for module::locate module")]
-#[test_case("visitor"; "for visitor module")]
 fn should_use_command_provide_output(module: &str) {
     let snapshot_name = format!("module_{module}");
 
@@ -32,7 +33,7 @@ fn should_use_command_provide_output(module: &str) {
 }
 
 #[test_matrix(
-  ["cli", "collector", "lib", "main", "module", "module::expand", "module::format", "module::locate", "visitor"],
+  ["analysis", "analysis::collect", "analysis::visit", "cli", "lib", "main", "module", "module::expand", "module::format", "module::locate"],
   [&["-t"],
    &["-t", "-e"],
    &["-t", "-e", "-d", "1"]

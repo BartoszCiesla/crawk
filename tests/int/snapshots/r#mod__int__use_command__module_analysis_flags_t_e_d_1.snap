@@ -4,7 +4,7 @@ info:
   program: crawk
   args:
     - use
-    - collector
+    - analysis
     - "-t"
     - "-e"
     - "-d"
@@ -13,9 +13,8 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-*
+analysis
 constants
 module
-visitor
 
 ----- stderr -----

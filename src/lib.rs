@@ -33,11 +33,10 @@ use std::error::Error;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::path::{Path, PathBuf};
 
-mod collector;
+mod analysis;
 mod constants;
 mod module;
 pub mod version;
-mod visitor;
 
 /// Options for dependency analysis.
 ///
@@ -305,7 +304,7 @@ impl Analyzer {
 
         // Collect dependencies
         let mut dependencies = HashSet::new();
-        collector::collect_use_statements(
+        analysis::collect::collect_use_statements(
             &source_file,
             &mut dependencies,
             options.include_tests,
