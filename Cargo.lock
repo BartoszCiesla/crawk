@@ -207,6 +207,7 @@ name = "crawk"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "cargo_metadata",
  "clap",
  "const_format",
  "insta",
@@ -216,6 +217,7 @@ dependencies = [
  "syn",
  "tempfile",
  "test-case",
+ "thiserror",
  "tracing",
  "tracing-subscriber",
  "vergen-git2",

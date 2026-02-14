@@ -17,11 +17,13 @@ vergen = ["dep:vergen-git2"]
 
 [dependencies]
 anyhow = "1.0.101"
+cargo_metadata = "0.23.1"
 clap = { version = "4.5", features = ["derive", "cargo"] }
 const_format = "0.2"
 owo-colors = "4.2.3"
 proc-macro2 = "1.0"
 syn = { version = "2.0", features = ["full", "parsing", "visit"] }
+thiserror = "2.0.18"
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
 

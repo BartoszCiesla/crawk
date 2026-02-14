@@ -12,6 +12,6 @@ exit_code: 0
 ----- stdout -----
 constants::{MODULE_NAME_TEST, MODULE_NAME_TESTS, PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER}
 module::format::use_tree_to_string
-module::{expand, format, locate}
+module::{discover, expand, format, locate}
 
 ----- stderr -----
