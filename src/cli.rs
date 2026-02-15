@@ -180,17 +180,6 @@ pub struct UseArgs {
     pub depth: Option<usize>,
 }
 
-impl UseArgs {
-    /// Parse module path into components
-    #[must_use]
-    pub fn module_components(&self) -> Vec<String> {
-        self.module_path
-            .split("::")
-            .map(ToString::to_string)
-            .collect()
-    }
-}
-
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {
@@ -221,27 +210,5 @@ mod tests {
     fn test_validate_depth_negative() {
         let result = validate_depth("-1");
         assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_module_components_single() {
-        let args = UseArgs {
-            module_path: "foo".to_string(),
-            include_tests: false,
-            expand: false,
-            depth: None,
-        };
-        assert_eq!(args.module_components(), vec!["foo"]);
-    }
-
-    #[test]
-    fn test_module_components_nested() {
-        let args = UseArgs {
-            module_path: "foo::bar::baz".to_string(),
-            include_tests: false,
-            expand: false,
-            depth: None,
-        };
-        assert_eq!(args.module_components(), vec!["foo", "bar", "baz"]);
     }
 }

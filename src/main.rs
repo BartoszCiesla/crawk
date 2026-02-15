@@ -6,8 +6,7 @@ use cli::{CrawkArgs, CrawkCommands, UseArgs};
 use crawk::{AnalysisOptions, Analyzer, version};
 use logger::configure_tracing;
 use std::path::Path;
-use std::process::exit;
-use tracing::{error, info};
+use tracing::info;
 
 fn main() -> anyhow::Result<()> {
     // Parse command-line arguments
@@ -16,32 +15,26 @@ fn main() -> anyhow::Result<()> {
     // Configure logging based on command-line options
     configure_tracing(&command)?;
 
-    // Get crate root and validate it exists
+    // Get crate root directory
     let crate_root = command.crate_root();
+
+    info!("Running {} v{}", version::NAME, version::VERSION);
+    info!("Crate root: {}", crate_root.display());
 
     // Dispatch to the appropriate subcommand
     match command.command {
-        CrawkCommands::Use(ref args) => handle_use_command(&crate_root, args),
+        CrawkCommands::Use(ref args) => handle_use_command(&crate_root, args)?,
     }
 
     Ok(())
 }
 
 /// Handle the 'use' subcommand
-fn handle_use_command(crate_root: &Path, args: &UseArgs) {
+fn handle_use_command(crate_root: &Path, args: &UseArgs) -> anyhow::Result<()> {
     // Create analyzer and validate crate root
-    let analyzer = Analyzer::new(crate_root);
+    let mut analyzer = Analyzer::new(crate_root)?;
 
-    if let Err(e) = analyzer.validate() {
-        error!("{e}");
-        exit(1);
-    }
-
-    // Parse the module path into components
-    let module_components = args.module_components();
-
-    info!("Running {} v{}", version::NAME, version::VERSION);
-    info!("Crate root: {}", crate_root.display());
+    // Log the module being analyzed
     info!("Analyzing module: {}", args.module_path);
 
     // Configure analysis options
@@ -52,22 +45,18 @@ fn handle_use_command(crate_root: &Path, args: &UseArgs) {
     };
 
     // Analyze the module
-    let result = match analyzer.analyze_module(&module_components, &options) {
-        Ok(result) => result,
-        Err(e) => {
-            error!("{e}");
-            exit(1);
-        }
-    };
+    let result = analyzer.analyze_module(&args.module_path, &options)?;
 
+    // Log the source file of the analyzed module
     info!("Module file: {}", result.source_file().display());
 
-    // Output results
     if result.is_empty() {
         info!("No internal crate use statements found.");
     } else {
-        for use_stmt in result.into_sorted_vec() {
-            println!("{use_stmt}");
+        for reference in result.into_sorted_vec() {
+            println!("{reference}");
         }
     }
+
+    Ok(())
 }

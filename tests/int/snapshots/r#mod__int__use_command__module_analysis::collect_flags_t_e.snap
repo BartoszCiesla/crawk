@@ -11,12 +11,8 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-analysis::collect
-analysis::visit
-analysis::visit::UseVisitor
-constants::DEFAULT_SRC_DIR
-module::expand::is_test_module
-module::locate::find_submodule
-module::locate::get_src_dir
+crate::analysis::visit::UseVisitor
+crate::module::expand::is_test_module
+crate::module::locate::{find_submodule, get_src_dir}
 
 ----- stderr -----

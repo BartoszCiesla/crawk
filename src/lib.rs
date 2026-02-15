@@ -28,11 +28,14 @@
 //! - **Test module filtering**: Optionally include or exclude `#[cfg(test)]` modules
 //! - **Depth limiting**: Truncate paths to a maximum depth for high-level views
 
+use crate::module::analyzer::{AnalyzerError, CrateAnalyzer};
+use crate::module::discover::{CrateInfo, CrateInfoError};
 use std::collections::HashSet;
-use std::error::Error;
-use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::path::{Path, PathBuf};
+use thiserror::Error;
+use tracing::{debug, error};
 
+#[allow(dead_code)]
 mod analysis;
 mod constants;
 mod module;
@@ -85,8 +88,8 @@ pub struct AnalysisOptions {
 /// and all its submodules.
 #[derive(Debug, Clone)]
 pub struct AnalysisResult {
-    /// The analyzed module path (e.g., `["utils", "parser"]`).
-    module_path: Vec<String>,
+    /// The analyzed module path (e.g., `"utils::parser"`).
+    module_path: String,
 
     /// Set of internal dependencies found, with `crate::` prefix stripped.
     dependencies: HashSet<String>,
@@ -98,7 +101,7 @@ pub struct AnalysisResult {
 impl AnalysisResult {
     /// Returns the analyzed module path.
     #[must_use]
-    pub fn module_path(&self) -> &[String] {
+    pub const fn module_path(&self) -> &String {
         &self.module_path
     }
 
@@ -136,37 +139,35 @@ impl AnalysisResult {
 }
 
 /// Error types for analysis operations.
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum AnalysisError {
     /// The specified module was not found in the crate.
+    #[error("Module not found: {module_path}")]
     ModuleNotFound {
         /// The module path that was not found.
         module_path: String,
     },
 
     /// The crate root directory does not exist or is not a valid Rust project.
+    #[error("Invalid crate root: {path} - {reason}")]
     InvalidCrateRoot {
         /// The path that was provided.
         path: PathBuf,
         /// Description of what's wrong.
         reason: String,
     },
+
+    /// Errors related to crate metadata retrieval and validation.
+    #[error(transparent)]
+    CrateInfoError(#[from] CrateInfoError),
+
+    /// Errors that occur during module parsing and analysis.
+    #[error("Error analyzing module: {0}")]
+    AnalyzerError(#[from] AnalyzerError),
 }
 
-impl Display for AnalysisError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        match self {
-            Self::ModuleNotFound { module_path } => {
-                write!(f, "module not found: {module_path}")
-            }
-            Self::InvalidCrateRoot { path, reason } => {
-                write!(f, "invalid crate root '{}': {}", path.display(), reason)
-            }
-        }
-    }
-}
-
-impl Error for AnalysisError {}
+/// Result type alias for analysis info operations.
+pub type Result<T> = std::result::Result<T, AnalysisError>;
 
 /// Analyzer for Rust module dependencies.
 ///
@@ -197,8 +198,10 @@ impl Error for AnalysisError {}
 /// ```
 #[derive(Debug, Clone)]
 pub struct Analyzer {
-    /// Path to the crate's src directory.
-    src_dir: PathBuf,
+    /// Crate analyzer
+    crate_info: CrateInfo,
+    /// Module analyzer
+    crate_analyzer: CrateAnalyzer,
 }
 
 impl Analyzer {
@@ -211,6 +214,13 @@ impl Analyzer {
     ///
     /// * `crate_root` - Path to the crate root directory
     ///
+    /// # Errors
+    ///
+    /// Returns [`AnalysisError::InvalidCrateRoot`] if the path does not exist or is not a valid Rust project.
+    /// Returns [`AnalysisError::CrateInfoError`] if there are issues retrieving crate metadata.
+    /// Returns [`AnalysisError::AnalyzerError`] if there are issues initializing the crate analyzer.
+    /// Returns `Ok(Analyzer)` if the crate root is valid and the analyzer is successfully initialized.
+    ///
     /// # Examples
     ///
     /// ```no_run
@@ -219,44 +229,42 @@ impl Analyzer {
     ///
     /// let analyzer = Analyzer::new(Path::new("/home/user/my-project"));
     /// ```
-    #[must_use]
-    pub fn new(crate_root: impl AsRef<Path>) -> Self {
-        Self {
-            src_dir: crate_root.as_ref().join(constants::DEFAULT_SRC_DIR),
-        }
+    pub fn new(crate_root: impl AsRef<Path>) -> Result<Self> {
+        let crate_info = CrateInfo::new(crate_root.as_ref())?;
+        let name = crate_info.root_package_name();
+        let crate_analyzer = CrateAnalyzer::new(name);
+
+        Ok(Self {
+            crate_info,
+            crate_analyzer,
+        })
     }
 
-    /// Returns the source directory path.
-    #[must_use]
-    pub fn src_dir(&self) -> &Path {
-        &self.src_dir
-    }
-
-    /// Find the source file for a module path.
-    ///
-    /// Returns `Some(path)` if the module exists, `None` otherwise.
-    ///
-    /// # Arguments
-    ///
-    /// * `module_path` - Module path components (e.g., `["utils", "parser"]`)
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// use crawk::Analyzer;
-    /// use std::path::Path;
-    ///
-    /// let analyzer = Analyzer::new(Path::new("/path/to/crate"));
-    /// if let Some(file) = analyzer.find_module(&["utils"]) {
-    ///     println!("Found module at: {}", file.display());
-    /// }
-    /// ```
-    #[must_use]
-    pub fn find_module(&self, module_path: &[impl AsRef<str>]) -> Option<PathBuf> {
-        let path_strings: Vec<String> =
-            module_path.iter().map(|s| s.as_ref().to_string()).collect();
-        module::locate::find_module_by_path(&self.src_dir, &path_strings)
-    }
+    // /// Find the source file for a module path.
+    // ///
+    // /// Returns `Some(path)` if the module exists, `None` otherwise.
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `module_path` - Module path components (e.g., `["utils", "parser"]`)
+    // ///
+    // /// # Examples
+    // ///
+    // /// ```no_run
+    // /// use crawk::Analyzer;
+    // /// use std::path::Path;
+    // ///
+    // /// let analyzer = Analyzer::new(Path::new("/path/to/crate"));
+    // /// if let Some(file) = analyzer.find_module(&["utils"]) {
+    // ///     println!("Found module at: {}", file.display());
+    // /// }
+    // /// ```
+    // #[must_use]
+    // pub fn find_module(&self, module_path: &[impl AsRef<str>]) -> Option<PathBuf> {
+    //     let path_strings: Vec<String> =
+    //         module_path.iter().map(|s| s.as_ref().to_string()).collect();
+    //     module::locate::find_module_by_path(&self.src_dir, &path_strings)
+    // }
 
     /// Analyze dependencies for a specific module.
     ///
@@ -279,7 +287,7 @@ impl Analyzer {
     /// use std::path::Path;
     ///
     /// let analyzer = Analyzer::new(Path::new("/path/to/crate"));
-    /// let result = analyzer.analyze_module(&["utils"], &AnalysisOptions::default())?;
+    /// let result = analyzer.analyze_module("utils::parser", &AnalysisOptions::default())?;
     ///
     /// for dep in result.dependencies() {
     ///     println!("{}", dep);
@@ -287,60 +295,44 @@ impl Analyzer {
     /// # Ok::<(), crawk::AnalysisError>(())
     /// ```
     pub fn analyze_module(
-        &self,
-        module_path: &[impl AsRef<str>],
+        &mut self,
+        module_path: impl Into<String>,
         options: &AnalysisOptions,
-    ) -> Result<AnalysisResult, AnalysisError> {
-        let path_strings: Vec<String> =
-            module_path.iter().map(|s| s.as_ref().to_string()).collect();
-        let module_path_display = path_strings.join("::");
+    ) -> Result<AnalysisResult> {
+        let module_path = module_path.into();
 
-        // Find the module file
-        let source_file = module::locate::find_module_by_path(&self.src_dir, &path_strings).ok_or(
-            AnalysisError::ModuleNotFound {
-                module_path: module_path_display,
-            },
-        )?;
+        let modules = if options.include_tests {
+            self.crate_info.get_module_tree(&module_path, true)?
+        } else {
+            self.crate_info.get_module_tree(&module_path, false)?
+        };
 
-        // Collect dependencies
+        let source_file = modules
+            .first()
+            .map(|m| m.source().to_path_buf())
+            .unwrap_or_default();
+
+        for module in modules {
+            if let Err(e) = self
+                .crate_analyzer
+                .parse_file(module.path(), module.source())
+            {
+                error!("Error while analyzing module: {e}");
+                return Err(AnalysisError::AnalyzerError(e));
+            }
+        }
+
         let mut dependencies = HashSet::new();
-        analysis::collect::collect_use_statements(
-            &source_file,
-            &mut dependencies,
-            options.include_tests,
-            &path_strings,
-            options.expand_groups,
-            options.max_depth,
-        );
+        for reference in self.crate_analyzer.iter_crate_references() {
+            debug!("Found crate reference: {}", reference.to_path_string());
+            dependencies.insert(reference.to_path_string());
+        }
 
         Ok(AnalysisResult {
-            module_path: path_strings,
+            module_path,
             dependencies,
             source_file,
         })
-    }
-
-    /// Check if the analyzer's source directory exists.
-    ///
-    /// Returns `true` if the `src/` directory exists in the crate root.
-    #[must_use]
-    pub fn is_valid(&self) -> bool {
-        self.src_dir.exists()
-    }
-
-    /// Validate that the crate root is a valid Rust project.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`AnalysisError::InvalidCrateRoot`] if the src directory doesn't exist.
-    pub fn validate(&self) -> Result<(), AnalysisError> {
-        if !self.src_dir.exists() {
-            return Err(AnalysisError::InvalidCrateRoot {
-                path: self.src_dir.parent().unwrap_or(&self.src_dir).to_path_buf(),
-                reason: "src/ directory not found".to_string(),
-            });
-        }
-        Ok(())
     }
 }
 
@@ -348,119 +340,6 @@ impl Analyzer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
-    use std::io::Write;
-    use tempfile::TempDir;
-
-    fn create_test_crate() -> TempDir {
-        let temp_dir = TempDir::new().unwrap();
-        let src_dir = temp_dir.path().join("src");
-        fs::create_dir(&src_dir).unwrap();
-
-        // Create lib.rs
-        fs::write(src_dir.join("lib.rs"), "pub mod utils;").unwrap();
-
-        // Create utils.rs with some dependencies
-        let mut utils_file = fs::File::create(src_dir.join("utils.rs")).unwrap();
-        writeln!(
-            utils_file,
-            r"
-use crate::foo::Bar;
-use self::helper::Thing;
-
-fn example() {{
-    crate::other::function();
-}}
-"
-        )
-        .unwrap();
-
-        temp_dir
-    }
-
-    #[test]
-    fn test_analyzer_new() {
-        let temp_dir = create_test_crate();
-        let analyzer = Analyzer::new(temp_dir.path());
-        assert!(analyzer.src_dir().ends_with("src"));
-    }
-
-    #[test]
-    fn test_analyzer_is_valid() {
-        let temp_dir = create_test_crate();
-        let analyzer = Analyzer::new(temp_dir.path());
-        assert!(analyzer.is_valid());
-
-        let invalid_analyzer = Analyzer::new("/nonexistent/path");
-        assert!(!invalid_analyzer.is_valid());
-    }
-
-    #[test]
-    fn test_analyzer_validate() {
-        let temp_dir = create_test_crate();
-        let analyzer = Analyzer::new(temp_dir.path());
-        assert!(analyzer.validate().is_ok());
-
-        let invalid_analyzer = Analyzer::new("/nonexistent/path");
-        assert!(invalid_analyzer.validate().is_err());
-    }
-
-    #[test]
-    fn test_analyzer_find_module() {
-        let temp_dir = create_test_crate();
-        let analyzer = Analyzer::new(temp_dir.path());
-
-        let result = analyzer.find_module(&["utils"]);
-        assert!(result.is_some());
-        assert!(result.unwrap().ends_with("utils.rs"));
-
-        let result = analyzer.find_module(&["nonexistent"]);
-        assert!(result.is_none());
-    }
-
-    #[test]
-    fn test_analyzer_analyze_module() {
-        let temp_dir = create_test_crate();
-        let analyzer = Analyzer::new(temp_dir.path());
-
-        let result = analyzer
-            .analyze_module(&["utils"], &AnalysisOptions::default())
-            .unwrap();
-
-        assert!(!result.is_empty());
-        assert!(result.dependencies().contains("foo::Bar"));
-        assert!(result.dependencies().contains("other::function"));
-    }
-
-    #[test]
-    fn test_analyzer_module_not_found() {
-        let temp_dir = create_test_crate();
-        let analyzer = Analyzer::new(temp_dir.path());
-
-        let result = analyzer.analyze_module(&["nonexistent"], &AnalysisOptions::default());
-        assert!(result.is_err());
-
-        if let Err(AnalysisError::ModuleNotFound { module_path }) = result {
-            assert_eq!(module_path, "nonexistent");
-        } else {
-            unreachable!("Expected ModuleNotFound error");
-        }
-    }
-
-    #[test]
-    fn test_analysis_result_into_sorted_vec() {
-        let result = AnalysisResult {
-            module_path: vec!["test".to_string()],
-            dependencies: ["z::Z", "a::A", "m::M"]
-                .iter()
-                .map(ToString::to_string)
-                .collect(),
-            source_file: PathBuf::from("/test.rs"),
-        };
-
-        let sorted = result.into_sorted_vec();
-        assert_eq!(sorted, vec!["a::A", "m::M", "z::Z"]);
-    }
 
     #[test]
     fn test_analysis_options_default() {

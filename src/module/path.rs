@@ -158,6 +158,17 @@ impl TypeReference {
         !matches!(self.prefix, PathPrefix::None)
     }
 
+    /// Checks if this path is from a specific crate.
+    #[must_use]
+    pub fn is_from_crate(&self, crate_name: &str) -> bool {
+        if self.prefix == PathPrefix::None
+            && let Some(first_segment) = self.segments.first()
+        {
+            return first_segment == crate_name;
+        }
+        false
+    }
+
     /// Returns true if this has a glob.
     #[must_use]
     pub const fn has_glob(&self) -> bool {

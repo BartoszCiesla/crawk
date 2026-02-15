@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use syn::visit::Visit;
-use syn::{File, ItemUse, UseTree};
+use syn::{File, ItemMod, ItemUse, UseTree};
 use thiserror::Error;
 
 use super::path::{GroupItem, PathPrefix, TypeReference};
@@ -127,13 +127,13 @@ impl CrateAnalyzer {
             message: e.to_string(),
         })?;
 
-        let mut visitor = ModuleVisitor::new();
+        let module = module.into();
+        let mut visitor = ModuleVisitor::new(module.clone());
         visitor.visit_file(&syntax);
 
         let mut file_refs = FileReferences::new(path);
         file_refs.references = visitor.references;
 
-        let module = module.into();
         if !self.files.contains_key(&module) {
             self.file_order.push(module.clone());
         }
@@ -149,9 +149,32 @@ impl CrateAnalyzer {
             .filter_map(|module| self.files.get(module).map(|refs| (module, refs)))
     }
 
+    /// Returns all collected crate internal references by module, in parse order.
+    pub fn all_crate_references(&self) -> impl Iterator<Item = (&String, Vec<&TypeReference>)> {
+        self.file_order.iter().filter_map(|module| {
+            self.files.get(module).map(|refs| {
+                let crate_refs: Vec<&TypeReference> = refs
+                    .references
+                    .iter()
+                    .filter(|r| r.is_relative() || r.is_from_crate(&self.crate_name))
+                    .collect();
+                (module, crate_refs)
+            })
+        })
+    }
+
     /// Returns an iterator over all references across all files.
     pub fn iter_references(&self) -> impl Iterator<Item = &TypeReference> {
         self.files.values().flat_map(|f| f.references.iter())
+    }
+
+    /// Returns an iterator over all crate internal references across all files.
+    pub fn iter_crate_references(&self) -> impl Iterator<Item = &TypeReference> {
+        self.files.values().flat_map(|f| {
+            f.references
+                .iter()
+                .filter(|r| r.is_relative() || r.is_from_crate(&self.crate_name))
+        })
     }
 
     /// Returns total number of references across all files.
@@ -173,17 +196,78 @@ impl CrateAnalyzer {
 
 /// Visitor for extracting type references from module AST.
 struct ModuleVisitor {
+    module_name: String,
     references: Vec<TypeReference>,
 }
 
 impl ModuleVisitor {
-    const fn new() -> Self {
+    fn new(module_name: impl Into<String>) -> Self {
         Self {
+            module_name: module_name.into(),
             references: Vec::new(),
         }
     }
 
+    /// Checks if the use tree matches the module we're interested in.
+    /// Returns true if the tree starts with or references the target module.
+    fn matches_module(&self, tree: &UseTree, prefix: &[String], path_prefix: &PathPrefix) -> bool {
+        // If no module filter is set, allow all
+        if self.module_name.is_empty() {
+            return true;
+        }
+
+        let module_segments: Vec<&str> = self.module_name.split("::").collect();
+
+        // Build the full path being checked
+        let mut full_path: Vec<String> = match path_prefix {
+            PathPrefix::Crate => vec!["crate".to_string()],
+            PathPrefix::SelfModule => vec!["self".to_string()],
+            PathPrefix::Super(n) => vec!["super".to_string(); *n],
+            PathPrefix::None => Vec::new(),
+        };
+        full_path.extend(prefix.iter().cloned());
+
+        // Get the first segment of the use tree
+        let first_segment = Self::get_first_segment(tree);
+        if let Some(seg) = first_segment {
+            full_path.push(seg);
+        }
+
+        // Check if the path starts with or matches the module
+        if full_path.is_empty() {
+            return true;
+        }
+
+        // Check if the use path starts with the module name
+        for (i, module_seg) in module_segments.iter().enumerate() {
+            if i >= full_path.len() {
+                // Module path is longer than use path, could be a prefix match
+                return true;
+            }
+            if full_path[i] != *module_seg {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    /// Gets the first segment identifier from a UseTree.
+    fn get_first_segment(tree: &UseTree) -> Option<String> {
+        match tree {
+            UseTree::Path(p) => Some(p.ident.to_string()),
+            UseTree::Name(n) => Some(n.ident.to_string()),
+            UseTree::Rename(r) => Some(r.ident.to_string()),
+            UseTree::Glob(_) | UseTree::Group(_) => None,
+        }
+    }
+
     fn process_use_tree(&mut self, tree: &UseTree, prefix: Vec<String>, path_prefix: PathPrefix) {
+        // Check if the use tree matches the module we're interested in
+        // if !self.matches_module(tree, &prefix, &path_prefix) {
+        //     return;
+        // }
+
         match tree {
             UseTree::Path(p) => {
                 let ident = p.ident.to_string();
@@ -347,6 +431,18 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
     fn visit_item_use(&mut self, node: &'ast ItemUse) {
         self.process_use_tree(&node.tree, Vec::new(), PathPrefix::None);
     }
+
+    fn visit_item_mod(&mut self, i: &'ast ItemMod) {
+        // visit the module content if it is same as module_name
+        // TODO: check if in case of nested modules we should check suffix
+        if i.ident == self.module_name
+            && let Some((_, items)) = &i.content
+        {
+            for item in items {
+                self.visit_item(item);
+            }
+        }
+    }
 }
 
 #[allow(clippy::unwrap_used)]
@@ -356,7 +452,7 @@ mod tests {
 
     fn parse_use(code: &str) -> Vec<TypeReference> {
         let syntax: File = syn::parse_file(code).unwrap();
-        let mut visitor = ModuleVisitor::new();
+        let mut visitor = ModuleVisitor::new("");
         visitor.visit_file(&syntax);
         visitor.references
     }
