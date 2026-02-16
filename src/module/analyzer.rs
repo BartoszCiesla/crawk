@@ -116,7 +116,11 @@ impl CrateAnalyzer {
     }
 
     /// Parses a single source file and collects type references.
-    pub fn parse_file(&mut self, module: impl Into<String>, path: &Path) -> Result<()> {
+    pub fn parse_file(
+        &mut self,
+        module: impl Into<String>,
+        path: &Path,
+    ) -> Result<Vec<TypeReference>> {
         let content = std::fs::read_to_string(path).map_err(|e| AnalyzerError::FileRead {
             path: path.to_path_buf(),
             source: e,
@@ -132,6 +136,7 @@ impl CrateAnalyzer {
         visitor.visit_file(&syntax);
 
         let mut file_refs = FileReferences::new(path);
+        let result = visitor.references.clone();
         file_refs.references = visitor.references;
 
         if !self.files.contains_key(&module) {
@@ -139,7 +144,7 @@ impl CrateAnalyzer {
         }
         self.files.insert(module, file_refs);
 
-        Ok(())
+        Ok(result)
     }
 
     /// Returns all collected references by module, in parse order.

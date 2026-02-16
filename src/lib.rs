@@ -33,7 +33,7 @@ use crate::module::discover::{CrateInfo, CrateInfoError};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
-use tracing::{debug, error};
+use tracing::{debug, error, info};
 
 #[allow(dead_code)]
 mod analysis;
@@ -313,12 +313,25 @@ impl Analyzer {
             .unwrap_or_default();
 
         for module in modules {
-            if let Err(e) = self
+            info!(
+                "Analyzing module: {} (file: {})",
+                module.path(),
+                module.source().display()
+            );
+            match self
                 .crate_analyzer
                 .parse_file(module.path(), module.source())
             {
-                error!("Error while analyzing module: {e}");
-                return Err(AnalysisError::AnalyzerError(e));
+                Err(e) => {
+                    error!("Error while analyzing module: {e}");
+                    return Err(AnalysisError::AnalyzerError(e));
+                }
+                Ok(type_list) => {
+                    info!("Analyzed {}", module.path());
+                    for reference in &type_list {
+                        info!("Found reference: {}", reference.to_path_string());
+                    }
+                }
             }
         }
 
