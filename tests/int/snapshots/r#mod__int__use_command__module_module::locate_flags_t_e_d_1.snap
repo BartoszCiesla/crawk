@@ -13,7 +13,6 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-constants
-module
+crate::constants::{DEFAULT_SRC_DIR, MODULE_FILE_NAME, PATH_QUALIFIER_CRATE}
 
 ----- stderr -----

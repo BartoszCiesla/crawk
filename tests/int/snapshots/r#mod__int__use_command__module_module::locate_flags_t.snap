@@ -10,7 +10,6 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-constants::{DEFAULT_SRC_DIR, MODULE_FILE_NAME, PATH_QUALIFIER_CRATE}
-module::{discover, expand, format, locate}
+crate::constants::{DEFAULT_SRC_DIR, MODULE_FILE_NAME, PATH_QUALIFIER_CRATE}
 
 ----- stderr -----

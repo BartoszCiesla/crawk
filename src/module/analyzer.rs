@@ -10,7 +10,7 @@ use syn::visit::Visit;
 use syn::{File, ItemMod, ItemUse, UseTree};
 use thiserror::Error;
 
-use super::path::{GroupItem, PathPrefix, TypeReference};
+use super::path::{GroupItem, PathPrefix, PathSuffix, TypeReference};
 
 /// Errors that can occur during analysis.
 #[derive(Debug, Error)]
@@ -326,14 +326,14 @@ impl ModuleVisitor {
 
                 let mut reference = TypeReference::new(segments);
                 reference.prefix = path_prefix;
-                reference.alias = Some(r.rename.to_string());
+                reference.suffix = PathSuffix::Alias(r.rename.to_string());
                 self.references.push(reference);
             }
 
             UseTree::Glob(_) => {
                 let mut reference = TypeReference::new(prefix);
                 reference.prefix = path_prefix;
-                reference.is_glob = true;
+                reference.suffix = PathSuffix::Glob;
                 self.references.push(reference);
             }
 
@@ -342,7 +342,7 @@ impl ModuleVisitor {
 
                 let mut reference = TypeReference::new(prefix);
                 reference.prefix = path_prefix;
-                reference.group = Some(group_items);
+                reference.suffix = PathSuffix::Group(group_items);
                 self.references.push(reference);
             }
         }

@@ -11,17 +11,9 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-constants::DEFAULT_SRC_DIR
-constants::MODULE_FILE_NAME
-constants::MODULE_NAME_TEST
-constants::MODULE_NAME_TESTS
-constants::PATH_QUALIFIER_CRATE
-constants::PATH_QUALIFIER_SELF
-constants::PATH_QUALIFIER_SUPER
-module::discover
-module::expand
-module::format
-module::format::use_tree_to_string
-module::locate
+crate::constants::PATH_QUALIFIER_CRATE
+crate::constants::{DEFAULT_SRC_DIR, MODULE_FILE_NAME, PATH_QUALIFIER_CRATE}
+crate::constants::{MODULE_NAME_TEST, MODULE_NAME_TESTS, PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER}
+super::path::{GroupItem, PathPrefix, PathSuffix, TypeReference}
 
 ----- stderr -----

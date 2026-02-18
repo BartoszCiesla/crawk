@@ -43,15 +43,18 @@ pub struct TypeReference {
     /// Path prefix type for relative resolution
     pub prefix: PathPrefix,
 
-    /// Alias if renamed (`as Alias`)
-    pub alias: Option<String>,
+    /// Path suffix type (alias, glob, or group)
+    pub suffix: PathSuffix,
+}
 
-    /// True if ends with glob (`::*`)
-    pub is_glob: bool,
-
-    /// Grouped items if this is a group import (`{A, B, C}`)
-    /// Each item can itself have an alias or be nested
-    pub group: Option<Vec<GroupItem>>,
+/// Suffix determining how path is resolved (alias, glob, group).
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+pub enum PathSuffix {
+    #[default]
+    None,
+    Alias(String),
+    Glob,
+    Group(Vec<GroupItem>),
 }
 
 /// Prefix determining how path is resolved.
@@ -104,9 +107,7 @@ impl TypeReference {
         Self {
             segments: segments.into_iter().map(Into::into).collect(),
             prefix: PathPrefix::None,
-            alias: None,
-            is_glob: false,
-            group: None,
+            suffix: PathSuffix::None,
         }
     }
 
@@ -134,21 +135,21 @@ impl TypeReference {
     /// Sets an alias (`as Name`).
     #[must_use]
     pub fn with_alias(mut self, alias: impl Into<String>) -> Self {
-        self.alias = Some(alias.into());
+        self.suffix = PathSuffix::Alias(alias.into());
         self
     }
 
     /// Marks as glob import (`::*`).
     #[must_use]
-    pub const fn with_glob(mut self) -> Self {
-        self.is_glob = true;
+    pub fn with_glob(mut self) -> Self {
+        self.suffix = PathSuffix::Glob;
         self
     }
 
     /// Sets grouped items (`{A, B, C}`).
     #[must_use]
     pub fn with_group(mut self, items: Vec<GroupItem>) -> Self {
-        self.group = Some(items);
+        self.suffix = PathSuffix::Group(items);
         self
     }
 
@@ -172,21 +173,22 @@ impl TypeReference {
     /// Returns true if this has a glob.
     #[must_use]
     pub const fn has_glob(&self) -> bool {
-        self.is_glob
+        matches!(self.suffix, PathSuffix::Glob)
     }
 
     /// Returns true if this has a group.
     #[must_use]
     pub const fn has_group(&self) -> bool {
-        self.group.is_some()
+        matches!(self.suffix, PathSuffix::Group(_))
     }
 
     /// Returns the final name (last segment or alias if present).
     #[must_use]
     pub fn final_name(&self) -> Option<&str> {
-        self.alias
-            .as_deref()
-            .or_else(|| self.segments.last().map(String::as_str))
+        match &self.suffix {
+            PathSuffix::Alias(alias) => Some(alias.as_str()),
+            _ => self.segments.last().map(String::as_str),
+        }
     }
 
     /// Converts to string representation.
@@ -211,23 +213,25 @@ impl TypeReference {
             result.push_str(&self.segments.join("::"));
         }
 
-        // Group or glob
-        if let Some(ref group) = self.group {
-            if !self.segments.is_empty() {
-                result.push_str("::");
+        // Suffix (group, glob, or alias)
+        match &self.suffix {
+            PathSuffix::None => {}
+            PathSuffix::Group(group) => {
+                if !self.segments.is_empty() {
+                    result.push_str("::");
+                }
+                result.push('{');
+                let items: Vec<_> = group.iter().map(ToString::to_string).collect();
+                result.push_str(&items.join(", "));
+                result.push('}');
             }
-            result.push('{');
-            let items: Vec<_> = group.iter().map(ToString::to_string).collect();
-            result.push_str(&items.join(", "));
-            result.push('}');
-        } else if self.is_glob {
-            result.push_str("::*");
-        }
-
-        // Alias
-        if let Some(ref alias) = self.alias {
-            result.push_str(" as ");
-            result.push_str(alias);
+            PathSuffix::Glob => {
+                result.push_str("::*");
+            }
+            PathSuffix::Alias(alias) => {
+                result.push_str(" as ");
+                result.push_str(alias);
+            }
         }
 
         result

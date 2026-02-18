@@ -12,6 +12,6 @@ exit_code: 0
 crate::constants::PATH_QUALIFIER_CRATE
 crate::constants::{DEFAULT_SRC_DIR, MODULE_FILE_NAME, PATH_QUALIFIER_CRATE}
 crate::constants::{MODULE_NAME_TEST, MODULE_NAME_TESTS, PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER}
-super::path::{GroupItem, PathPrefix, TypeReference}
+super::path::{GroupItem, PathPrefix, PathSuffix, TypeReference}
 
 ----- stderr -----

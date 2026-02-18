@@ -20,6 +20,6 @@ crate::module::expand::{expand_path_to_string, expand_use_tree, extract_public_i
 crate::module::format::{expand_use_tree_to_paths, strip_crate_prefix, truncate_path, use_tree_to_string}
 crate::module::locate::resolve_module_path_to_file
 crate::module::locate::{find_submodule, get_src_dir}
-super::path::{GroupItem, PathPrefix, TypeReference}
+super::path::{GroupItem, PathPrefix, PathSuffix, TypeReference}
 
 ----- stderr -----

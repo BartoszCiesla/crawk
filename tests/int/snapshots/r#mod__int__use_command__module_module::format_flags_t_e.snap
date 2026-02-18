@@ -11,10 +11,6 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-constants::PATH_QUALIFIER_CRATE
-module::discover
-module::expand
-module::format
-module::locate
+crate::constants::PATH_QUALIFIER_CRATE
 
 ----- stderr -----
