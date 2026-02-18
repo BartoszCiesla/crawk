@@ -329,6 +329,7 @@ impl Analyzer {
                 Ok(type_list) => {
                     info!("Analyzed {}", module.path());
                     for reference in &type_list {
+                        debug!("Analyzed {reference:?}");
                         info!("Found reference: {}", reference.to_path_string());
                     }
                 }

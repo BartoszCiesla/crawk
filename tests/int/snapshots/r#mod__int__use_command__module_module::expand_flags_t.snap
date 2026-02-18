@@ -10,8 +10,6 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-constants::{MODULE_NAME_TEST, MODULE_NAME_TESTS, PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER}
-module::format::use_tree_to_string
-module::{discover, expand, format, locate}
+crate::constants::{MODULE_NAME_TEST, MODULE_NAME_TESTS, PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER}
 
 ----- stderr -----

@@ -207,11 +207,16 @@ impl TypeReference {
         }
 
         // Segments
-        result.push_str(&self.segments.join("::"));
+        if !self.segments.is_empty() {
+            result.push_str(&self.segments.join("::"));
+        }
 
         // Group or glob
         if let Some(ref group) = self.group {
-            result.push_str("::{");
+            if !self.segments.is_empty() {
+                result.push_str("::");
+            }
+            result.push('{');
             let items: Vec<_> = group.iter().map(ToString::to_string).collect();
             result.push_str(&items.join(", "));
             result.push('}');
@@ -238,9 +243,28 @@ impl Display for GroupItem {
             Self::SelfItem { alias: Some(a) } => write!(f, "self as {a}"),
             Self::Glob => write!(f, "*"),
             Self::Nested { prefix, items } => {
-                write!(f, "{}::{{", prefix.join("::"))?;
-                let items_str: Vec<_> = items.iter().map(ToString::to_string).collect();
-                write!(f, "{}}}", items_str.join(", "))
+                write!(f, "{}", prefix.join("::"))?;
+                // Skip ::{} for empty items or single simple item
+                if items.is_empty() {
+                    Ok(())
+                } else if items.len() == 1 {
+                    if let Some(Self::Simple(name)) = items.first() {
+                        write!(f, "::{name}")
+                    } else {
+                        write!(
+                            f,
+                            "::{{{}}}",
+                            items
+                                .iter()
+                                .map(ToString::to_string)
+                                .collect::<Vec<_>>()
+                                .join(", ")
+                        )
+                    }
+                } else {
+                    let items_str: Vec<_> = items.iter().map(ToString::to_string).collect();
+                    write!(f, "::{{{}}}", items_str.join(", "))
+                }
             }
         }
     }
@@ -361,5 +385,45 @@ mod tests {
         assert_eq!(r.to_path_string(), "m::n::{a, b, c::{x, y}}");
         assert!(r.has_group());
         assert!(!r.is_relative());
+    }
+
+    #[test]
+    fn test_nested() {
+        let r = TypeReference::new(Vec::<&str>::new())
+            .with_super(1)
+            .with_group(vec![
+                GroupItem::Simple("Id".into()),
+                GroupItem::Simple("ItemDisplay".into()),
+                GroupItem::Simple("ItemDisplaySettings".into()),
+                GroupItem::Simple("OptionNameExt".into()),
+                GroupItem::Simple("OptionToString".into()),
+                GroupItem::Nested {
+                    prefix: vec!["area".into()],
+                    items: vec![GroupItem::Simple("Area".into())],
+                },
+                GroupItem::Nested {
+                    prefix: vec!["display".into()],
+                    items: vec![GroupItem::Simple("NameDisplay".into())],
+                },
+                GroupItem::Nested {
+                    prefix: vec!["lifespan".into()],
+                    items: vec![GroupItem::Simple("LifeSpan".into())],
+                },
+                GroupItem::Nested {
+                    prefix: vec!["ratings".into()],
+                    items: vec![
+                        GroupItem::Simple("AllRatings".into()),
+                        GroupItem::Simple("UserRating".into()),
+                        GroupItem::Simple("get_rating".into()),
+                    ],
+                },
+            ]);
+
+        assert_eq!(
+            r.to_path_string(),
+            "super::{Id, ItemDisplay, ItemDisplaySettings, OptionNameExt, OptionToString, area::Area, display::NameDisplay, lifespan::LifeSpan, ratings::{AllRatings, UserRating, get_rating}}"
+        );
+        assert!(r.has_group());
+        assert!(r.is_relative());
     }
 }
