@@ -4,6 +4,60 @@
 //! type/path references in Rust code: `use` statements, fully qualified paths,
 //! and relative paths (`self`, `super`, `crate`).
 use std::fmt::{Display, Formatter, Result};
+use std::ops::{Deref, DerefMut};
+
+/// Ordered list of path segments (e.g., `["std", "collections", "HashMap"]`).
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+pub struct Segments(Vec<String>);
+
+impl Segments {
+    /// Creates a new `Segments` from an iterator of string-like values.
+    pub fn new<I, S>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        Self(iter.into_iter().map(Into::into).collect())
+    }
+
+    /// Returns true if there are no segments.
+    #[must_use]
+    pub const fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    /// Returns the number of segments.
+    #[must_use]
+    pub const fn len(&self) -> usize {
+        self.0.len()
+    }
+}
+
+impl Deref for Segments {
+    type Target = Vec<String>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Segments {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl<S: Into<String>> FromIterator<S> for Segments {
+    fn from_iter<I: IntoIterator<Item = S>>(iter: I) -> Self {
+        Self::new(iter)
+    }
+}
+
+impl From<Vec<String>> for Segments {
+    fn from(v: Vec<String>) -> Self {
+        Self(v)
+    }
+}
 
 /// Unified type reference representing any path/type usage in Rust code.
 ///
@@ -38,7 +92,7 @@ use std::fmt::{Display, Formatter, Result};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TypeReference {
     /// Path segments (e.g., `["std", "collections", "HashMap"]`)
-    pub segments: Vec<String>,
+    pub segments: Segments,
 
     /// Path prefix type for relative resolution
     pub prefix: PathPrefix,
@@ -47,13 +101,20 @@ pub struct TypeReference {
     pub suffix: PathSuffix,
 }
 
-/// Suffix determining how path is resolved (alias, glob, group).
+/// Suffix determining how a path ends (alias, glob, or group).
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub enum PathSuffix {
+    /// No suffix - simple path
     #[default]
     None,
+
+    /// Aliased import: `as Name`
     Alias(String),
+
+    /// Glob import: `::*`
     Glob,
+
+    /// Grouped import: `{A, B, C}`
     Group(Vec<GroupItem>),
 }
 
@@ -105,7 +166,7 @@ impl TypeReference {
         S: Into<String>,
     {
         Self {
-            segments: segments.into_iter().map(Into::into).collect(),
+            segments: Segments::new(segments),
             prefix: PathPrefix::None,
             suffix: PathSuffix::None,
         }
@@ -188,6 +249,62 @@ impl TypeReference {
         match &self.suffix {
             PathSuffix::Alias(alias) => Some(alias.as_str()),
             _ => self.segments.last().map(String::as_str),
+        }
+    }
+
+    fn append_segment(mut self, segment: impl Into<String>) -> Self {
+        self.segments.push(segment.into());
+        self
+    }
+
+    #[must_use]
+    fn clone_with(&self, prefix: bool, suffix: bool) -> Self {
+        Self {
+            segments: self.segments.clone(),
+            prefix: if prefix {
+                self.prefix
+            } else {
+                PathPrefix::None
+            },
+            suffix: if suffix {
+                self.suffix.clone()
+            } else {
+                PathSuffix::None
+            },
+        }
+    }
+
+    pub fn expand_suffix(&self) -> Vec<Self> {
+        match &self.suffix {
+            PathSuffix::None | PathSuffix::Alias(_) => vec![self.clone_with(true, false)],
+            PathSuffix::Glob => vec![self.clone_with(true, true)],
+            PathSuffix::Group(items) => {
+                let mut result = Vec::new();
+                for item in items {
+                    match item {
+                        GroupItem::Simple(name) | GroupItem::Aliased { name, alias: _ } => {
+                            result.push(self.clone_with(true, false).append_segment(name));
+                        }
+                        GroupItem::SelfItem { alias: _ } => {
+                            result.push(self.clone_with(true, false));
+                        }
+                        GroupItem::Glob => {
+                            // Cannot expand glob without context, return as-is
+                            result.push(self.clone_with(true, true));
+                        }
+                        GroupItem::Nested {
+                            prefix,
+                            items: nested_items,
+                        } => {
+                            let mut nested = self.clone_with(true, false);
+                            nested.segments.extend(prefix.iter().cloned());
+                            nested.suffix = PathSuffix::Group(nested_items.clone());
+                            result.extend(nested.expand_suffix());
+                        }
+                    }
+                }
+                result
+            }
         }
     }
 
@@ -429,5 +546,201 @@ mod tests {
         );
         assert!(r.has_group());
         assert!(r.is_relative());
+    }
+
+    fn make_ref(segments: &[&str], suffix: PathSuffix) -> TypeReference {
+        let mut r = TypeReference::new(segments.iter().copied());
+        r.suffix = suffix;
+        r
+    }
+
+    fn expand_segments(r: &TypeReference) -> Vec<Vec<String>> {
+        r.expand_suffix()
+            .into_iter()
+            .map(|t| t.segments.0)
+            .collect()
+    }
+
+    #[test]
+    fn test_expand_suffix_none_passthrough() {
+        let r = make_ref(&["std", "collections"], PathSuffix::None);
+        assert_eq!(expand_segments(&r), vec![vec!["std", "collections"]]);
+    }
+
+    #[test]
+    fn test_expand_suffix_alias_passthrough() {
+        let r = make_ref(
+            &["std", "collections", "HashMap"],
+            PathSuffix::Alias("Map".into()),
+        );
+        // Alias doesn't change the segments, just passes through
+        assert_eq!(
+            expand_segments(&r),
+            vec![vec!["std", "collections", "HashMap"]]
+        );
+    }
+
+    #[test]
+    fn test_expand_suffix_glob_passthrough() {
+        let r = make_ref(&["std", "collections"], PathSuffix::Glob);
+        assert_eq!(expand_segments(&r), vec![vec!["std", "collections"]]);
+    }
+
+    #[test]
+    fn test_expand_suffix_group_simple() {
+        let r = make_ref(
+            &["std", "collections"],
+            PathSuffix::Group(vec![
+                GroupItem::Simple("HashMap".into()),
+                GroupItem::Simple("HashSet".into()),
+            ]),
+        );
+        assert_eq!(
+            expand_segments(&r),
+            vec![
+                vec!["std", "collections", "HashMap"],
+                vec!["std", "collections", "HashSet"],
+            ]
+        );
+    }
+
+    #[test]
+    fn test_expand_suffix_group_aliased_uses_original_name() {
+        let r = make_ref(
+            &["std", "collections"],
+            PathSuffix::Group(vec![GroupItem::Aliased {
+                name: "HashMap".into(),
+                alias: "Map".into(),
+            }]),
+        );
+        // Aliased items expand to the original name (alias is discarded in segments)
+        assert_eq!(
+            expand_segments(&r),
+            vec![vec!["std", "collections", "HashMap"]]
+        );
+    }
+
+    #[test]
+    fn test_expand_suffix_group_self_item_no_alias() {
+        let r = make_ref(
+            &["std", "collections", "module"],
+            PathSuffix::Group(vec![GroupItem::SelfItem { alias: None }]),
+        );
+        assert_eq!(
+            expand_segments(&r),
+            vec![vec!["std", "collections", "module"]]
+        );
+    }
+
+    #[test]
+    fn test_expand_suffix_group_self_item_with_alias() {
+        let r = make_ref(
+            &["std", "collections", "module"],
+            PathSuffix::Group(vec![GroupItem::SelfItem {
+                alias: Some("Alias".into()),
+            }]),
+        );
+        assert_eq!(
+            expand_segments(&r),
+            vec![vec!["std", "collections", "module"]]
+        );
+    }
+
+    #[test]
+    fn test_expand_suffix_group_self_item_empty_base_no_alias() {
+        // SelfItem without alias on empty base: nothing appended
+        let r = make_ref(
+            &[],
+            PathSuffix::Group(vec![GroupItem::SelfItem { alias: None }]),
+        );
+        assert_eq!(expand_segments(&r), vec![vec![] as Vec<String>]);
+    }
+
+    #[test]
+    fn test_expand_suffix_group_glob_returns_base() {
+        let r = make_ref(
+            &["std", "collections"],
+            PathSuffix::Group(vec![GroupItem::Glob]),
+        );
+        // Glob inside group cannot be expanded, base segments returned as-is
+        assert_eq!(expand_segments(&r), vec![vec!["std", "collections"]]);
+    }
+
+    #[test]
+    fn test_expand_suffix_group_nested() {
+        let r = make_ref(
+            &["std"],
+            PathSuffix::Group(vec![GroupItem::Nested {
+                prefix: vec!["collections".into()],
+                items: vec![
+                    GroupItem::Simple("HashMap".into()),
+                    GroupItem::Simple("HashSet".into()),
+                ],
+            }]),
+        );
+        assert_eq!(
+            expand_segments(&r),
+            vec![
+                vec!["std", "collections", "HashMap"],
+                vec!["std", "collections", "HashSet"],
+            ]
+        );
+    }
+
+    #[test]
+    fn test_expand_suffix_group_mixed() {
+        // m::n::{a, b as B, c::{x, y}, *}
+        let r = make_ref(
+            &["m", "n"],
+            PathSuffix::Group(vec![
+                GroupItem::Simple("a".into()),
+                GroupItem::Aliased {
+                    name: "b".into(),
+                    alias: "B".into(),
+                },
+                GroupItem::Nested {
+                    prefix: vec!["c".into()],
+                    items: vec![GroupItem::Simple("x".into()), GroupItem::Simple("y".into())],
+                },
+                GroupItem::Glob,
+            ]),
+        );
+        assert_eq!(
+            expand_segments(&r),
+            vec![
+                vec!["m", "n", "a"],
+                vec!["m", "n", "b"],
+                vec!["m", "n", "c", "x"],
+                vec!["m", "n", "c", "y"],
+                vec!["m", "n"], // glob returns base
+            ]
+        );
+    }
+
+    #[test]
+    fn test_expand_suffix_deeply_nested() {
+        // a::{b::{c::{d,e,f}}}
+        let r = make_ref(
+            &["a"],
+            PathSuffix::Group(vec![GroupItem::Nested {
+                prefix: vec!["b".into()],
+                items: vec![GroupItem::Nested {
+                    prefix: vec!["c".into()],
+                    items: vec![
+                        GroupItem::Simple("d".into()),
+                        GroupItem::Simple("e".into()),
+                        GroupItem::Simple("f".into()),
+                    ],
+                }],
+            }]),
+        );
+        assert_eq!(
+            expand_segments(&r),
+            vec![
+                vec!["a", "b", "c", "d"],
+                vec!["a", "b", "c", "e"],
+                vec!["a", "b", "c", "f"],
+            ]
+        );
     }
 }

@@ -15,6 +15,7 @@ exit_code: 0
 ----- stdout -----
 crate::analysis::visit::UseVisitor
 crate::module::expand::is_test_module
-crate::module::locate::{find_submodule, get_src_dir}
+crate::module::locate::find_submodule
+crate::module::locate::get_src_dir
 
 ----- stderr -----

@@ -339,7 +339,19 @@ impl Analyzer {
         let mut dependencies = HashSet::new();
         for reference in self.crate_analyzer.iter_crate_references() {
             debug!("Found crate reference: {}", reference.to_path_string());
-            dependencies.insert(reference.to_path_string());
+            if options.expand_groups {
+                debug!(
+                    "Expanding groups for reference: {}",
+                    reference.to_path_string()
+                );
+                let expanded = reference.expand_suffix();
+                for exp in expanded {
+                    debug!("Expanded reference: {}", exp.to_path_string());
+                    dependencies.insert(exp.to_path_string());
+                }
+            } else {
+                dependencies.insert(reference.to_path_string());
+            }
         }
 
         Ok(AnalysisResult {

@@ -11,6 +11,10 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::constants::{MODULE_NAME_TEST, MODULE_NAME_TESTS, PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER}
+crate::constants::MODULE_NAME_TEST
+crate::constants::MODULE_NAME_TESTS
+crate::constants::PATH_QUALIFIER_CRATE
+crate::constants::PATH_QUALIFIER_SELF
+crate::constants::PATH_QUALIFIER_SUPER
 
 ----- stderr -----
