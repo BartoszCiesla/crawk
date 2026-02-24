@@ -65,22 +65,6 @@ pub type Result<T> = std::result::Result<T, CrateInfoError>;
 /// the module's fully qualified path and the file system path where it is defined.
 /// Modules can be defined either as separate files or as inline modules within
 /// another file.
-///
-/// # Example
-///
-/// ```ignore
-/// use discover::ModuleInfo;
-/// use std::path::PathBuf;
-///
-/// // Create a module info for an external module
-/// let module_info = ModuleInfo::new(
-///     "analysis::collect".to_string(),
-///     PathBuf::from("/path/to/crate/src/analysis/collect.rs")
-/// );
-///
-/// println!("Module path: {}", module_info.path());
-/// println!("Source file: {}", module_info.source().display());
-/// ```
 #[derive(Debug, Clone)]
 pub struct ModuleInfo {
     /// The full module path (e.g., "analysis::collect")
@@ -97,18 +81,6 @@ impl ModuleInfo {
     ///
     /// * `module_path` - The fully qualified module path (e.g., "analysis::collect")
     /// * `source_file` - The file system path where this module is defined
-    ///
-    /// # Example
-    ///
-    /// ```ignore
-    /// use discover::ModuleInfo;
-    /// use std::path::PathBuf;
-    ///
-    /// let module_info = ModuleInfo::new(
-    ///     "analysis::collect".to_string(),
-    ///     PathBuf::from("src/analysis/collect.rs")
-    /// );
-    /// ```
     pub const fn new(module_path: String, source_file: PathBuf) -> Self {
         Self {
             module_path,
@@ -117,20 +89,6 @@ impl ModuleInfo {
     }
 
     /// Returns the fully qualified module path.
-    ///
-    /// # Example
-    ///
-    /// ```ignore
-    /// use discover::ModuleInfo;
-    /// use std::path::PathBuf;
-    ///
-    /// let module_info = ModuleInfo::new(
-    ///     "analysis::collect".to_string(),
-    ///     PathBuf::from("src/analysis/collect.rs")
-    /// );
-    ///
-    /// assert_eq!(module_info.path(), "analysis::collect");
-    /// ```
     #[must_use]
     pub fn path(&self) -> &str {
         &self.module_path
@@ -140,20 +98,6 @@ impl ModuleInfo {
     ///
     /// For inline modules (such as test modules defined with `#[cfg(test)]`),
     /// this returns the path of the file containing the inline module definition.
-    ///
-    /// # Example
-    ///
-    /// ```ignore
-    /// use discover::ModuleInfo;
-    /// use std::path::{Path, PathBuf};
-    ///
-    /// let module_info = ModuleInfo::new(
-    ///     "analysis::collect".to_string(),
-    ///     PathBuf::from("src/analysis/collect.rs")
-    /// );
-    ///
-    /// assert_eq!(module_info.source(), Path::new("src/analysis/collect.rs"));
-    /// ```
     #[must_use]
     pub fn source(&self) -> &Path {
         &self.source_file
@@ -165,18 +109,6 @@ impl ModuleInfo {
 /// This struct holds the metadata for a Rust crate and provides methods to
 /// resolve module paths (like `analysis::collect`) to their corresponding
 /// file paths on disk.
-///
-/// # Example
-///
-/// ```ignore
-/// use discover::CrateInfo;
-/// use std::path::Path;
-///
-/// let crate_info = CrateInfo::new(Path::new("/path/to/my/crate"))?;
-/// let file_path = crate_info.resolve_module("analysis::collect")?;
-/// println!("Module located at: {}", file_path.display());
-/// # Ok::<(), discover::CrateInfoError>(())
-/// ```
 #[derive(Debug, Clone)]
 pub struct CrateInfo {
     /// The cargo metadata for the crate.
@@ -198,16 +130,6 @@ impl CrateInfo {
     /// Returns an error if:
     /// - The cargo metadata command fails to execute
     /// - No root package is found in the workspace
-    ///
-    /// # Example
-    ///
-    /// ```ignore
-    /// use discover::CrateInfo;
-    /// use std::path::Path;
-    ///
-    /// let crate_info = CrateInfo::new(Path::new("/path/to/crate"))?;
-    /// # Ok::<(), discover::CrateInfoError>(())
-    /// ```
     pub fn new(crate_path: &Path) -> Result<Self> {
         let metadata = MetadataCommand::new().current_dir(crate_path).exec()?;
 
@@ -254,22 +176,6 @@ impl CrateInfo {
     /// - The module path is empty
     /// - The module cannot be found
     /// - The crate root cannot be determined
-    ///
-    /// # Example
-    ///
-    /// ```ignore
-    /// use discover::CrateInfo;
-    /// use std::path::Path;
-    ///
-    /// let crate_info = CrateInfo::new(Path::new("/path/to/crate"))?;
-    ///
-    /// // Resolve a module path
-    /// let path = crate_info.resolve_module("analysis::collect")?;
-    ///
-    /// // Also works with crate name prefix
-    /// let path = crate_info.resolve_module("mycrate::analysis::collect")?;
-    /// # Ok::<(), discover::CrateInfoError>(())
-    /// ```
     fn resolve_module(&self, module_path: &str) -> Result<PathBuf> {
         let package = self
             .metadata
@@ -429,25 +335,6 @@ impl CrateInfo {
     /// - The module path cannot be resolved
     /// - The source file cannot be read
     /// - The source file cannot be parsed
-    ///
-    /// # Example
-    ///
-    /// ```ignore
-    /// use discover::CrateInfo;
-    /// use std::path::Path;
-    ///
-    /// let crate_info = CrateInfo::new(Path::new("/path/to/crate"))?;
-    ///
-    /// // Get all submodules recursively, excluding test modules
-    /// let modules = crate_info.get_module_tree("analysis", false, true)?;
-    /// for module_info in &modules {
-    ///     println!("{} -> {}", module_info.path(), module_info.source().display());
-    /// }
-    ///
-    /// // Get only direct submodules (non-recursive), including test modules
-    /// let direct = crate_info.get_module_tree("analysis", true, false)?;
-    /// # Ok::<(), discover::CrateInfoError>(())
-    /// ```
     pub fn get_module_tree(
         &self,
         module_path: &str,

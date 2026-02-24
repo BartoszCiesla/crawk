@@ -60,35 +60,6 @@ impl From<Vec<String>> for Segments {
 }
 
 /// Unified type reference representing any path/type usage in Rust code.
-///
-/// # Examples
-///
-/// ```ignore
-/// use crawk::module::path::TypeReference;
-///
-/// // Simple use: `use std::collections::HashMap;`
-/// let r = TypeReference::new(vec!["std", "collections", "HashMap"]);
-///
-/// // Glob: `use std::collections::*;`
-/// let r = TypeReference::new(vec!["std", "collections"]).with_glob();
-///
-/// // Relative with self: `use self::module::Type;`
-/// let r = TypeReference::new(vec!["module", "Type"]).with_self_prefix();
-///
-/// // Super: `use super::sibling::Type;`
-/// let r = TypeReference::new(vec!["sibling", "Type"]).with_super(1);
-///
-/// // Crate root: `use crate::module::Type;`
-/// let r = TypeReference::new(vec!["module", "Type"]).with_crate_prefix();
-///
-/// // Grouped: `use std::collections::{HashMap, HashSet};`
-/// let r = TypeReference::new(vec!["std", "collections"])
-///     .with_group(vec!["HashMap".into(), "HashSet".into()]);
-///
-/// // Aliased: `use std::collections::HashMap as Map;`
-/// let r = TypeReference::new(vec!["std", "collections", "HashMap"])
-///     .with_alias("Map");
-/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TypeReference {
     /// Path segments (e.g., `["std", "collections", "HashMap"]`)

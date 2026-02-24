@@ -66,28 +66,6 @@ impl FileReferences {
 }
 
 /// Analyzer for collecting type references from a Rust crate.
-///
-/// # Example
-///
-/// ```ignore
-/// use crawk::module::analyzer::CrateAnalyzer;
-/// use std::path::Path;
-///
-/// let mut analyzer = CrateAnalyzer::new("my_crate");
-///
-/// // Parse source files
-/// analyzer.parse_file("module", Path::new("src/module/mod.rs"))?;
-/// analyzer.parse_file("module::submodule", Path::new("src/module/submodule.rs"))?;
-///
-/// // Get all references
-/// for (file, refs) in analyzer.all_references() {
-///     println!("{file}: {} references", refs.len());
-/// }
-///
-/// // Get flattened list of all references
-/// let all_refs: Vec<_> = analyzer.iter_references().collect();
-/// # Ok::<(), crawk::module::analyzer::AnalyzerError>(())
-/// ```
 #[derive(Debug, Clone)]
 pub struct CrateAnalyzer {
     /// Name of the crate being analyzed.
