@@ -181,6 +181,10 @@ impl CrateAnalyzer {
 struct ModuleVisitor {
     module_name: String,
     references: Vec<TypeReference>,
+    /// Track if we're currently in a test module
+    in_test_module: bool,
+    /// Whether to include references from test modules
+    include_tests: bool,
 }
 
 impl ModuleVisitor {
@@ -188,6 +192,76 @@ impl ModuleVisitor {
         Self {
             module_name: module_name.into(),
             references: Vec::new(),
+            in_test_module: false,
+            include_tests: false,
+        }
+    }
+
+    /// Checks if a module is a test module (has #[cfg(test)] attribute).
+    fn is_test_module(node: &ItemMod) -> bool {
+        node.attrs.iter().any(|attr| {
+            attr.path().is_ident("cfg")
+                && attr
+                    .parse_args::<syn::Ident>()
+                    .is_ok_and(|ident| ident == "test")
+        })
+    }
+
+    /// Checks if a syn::Path is an internal crate reference.
+    /// Returns true if the path starts with crate::, self::, or super::.
+    fn is_internal_path(path: &syn::Path) -> bool {
+        path.segments.first().is_some_and(|first_segment| {
+            let ident = first_segment.ident.to_string();
+            matches!(ident.as_str(), "crate" | "self" | "super")
+        })
+    }
+
+    /// Processes a syn::Path and converts it to a TypeReference if it's internal.
+    fn process_path(&mut self, path: &syn::Path) {
+        if !Self::is_internal_path(path) {
+            return;
+        }
+
+        let mut segments = Vec::new();
+        let mut path_prefix = PathPrefix::None;
+
+        for (i, segment) in path.segments.iter().enumerate() {
+            let ident = segment.ident.to_string();
+
+            // Handle special prefixes at the start
+            if i == 0 {
+                match ident.as_str() {
+                    "crate" => {
+                        path_prefix = PathPrefix::Crate;
+                        continue;
+                    }
+                    "self" => {
+                        path_prefix = PathPrefix::SelfModule;
+                        continue;
+                    }
+                    "super" => {
+                        path_prefix = PathPrefix::Super(1);
+                        continue;
+                    }
+                    _ => {}
+                }
+            } else if ident == "super" {
+                // Handle chained super::
+                let levels = match path_prefix {
+                    PathPrefix::Super(n) => n + 1,
+                    _ => 1,
+                };
+                path_prefix = PathPrefix::Super(levels);
+                continue;
+            }
+
+            segments.push(ident);
+        }
+
+        if !segments.is_empty() {
+            let mut reference = TypeReference::new(segments);
+            reference.prefix = path_prefix;
+            self.references.push(reference);
         }
     }
 
@@ -412,19 +486,118 @@ impl ModuleVisitor {
 
 impl<'ast> Visit<'ast> for ModuleVisitor {
     fn visit_item_mod(&mut self, i: &'ast ItemMod) {
-        // visit the module content if it is same as module_name
-        // TODO: check if in case of nested modules we should check suffix
-        if i.ident == self.module_name
-            && let Some((_, items)) = &i.content
-        {
+        let was_in_test = self.in_test_module;
+
+        // Check if this module is a test module (has #[cfg(test)] attribute)
+        if !self.include_tests && Self::is_test_module(i) {
+            self.in_test_module = true;
+        }
+
+        // Check if this module matches the target module or is on the path to it
+        let module_ident = i.ident.to_string();
+        let should_visit = if self.module_name.is_empty() {
+            // No filter, visit all modules
+            true
+        } else if self.module_name == module_ident {
+            // Exact match
+            true
+        } else if self.module_name.contains("::") {
+            // For nested modules like "foo::bar::baz", check if this module
+            // is on the path (e.g., ident is "foo" and module_name starts with "foo::")
+            // or if this module is the final segment
+            self.module_name.split("::").any(|seg| seg == module_ident)
+                || self.module_name.ends_with(&format!("::{module_ident}"))
+        } else {
+            // Single-segment module name, check exact match
+            self.module_name == module_ident
+        };
+
+        if should_visit && let Some((_, items)) = &i.content {
             for item in items {
                 self.visit_item(item);
             }
         }
+
+        // Restore previous test module state
+        self.in_test_module = was_in_test;
     }
 
     fn visit_item_use(&mut self, node: &'ast ItemUse) {
-        self.process_use_tree(&node.tree, Vec::new(), PathPrefix::None);
+        if !self.in_test_module || self.include_tests {
+            self.process_use_tree(&node.tree, Vec::new(), PathPrefix::None);
+        }
+    }
+
+    /// Visit expression paths - captures paths in expressions like `crate::foo::bar()`
+    fn visit_expr_path(&mut self, node: &'ast syn::ExprPath) {
+        if !self.in_test_module || self.include_tests {
+            self.process_path(&node.path);
+        }
+        syn::visit::visit_expr_path(self, node);
+    }
+
+    /// Visit type paths - captures type annotations like `let x: crate::Foo`
+    fn visit_type_path(&mut self, node: &'ast syn::TypePath) {
+        if !self.in_test_module || self.include_tests {
+            self.process_path(&node.path);
+
+            // Also check the qself if present (e.g., <crate::Foo as Trait>::Item)
+            if let Some(qself) = &node.qself {
+                syn::visit::visit_type(self, &qself.ty);
+            }
+        }
+        syn::visit::visit_type_path(self, node);
+    }
+
+    /// Visit pattern structs - captures struct patterns in match arms
+    fn visit_pat_struct(&mut self, node: &'ast syn::PatStruct) {
+        if !self.in_test_module || self.include_tests {
+            self.process_path(&node.path);
+        }
+        syn::visit::visit_pat_struct(self, node);
+    }
+
+    /// Visit pattern tuple structs - captures tuple struct patterns
+    fn visit_pat_tuple_struct(&mut self, node: &'ast syn::PatTupleStruct) {
+        if !self.in_test_module || self.include_tests {
+            self.process_path(&node.path);
+        }
+        syn::visit::visit_pat_tuple_struct(self, node);
+    }
+
+    /// Visit struct expressions - captures struct literal construction
+    fn visit_expr_struct(&mut self, node: &'ast syn::ExprStruct) {
+        if !self.in_test_module || self.include_tests {
+            self.process_path(&node.path);
+        }
+        syn::visit::visit_expr_struct(self, node);
+    }
+
+    /// Visit trait bounds - captures trait bounds in generics
+    fn visit_trait_bound(&mut self, node: &'ast syn::TraitBound) {
+        if !self.in_test_module || self.include_tests {
+            self.process_path(&node.path);
+        }
+        syn::visit::visit_trait_bound(self, node);
+    }
+
+    /// Visit impl items - captures impl blocks
+    fn visit_item_impl(&mut self, node: &'ast syn::ItemImpl) {
+        if !self.in_test_module || self.include_tests {
+            // Check the trait being implemented (if any)
+            if let Some((_, trait_path, _)) = &node.trait_ {
+                self.process_path(trait_path);
+            }
+        }
+        syn::visit::visit_item_impl(self, node);
+    }
+
+    /// Visit macro invocations - captures macro paths
+    fn visit_macro(&mut self, node: &'ast syn::Macro) {
+        if !self.in_test_module || self.include_tests {
+            self.process_path(&node.path);
+        }
+        syn::visit::visit_macro(self, node);
     }
 }
 
@@ -522,5 +695,75 @@ mod tests {
         assert_eq!(analyzer.crate_name(), "test_crate");
         assert_eq!(analyzer.file_count(), 0);
         assert_eq!(analyzer.total_references(), 0);
+    }
+
+    #[test]
+    fn test_type_path_collection() {
+        let code = "
+            fn foo(x: crate::MyType) -> crate::Result {
+                let y: crate::Other = x;
+                y
+            }
+        ";
+        let refs = parse_use(code);
+        assert!(refs.len() >= 2, "Should capture type annotations");
+
+        // Should capture both MyType and Result (and possibly Other)
+        let paths: Vec<String> = refs.iter().map(TypeReference::to_path_string).collect();
+        assert!(paths.iter().any(|p| p.contains("MyType")));
+        assert!(paths.iter().any(|p| p.contains("Result")));
+    }
+
+    #[test]
+    fn test_expr_path_collection() {
+        let code = "
+            fn foo() {
+                crate::module::function();
+                let x = crate::module::Type::new();
+            }
+        ";
+        let refs = parse_use(code);
+        assert!(refs.len() >= 2, "Should capture expression paths");
+
+        let paths: Vec<String> = refs.iter().map(TypeReference::to_path_string).collect();
+        assert!(paths.iter().any(|p| p.contains("function")));
+        assert!(paths.iter().any(|p| p.contains("Type")));
+    }
+
+    #[test]
+    fn test_impl_trait_collection() {
+        let code = "
+            impl crate::MyTrait for Foo {
+                fn bar() {}
+            }
+        ";
+        let refs = parse_use(code);
+        assert_eq!(refs.len(), 1);
+        assert_eq!(refs[0].to_path_string(), "crate::MyTrait");
+    }
+
+    #[test]
+    fn test_struct_pattern_collection() {
+        let code = "
+            fn foo(x: Something) {
+                match x {
+                    crate::module::Variant { field } => field,
+                }
+            }
+        ";
+        let refs = parse_use(code);
+        assert!(refs.iter().any(|r| r.to_path_string().contains("Variant")));
+    }
+
+    #[test]
+    fn test_macro_path_collection() {
+        let code = "
+            fn foo() {
+                crate::macros::my_macro!();
+            }
+        ";
+        let refs = parse_use(code);
+        assert_eq!(refs.len(), 1);
+        assert!(refs[0].to_path_string().contains("my_macro"));
     }
 }
