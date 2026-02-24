@@ -4,13 +4,18 @@ info:
   program: crawk
   args:
     - use
-    - lib
+    - "module::analyzer"
     - "-t"
+    - "-e"
+    - "-d"
+    - "1"
 ---
 success: true
 exit_code: 0
 ----- stdout -----
-crate::module::analyzer::{AnalyzerError, CrateAnalyzer}
-crate::module::discover::{CrateInfo, CrateInfoError}
+super::path::GroupItem
+super::path::PathPrefix
+super::path::PathSuffix
+super::path::TypeReference
 
 ----- stderr -----

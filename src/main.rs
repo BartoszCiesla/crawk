@@ -39,6 +39,7 @@ fn handle_use_command(crate_root: &Path, args: &UseArgs) -> anyhow::Result<()> {
 
     // Configure analysis options
     let options = AnalysisOptions {
+        recursive: args.recursive,
         include_tests: args.include_tests,
         expand_groups: args.expand,
         max_depth: args.depth,

@@ -11,16 +11,5 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::constants::DEFAULT_SRC_DIR
-crate::constants::MODULE_FILE_NAME
-crate::constants::MODULE_NAME_TEST
-crate::constants::MODULE_NAME_TESTS
-crate::constants::PATH_QUALIFIER_CRATE
-crate::constants::PATH_QUALIFIER_SELF
-crate::constants::PATH_QUALIFIER_SUPER
-super::path::GroupItem
-super::path::PathPrefix
-super::path::PathSuffix
-super::path::TypeReference
 
 ----- stderr -----

@@ -4,10 +4,12 @@ info:
   program: crawk
   args:
     - use
-    - analysis
+    - "module::analyzer"
+    - "-t"
 ---
 success: true
 exit_code: 0
 ----- stdout -----
+super::path::{GroupItem, PathPrefix, PathSuffix, TypeReference}
 
 ----- stderr -----

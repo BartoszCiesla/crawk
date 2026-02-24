@@ -4,7 +4,11 @@ info:
   program: crawk
   args:
     - use
-    - analysis
+    - "module::path"
+    - "-t"
+    - "-e"
+    - "-d"
+    - "1"
 ---
 success: true
 exit_code: 0

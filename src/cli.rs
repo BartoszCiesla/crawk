@@ -160,6 +160,11 @@ pub struct UseArgs {
     #[clap(verbatim_doc_comment)]
     pub module_path: String,
 
+    /// Recursively analyze all submodules (disabled by default)
+    #[clap(verbatim_doc_comment)]
+    #[arg(short = 'r', long = "recursive", default_value_t = false)]
+    pub recursive: bool,
+
     /// Include modules defined in `#[cfg(test)]` blocks (excluded by default)
     #[clap(verbatim_doc_comment)]
     #[arg(short = 't', long = "include-tests", default_value_t = false)]

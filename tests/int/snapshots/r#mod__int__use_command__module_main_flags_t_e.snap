@@ -14,6 +14,5 @@ exit_code: 0
 crawk::AnalysisOptions
 crawk::Analyzer
 crawk::version
-super::cli::CrawkArgs
 
 ----- stderr -----

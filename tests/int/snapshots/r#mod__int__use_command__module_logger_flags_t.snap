@@ -4,10 +4,12 @@ info:
   program: crawk
   args:
     - use
-    - analysis
+    - logger
+    - "-t"
 ---
 success: true
 exit_code: 0
 ----- stdout -----
+super::cli::CrawkArgs
 
 ----- stderr -----

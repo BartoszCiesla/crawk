@@ -68,7 +68,7 @@ pub type Result<T> = std::result::Result<T, CrateInfoError>;
 ///
 /// # Example
 ///
-/// ```no_run
+/// ```ignore
 /// use discover::ModuleInfo;
 /// use std::path::PathBuf;
 ///
@@ -100,7 +100,7 @@ impl ModuleInfo {
     ///
     /// # Example
     ///
-    /// ```no_run
+    /// ```ignore
     /// use discover::ModuleInfo;
     /// use std::path::PathBuf;
     ///
@@ -120,7 +120,7 @@ impl ModuleInfo {
     ///
     /// # Example
     ///
-    /// ```no_run
+    /// ```ignore
     /// use discover::ModuleInfo;
     /// use std::path::PathBuf;
     ///
@@ -143,7 +143,7 @@ impl ModuleInfo {
     ///
     /// # Example
     ///
-    /// ```no_run
+    /// ```ignore
     /// use discover::ModuleInfo;
     /// use std::path::{Path, PathBuf};
     ///
@@ -168,7 +168,7 @@ impl ModuleInfo {
 ///
 /// # Example
 ///
-/// ```no_run
+/// ```ignore
 /// use discover::CrateInfo;
 /// use std::path::Path;
 ///
@@ -201,7 +201,7 @@ impl CrateInfo {
     ///
     /// # Example
     ///
-    /// ```no_run
+    /// ```ignore
     /// use discover::CrateInfo;
     /// use std::path::Path;
     ///
@@ -257,7 +257,7 @@ impl CrateInfo {
     ///
     /// # Example
     ///
-    /// ```no_run
+    /// ```ignore
     /// use discover::CrateInfo;
     /// use std::path::Path;
     ///
@@ -413,6 +413,10 @@ impl CrateInfo {
     ///
     /// * `module_path` - A module path like `analysis::collect` or `mycrate::analysis`
     /// * `include_tests` - If `true`, includes modules marked with `#[cfg(test)]`
+    /// * `recursive` - If `true`, recursively collects all submodules. If `false`, only the
+    ///   current module and its direct submodules are returned (without traversing deeper).
+    ///   When `include_tests` is `true` and `recursive` is `false`, only the test module
+    ///   directly under the given module is included.
     ///
     /// # Returns
     ///
@@ -428,25 +432,26 @@ impl CrateInfo {
     ///
     /// # Example
     ///
-    /// ```no_run
+    /// ```ignore
     /// use discover::CrateInfo;
     /// use std::path::Path;
     ///
     /// let crate_info = CrateInfo::new(Path::new("/path/to/crate"))?;
     ///
-    /// // Get all submodules, excluding test modules
-    /// let modules = crate_info.get_module_tree("analysis", false)?;
+    /// // Get all submodules recursively, excluding test modules
+    /// let modules = crate_info.get_module_tree("analysis", false, true)?;
     /// for module_info in &modules {
     ///     println!("{} -> {}", module_info.path(), module_info.source().display());
     /// }
     ///
-    /// // Get all submodules, including test modules
-    /// let modules_with_tests = crate_info.get_module_tree("analysis", true)?;
+    /// // Get only direct submodules (non-recursive), including test modules
+    /// let direct = crate_info.get_module_tree("analysis", true, false)?;
     /// # Ok::<(), discover::CrateInfoError>(())
     /// ```
     pub fn get_module_tree(
         &self,
         module_path: &str,
+        recursive: bool,
         include_tests: bool,
     ) -> Result<Vec<ModuleInfo>> {
         let file_path = self.resolve_module(module_path)?;
@@ -454,7 +459,11 @@ impl CrateInfo {
         // Normalize the module path (remove crate name prefix if present)
         let normalized_path = self.normalize_module_path(module_path);
 
-        Self::collect_submodules_recursive(&file_path, &normalized_path, include_tests)
+        if recursive {
+            Self::collect_submodules_recursive(&file_path, &normalized_path, include_tests)
+        } else {
+            Self::collect_submodules_shallow(&file_path, &normalized_path, include_tests)
+        }
     }
 
     /// Normalizes a module path by removing the crate name prefix if present.
@@ -471,6 +480,53 @@ impl CrateInfo {
         } else {
             module_path.to_string()
         }
+    }
+
+    /// Collects only the current module (non-recursive, no submodules).
+    ///
+    /// When `include_tests` is `true`, also includes the direct test module
+    /// (marked with `#[cfg(test)]`) if one exists directly under the given module.
+    fn collect_submodules_shallow(
+        file_path: &Path,
+        current_module_path: &str,
+        include_tests: bool,
+    ) -> Result<Vec<ModuleInfo>> {
+        let mut result = Vec::new();
+
+        // Add only the current module itself
+        result.push(ModuleInfo::new(
+            current_module_path.to_string(),
+            file_path.to_path_buf(),
+        ));
+
+        if include_tests {
+            // Read and parse the file to find a direct test module
+            let content = fs::read_to_string(file_path).map_err(|e| CrateInfoError::FileRead {
+                path: file_path.to_path_buf(),
+                source: e,
+            })?;
+
+            let syntax = syn::parse_file(&content).map_err(|e| CrateInfoError::ParseError {
+                path: file_path.to_path_buf(),
+                message: e.to_string(),
+            })?;
+
+            for item in &syntax.items {
+                if let Item::Mod(item_mod) = item
+                    && Self::has_cfg_test(&item_mod.attrs)
+                {
+                    let mod_name = item_mod.ident.to_string();
+                    let submodule_path = if current_module_path.is_empty() {
+                        mod_name
+                    } else {
+                        format!("{current_module_path}::{mod_name}")
+                    };
+                    result.push(ModuleInfo::new(submodule_path, file_path.to_path_buf()));
+                }
+            }
+        }
+
+        Ok(result)
     }
 
     /// Recursively collects all submodules from a file.

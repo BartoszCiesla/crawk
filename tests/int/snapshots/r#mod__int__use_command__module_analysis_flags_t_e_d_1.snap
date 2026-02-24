@@ -13,19 +13,5 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::analysis::visit::UseVisitor
-crate::module::expand::expand_path_to_string
-crate::module::expand::expand_use_tree
-crate::module::expand::extract_public_items
-crate::module::expand::is_internal_path
-crate::module::expand::is_internal_use
-crate::module::expand::is_test_module
-crate::module::format::expand_use_tree_to_paths
-crate::module::format::strip_crate_prefix
-crate::module::format::truncate_path
-crate::module::format::use_tree_to_string
-crate::module::locate::find_submodule
-crate::module::locate::get_src_dir
-crate::module::locate::resolve_module_path_to_file
 
 ----- stderr -----

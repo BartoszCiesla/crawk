@@ -33,7 +33,7 @@ fn should_use_command_provide_output(module: &str) {
 }
 
 #[test_matrix(
-  ["analysis", "analysis::collect", "analysis::visit", "cli", "lib", "main", "module", "module::expand", "module::format", "module::locate"],
+  ["analysis", "analysis::collect", "analysis::visit", "cli", "lib", "main", "module", "logger", "module::expand", "module::format", "module::locate", "module::analyzer", "module::discover", "module::path"],
   [&["-t"],
    &["-t", "-e"],
    &["-t", "-e", "-d", "1"]

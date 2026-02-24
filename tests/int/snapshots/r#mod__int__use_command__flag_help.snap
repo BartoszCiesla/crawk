@@ -21,6 +21,9 @@ Arguments:
           Module path relative to the crate root (e.g., "utils" or "foo::bar::baz")
 
 Options:
+  -r, --recursive
+          Recursively analyze all submodules (disabled by default)
+
   -t, --include-tests
           Include modules defined in `#[cfg(test)]` blocks (excluded by default)
 

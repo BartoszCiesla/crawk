@@ -9,8 +9,6 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crawk::version
 crawk::{AnalysisOptions, Analyzer, version}
-super::cli::CrawkArgs
 
 ----- stderr -----

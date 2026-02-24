@@ -10,13 +10,14 @@
 //! use crawk::{Analyzer, AnalysisOptions};
 //! use std::path::Path;
 //!
-//! let analyzer = Analyzer::new(Path::new("/path/to/crate"));
+//! let mut analyzer = Analyzer::new(Path::new("/path/to/crate"))?;
 //! let options = AnalysisOptions::default();
-//! let result = analyzer.analyze_module(&["utils", "parser"], &options).unwrap();
+//! let result = analyzer.analyze_module("utils::parser", &options)?;
 //!
 //! for dep in result.dependencies() {
 //!     println!("{}", dep);
 //! }
+//! # Ok::<(), crawk::AnalysisError>(())
 //! ```
 //!
 //! # Features
@@ -62,6 +63,14 @@ pub mod version;
 /// ```
 #[derive(Debug, Clone, Default)]
 pub struct AnalysisOptions {
+    /// Recursively analyze all submodules of the specified module.
+    ///
+    /// When `false` (default), only the specified module is analyzed.
+    /// When `true`, all nested submodules are also analyzed. For example,
+    /// if analyzing `foo` with `recursive = true`, it will analyze
+    /// `foo`, `foo::bar`, `foo::baz`, etc.
+    pub recursive: bool,
+
     /// Include test modules (`#[cfg(test)]`) in analysis.
     ///
     /// When `false` (default), dependencies from test modules are excluded.
@@ -181,10 +190,10 @@ pub type Result<T> = std::result::Result<T, AnalysisError>;
 /// use crawk::{Analyzer, AnalysisOptions};
 /// use std::path::Path;
 ///
-/// let analyzer = Analyzer::new(Path::new("/path/to/my-crate"));
+/// let mut analyzer = Analyzer::new(Path::new("/path/to/my-crate"))?;
 ///
 /// // Analyze the "utils" module
-/// let result = analyzer.analyze_module(&["utils"], &AnalysisOptions::default())?;
+/// let result = analyzer.analyze_module("utils", &AnalysisOptions::default())?;
 /// println!("Found {} dependencies", result.len());
 ///
 /// // Analyze a nested module with custom options
@@ -192,8 +201,9 @@ pub type Result<T> = std::result::Result<T, AnalysisError>;
 ///     include_tests: true,
 ///     expand_groups: true,
 ///     max_depth: Some(2),
+///     ..Default::default()
 /// };
-/// let result = analyzer.analyze_module(&["foo", "bar"], &options)?;
+/// let result = analyzer.analyze_module("foo::bar", &options)?;
 /// # Ok::<(), crawk::AnalysisError>(())
 /// ```
 #[derive(Debug, Clone)]
@@ -286,7 +296,7 @@ impl Analyzer {
     /// use crawk::{Analyzer, AnalysisOptions};
     /// use std::path::Path;
     ///
-    /// let analyzer = Analyzer::new(Path::new("/path/to/crate"));
+    /// let mut analyzer = Analyzer::new(Path::new("/path/to/crate"))?;
     /// let result = analyzer.analyze_module("utils::parser", &AnalysisOptions::default())?;
     ///
     /// for dep in result.dependencies() {
@@ -301,11 +311,11 @@ impl Analyzer {
     ) -> Result<AnalysisResult> {
         let module_path = module_path.into();
 
-        let modules = if options.include_tests {
-            self.crate_info.get_module_tree(&module_path, true)?
-        } else {
-            self.crate_info.get_module_tree(&module_path, false)?
-        };
+        let modules = self.crate_info.get_module_tree(
+            &module_path,
+            options.recursive,
+            options.include_tests,
+        )?;
 
         let source_file = modules
             .first()

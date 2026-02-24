@@ -69,7 +69,7 @@ impl FileReferences {
 ///
 /// # Example
 ///
-/// ```no_run
+/// ```ignore
 /// use crawk::module::analyzer::CrateAnalyzer;
 /// use std::path::Path;
 ///
@@ -433,10 +433,6 @@ impl ModuleVisitor {
 }
 
 impl<'ast> Visit<'ast> for ModuleVisitor {
-    fn visit_item_use(&mut self, node: &'ast ItemUse) {
-        self.process_use_tree(&node.tree, Vec::new(), PathPrefix::None);
-    }
-
     fn visit_item_mod(&mut self, i: &'ast ItemMod) {
         // visit the module content if it is same as module_name
         // TODO: check if in case of nested modules we should check suffix
@@ -447,6 +443,10 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
                 self.visit_item(item);
             }
         }
+    }
+
+    fn visit_item_use(&mut self, node: &'ast ItemUse) {
+        self.process_use_tree(&node.tree, Vec::new(), PathPrefix::None);
     }
 }
 

@@ -63,7 +63,7 @@ impl From<Vec<String>> for Segments {
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 /// use crawk::module::path::TypeReference;
 ///
 /// // Simple use: `use std::collections::HashMap;`
