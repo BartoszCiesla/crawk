@@ -14,8 +14,11 @@
 //! let options = AnalysisOptions::default();
 //! let result = analyzer.analyze_module("utils::parser", &options)?;
 //!
-//! for dep in result.dependencies() {
-//!     println!("{}", dep);
+//! for (module, refs) in result.dependencies() {
+//!     println!("{module}");
+//!     for reference in refs {
+//!         println!("  {reference}");
+//!     }
 //! }
 //! # Ok::<(), crawk::AnalysisError>(())
 //! ```
@@ -31,7 +34,7 @@
 
 use crate::module::analyzer::{AnalyzerError, CrateAnalyzer};
 use crate::module::discover::{CrateInfo, CrateInfoError};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 use tracing::{debug, error, info};
@@ -100,8 +103,8 @@ pub struct AnalysisResult {
     /// The analyzed module path (e.g., `"utils::parser"`).
     module_path: String,
 
-    /// Set of internal dependencies found, with `crate::` prefix stripped.
-    dependencies: HashSet<String>,
+    /// Set of internal dependencies found for the analyzed modules.
+    dependencies: HashMap<String, HashSet<String>>,
 
     /// Path to the source file that was analyzed.
     source_file: PathBuf,
@@ -116,7 +119,7 @@ impl AnalysisResult {
 
     /// Returns the set of dependencies found.
     #[must_use]
-    pub const fn dependencies(&self) -> &HashSet<String> {
+    pub const fn dependencies(&self) -> &HashMap<String, HashSet<String>> {
         &self.dependencies
     }
 
@@ -141,9 +144,10 @@ impl AnalysisResult {
     /// Consumes the result and returns the dependencies as a sorted vector.
     #[must_use]
     pub fn into_sorted_vec(self) -> Vec<String> {
-        let mut deps: Vec<_> = self.dependencies.into_iter().collect();
-        deps.sort();
-        deps
+        let all_deps_unique: HashSet<_> = self.dependencies.values().flatten().cloned().collect();
+        let mut all_deps_unique: Vec<String> = all_deps_unique.into_iter().collect();
+        all_deps_unique.sort();
+        all_deps_unique
     }
 }
 
@@ -299,8 +303,11 @@ impl Analyzer {
     /// let mut analyzer = Analyzer::new(Path::new("/path/to/crate"))?;
     /// let result = analyzer.analyze_module("utils::parser", &AnalysisOptions::default())?;
     ///
-    /// for dep in result.dependencies() {
-    ///     println!("{}", dep);
+    /// for (module, refs) in result.dependencies() {
+    ///     println!("{module}");
+    ///     for reference in refs {
+    ///         println!("  {reference}");
+    ///     }
     /// }
     /// # Ok::<(), crawk::AnalysisError>(())
     /// ```
@@ -346,22 +353,32 @@ impl Analyzer {
             }
         }
 
-        let mut dependencies = HashSet::new();
-        for reference in self.crate_analyzer.iter_crate_references() {
-            debug!("Found crate reference: {}", reference.to_path_string());
-            if options.expand_groups {
-                debug!(
-                    "Expanding groups for reference: {}",
-                    reference.to_path_string()
-                );
-                let expanded = reference.expand_suffix();
-                for exp in expanded {
-                    debug!("Expanded reference: {}", exp.to_path_string());
-                    dependencies.insert(exp.to_path_string());
+        let mut dependencies = HashMap::new();
+        for (module, module_references) in self.crate_analyzer.all_crate_references() {
+            debug!("Processing module: {}", module);
+            let mut refs = HashSet::new();
+            for reference in module_references {
+                debug!("Found crate reference: {}", reference.to_path_string());
+                if options.expand_groups {
+                    debug!(
+                        "Expanding groups for reference: {}",
+                        reference.to_path_string()
+                    );
+                    let expanded = reference.expand_suffix();
+                    for exp in expanded {
+                        debug!("Expanded reference: {}", exp.to_path_string());
+                        refs.insert(exp.to_path_string());
+                    }
+                } else {
+                    refs.insert(reference.to_path_string());
                 }
-            } else {
-                dependencies.insert(reference.to_path_string());
             }
+
+            debug!(
+                "Processing module: {module} complete, found {} dependencies",
+                dependencies.len()
+            );
+            dependencies.insert(module.clone(), refs);
         }
 
         Ok(AnalysisResult {

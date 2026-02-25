@@ -21,6 +21,7 @@ Options:
   -t, --include-tests  Include modules defined in `#[cfg(test)]` blocks (excluded by default)
   -e, --expand         Expand grouped imports into individual paths
   -d, --depth <DEPTH>  Limit displayed module path depth from the crate root
+  -g, --grouped        Group output by source module (disabled by default)
   -h, --help           Print help (see more with '--help')
 
 ----- stderr -----

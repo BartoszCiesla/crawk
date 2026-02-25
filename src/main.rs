@@ -53,6 +53,17 @@ fn handle_use_command(crate_root: &Path, args: &UseArgs) -> anyhow::Result<()> {
 
     if result.is_empty() {
         info!("No internal crate use statements found.");
+    } else if args.grouped {
+        let dependencies = result.dependencies();
+        let mut modules = dependencies.keys().cloned().collect::<Vec<_>>();
+        modules.sort();
+
+        for module in modules {
+            println!("{module}");
+            for reference in &dependencies[&module] {
+                println!(" - {reference}");
+            }
+        }
     } else {
         for reference in result.into_sorted_vec() {
             println!("{reference}");

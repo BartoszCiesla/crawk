@@ -37,6 +37,14 @@ Options:
           
           e.g., --depth 1 shows x, --depth 2 shows x::y
 
+  -g, --grouped
+          Group output by source module (disabled by default)
+          
+          When enabled, dependencies are displayed grouped by their source module,
+          showing which module each dependency originates from.
+          
+          e.g., foo::bar and foo::baz are shown under the foo module
+
   -h, --help
           Print help (see a summary with '-h')
 

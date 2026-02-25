@@ -154,6 +154,7 @@ pub enum CrawkCommands {
     Use(UseArgs),
 }
 
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Parser, Debug, Clone)]
 pub struct UseArgs {
     /// Module path relative to the crate root (e.g., "utils" or "foo::bar::baz")
@@ -183,6 +184,16 @@ pub struct UseArgs {
     #[clap(verbatim_doc_comment)]
     #[arg(short = 'd', long = "depth", value_parser = validate_depth)]
     pub depth: Option<usize>,
+
+    /// Group output by source module (disabled by default)
+    ///
+    /// When enabled, dependencies are displayed grouped by their source module,
+    /// showing which module each dependency originates from.
+    ///
+    /// e.g., foo::bar and foo::baz are shown under the foo module
+    #[clap(verbatim_doc_comment)]
+    #[arg(short = 'g', long = "grouped", default_value_t = false)]
+    pub grouped: bool,
 }
 
 #[cfg(test)]
