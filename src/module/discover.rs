@@ -211,7 +211,7 @@ impl CrateInfo {
             .parent()
             .ok_or_else(|| CrateInfoError::NoCrateRoot(package.name.to_string()))?;
 
-        Self::resolve_module_parts(crate_root_dir, &parts).ok_or_else(|| {
+        Self::resolve_module_parts(crate_root_dir, &parts, Some(&crate_root))?.ok_or_else(|| {
             CrateInfoError::ModuleNotFound {
                 module_path: module_path.to_string(),
             }
@@ -275,35 +275,106 @@ impl CrateInfo {
     /// Resolves module parts to a file path.
     ///
     /// Checks both `module.rs` (Rust 2018+ style) and `module/mod.rs` (older style) conventions.
-    fn resolve_module_parts(base_dir: &Path, parts: &[&str]) -> Option<PathBuf> {
+    /// If a file-based module is not found, also searches for inline module declarations in the parent file.
+    /// When `root_file` is provided, inline modules in that file are checked when the first part
+    /// has no corresponding file on disk.
+    fn resolve_module_parts(
+        base_dir: &Path,
+        parts: &[&str],
+        root_file: Option<&Path>,
+    ) -> Result<Option<PathBuf>> {
         if parts.is_empty() {
-            return None;
+            return Ok(None);
         }
 
         let mut current_dir = base_dir.to_path_buf();
+        let mut current_file: Option<PathBuf> = root_file.map(Path::to_path_buf);
 
-        // Navigate through all parts except the last one
-        for &part in &parts[..parts.len() - 1] {
-            let sub_dir = current_dir.join(part);
-            if sub_dir.is_dir() {
-                current_dir = sub_dir;
-            } else {
-                return None;
+        // Navigate through all parts
+        for (idx, &part) in parts.iter().enumerate() {
+            let is_last = idx == parts.len() - 1;
+
+            let part_dir = current_dir.join(part);
+
+            // Check for `part.rs` (Rust 2018+ style)
+            let file_path = current_dir.join(format!("{part}.rs"));
+            if file_path.exists() {
+                if is_last {
+                    return Ok(Some(file_path));
+                }
+                // For non-last parts, remember this file and try to navigate into companion directory
+                if part_dir.is_dir() {
+                    current_file = Some(file_path);
+                    current_dir = part_dir;
+                    continue;
+                }
+                // No companion directory, but we have a file - check for inline module
+                return Self::check_inline_module(&file_path, &parts[idx + 1..]);
             }
+
+            // Check for `part/mod.rs` (older style)
+            let mod_path = part_dir.join("mod.rs");
+            if mod_path.exists() {
+                if is_last {
+                    return Ok(Some(mod_path));
+                }
+                // Navigate into this module's directory
+                current_file = Some(mod_path);
+                current_dir = part_dir;
+                continue;
+            }
+
+            // Module not found as a file - check if it's an inline module in the parent file
+            if let Some(parent_file) = &current_file {
+                return Self::check_inline_module(parent_file, &parts[idx..]);
+            }
+
+            return Ok(None);
         }
 
-        let last_part = parts[parts.len() - 1];
+        Ok(None)
+    }
 
-        // Check for `last_part.rs` (Rust 2018+ style)
-        let file_path = current_dir.join(format!("{last_part}.rs"));
-        if file_path.exists() {
-            return Some(file_path);
+    /// Checks if a sequence of module names exists as inline modules in the given file.
+    /// Returns the file path if all parts exist as nested inline modules, None otherwise.
+    fn check_inline_module(file_path: &Path, module_parts: &[&str]) -> Result<Option<PathBuf>> {
+        if module_parts.is_empty() {
+            return Ok(Some(file_path.to_path_buf()));
         }
 
-        // Check for `last_part/mod.rs` (older style)
-        let mod_path = current_dir.join(last_part).join("mod.rs");
-        if mod_path.exists() {
-            return Some(mod_path);
+        let syntax = Self::parse_source_file(file_path)?;
+        Ok(Self::find_nested_inline_module(
+            &syntax.items,
+            module_parts,
+            file_path,
+        ))
+    }
+
+    /// Recursively checks for nested inline modules within a list of items.
+    fn find_nested_inline_module(
+        items: &[Item],
+        module_parts: &[&str],
+        file_path: &Path,
+    ) -> Option<PathBuf> {
+        if module_parts.is_empty() {
+            return Some(file_path.to_path_buf());
+        }
+
+        let target_name = module_parts[0];
+        for item in items {
+            if let Item::Mod(item_mod) = item
+                && item_mod.ident == target_name
+                && let Some((_, nested_items)) = &item_mod.content
+            {
+                if module_parts.len() == 1 {
+                    return Some(file_path.to_path_buf());
+                }
+                return Self::find_nested_inline_module(
+                    nested_items,
+                    &module_parts[1..],
+                    file_path,
+                );
+            }
         }
 
         None
@@ -369,6 +440,18 @@ impl CrateInfo {
         }
     }
 
+    /// Reads and parses a Rust source file.
+    fn parse_source_file(path: &Path) -> Result<syn::File> {
+        let content = fs::read_to_string(path).map_err(|e| CrateInfoError::FileRead {
+            path: path.to_path_buf(),
+            source: e,
+        })?;
+        syn::parse_file(&content).map_err(|e| CrateInfoError::ParseError {
+            path: path.to_path_buf(),
+            message: e.to_string(),
+        })
+    }
+
     /// Collects only the current module (non-recursive, no submodules).
     ///
     /// When `include_tests` is `true`, also includes the direct test module
@@ -388,15 +471,7 @@ impl CrateInfo {
 
         if include_tests {
             // Read and parse the file to find a direct test module
-            let content = fs::read_to_string(file_path).map_err(|e| CrateInfoError::FileRead {
-                path: file_path.to_path_buf(),
-                source: e,
-            })?;
-
-            let syntax = syn::parse_file(&content).map_err(|e| CrateInfoError::ParseError {
-                path: file_path.to_path_buf(),
-                message: e.to_string(),
-            })?;
+            let syntax = Self::parse_source_file(file_path)?;
 
             for item in &syntax.items {
                 if let Item::Mod(item_mod) = item
@@ -431,15 +506,7 @@ impl CrateInfo {
         ));
 
         // Read and parse the file
-        let content = fs::read_to_string(file_path).map_err(|e| CrateInfoError::FileRead {
-            path: file_path.to_path_buf(),
-            source: e,
-        })?;
-
-        let syntax = syn::parse_file(&content).map_err(|e| CrateInfoError::ParseError {
-            path: file_path.to_path_buf(),
-            message: e.to_string(),
-        })?;
+        let syntax = Self::parse_source_file(file_path)?;
 
         // Get the directory containing this file for resolving submodules
         let base_dir = Self::get_module_base_dir(file_path);
@@ -475,11 +542,13 @@ impl CrateInfo {
                         items,
                         &submodule_path,
                         file_path,
+                        &base_dir,
                         include_tests,
-                    ));
+                    )?);
                 } else {
                     // External module - find and parse its file
-                    if let Some(sub_mod_file) = Self::resolve_module_parts(&base_dir, &[&mod_name])
+                    if let Some(sub_mod_file) =
+                        Self::resolve_module_parts(&base_dir, &[&mod_name], None)?
                     {
                         result.extend(Self::collect_submodules_recursive(
                             &sub_mod_file,
@@ -513,15 +582,43 @@ impl CrateInfo {
     }
 
     /// Checks if an item has a `#[cfg(test)]` attribute.
+    ///
+    /// Matches `#[cfg(test)]`, `#[cfg(all(test, ...))]`, `#[cfg(any(test, ...))]`,
+    /// but not `#[cfg(not(test))]`.
     fn has_cfg_test(attrs: &[Attribute]) -> bool {
+        use proc_macro2::TokenTree;
+
+        fn stream_contains_test(stream: proc_macro2::TokenStream) -> bool {
+            let tokens: Vec<TokenTree> = stream.into_iter().collect();
+            let mut i = 0;
+            while i < tokens.len() {
+                match &tokens[i] {
+                    TokenTree::Ident(ident) if ident == "test" => return true,
+                    TokenTree::Ident(ident) if ident == "not" => {
+                        // Skip the `not(...)` group entirely
+                        if matches!(tokens.get(i + 1), Some(TokenTree::Group(_))) {
+                            i += 2;
+                            continue;
+                        }
+                    }
+                    TokenTree::Group(group) => {
+                        if stream_contains_test(group.stream()) {
+                            return true;
+                        }
+                    }
+                    _ => {}
+                }
+                i += 1;
+            }
+            false
+        }
+
         for attr in attrs {
             if let Meta::List(meta_list) = &attr.meta
                 && meta_list.path.is_ident("cfg")
+                && stream_contains_test(meta_list.tokens.clone())
             {
-                let tokens = meta_list.tokens.to_string();
-                if tokens.contains("test") {
-                    return true;
-                }
+                return true;
             }
         }
         false
@@ -532,8 +629,9 @@ impl CrateInfo {
         items: &[Item],
         current_module_path: &str,
         containing_file: &Path,
+        base_dir: &Path,
         include_tests: bool,
-    ) -> Vec<ModuleInfo> {
+    ) -> Result<Vec<ModuleInfo>> {
         let mut result = Vec::new();
 
         for item in items {
@@ -549,23 +647,35 @@ impl CrateInfo {
                 }
 
                 let submodule_path = format!("{current_module_path}::{mod_name}");
-                result.push(ModuleInfo::new(
-                    submodule_path.clone(),
-                    containing_file.to_path_buf(),
-                ));
 
-                // If this inline module has content, recursively process it
                 if let Some((_, nested_items)) = &item_mod.content {
+                    // Inline module - record with containing file and recurse into items
+                    result.push(ModuleInfo::new(
+                        submodule_path.clone(),
+                        containing_file.to_path_buf(),
+                    ));
                     result.extend(Self::collect_inline_submodules(
                         nested_items,
                         &submodule_path,
                         containing_file,
+                        base_dir,
                         include_tests,
-                    ));
+                    )?);
+                } else {
+                    // File-based module declared inside an inline module
+                    if let Some(sub_mod_file) =
+                        Self::resolve_module_parts(base_dir, &[&mod_name], None)?
+                    {
+                        result.extend(Self::collect_submodules_recursive(
+                            &sub_mod_file,
+                            &submodule_path,
+                            include_tests,
+                        )?);
+                    }
                 }
             }
         }
 
-        result
+        Ok(result)
     }
 }
