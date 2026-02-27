@@ -62,6 +62,18 @@ impl From<Vec<String>> for Segments {
     }
 }
 
+impl Display for Segments {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "{}", self.0.join("::"))
+    }
+}
+
+impl Display for TypeReference {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "{}", self.to_path_string())
+    }
+}
+
 /// Unified type reference representing any path/type usage in Rust code.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TypeReference {
@@ -248,6 +260,7 @@ impl TypeReference {
         }
     }
 
+    #[must_use]
     pub fn expand_suffix(&self) -> Vec<Self> {
         match &self.suffix {
             PathSuffix::None | PathSuffix::Alias(_) => vec![self.clone_with(true, false)],
@@ -349,7 +362,7 @@ impl TypeReference {
 
         // Segments
         if !self.segments.is_empty() {
-            result.push_str(&self.segments.join("::"));
+            result.push_str(&self.segments.to_string());
         }
 
         // Suffix (group, glob, or alias)

@@ -12,5 +12,6 @@ exit_code: 0
 ----- stdout -----
 crate::module::analyzer::{AnalyzerError, CrateAnalyzer}
 crate::module::discover::{CrateInfo, CrateInfoError}
+crate::module::path::{GroupItem, PathPrefix, PathSuffix, Segments, TypeReference}
 
 ----- stderr -----

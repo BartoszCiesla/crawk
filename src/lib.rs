@@ -43,6 +43,8 @@ mod constants;
 mod module;
 pub mod version;
 
+pub use crate::module::path::{GroupItem, PathPrefix, PathSuffix, Segments, TypeReference};
+
 /// Options for dependency analysis.
 ///
 /// Controls how the analyzer processes modules and formats output.
@@ -102,7 +104,7 @@ pub struct AnalysisResult {
     module_path: String,
 
     /// Set of internal dependencies found for the analyzed modules.
-    dependencies: HashMap<String, HashSet<String>>,
+    dependencies: HashMap<String, HashSet<TypeReference>>,
 
     /// Path to the source file that was analyzed.
     source_file: PathBuf,
@@ -117,7 +119,7 @@ impl AnalysisResult {
 
     /// Returns the set of dependencies found.
     #[must_use]
-    pub const fn dependencies(&self) -> &HashMap<String, HashSet<String>> {
+    pub const fn dependencies(&self) -> &HashMap<String, HashSet<TypeReference>> {
         &self.dependencies
     }
 
@@ -141,10 +143,10 @@ impl AnalysisResult {
 
     /// Consumes the result and returns the dependencies as a sorted vector.
     #[must_use]
-    pub fn into_sorted_vec(self) -> Vec<String> {
+    pub fn into_sorted_vec(self) -> Vec<TypeReference> {
         let all_deps_unique: HashSet<_> = self.dependencies.values().flatten().cloned().collect();
-        let mut all_deps_unique: Vec<String> = all_deps_unique.into_iter().collect();
-        all_deps_unique.sort();
+        let mut all_deps_unique: Vec<TypeReference> = all_deps_unique.into_iter().collect();
+        all_deps_unique.sort_by_key(TypeReference::to_path_string);
         all_deps_unique
     }
 }
@@ -365,10 +367,10 @@ impl Analyzer {
                     let expanded = reference.expand_suffix();
                     for exp in expanded {
                         debug!("Expanded reference: {}", exp.to_path_string());
-                        refs.insert(exp.to_path_string());
+                        refs.insert(exp);
                     }
                 } else {
-                    refs.insert(reference.to_path_string());
+                    refs.insert(reference.clone());
                 }
             }
 
