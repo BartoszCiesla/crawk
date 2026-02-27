@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 //! Module for parsing Rust source files and extracting type references.
 //!
 //! Provides [`CrateAnalyzer`] for collecting [`TypeReference`]s from multiple
@@ -11,6 +12,9 @@ use syn::{File, ItemMod, ItemUse, UseTree};
 use thiserror::Error;
 
 use super::path::{GroupItem, PathPrefix, PathSuffix, TypeReference};
+use crate::constants::{
+    ATTR_CFG, MODULE_NAME_TEST, PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER,
+};
 
 /// Errors that can occur during analysis.
 #[derive(Debug, Error)]
@@ -200,10 +204,10 @@ impl ModuleVisitor {
     /// Checks if a module is a test module (has #[cfg(test)] attribute).
     fn is_test_module(node: &ItemMod) -> bool {
         node.attrs.iter().any(|attr| {
-            attr.path().is_ident("cfg")
+            attr.path().is_ident(ATTR_CFG)
                 && attr
                     .parse_args::<syn::Ident>()
-                    .is_ok_and(|ident| ident == "test")
+                    .is_ok_and(|ident| ident == MODULE_NAME_TEST)
         })
     }
 
@@ -212,7 +216,10 @@ impl ModuleVisitor {
     fn is_internal_path(path: &syn::Path) -> bool {
         path.segments.first().is_some_and(|first_segment| {
             let ident = first_segment.ident.to_string();
-            matches!(ident.as_str(), "crate" | "self" | "super")
+            matches!(
+                ident.as_str(),
+                PATH_QUALIFIER_CRATE | PATH_QUALIFIER_SELF | PATH_QUALIFIER_SUPER
+            )
         })
     }
 
@@ -231,21 +238,21 @@ impl ModuleVisitor {
             // Handle special prefixes at the start
             if i == 0 {
                 match ident.as_str() {
-                    "crate" => {
+                    PATH_QUALIFIER_CRATE => {
                         path_prefix = PathPrefix::Crate;
                         continue;
                     }
-                    "self" => {
+                    PATH_QUALIFIER_SELF => {
                         path_prefix = PathPrefix::SelfModule;
                         continue;
                     }
-                    "super" => {
+                    PATH_QUALIFIER_SUPER => {
                         path_prefix = PathPrefix::Super(1);
                         continue;
                     }
                     _ => {}
                 }
-            } else if ident == "super" {
+            } else if ident == PATH_QUALIFIER_SUPER {
                 // Handle chained super::
                 let levels = match path_prefix {
                     PathPrefix::Super(n) => n + 1,
@@ -277,9 +284,9 @@ impl ModuleVisitor {
 
         // Build the full path being checked
         let mut full_path: Vec<String> = match path_prefix {
-            PathPrefix::Crate => vec!["crate".to_string()],
-            PathPrefix::SelfModule => vec!["self".to_string()],
-            PathPrefix::Super(n) => vec!["super".to_string(); *n],
+            PathPrefix::Crate => vec![PATH_QUALIFIER_CRATE.to_string()],
+            PathPrefix::SelfModule => vec![PATH_QUALIFIER_SELF.to_string()],
+            PathPrefix::Super(n) => vec![PATH_QUALIFIER_SUPER.to_string(); *n],
             PathPrefix::None => Vec::new(),
         };
         full_path.extend(prefix.iter().cloned());
@@ -332,9 +339,9 @@ impl ModuleVisitor {
                 // Check for special prefixes at the start
                 let (new_prefix, new_path_prefix) = if prefix.is_empty() {
                     match ident.as_str() {
-                        "crate" => (Vec::new(), PathPrefix::Crate),
-                        "self" => (Vec::new(), PathPrefix::SelfModule),
-                        "super" => {
+                        PATH_QUALIFIER_CRATE => (Vec::new(), PathPrefix::Crate),
+                        PATH_QUALIFIER_SELF => (Vec::new(), PathPrefix::SelfModule),
+                        PATH_QUALIFIER_SUPER => {
                             let levels = match path_prefix {
                                 PathPrefix::Super(n) => n + 1,
                                 _ => 1,
@@ -347,7 +354,7 @@ impl ModuleVisitor {
                             (new_prefix, path_prefix)
                         }
                     }
-                } else if ident == "super" {
+                } else if ident == PATH_QUALIFIER_SUPER {
                     // Handle chained super:: in the middle of path
                     let levels = match path_prefix {
                         PathPrefix::Super(n) => n + 1,
@@ -414,7 +421,7 @@ impl ModuleVisitor {
         match tree {
             UseTree::Name(n) => {
                 let ident = n.ident.to_string();
-                if ident == "self" {
+                if ident == PATH_QUALIFIER_SELF {
                     GroupItem::SelfItem { alias: None }
                 } else {
                     GroupItem::Simple(ident)
@@ -424,7 +431,7 @@ impl ModuleVisitor {
             UseTree::Rename(r) => {
                 let ident = r.ident.to_string();
                 let alias = r.rename.to_string();
-                if ident == "self" {
+                if ident == PATH_QUALIFIER_SELF {
                     GroupItem::SelfItem { alias: Some(alias) }
                 } else {
                     GroupItem::Aliased { name: ident, alias }

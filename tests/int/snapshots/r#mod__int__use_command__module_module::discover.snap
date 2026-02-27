@@ -4,11 +4,11 @@ info:
   program: crawk
   args:
     - use
-    - "module::locate"
+    - "module::discover"
 ---
 success: true
 exit_code: 0
 ----- stdout -----
-crate::constants::{DEFAULT_SRC_DIR, MODULE_FILE_NAME, PATH_QUALIFIER_CRATE}
+crate::constants::{ATTR_CFG, LIB_FILE_NAME, MAIN_FILE_NAME, MODULE_FILE_NAME, MODULE_NAME_TEST}
 
 ----- stderr -----

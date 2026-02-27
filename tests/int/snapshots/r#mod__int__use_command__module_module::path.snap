@@ -4,10 +4,11 @@ info:
   program: crawk
   args:
     - use
-    - analysis
+    - "module::path"
 ---
 success: true
 exit_code: 0
 ----- stdout -----
+crate::constants::PATH_QUALIFIER_SELF
 
 ----- stderr -----

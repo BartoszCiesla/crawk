@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 //! Module for analyzing type usage in Rust source files.
 //!
 //! Provides a single unified type [`TypeReference`] to represent all forms of
@@ -5,6 +6,8 @@
 //! and relative paths (`self`, `super`, `crate`).
 use std::fmt::{Display, Formatter, Result};
 use std::ops::{Deref, DerefMut};
+
+use crate::constants::PATH_QUALIFIER_SELF;
 
 /// Ordered list of path segments (e.g., `["std", "collections", "HashMap"]`).
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
@@ -331,8 +334,8 @@ impl Display for GroupItem {
         match self {
             Self::Simple(name) => write!(f, "{name}"),
             Self::Aliased { name, alias } => write!(f, "{name} as {alias}"),
-            Self::SelfItem { alias: None } => write!(f, "self"),
-            Self::SelfItem { alias: Some(a) } => write!(f, "self as {a}"),
+            Self::SelfItem { alias: None } => write!(f, "{PATH_QUALIFIER_SELF}"),
+            Self::SelfItem { alias: Some(a) } => write!(f, "{PATH_QUALIFIER_SELF} as {a}"),
             Self::Glob => write!(f, "*"),
             Self::Nested { prefix, items } => {
                 write!(f, "{}", prefix.join("::"))?;
@@ -366,7 +369,7 @@ impl From<&str> for GroupItem {
     fn from(s: &str) -> Self {
         if s == "*" {
             Self::Glob
-        } else if s == "self" {
+        } else if s == PATH_QUALIFIER_SELF {
             Self::SelfItem { alias: None }
         } else {
             Self::Simple(s.to_string())

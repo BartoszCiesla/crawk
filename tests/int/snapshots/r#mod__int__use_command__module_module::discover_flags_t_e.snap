@@ -11,5 +11,10 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+crate::constants::ATTR_CFG
+crate::constants::LIB_FILE_NAME
+crate::constants::MAIN_FILE_NAME
+crate::constants::MODULE_FILE_NAME
+crate::constants::MODULE_NAME_TEST
 
 ----- stderr -----

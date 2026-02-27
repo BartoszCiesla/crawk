@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 //! Module for locating and resolving Rust module paths within a crate.
 //!
 //! This module provides the [`CrateInfo`] struct which wraps cargo metadata
@@ -10,6 +11,10 @@ use std::path::{Path, PathBuf};
 use cargo_metadata::{Metadata, MetadataCommand, Package};
 use syn::{Attribute, Item, Meta};
 use thiserror::Error;
+
+use crate::constants::{
+    ATTR_CFG, LIB_FILE_NAME, MAIN_FILE_NAME, MODULE_FILE_NAME, MODULE_NAME_TEST,
+};
 
 /// Errors that can occur during crate info operations.
 #[derive(Debug, Error)]
@@ -313,7 +318,7 @@ impl CrateInfo {
             }
 
             // Check for `part/mod.rs` (older style)
-            let mod_path = part_dir.join("mod.rs");
+            let mod_path = part_dir.join(MODULE_FILE_NAME);
             if mod_path.exists() {
                 if is_last {
                     return Ok(Some(mod_path));
@@ -571,7 +576,10 @@ impl CrateInfo {
         let file_name = file_path.file_name().and_then(|n| n.to_str()).unwrap_or("");
         let parent = file_path.parent().unwrap_or_else(|| Path::new(""));
 
-        if file_name == "mod.rs" || file_name == "lib.rs" || file_name == "main.rs" {
+        if file_name == MODULE_FILE_NAME
+            || file_name == LIB_FILE_NAME
+            || file_name == MAIN_FILE_NAME
+        {
             // Submodules are in the same directory
             parent.to_path_buf()
         } else {
@@ -593,7 +601,7 @@ impl CrateInfo {
             let mut i = 0;
             while i < tokens.len() {
                 match &tokens[i] {
-                    TokenTree::Ident(ident) if ident == "test" => return true,
+                    TokenTree::Ident(ident) if ident == MODULE_NAME_TEST => return true,
                     TokenTree::Ident(ident) if ident == "not" => {
                         // Skip the `not(...)` group entirely
                         if matches!(tokens.get(i + 1), Some(TokenTree::Group(_))) {
@@ -615,7 +623,7 @@ impl CrateInfo {
 
         for attr in attrs {
             if let Meta::List(meta_list) = &attr.meta
-                && meta_list.path.is_ident("cfg")
+                && meta_list.path.is_ident(ATTR_CFG)
                 && stream_contains_test(meta_list.tokens.clone())
             {
                 return true;

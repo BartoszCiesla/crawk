@@ -1,5 +1,5 @@
 use crate::constants::{
-    MODULE_NAME_TEST, MODULE_NAME_TESTS, PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF,
+    ATTR_CFG, MODULE_NAME_TEST, MODULE_NAME_TESTS, PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF,
     PATH_QUALIFIER_SUPER,
 };
 use proc_macro2::Span;
@@ -138,7 +138,7 @@ pub fn is_test_module(item_mod: &syn::ItemMod) -> bool {
 
     // Check for #[cfg(test)] attribute
     for attr in &item_mod.attrs {
-        if attr.path().is_ident("cfg")
+        if attr.path().is_ident(ATTR_CFG)
             && let Ok(meta_list) = attr.meta.require_list()
         {
             let tokens = meta_list.tokens.to_string();

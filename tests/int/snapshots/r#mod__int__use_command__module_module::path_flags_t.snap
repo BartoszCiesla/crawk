@@ -10,5 +10,6 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+crate::constants::PATH_QUALIFIER_SELF
 
 ----- stderr -----

@@ -39,8 +39,6 @@ use std::path::{Path, PathBuf};
 use thiserror::Error;
 use tracing::{debug, error, info};
 
-#[allow(dead_code)]
-mod analysis;
 mod constants;
 mod module;
 pub mod version;

@@ -4,13 +4,11 @@ info:
   program: crawk
   args:
     - use
-    - "module::format"
-    - "-t"
-    - "-e"
+    - nonexisting
 ---
-success: true
-exit_code: 0
+success: false
+exit_code: 1
 ----- stdout -----
-crate::constants::PATH_QUALIFIER_CRATE
 
 ----- stderr -----
+Error: Module 'nonexisting' not found
