@@ -260,6 +260,30 @@ impl TypeReference {
         }
     }
 
+    /// Truncates the path to the given depth (number of segments).
+    ///
+    /// If the path has more segments than `depth`, the segments are truncated
+    /// and the suffix is dropped. Otherwise the reference is returned unchanged.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// // crate::module::analyzer::AnalyzerError (3 segments) with depth=2
+    /// // becomes crate::module::analyzer (2 segments, no suffix)
+    /// let truncated = reference.truncate_to_depth(2);
+    /// ```
+    #[must_use]
+    pub fn truncate_to_depth(&self, depth: usize) -> Self {
+        if self.segments.len() <= depth {
+            return self.clone();
+        }
+        Self {
+            segments: Segments::from(self.segments[..depth].to_vec()),
+            prefix: self.prefix,
+            suffix: PathSuffix::None,
+        }
+    }
+
     #[must_use]
     pub fn expand_suffix(&self) -> Vec<Self> {
         match &self.suffix {

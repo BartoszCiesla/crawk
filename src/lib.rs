@@ -30,7 +30,7 @@
 //! - **Path expansion**: Resolves `self::` and `super::` to absolute `crate::` paths
 //! - **Glob expansion**: Optionally expands `use crate::foo::*` to explicit items
 //! - **Test module filtering**: Optionally include or exclude `#[cfg(test)]` modules
-//! - **Depth limiting**: Truncate paths to a maximum depth for high-level views
+//! - **Depth limiting**: Truncate [`TypeReference`] paths via [`TypeReference::truncate_to_depth`]
 
 use crate::module::analyzer::{AnalyzerError, CrateAnalyzer};
 use crate::module::discover::{CrateInfo, CrateInfoError};
@@ -54,7 +54,7 @@ pub use crate::module::path::{GroupItem, PathPrefix, PathSuffix, Segments, TypeR
 /// ```
 /// use crawk::AnalysisOptions;
 ///
-/// // Default options: exclude tests, don't expand groups, no depth limit
+/// // Default options: exclude tests, don't expand groups
 /// let options = AnalysisOptions::default();
 ///
 /// // Include test modules and expand grouped imports
@@ -84,14 +84,6 @@ pub struct AnalysisOptions {
     /// When `true`, `use crate::foo::{Bar, Baz}` becomes two separate entries:
     /// `foo::Bar` and `foo::Baz`.
     pub expand_groups: bool,
-
-    /// Truncate paths at this depth from the crate root.
-    ///
-    /// For example, with `max_depth = Some(2)`:
-    /// - `foo::bar::baz::Thing` becomes `foo::bar`
-    ///
-    /// `None` means no truncation.
-    pub max_depth: Option<usize>,
 }
 
 /// Result of analyzing a module's dependencies.
@@ -204,7 +196,6 @@ pub type Result<T> = std::result::Result<T, AnalysisError>;
 /// let options = AnalysisOptions {
 ///     include_tests: true,
 ///     expand_groups: true,
-///     max_depth: Some(2),
 ///     ..Default::default()
 /// };
 /// let result = analyzer.analyze_module("foo::bar", &options)?;
@@ -399,6 +390,5 @@ mod tests {
         let options = AnalysisOptions::default();
         assert!(!options.include_tests);
         assert!(!options.expand_groups);
-        assert!(options.max_depth.is_none());
     }
 }

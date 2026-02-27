@@ -10,6 +10,6 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crawk::{AnalysisOptions, Analyzer, version}
+crawk::{AnalysisOptions, Analyzer, TypeReference, version}
 
 ----- stderr -----

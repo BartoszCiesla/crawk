@@ -3,8 +3,9 @@ mod logger;
 
 use clap::Parser;
 use cli::{CrawkArgs, CrawkCommands, UseArgs};
-use crawk::{AnalysisOptions, Analyzer, version};
+use crawk::{AnalysisOptions, Analyzer, TypeReference, version};
 use logger::configure_tracing;
+use std::collections::BTreeSet;
 use std::path::Path;
 use tracing::info;
 
@@ -29,6 +30,18 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Apply optional depth truncation and deduplicate references, returning sorted results.
+fn truncate_and_dedup<'a, I>(refs: I, depth: Option<usize>) -> Vec<String>
+where
+    I: IntoIterator<Item = &'a TypeReference>,
+{
+    let truncated: BTreeSet<String> = refs
+        .into_iter()
+        .map(|r| depth.map_or_else(|| r.to_string(), |d| r.truncate_to_depth(d).to_string()))
+        .collect();
+    truncated.into_iter().collect()
+}
+
 /// Handle the 'use' subcommand
 fn handle_use_command(crate_root: &Path, args: &UseArgs) -> anyhow::Result<()> {
     // Create analyzer and validate crate root
@@ -42,7 +55,6 @@ fn handle_use_command(crate_root: &Path, args: &UseArgs) -> anyhow::Result<()> {
         recursive: args.recursive,
         include_tests: args.include_tests,
         expand_groups: args.expand,
-        max_depth: args.depth,
     };
 
     // Analyze the module
@@ -60,12 +72,15 @@ fn handle_use_command(crate_root: &Path, args: &UseArgs) -> anyhow::Result<()> {
 
         for module in modules {
             println!("{module}");
-            for reference in &dependencies[&module] {
+            let refs = truncate_and_dedup(&dependencies[&module], args.depth);
+            for reference in refs {
                 println!(" - {reference}");
             }
         }
     } else {
-        for reference in result.into_sorted_vec() {
+        let all_refs = result.into_sorted_vec();
+        let refs = truncate_and_dedup(&all_refs, args.depth);
+        for reference in refs {
             println!("{reference}");
         }
     }

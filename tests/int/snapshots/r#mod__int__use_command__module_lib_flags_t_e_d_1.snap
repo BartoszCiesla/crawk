@@ -13,14 +13,6 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::module::analyzer::AnalyzerError
-crate::module::analyzer::CrateAnalyzer
-crate::module::discover::CrateInfo
-crate::module::discover::CrateInfoError
-crate::module::path::GroupItem
-crate::module::path::PathPrefix
-crate::module::path::PathSuffix
-crate::module::path::Segments
-crate::module::path::TypeReference
+crate::module
 
 ----- stderr -----

@@ -13,6 +13,7 @@ exit_code: 0
 ----- stdout -----
 crawk::AnalysisOptions
 crawk::Analyzer
+crawk::TypeReference
 crawk::version
 
 ----- stderr -----
