@@ -10,6 +10,6 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::constants::{ATTR_CFG, MODULE_NAME_TEST, PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER}
-super::path::{GroupItem, PathPrefix, PathSuffix, TypeReference}
+crate::module::path::{GroupItem, PathPrefix, PathSuffix, TypeReference}
 
 ----- stderr -----

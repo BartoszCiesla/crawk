@@ -282,6 +282,54 @@ impl TypeReference {
         }
     }
 
+    /// Resolves relative paths (`self::`, `super::`) to absolute paths (`crate::`).
+    ///
+    /// Given the current module path, converts relative references to absolute ones:
+    /// - `self::foo` in module `a::b` becomes `crate::a::b::foo`
+    /// - `super::foo` in module `a::b` becomes `crate::a::foo`
+    /// - `super::super::foo` in module `a::b::c` becomes `crate::a::foo`
+    /// - `crate::foo` stays as `crate::foo`
+    ///
+    /// # Arguments
+    ///
+    /// * `module_path` - The current module path as segments (e.g., `["utils", "parser"]`)
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let ref = TypeReference::new(["foo", "Bar"]).with_self_prefix();
+    /// let resolved = ref.resolve(&["utils", "parser"]);
+    /// assert_eq!(resolved.to_path_string(), "crate::utils::parser::foo::Bar");
+    /// ```
+    #[must_use]
+    pub fn resolve(mut self, module_path: &[String]) -> Self {
+        match self.prefix {
+            PathPrefix::SelfModule => {
+                // self::foo in module a::b becomes crate::a::b::foo
+                let mut new_segments = module_path.to_vec();
+                new_segments.extend(self.segments.0.clone());
+                self.segments = Segments::from(new_segments);
+                self.prefix = PathPrefix::Crate;
+            }
+            PathPrefix::Super(levels) => {
+                // super::foo in module a::b becomes crate::a::foo
+                // super::super::foo in module a::b::c becomes crate::a::foo
+                if module_path.len() >= levels {
+                    let parent_depth = module_path.len() - levels;
+                    let mut new_segments = module_path[..parent_depth].to_vec();
+                    new_segments.extend(self.segments.0.clone());
+                    self.segments = Segments::from(new_segments);
+                    self.prefix = PathPrefix::Crate;
+                }
+                // If we can't go up that many levels, leave as-is (invalid but don't crash)
+            }
+            PathPrefix::Crate | PathPrefix::None => {
+                // Already absolute or external, no changes needed
+            }
+        }
+        self
+    }
+
     /// Converts to string representation.
     #[must_use]
     pub fn to_path_string(&self) -> String {
@@ -716,5 +764,121 @@ mod tests {
                 vec!["a", "b", "c", "f"],
             ]
         );
+    }
+
+    #[test]
+    fn test_resolve_self_prefix() {
+        let r = TypeReference::new(["foo", "Bar"]).with_self_prefix();
+        let module_path = vec!["utils".to_string(), "parser".to_string()];
+        let resolved = r.resolve(&module_path);
+
+        assert_eq!(resolved.prefix, PathPrefix::Crate);
+        assert_eq!(
+            resolved.segments.as_slice(),
+            &["utils", "parser", "foo", "Bar"]
+        );
+        assert_eq!(resolved.to_path_string(), "crate::utils::parser::foo::Bar");
+    }
+
+    #[test]
+    fn test_resolve_self_prefix_at_crate_root() {
+        let r = TypeReference::new(["foo", "Bar"]).with_self_prefix();
+        let module_path: Vec<String> = vec![];
+        let resolved = r.resolve(&module_path);
+
+        assert_eq!(resolved.prefix, PathPrefix::Crate);
+        assert_eq!(resolved.segments.as_slice(), &["foo", "Bar"]);
+        assert_eq!(resolved.to_path_string(), "crate::foo::Bar");
+    }
+
+    #[test]
+    fn test_resolve_super_single_level() {
+        let r = TypeReference::new(["sibling", "Type"]).with_super(1);
+        let module_path = vec!["parent".to_string(), "child".to_string()];
+        let resolved = r.resolve(&module_path);
+
+        assert_eq!(resolved.prefix, PathPrefix::Crate);
+        assert_eq!(resolved.segments.as_slice(), &["parent", "sibling", "Type"]);
+        assert_eq!(resolved.to_path_string(), "crate::parent::sibling::Type");
+    }
+
+    #[test]
+    fn test_resolve_super_multiple_levels() {
+        let r = TypeReference::new(["ancestor", "Type"]).with_super(2);
+        let module_path = vec!["a".to_string(), "b".to_string(), "c".to_string()];
+        let resolved = r.resolve(&module_path);
+
+        assert_eq!(resolved.prefix, PathPrefix::Crate);
+        assert_eq!(resolved.segments.as_slice(), &["a", "ancestor", "Type"]);
+        assert_eq!(resolved.to_path_string(), "crate::a::ancestor::Type");
+    }
+
+    #[test]
+    fn test_resolve_super_at_crate_root() {
+        // super at crate root is invalid but shouldn't crash
+        let r = TypeReference::new(["foo", "Bar"]).with_super(1);
+        let module_path: Vec<String> = vec![];
+        let resolved = r.resolve(&module_path);
+
+        // Should leave it as-is since we can't go up
+        assert_eq!(resolved.prefix, PathPrefix::Super(1));
+        assert_eq!(resolved.segments.as_slice(), &["foo", "Bar"]);
+    }
+
+    #[test]
+    fn test_resolve_super_too_many_levels() {
+        // Trying to go up more levels than exist
+        let r = TypeReference::new(["foo", "Bar"]).with_super(5);
+        let module_path = vec!["a".to_string(), "b".to_string()];
+        let resolved = r.resolve(&module_path);
+
+        // Should leave it as-is since we can't go up that far
+        assert_eq!(resolved.prefix, PathPrefix::Super(5));
+        assert_eq!(resolved.segments.as_slice(), &["foo", "Bar"]);
+    }
+
+    #[test]
+    fn test_resolve_crate_prefix_unchanged() {
+        let r = TypeReference::new(["module", "Type"]).with_crate_prefix();
+        let module_path = vec!["utils".to_string()];
+        let resolved = r.resolve(&module_path);
+
+        assert_eq!(resolved.prefix, PathPrefix::Crate);
+        assert_eq!(resolved.segments.as_slice(), &["module", "Type"]);
+        assert_eq!(resolved.to_path_string(), "crate::module::Type");
+    }
+
+    #[test]
+    fn test_resolve_no_prefix_unchanged() {
+        let r = TypeReference::new(["std", "collections", "HashMap"]);
+        let module_path = vec!["utils".to_string()];
+        let resolved = r.resolve(&module_path);
+
+        assert_eq!(resolved.prefix, PathPrefix::None);
+        assert_eq!(
+            resolved.segments.as_slice(),
+            &["std", "collections", "HashMap"]
+        );
+        assert_eq!(resolved.to_path_string(), "std::collections::HashMap");
+    }
+
+    #[test]
+    fn test_resolve_preserves_suffix() {
+        let r = TypeReference::new(["foo", "Bar"])
+            .with_self_prefix()
+            .with_alias("MyBar");
+        let module_path = vec!["utils".to_string()];
+        let resolved = r.resolve(&module_path);
+
+        assert_eq!(resolved.to_path_string(), "crate::utils::foo::Bar as MyBar");
+    }
+
+    #[test]
+    fn test_resolve_with_glob() {
+        let r = TypeReference::new(["foo"]).with_self_prefix().with_glob();
+        let module_path = vec!["utils".to_string()];
+        let resolved = r.resolve(&module_path);
+
+        assert_eq!(resolved.to_path_string(), "crate::utils::foo::*");
     }
 }

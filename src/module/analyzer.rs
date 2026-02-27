@@ -183,18 +183,39 @@ impl CrateAnalyzer {
 
 /// Visitor for extracting type references from module AST.
 struct ModuleVisitor {
+    /// Module name for filtering and identification (e.g., "foo::bar").
+    /// Used to match against nested module declarations. Empty string means analyze all modules.
     module_name: String,
+
+    /// Module path as segments for resolving relative paths (e.g., `["foo", "bar"]`).
+    /// Used to convert `self::` and `super::` references to absolute `crate::` paths.
+    module_path: Vec<String>,
+
+    /// Collected type references found in this module.
+    /// All relative paths are resolved to absolute paths before being added.
     references: Vec<TypeReference>,
-    /// Track if we're currently in a test module
+
+    /// Track if we're currently visiting inside a test module.
+    /// Updated as we traverse nested modules to filter test-only references.
     in_test_module: bool,
-    /// Whether to include references from test modules
+
+    /// Whether to include references from test modules (those marked with `#[cfg(test)]`).
+    /// When `false`, references found in test modules are excluded.
     include_tests: bool,
 }
 
 impl ModuleVisitor {
     fn new(module_name: impl Into<String>) -> Self {
+        let module_name = module_name.into();
+        let module_path: Vec<String> = if module_name.is_empty() {
+            vec![]
+        } else {
+            module_name.split("::").map(String::from).collect()
+        };
+
         Self {
-            module_name: module_name.into(),
+            module_name,
+            module_path,
             references: Vec::new(),
             in_test_module: false,
             include_tests: false,
@@ -268,6 +289,8 @@ impl ModuleVisitor {
         if !segments.is_empty() {
             let mut reference = TypeReference::new(segments);
             reference.prefix = path_prefix;
+            // Resolve relative paths to absolute paths
+            reference = reference.resolve(&self.module_path);
             self.references.push(reference);
         }
     }
@@ -376,6 +399,8 @@ impl ModuleVisitor {
 
                 let mut reference = TypeReference::new(segments);
                 reference.prefix = path_prefix;
+                // Resolve relative paths to absolute paths
+                reference = reference.resolve(&self.module_path);
                 self.references.push(reference);
             }
 
@@ -386,6 +411,8 @@ impl ModuleVisitor {
                 let mut reference = TypeReference::new(segments);
                 reference.prefix = path_prefix;
                 reference.suffix = PathSuffix::Alias(r.rename.to_string());
+                // Resolve relative paths to absolute paths
+                reference = reference.resolve(&self.module_path);
                 self.references.push(reference);
             }
 
@@ -393,6 +420,8 @@ impl ModuleVisitor {
                 let mut reference = TypeReference::new(prefix);
                 reference.prefix = path_prefix;
                 reference.suffix = PathSuffix::Glob;
+                // Resolve relative paths to absolute paths
+                reference = reference.resolve(&self.module_path);
                 self.references.push(reference);
             }
 
@@ -402,6 +431,8 @@ impl ModuleVisitor {
                 let mut reference = TypeReference::new(prefix);
                 reference.prefix = path_prefix;
                 reference.suffix = PathSuffix::Group(group_items);
+                // Resolve relative paths to absolute paths
+                reference = reference.resolve(&self.module_path);
                 self.references.push(reference);
             }
         }
@@ -652,23 +683,29 @@ mod tests {
 
     #[test]
     fn test_use_self() {
+        // self:: at crate root resolves to crate::
         let refs = parse_use("use self::submodule::Type;");
         assert_eq!(refs.len(), 1);
-        assert_eq!(refs[0].to_path_string(), "self::submodule::Type");
+        assert_eq!(refs[0].to_path_string(), "crate::submodule::Type");
+        assert_eq!(refs[0].prefix, PathPrefix::Crate);
     }
 
     #[test]
     fn test_use_super() {
+        // super:: at crate root cannot be resolved (invalid), stays as super::
         let refs = parse_use("use super::sibling::Type;");
         assert_eq!(refs.len(), 1);
         assert_eq!(refs[0].to_path_string(), "super::sibling::Type");
+        assert_eq!(refs[0].prefix, PathPrefix::Super(1));
     }
 
     #[test]
     fn test_use_super_multiple() {
+        // super::super:: at crate root cannot be resolved, stays as super::super::
         let refs = parse_use("use super::super::ancestor::Type;");
         assert_eq!(refs.len(), 1);
         assert_eq!(refs[0].to_path_string(), "super::super::ancestor::Type");
+        assert_eq!(refs[0].prefix, PathPrefix::Super(2));
     }
 
     #[test]
@@ -772,5 +809,132 @@ mod tests {
         let refs = parse_use(code);
         assert_eq!(refs.len(), 1);
         assert!(refs[0].to_path_string().contains("my_macro"));
+    }
+
+    #[test]
+    fn test_resolve_self_in_module() {
+        // Test resolution of self:: in a nested module
+        let code = "use self::submodule::Type;";
+        let syntax: File = syn::parse_file(code).unwrap();
+        let mut visitor = ModuleVisitor::new("utils::parser");
+        visitor.visit_file(&syntax);
+
+        assert_eq!(visitor.references.len(), 1);
+        assert_eq!(
+            visitor.references[0].to_path_string(),
+            "crate::utils::parser::submodule::Type"
+        );
+        assert_eq!(visitor.references[0].prefix, PathPrefix::Crate);
+    }
+
+    #[test]
+    fn test_resolve_super_in_nested_module() {
+        // Test resolution of super:: in a nested module
+        let code = "use super::sibling::Type;";
+        let syntax: File = syn::parse_file(code).unwrap();
+        let mut visitor = ModuleVisitor::new("utils::parser");
+        visitor.visit_file(&syntax);
+
+        assert_eq!(visitor.references.len(), 1);
+        assert_eq!(
+            visitor.references[0].to_path_string(),
+            "crate::utils::sibling::Type"
+        );
+        assert_eq!(visitor.references[0].prefix, PathPrefix::Crate);
+    }
+
+    #[test]
+    fn test_resolve_super_multiple_in_deeply_nested_module() {
+        // Test resolution of super::super:: in a deeply nested module
+        let code = "use super::super::ancestor::Type;";
+        let syntax: File = syn::parse_file(code).unwrap();
+        let mut visitor = ModuleVisitor::new("a::b::c");
+        visitor.visit_file(&syntax);
+
+        assert_eq!(visitor.references.len(), 1);
+        assert_eq!(
+            visitor.references[0].to_path_string(),
+            "crate::a::ancestor::Type"
+        );
+        assert_eq!(visitor.references[0].prefix, PathPrefix::Crate);
+    }
+
+    #[test]
+    fn test_resolve_preserves_groups() {
+        // Test that resolution works with grouped imports
+        let code = "use self::{foo, bar::Baz};";
+        let syntax: File = syn::parse_file(code).unwrap();
+        let mut visitor = ModuleVisitor::new("utils");
+        visitor.visit_file(&syntax);
+
+        assert_eq!(visitor.references.len(), 1);
+        assert_eq!(
+            visitor.references[0].to_path_string(),
+            "crate::utils::{foo, bar::Baz}"
+        );
+        assert_eq!(visitor.references[0].prefix, PathPrefix::Crate);
+    }
+
+    #[test]
+    fn test_resolve_preserves_glob() {
+        // Test that resolution works with glob imports
+        let code = "use self::submodule::*;";
+        let syntax: File = syn::parse_file(code).unwrap();
+        let mut visitor = ModuleVisitor::new("utils");
+        visitor.visit_file(&syntax);
+
+        assert_eq!(visitor.references.len(), 1);
+        assert_eq!(
+            visitor.references[0].to_path_string(),
+            "crate::utils::submodule::*"
+        );
+        assert_eq!(visitor.references[0].prefix, PathPrefix::Crate);
+        assert!(visitor.references[0].has_glob());
+    }
+
+    #[test]
+    fn test_resolve_preserves_alias() {
+        // Test that resolution works with aliased imports
+        let code = "use self::submodule::Type as MyType;";
+        let syntax: File = syn::parse_file(code).unwrap();
+        let mut visitor = ModuleVisitor::new("utils");
+        visitor.visit_file(&syntax);
+
+        assert_eq!(visitor.references.len(), 1);
+        assert_eq!(
+            visitor.references[0].to_path_string(),
+            "crate::utils::submodule::Type as MyType"
+        );
+        assert_eq!(visitor.references[0].prefix, PathPrefix::Crate);
+    }
+
+    #[test]
+    fn test_resolve_expression_paths() {
+        // Test that resolution works for paths in expressions
+        let code = "
+            fn foo() {
+                self::helper::do_something();
+                super::sibling::bar();
+            }
+        ";
+        let syntax: File = syn::parse_file(code).unwrap();
+        let mut visitor = ModuleVisitor::new("utils::parser");
+        visitor.visit_file(&syntax);
+
+        assert!(visitor.references.len() >= 2);
+
+        // Check that paths are resolved
+        let paths: Vec<String> = visitor
+            .references
+            .iter()
+            .map(TypeReference::to_path_string)
+            .collect();
+
+        assert!(
+            paths
+                .iter()
+                .any(|p| p.contains("crate::utils::parser::helper"))
+        );
+        assert!(paths.iter().any(|p| p.contains("crate::utils::sibling")));
     }
 }

@@ -16,9 +16,13 @@ crate::constants::MODULE_NAME_TEST
 crate::constants::PATH_QUALIFIER_CRATE
 crate::constants::PATH_QUALIFIER_SELF
 crate::constants::PATH_QUALIFIER_SUPER
-super::path::GroupItem
-super::path::PathPrefix
-super::path::PathSuffix
-super::path::TypeReference
+crate::module::analyzer::path::GroupItem
+crate::module::analyzer::path::PathPrefix
+crate::module::analyzer::path::PathSuffix
+crate::module::analyzer::path::TypeReference
+crate::module::path::GroupItem
+crate::module::path::PathPrefix
+crate::module::path::PathSuffix
+crate::module::path::TypeReference
 
 ----- stderr -----
