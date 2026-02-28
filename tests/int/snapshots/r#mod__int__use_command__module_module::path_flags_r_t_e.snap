@@ -1,0 +1,18 @@
+---
+source: tests/int/use_command.rs
+info:
+  program: crawk
+  args:
+    - use
+    - "module::path"
+    - "-r"
+    - "-t"
+    - "-e"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::constants::PATH_QUALIFIER_SELF
+crate::module::path::*
+
+----- stderr -----

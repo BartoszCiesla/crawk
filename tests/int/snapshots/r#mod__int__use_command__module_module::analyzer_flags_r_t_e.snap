@@ -1,0 +1,26 @@
+---
+source: tests/int/use_command.rs
+info:
+  program: crawk
+  args:
+    - use
+    - "module::analyzer"
+    - "-r"
+    - "-t"
+    - "-e"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::constants::ATTR_CFG
+crate::constants::MODULE_NAME_TEST
+crate::constants::PATH_QUALIFIER_CRATE
+crate::constants::PATH_QUALIFIER_SELF
+crate::constants::PATH_QUALIFIER_SUPER
+crate::module::analyzer::*
+crate::module::path::GroupItem
+crate::module::path::PathPrefix
+crate::module::path::PathSuffix
+crate::module::path::TypeReference
+
+----- stderr -----

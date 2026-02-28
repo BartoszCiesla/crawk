@@ -31,10 +31,14 @@ fn should_use_command_provide_output(module: &str) {
 }
 
 #[test_matrix(
-  ["cli", "lib", "main", "module", "logger", "module::analyzer", "module::discover", "module::path"],
+  ["module", "module::analyzer", "module::discover", "module::path", "module::resolve", "lib", "main", "build", "cli", "constants", "logger", "version"],
   [&["-t"],
    &["-t", "-e"],
-   &["-t", "-e", "-d", "1"]
+   &["-t", "-e", "-d", "1"],
+   &["-r"],
+   &["-r", "-t"],
+   &["-r", "-t", "-e"],
+   &["-r", "-t", "-e", "-G"],
   ]
 )]
 fn should_use_command_provide_output_for_flags(module: &str, flags: &[&str]) {

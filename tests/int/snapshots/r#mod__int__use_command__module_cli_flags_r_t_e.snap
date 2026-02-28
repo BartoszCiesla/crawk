@@ -1,0 +1,18 @@
+---
+source: tests/int/use_command.rs
+info:
+  program: crawk
+  args:
+    - use
+    - cli
+    - "-r"
+    - "-t"
+    - "-e"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::cli::*
+crawk::version
+
+----- stderr -----

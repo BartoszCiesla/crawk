@@ -1,0 +1,57 @@
+---
+source: tests/int/use_command.rs
+info:
+  program: crawk
+  args:
+    - use
+    - lib
+    - "-r"
+    - "-t"
+    - "-e"
+    - "-G"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::constants::ATTR_CFG
+crate::constants::LIB_FILE_NAME
+crate::constants::MAIN_FILE_NAME
+crate::constants::MODULE_FILE_NAME
+crate::constants::MODULE_NAME_TEST
+crate::constants::PATH_QUALIFIER_CRATE
+crate::constants::PATH_QUALIFIER_SELF
+crate::constants::PATH_QUALIFIER_SUPER
+crate::crawk::AnalysisError
+crate::crawk::AnalysisOptions
+crate::crawk::AnalysisResult
+crate::crawk::Analyzer
+crate::crawk::GroupItem
+crate::crawk::PathPrefix
+crate::crawk::PathSuffix
+crate::crawk::Result
+crate::crawk::Segments
+crate::crawk::TypeReference
+crate::crawk::module::analyzer::AnalyzerError
+crate::crawk::module::analyzer::CrateAnalyzer
+crate::crawk::module::analyzer::FileReferences
+crate::crawk::module::analyzer::Result
+crate::crawk::module::path::GroupItem
+crate::crawk::module::path::PathPrefix
+crate::crawk::module::path::PathSuffix
+crate::crawk::module::path::Segments
+crate::crawk::module::path::TypeReference
+crate::crawk::module::resolve::extract_public_items
+crate::crawk::version
+crate::module::analyzer::AnalyzerError
+crate::module::analyzer::CrateAnalyzer
+crate::module::discover::CrateInfo
+crate::module::discover::CrateInfoError
+crate::module::discover::ModuleInfo
+crate::module::path::GroupItem
+crate::module::path::PathPrefix
+crate::module::path::PathSuffix
+crate::module::path::Segments
+crate::module::path::TypeReference
+crate::module::resolve::extract_public_items
+
+----- stderr -----

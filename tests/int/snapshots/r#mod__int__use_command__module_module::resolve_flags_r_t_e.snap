@@ -1,0 +1,17 @@
+---
+source: tests/int/use_command.rs
+info:
+  program: crawk
+  args:
+    - use
+    - "module::resolve"
+    - "-r"
+    - "-t"
+    - "-e"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::module::resolve::*
+
+----- stderr -----
