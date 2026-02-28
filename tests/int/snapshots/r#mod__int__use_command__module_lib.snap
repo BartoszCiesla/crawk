@@ -10,7 +10,9 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::module::analyzer::{AnalyzerError, CrateAnalyzer}
+crate::module::discover::ModuleInfo
 crate::module::discover::{CrateInfo, CrateInfoError}
 crate::module::path::{GroupItem, PathPrefix, PathSuffix, Segments, TypeReference}
+crate::module::resolve::extract_public_items
 
 ----- stderr -----

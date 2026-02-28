@@ -98,10 +98,16 @@ impl CrateAnalyzer {
     }
 
     /// Parses a single source file and collects type references.
+    ///
+    /// When `inline_scope` is non-empty, the visitor is scoped to only the items
+    /// inside the target inline module instead of visiting the entire file.
+    /// For example, if parsing `glob_patterns::utilities` from `glob_patterns.rs`,
+    /// `inline_scope` would be `["utilities"]`.
     pub fn parse_file(
         &mut self,
         module: impl Into<String>,
         path: &Path,
+        inline_scope: &[String],
     ) -> Result<Vec<TypeReference>> {
         let content = std::fs::read_to_string(path).map_err(|e| AnalyzerError::FileRead {
             path: path.to_path_buf(),
@@ -115,7 +121,14 @@ impl CrateAnalyzer {
 
         let module = module.into();
         let mut visitor = ModuleVisitor::new(module.clone());
-        visitor.visit_file(&syntax);
+
+        if inline_scope.is_empty() {
+            visitor.visit_file(&syntax);
+        } else if let Some(items) = find_inline_items(&syntax.items, inline_scope) {
+            for item in items {
+                visitor.visit_item(item);
+            }
+        }
 
         let mut file_refs = FileReferences::new(path);
         let result = visitor.references.clone();
@@ -179,6 +192,32 @@ impl CrateAnalyzer {
         self.files.clear();
         self.file_order.clear();
     }
+}
+
+/// Navigate the AST to find items inside a nested inline module.
+///
+/// Given a list of items and a scope path like `["utilities"]`, descends into the
+/// `mod utilities { ... }` item and returns its items. For deeper scopes like
+/// `["a", "b"]`, it descends recursively: first into `mod a`, then into `mod b`.
+///
+/// Returns `None` if the scope is empty or if the target inline module is not found.
+fn find_inline_items<'a>(items: &'a [syn::Item], scope: &[String]) -> Option<&'a Vec<syn::Item>> {
+    if scope.is_empty() {
+        return None;
+    }
+    let target = &scope[0];
+    for item in items {
+        if let syn::Item::Mod(item_mod) = item
+            && item_mod.ident == *target
+            && let Some((_, nested)) = &item_mod.content
+        {
+            if scope.len() == 1 {
+                return Some(nested);
+            }
+            return find_inline_items(nested, &scope[1..]);
+        }
+    }
+    None
 }
 
 /// Visitor for extracting type references from module AST.

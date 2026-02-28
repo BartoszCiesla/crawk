@@ -192,6 +192,17 @@ impl CrateInfo {
         self.resolve_module_path_with_crate(package, module_path)
     }
 
+    /// Public wrapper around [`resolve_module`](Self::resolve_module).
+    ///
+    /// Resolves a module path (e.g., `"foo::bar"`) to the corresponding source file.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the module cannot be found or the crate root is invalid.
+    pub fn resolve_module_path_to_file(&self, module_path: &str) -> Result<PathBuf> {
+        self.resolve_module(module_path)
+    }
+
     /// Resolves a module path within a specific package.
     ///
     /// # Arguments

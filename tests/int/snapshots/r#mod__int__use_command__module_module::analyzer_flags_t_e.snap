@@ -16,10 +16,7 @@ crate::constants::MODULE_NAME_TEST
 crate::constants::PATH_QUALIFIER_CRATE
 crate::constants::PATH_QUALIFIER_SELF
 crate::constants::PATH_QUALIFIER_SUPER
-crate::module::analyzer::path::GroupItem
-crate::module::analyzer::path::PathPrefix
-crate::module::analyzer::path::PathSuffix
-crate::module::analyzer::path::TypeReference
+crate::module::analyzer::*
 crate::module::path::GroupItem
 crate::module::path::PathPrefix
 crate::module::path::PathSuffix
