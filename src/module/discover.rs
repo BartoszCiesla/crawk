@@ -237,6 +237,7 @@ impl CrateInfo {
     /// Resolves a fully qualified module path that may include the crate name.
     ///
     /// E.g., `crawk::analysis::collect` or just `analysis::collect`
+    /// Also treats "lib" as an alias for the library root (same as crate name).
     fn resolve_module_path_with_crate(
         &self,
         package: &Package,
@@ -248,20 +249,22 @@ impl CrateInfo {
             return Err(CrateInfoError::EmptyModulePath);
         }
 
-        // Check if the first part is the crate name itself
-        if parts[0] == self.root_package_name {
-            // Skip the crate name and resolve the rest
+        // Check if the first part is the crate name itself or "lib" alias
+        let is_lib_root = parts[0] == self.root_package_name || parts[0] == "lib";
+
+        if is_lib_root {
+            // Skip the crate name/alias and resolve the rest
             return if parts.len() > 1 {
                 let remaining_path = parts[1..].join("::");
                 Self::resolve_module_path(package, &remaining_path)
             } else {
-                // Just the crate name, return the crate root
+                // Just the crate name/alias, return the crate root (library)
                 Self::find_crate_root(package)
                     .ok_or_else(|| CrateInfoError::NoCrateRoot(package.name.to_string()))
             };
         }
 
-        // Otherwise, resolve as-is
+        // Otherwise, resolve as-is (including "main" as a regular module)
         Self::resolve_module_path(package, module_path)
     }
 
@@ -441,12 +444,13 @@ impl CrateInfo {
     }
 
     /// Normalizes a module path by removing the crate name prefix if present.
-    /// If the module path is just the crate name, returns the crate name (not empty).
+    /// Also normalizes "lib" alias to the crate name.
+    /// If the module path is just the crate name/lib, returns the crate name (not empty).
     fn normalize_module_path(&self, module_path: &str) -> String {
         let parts: Vec<&str> = module_path.split("::").collect();
-        if !parts.is_empty() && parts[0] == self.root_package_name {
+        if !parts.is_empty() && (parts[0] == self.root_package_name || parts[0] == "lib") {
             if parts.len() == 1 {
-                // Just the crate name - keep it as the root identifier
+                // Just the crate name/lib - keep it as the root identifier
                 self.root_package_name.clone()
             } else {
                 parts[1..].join("::")

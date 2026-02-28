@@ -13,7 +13,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::lib::*
+crate::crawk::*
 crate::module
 
 ----- stderr -----

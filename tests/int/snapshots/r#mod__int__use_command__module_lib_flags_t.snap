@@ -10,7 +10,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::lib::*
+crate::crawk::*
 crate::module::analyzer::{AnalyzerError, CrateAnalyzer}
 crate::module::discover::ModuleInfo
 crate::module::discover::{CrateInfo, CrateInfoError}
