@@ -14,6 +14,7 @@ alias m := nextestsnc
 alias cv := coverage
 alias cl := clippy
 alias f := fmt
+alias i := insta
 
 build:
     cargo build
@@ -41,3 +42,6 @@ clippy:
 
 fmt:
     cargo fmt
+
+insta: build
+    cargo insta test
