@@ -55,6 +55,7 @@ fn handle_use_command(crate_root: &Path, args: &UseArgs) -> anyhow::Result<()> {
         recursive: args.recursive,
         include_tests: args.include_tests,
         expand_groups: args.expand,
+        resolve_globs: args.resolve_globs,
     };
 
     // Analyze the module

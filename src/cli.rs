@@ -194,6 +194,16 @@ pub struct UseArgs {
     #[clap(verbatim_doc_comment)]
     #[arg(short = 'g', long = "grouped", default_value_t = false)]
     pub grouped: bool,
+
+    /// Resolve glob imports (`use crate::foo::*`) to explicit items
+    ///
+    /// When enabled, glob imports are expanded into the individual items
+    /// they resolve to based on the target module's public API.
+    ///
+    /// e.g., foo::* becomes foo::Bar, foo::Baz
+    #[clap(verbatim_doc_comment)]
+    #[arg(short = 'G', long = "resolve-globs", default_value_t = false)]
+    pub resolve_globs: bool,
 }
 
 #[cfg(test)]

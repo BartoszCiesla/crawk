@@ -45,6 +45,14 @@ Options:
           
           e.g., foo::bar and foo::baz are shown under the foo module
 
+  -G, --resolve-globs
+          Resolve glob imports (`use crate::foo::*`) to explicit items
+          
+          When enabled, glob imports are expanded into the individual items
+          they resolve to based on the target module's public API.
+          
+          e.g., foo::* becomes foo::Bar, foo::Baz
+
   -h, --help
           Print help (see a summary with '-h')
 

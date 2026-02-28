@@ -54,7 +54,7 @@ pub use crate::module::path::{GroupItem, PathPrefix, PathSuffix, Segments, TypeR
 /// ```
 /// use crawk::AnalysisOptions;
 ///
-/// // Default options: exclude tests, don't expand groups
+/// // Default options: exclude tests, don't expand groups, don't resolve globs
 /// let options = AnalysisOptions::default();
 ///
 /// // Include test modules and expand grouped imports
@@ -63,7 +63,14 @@ pub use crate::module::path::{GroupItem, PathPrefix, PathSuffix, Segments, TypeR
 ///     expand_groups: true,
 ///     ..Default::default()
 /// };
+///
+/// // Resolve glob imports to explicit items
+/// let options = AnalysisOptions {
+///     resolve_globs: true,
+///     ..Default::default()
+/// };
 /// ```
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, Default)]
 pub struct AnalysisOptions {
     /// Recursively analyze all submodules of the specified module.
@@ -84,6 +91,12 @@ pub struct AnalysisOptions {
     /// When `true`, `use crate::foo::{Bar, Baz}` becomes two separate entries:
     /// `foo::Bar` and `foo::Baz`.
     pub expand_groups: bool,
+
+    /// Resolve glob imports to explicit items.
+    ///
+    /// When `true`, `use crate::foo::*` is expanded into the individual public
+    /// items exported by module `foo` (e.g., `foo::Bar`, `foo::Baz`).
+    pub resolve_globs: bool,
 }
 
 /// Result of analyzing a module's dependencies.
