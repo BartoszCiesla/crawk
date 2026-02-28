@@ -238,6 +238,7 @@ impl CrateInfo {
     ///
     /// E.g., `crawk::analysis::collect` or just `analysis::collect`
     /// Also treats "lib" as an alias for the library root (same as crate name).
+    /// Also treats "main" as an alias for the main binary target root.
     fn resolve_module_path_with_crate(
         &self,
         package: &Package,
@@ -264,7 +265,22 @@ impl CrateInfo {
             };
         }
 
-        // Otherwise, resolve as-is (including "main" as a regular module)
+        // Check if the first part is "main" alias for the main binary target
+        let is_main_root = parts[0] == "main";
+
+        if is_main_root {
+            // Find the main binary target and use it as the root
+            return if parts.len() > 1 {
+                let remaining_path = parts[1..].join("::");
+                Self::resolve_module_path_from_main(package, &remaining_path)
+            } else {
+                // Just "main", return the main binary root
+                Self::find_main_binary(package)
+                    .ok_or_else(|| CrateInfoError::NoCrateRoot(package.name.to_string()))
+            };
+        }
+
+        // Otherwise, resolve as-is
         Self::resolve_module_path(package, module_path)
     }
 
@@ -289,6 +305,40 @@ impl CrateInfo {
         }
         // Fallback to first target
         package.targets.first().map(|t| t.src_path.clone().into())
+    }
+
+    /// Finds the main binary target file (main.rs).
+    fn find_main_binary(package: &Package) -> Option<PathBuf> {
+        for target in &package.targets {
+            if target.is_bin() {
+                return Some(target.src_path.clone().into());
+            }
+        }
+        None
+    }
+
+    /// Resolves a module path relative to the main binary target.
+    ///
+    /// Similar to `resolve_module_path`, but uses the main binary as the root.
+    fn resolve_module_path_from_main(package: &Package, module_path: &str) -> Result<PathBuf> {
+        let parts: Vec<&str> = module_path.split("::").collect();
+
+        if parts.is_empty() || module_path.is_empty() {
+            return Err(CrateInfoError::EmptyModulePath);
+        }
+
+        let main_root = Self::find_main_binary(package)
+            .ok_or_else(|| CrateInfoError::NoCrateRoot(package.name.to_string()))?;
+
+        let main_root_dir = main_root
+            .parent()
+            .ok_or_else(|| CrateInfoError::NoCrateRoot(package.name.to_string()))?;
+
+        Self::resolve_module_parts(main_root_dir, &parts, Some(&main_root))?.ok_or_else(|| {
+            CrateInfoError::ModuleNotFound {
+                module_path: module_path.to_string(),
+            }
+        })
     }
 
     /// Resolves module parts to a file path.
