@@ -501,19 +501,44 @@ impl CrateInfo {
 
     /// Normalizes a module path by removing the crate name prefix if present.
     /// Also normalizes "lib" alias to the crate name.
-    /// If the module path is just the crate name/lib, returns the crate name (not empty).
+    /// Also normalizes binary target file stems (e.g., "main" for main.rs).
+    /// If the module path is just the crate name/lib/binary, returns empty string.
     fn normalize_module_path(&self, module_path: &str) -> String {
         let parts: Vec<&str> = module_path.split("::").collect();
-        if !parts.is_empty() && (parts[0] == self.root_package_name || parts[0] == "lib") {
-            if parts.len() == 1 {
-                // Just the crate name/lib - keep it as the root identifier
-                self.root_package_name.clone()
+        if parts.is_empty() {
+            return module_path.to_string();
+        }
+
+        let first_part = parts[0];
+
+        // Check if first part is the crate name or "lib" alias
+        if first_part == self.root_package_name || first_part == "lib" {
+            return if parts.len() == 1 {
+                // Just the crate name/lib - return empty (analyzing crate root)
+                String::new()
             } else {
                 parts[1..].join("::")
-            }
-        } else {
-            module_path.to_string()
+            };
         }
+
+        // Check if first part is a binary target file stem (e.g., "main", "app")
+        if let Some(package) = self
+            .metadata
+            .packages
+            .iter()
+            .find(|p| p.name == self.root_package_name)
+            && Self::find_binary_by_file_stem(package, first_part).is_some()
+        {
+            return if parts.len() == 1 {
+                // Just the binary target name - return empty (analyzing binary root)
+                String::new()
+            } else {
+                // Strip the binary target prefix
+                parts[1..].join("::")
+            };
+        }
+
+        module_path.to_string()
     }
 
     /// Reads and parses a Rust source file.
