@@ -72,7 +72,13 @@ fn handle_use_command(crate_root: &Path, args: &UseArgs) -> anyhow::Result<()> {
         modules.sort();
 
         for module in modules {
-            println!("{module}");
+            // If module name is empty (crate root), use the original module path
+            let display_name = if module.is_empty() {
+                result.module_path()
+            } else {
+                module.as_str()
+            };
+            println!("{display_name}");
             let refs = truncate_and_dedup(&dependencies[&module], args.depth);
             for reference in refs {
                 println!(" - {reference}");
