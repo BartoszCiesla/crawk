@@ -1,0 +1,78 @@
+---
+source: tests/int/use_command.rs
+info:
+  program: crawk
+  args:
+    - use
+    - crawk
+    - "-r"
+    - "-t"
+    - "-e"
+    - "-g"
+    - "-G"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crawk
+ - crate::module::analyzer::AnalyzerError
+ - crate::module::analyzer::CrateAnalyzer
+ - crate::module::discover::CrateInfo
+ - crate::module::discover::CrateInfoError
+ - crate::module::discover::ModuleInfo
+ - crate::module::path::GroupItem
+ - crate::module::path::PathPrefix
+ - crate::module::path::PathSuffix
+ - crate::module::path::Segments
+ - crate::module::path::TypeReference
+ - crate::module::resolve::extract_public_items
+constants
+module
+module::analyzer
+ - crate::constants::ATTR_CFG
+ - crate::constants::MODULE_NAME_TEST
+ - crate::constants::PATH_QUALIFIER_CRATE
+ - crate::constants::PATH_QUALIFIER_SELF
+ - crate::constants::PATH_QUALIFIER_SUPER
+ - crate::module::path::GroupItem
+ - crate::module::path::PathPrefix
+ - crate::module::path::PathSuffix
+ - crate::module::path::TypeReference
+module::analyzer::tests
+ - crate::module::analyzer::AnalyzerError
+ - crate::module::analyzer::CrateAnalyzer
+ - crate::module::analyzer::FileReferences
+ - crate::module::analyzer::Result
+module::discover
+ - crate::constants::ATTR_CFG
+ - crate::constants::LIB_FILE_NAME
+ - crate::constants::MAIN_FILE_NAME
+ - crate::constants::MODULE_FILE_NAME
+ - crate::constants::MODULE_NAME_TEST
+module::path
+ - crate::constants::PATH_QUALIFIER_SELF
+module::path::tests
+ - crate::module::path::GroupItem
+ - crate::module::path::PathPrefix
+ - crate::module::path::PathSuffix
+ - crate::module::path::Segments
+ - crate::module::path::TypeReference
+module::resolve
+module::resolve::tests
+ - crate::module::resolve::extract_public_items
+tests
+ - crate::module::analyzer::AnalyzerError
+ - crate::module::analyzer::CrateAnalyzer
+ - crate::module::discover::CrateInfo
+ - crate::module::discover::CrateInfoError
+ - crate::module::discover::ModuleInfo
+ - crate::module::path::GroupItem
+ - crate::module::path::PathPrefix
+ - crate::module::path::PathSuffix
+ - crate::module::path::Segments
+ - crate::module::path::TypeReference
+ - crate::module::resolve::extract_public_items
+version
+version::build_info
+
+----- stderr -----

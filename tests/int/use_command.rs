@@ -30,8 +30,14 @@ fn should_use_command_provide_output(module: &str) {
     assert_cmd_snapshot!(snapshot_name, crawk().arg("use").arg(module));
 }
 
+// Test various flag combinations for different modules to ensure consistent output
+//
+// - crawk and lib shall give the same output for all flags, as they are both crate roots. The only difference
+//   will be the module name in the output, which will be "lib" for lib and "crawk" for crawk.
+// - main should give the output for binary only.
+// - build should give the output for build script only.
 #[test_matrix(
-  ["module", "module::analyzer", "module::discover", "module::path", "module::resolve", "lib", "main", "build", "cli", "constants", "logger", "version"],
+  ["crawk", "module", "module::analyzer", "module::discover", "module::path", "module::resolve", "lib", "main", "build", "cli", "constants", "logger", "version"],
   [&["-t"],
    &["-t", "-e"],
    &["-t", "-e", "-d", "1"],
@@ -39,6 +45,7 @@ fn should_use_command_provide_output(module: &str) {
    &["-r", "-t"],
    &["-r", "-t", "-e"],
    &["-r", "-t", "-e", "-G"],
+   &["-r", "-t", "-e", "-g", "-G"],
   ]
 )]
 fn should_use_command_provide_output_for_flags(module: &str, flags: &[&str]) {
