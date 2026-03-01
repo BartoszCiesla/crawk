@@ -238,7 +238,7 @@ impl CrateInfo {
     ///
     /// E.g., `crawk::analysis::collect` or just `analysis::collect`
     /// Also treats "lib" as an alias for the library root (same as crate name).
-    /// Also treats "main" as an alias for the main binary target root.
+    /// Also matches binary targets by their source file stem (e.g., "main" for main.rs, "app" for app.rs).
     fn resolve_module_path_with_crate(
         &self,
         package: &Package,
@@ -265,17 +265,13 @@ impl CrateInfo {
             };
         }
 
-        // Check if the first part is "main" alias for the main binary target
-        let is_main_root = parts[0] == "main";
-
-        if is_main_root {
-            // Find the main binary target and use it as the root
+        // Check if the first part matches any binary target's source file stem
+        if Self::find_binary_by_file_stem(package, parts[0]).is_some() {
             return if parts.len() > 1 {
-                let remaining_path = parts[1..].join("::");
-                Self::resolve_module_path_from_main(package, &remaining_path)
+                let remaining = parts[1..].join("::");
+                Self::resolve_module_path_from_binary(package, parts[0], &remaining)
             } else {
-                // Just "main", return the main binary root
-                Self::find_main_binary(package)
+                Self::find_binary_by_file_stem(package, parts[0])
                     .ok_or_else(|| CrateInfoError::NoCrateRoot(package.name.to_string()))
             };
         }
@@ -307,34 +303,44 @@ impl CrateInfo {
         package.targets.first().map(|t| t.src_path.clone().into())
     }
 
-    /// Finds the main binary target file (main.rs).
-    fn find_main_binary(package: &Package) -> Option<PathBuf> {
-        for target in &package.targets {
-            if target.is_bin() {
-                return Some(target.src_path.clone().into());
-            }
-        }
-        None
+    /// Finds a binary target by matching its source file's filename against `"{file_stem}.rs"`.
+    fn find_binary_by_file_stem(package: &Package, file_stem: &str) -> Option<PathBuf> {
+        let expected_filename = format!("{file_stem}.rs");
+        package
+            .targets
+            .iter()
+            .find(|t| {
+                t.is_bin()
+                    && Path::new(t.src_path.as_str())
+                        .file_name()
+                        .and_then(|f| f.to_str())
+                        .is_some_and(|name| name == expected_filename)
+            })
+            .map(|t| t.src_path.clone().into())
     }
 
-    /// Resolves a module path relative to the main binary target.
+    /// Resolves a module path relative to a binary target identified by its source file stem.
     ///
-    /// Similar to `resolve_module_path`, but uses the main binary as the root.
-    fn resolve_module_path_from_main(package: &Package, module_path: &str) -> Result<PathBuf> {
+    /// Similar to `resolve_module_path`, but uses the specified binary as the root.
+    fn resolve_module_path_from_binary(
+        package: &Package,
+        file_stem: &str,
+        module_path: &str,
+    ) -> Result<PathBuf> {
         let parts: Vec<&str> = module_path.split("::").collect();
 
         if parts.is_empty() || module_path.is_empty() {
             return Err(CrateInfoError::EmptyModulePath);
         }
 
-        let main_root = Self::find_main_binary(package)
+        let bin_root = Self::find_binary_by_file_stem(package, file_stem)
             .ok_or_else(|| CrateInfoError::NoCrateRoot(package.name.to_string()))?;
 
-        let main_root_dir = main_root
+        let bin_root_dir = bin_root
             .parent()
             .ok_or_else(|| CrateInfoError::NoCrateRoot(package.name.to_string()))?;
 
-        Self::resolve_module_parts(main_root_dir, &parts, Some(&main_root))?.ok_or_else(|| {
+        Self::resolve_module_parts(bin_root_dir, &parts, Some(&bin_root))?.ok_or_else(|| {
             CrateInfoError::ModuleNotFound {
                 module_path: module_path.to_string(),
             }
