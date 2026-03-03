@@ -1,0 +1,13 @@
+# Typos configuration for crawk project
+# https://github.com/crate-ci/typos
+
+[files]
+# Exclude CHANGELOG.md from spell checking as it contains many git commit hashes
+# that trigger false positives (e.g., "ba" in "2d69ba8")
+extend-exclude = ["CHANGELOG.md"]
+
+[default]
+extend-ignore-re = [
+  # Ignore commit hashes (7-40 hex characters)
+  "[0-9a-f]{7,40}",
+]

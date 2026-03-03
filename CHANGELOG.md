@@ -103,4 +103,3 @@
 - Add version metadata and build-time constants - ([e9cfb0a](https://github.com/BartoszCiesla/crawk/commit/e9cfb0a0b095290fab718734d54df47bdfe4b6a1))
 - Add justfile for development commands - ([c787514](https://github.com/BartoszCiesla/crawk/commit/c787514ae56f86b44052d2187837256d0c828477))
 - Pin Rust toolchain to version 1.93.0 - ([afa9796](https://github.com/BartoszCiesla/crawk/commit/afa97961db5826e6927b3b74c3b1a5bb0a1b5f43))
-
