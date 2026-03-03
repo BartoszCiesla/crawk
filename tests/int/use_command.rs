@@ -25,7 +25,7 @@ fn should_use_command_short_help_match(help_flag: &str) {
 #[test_case("module::path"; "for module::path module")]
 #[test_case("nonexisting"; "for nonexisting module")]
 fn should_use_command_provide_output(module: &str) {
-    let snapshot_name = format!("module_{module}");
+    let snapshot_name = format!("module_{}", module.replace("::", "__"));
 
     assert_cmd_snapshot!(snapshot_name, crawk().arg("use").arg(module));
 }
@@ -54,7 +54,7 @@ fn should_use_command_provide_output_for_flags(module: &str, flags: &[&str]) {
         .map(|f| f.trim_start_matches('-'))
         .collect::<Vec<_>>()
         .join("_");
-    let snapshot_name = format!("module_{module}_flags_{flags_part}");
+    let snapshot_name = format!("module_{}_flags_{flags_part}", module.replace("::", "__"));
 
     assert_cmd_snapshot!(snapshot_name, crawk().arg("use").arg(module).args(flags));
 }

@@ -7,8 +7,6 @@ repository = "https://github.com/BartoszCiesla/crawk"
 homepage = "https://github.com/BartoszCiesla/crawk"
 description = "Dependency crawler for Rust. It crawls so you don't have to untangle"
 license = "Apache-2.0"
-# TODO: uncomment when RR fix SIGSEGV build script
-# build = "src/build.rs"
 
 [features]
 default = ["static-build-config"]
@@ -36,6 +34,15 @@ insta = { version = "1.46.3", features = ["filters"] }
 insta-cmd = "0.6.0"
 tempfile = "3.8"
 test-case = "3.3.1"
+# TODO: uncomment when RR fix SIGSEGV build script
+# build = "src/build.rs"
+
+[[test]]
+# Add an integration test to make sure the snapshot files are generated with the correct names and paths.
+# This is important for the crate release process as by default cargo-insta uses not allowed chars in snapshot
+# file names, which causes the release process to fail.
+name = "integration"
+path = "tests/mod.rs"
 
 [lints.rust]
 unsafe_code = "deny"
