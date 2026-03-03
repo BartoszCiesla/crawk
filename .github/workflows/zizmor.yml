@@ -1,0 +1,31 @@
+name: Workflow
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - '.github/**'
+  pull_request:
+    paths:
+      - '.github/**'
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  zizmor:
+    name: Check with Zizmor
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Run zizmor
+        uses: zizmorcore/zizmor-action@0dce2577a4760a2749d8cfb7a84b7d5585ebcb7d # v0.5.0
+        with:
+          persona: pedantic
+          # Don't use GitHub advanced security.
+          # Instead, fail if there's a security issue.
+          advanced-security: false

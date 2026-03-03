@@ -1,0 +1,56 @@
+name: Checks
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+permissions: {}
+jobs:
+  prek-checks:
+    name: Prek Checks
+    permissions:
+      contents: read # For checking the code in the repository.
+    runs-on: ubuntu-latest
+    concurrency:
+      group: prek-checks-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@a0b538fa0b742a6aa35d6e2c169b4bd06d225a98 # v1.15.3
+        with:
+          components: clippy, rustfmt
+      - name: Install cargo tools
+        uses: taiki-e/install-action@bbdef1c33cb8ed1fd122d68d8374ac79998d6960
+        with:
+          tool: cargo-sort, cargo-machete, cargo-sort, cargo-nextest
+      - name: Run checks
+        uses: j178/prek-action@0bb87d7f00b0c99306c8bcb8b8beba1eb581c037 # v1.1.1
+        with:
+          extra-args: '--all-files'
+  finalize:
+    name: Finalize Checks
+    runs-on: ubuntu-latest
+    concurrency:
+      group: finalize-${{ github.ref }}
+      cancel-in-progress: false
+    needs:
+      - prek-checks
+    if: always()
+    steps:
+      - name: Exit with appropriate code
+        env:
+          CHECKS_FAILED: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: |
+          if [ "$CHECKS_FAILED" = "true" ]; then
+            echo "❌ Some checks failed or were cancelled"
+            exit 1
+          else
+            echo "✅ All checks passed successfully"
+            exit 0
+          fi
