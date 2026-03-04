@@ -492,8 +492,16 @@ impl CrateInfo {
         // Normalize the module path (remove crate name prefix if present)
         let normalized_path = self.normalize_module_path(module_path);
 
+        // Determine if this is an inline module and compute inline scope
+        let inline_scope = self.compute_inline_scope_for_path(&normalized_path, &file_path);
+
         if recursive {
-            Self::collect_submodules_recursive(&file_path, &normalized_path, include_tests)
+            Self::collect_submodules_recursive(
+                &file_path,
+                &normalized_path,
+                &inline_scope,
+                include_tests,
+            )
         } else {
             Self::collect_submodules_shallow(&file_path, &normalized_path, include_tests)
         }
@@ -593,9 +601,15 @@ impl CrateInfo {
     }
 
     /// Recursively collects all submodules from a file.
+    ///
+    /// The `inline_scope` parameter specifies which inline modules to descend into
+    /// within the file. For file-based modules, this should be empty. For inline
+    /// modules, it contains the path segments to navigate (e.g., ["tests"] for
+    /// an inline module `mod tests` in the file).
     fn collect_submodules_recursive(
         file_path: &Path,
         current_module_path: &str,
+        inline_scope: &[String],
         include_tests: bool,
     ) -> Result<Vec<ModuleInfo>> {
         let mut result = Vec::new();
@@ -612,8 +626,17 @@ impl CrateInfo {
         // Get the directory containing this file for resolving submodules
         let base_dir = Self::get_module_base_dir(file_path);
 
+        // Determine which items to iterate over based on inline scope
+        let items_to_process = if inline_scope.is_empty() {
+            // File-based module - process all top-level items
+            &syntax.items
+        } else {
+            // Inline module - navigate to the inline module and process its items
+            Self::get_inline_module_items(&syntax.items, inline_scope)?
+        };
+
         // Extract module declarations
-        for item in &syntax.items {
+        for item in items_to_process {
             if let Item::Mod(item_mod) = item {
                 let mod_name = item_mod.ident.to_string();
 
@@ -651,9 +674,11 @@ impl CrateInfo {
                     if let Some(sub_mod_file) =
                         Self::resolve_module_parts(&base_dir, &[&mod_name], None)?
                     {
+                        // External modules are file-based, so inline_scope is empty
                         result.extend(Self::collect_submodules_recursive(
                             &sub_mod_file,
                             &submodule_path,
+                            &[], // Empty inline scope for file-based modules
                             include_tests,
                         )?);
                     }
@@ -770,9 +795,11 @@ impl CrateInfo {
                     if let Some(sub_mod_file) =
                         Self::resolve_module_parts(base_dir, &[&mod_name], None)?
                     {
+                        // File-based modules have empty inline scope
                         result.extend(Self::collect_submodules_recursive(
                             &sub_mod_file,
                             &submodule_path,
+                            &[], // Empty inline scope for file-based modules
                             include_tests,
                         )?);
                     }
@@ -781,5 +808,84 @@ impl CrateInfo {
         }
 
         Ok(result)
+    }
+
+    /// Computes the inline scope for a module path within a file.
+    ///
+    /// Returns the segments of the module path that represent inline modules
+    /// within the file. For example, if `module_path` is "foo::bar::tests" and
+    /// the file is lib.rs containing an inline module "foo" with an inline module "bar"
+    /// with an inline module "tests", returns ["foo", "bar", "tests"].
+    ///
+    /// Returns empty vector if the module is file-based (not inline).
+    fn compute_inline_scope_for_path(&self, module_path: &str, file_path: &Path) -> Vec<String> {
+        if module_path.is_empty() {
+            return vec![];
+        }
+
+        let segments: Vec<&str> = module_path.split("::").collect();
+
+        // Try progressively shorter prefixes to find the file root
+        for len in (1..segments.len()).rev() {
+            let prefix = segments[..len].join("::");
+
+            if let Ok(resolved) = self.resolve_module_path_to_file(&prefix) {
+                if resolved == *file_path {
+                    // Found file root at this prefix
+                    // The remaining segments are inline scope
+                    return segments[len..].iter().map(|s| s.to_string()).collect();
+                }
+            }
+        }
+
+        // Check if the file is crate root
+        let is_crate_root = file_path.to_string_lossy().ends_with("src/lib.rs")
+            || file_path.to_string_lossy().ends_with("src/main.rs");
+
+        if is_crate_root {
+            // The entire module path is inline scope within crate root
+            return segments.iter().map(|s| s.to_string()).collect();
+        }
+
+        // Not an inline module
+        vec![]
+    }
+
+    /// Navigates through nested inline modules and returns the items at the target scope.
+    ///
+    /// Given a list of items and an inline scope (e.g., ["tests", "submod"]), this function
+    /// navigates through the nested inline module declarations and returns the items
+    /// inside the target module.
+    ///
+    /// Returns the top-level items if inline_scope is empty.
+    fn get_inline_module_items<'a>(
+        items: &'a [Item],
+        inline_scope: &[String],
+    ) -> Result<&'a [Item]> {
+        if inline_scope.is_empty() {
+            return Ok(items);
+        }
+
+        let module_name = &inline_scope[0];
+
+        for item in items {
+            if let Item::Mod(item_mod) = item {
+                if item_mod.ident == module_name {
+                    if let Some((_, nested_items)) = &item_mod.content {
+                        // Found the inline module, recurse if there are more segments
+                        if inline_scope.len() > 1 {
+                            return Self::get_inline_module_items(nested_items, &inline_scope[1..]);
+                        } else {
+                            return Ok(nested_items);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Module not found in inline scope
+        Err(CrateInfoError::ModuleNotFound {
+            module_path: inline_scope.join("::"),
+        })
     }
 }

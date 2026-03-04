@@ -12,6 +12,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+crate::AnalysisOptions
 crate::constants::ATTR_CFG
 crate::constants::LIB_FILE_NAME
 crate::constants::MAIN_FILE_NAME

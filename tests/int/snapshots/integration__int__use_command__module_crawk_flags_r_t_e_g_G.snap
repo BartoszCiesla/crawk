@@ -61,17 +61,7 @@ module::resolve
 module::resolve::tests
  - crate::module::resolve::extract_public_items
 tests
- - crate::module::analyzer::AnalyzerError
- - crate::module::analyzer::CrateAnalyzer
- - crate::module::discover::CrateInfo
- - crate::module::discover::CrateInfoError
- - crate::module::discover::ModuleInfo
- - crate::module::path::GroupItem
- - crate::module::path::PathPrefix
- - crate::module::path::PathSuffix
- - crate::module::path::Segments
- - crate::module::path::TypeReference
- - crate::module::resolve::extract_public_items
+ - crate::AnalysisOptions
 version
 version::build_info
 

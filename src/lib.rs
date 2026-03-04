@@ -34,6 +34,7 @@
 
 use crate::module::analyzer::{AnalyzerError, CrateAnalyzer};
 use crate::module::discover::{CrateInfo, CrateInfoError};
+use crate::module::resolve::extract_public_items;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use thiserror::Error;
@@ -333,7 +334,7 @@ impl Analyzer {
             .map(|m| m.source().to_path_buf())
             .unwrap_or_default();
 
-        let file_root = Self::build_file_root_map(&modules);
+        let file_root = self.build_file_root_map(&modules);
 
         for module in modules {
             let root_path = &file_root[module.source()];
@@ -427,8 +428,6 @@ impl Analyzer {
     /// unchanged. If the module file cannot be found or parsed, the original
     /// glob reference is returned with a warning.
     fn resolve_glob(&self, reference: &TypeReference) -> Vec<TypeReference> {
-        use crate::module::resolve::extract_public_items;
-
         // Determine the module path to resolve.
         // Accept both `crate::foo::bar::*` (PathPrefix::Crate, segments=["foo","bar"])
         // and `mycrate::foo::bar::*` (PathPrefix::None, first segment == crate name).
@@ -496,20 +495,79 @@ impl Analyzer {
     /// When multiple modules share the same source file (inline modules),
     /// the one with the shortest path is the file-level owner.
     fn build_file_root_map(
+        &self,
         modules: &[crate::module::discover::ModuleInfo],
     ) -> HashMap<PathBuf, String> {
         let mut file_root: HashMap<PathBuf, String> = HashMap::new();
         for module in modules {
+            let source_path = module.source().to_path_buf();
+            let actual_root = self.find_actual_file_root(module.path(), &source_path);
+
             file_root
-                .entry(module.source().to_path_buf())
+                .entry(source_path)
                 .and_modify(|existing| {
-                    if module.path().len() < existing.len() {
-                        *existing = module.path().to_string();
+                    if actual_root.len() < existing.len() {
+                        *existing = actual_root.clone();
                     }
                 })
-                .or_insert_with(|| module.path().to_string());
+                .or_insert(actual_root);
         }
         file_root
+    }
+
+    /// Find the actual file-level module path for a given module.
+    ///
+    /// This detects if a module is actually an inline module by checking if
+    /// shorter prefixes (or empty path for crate root) resolve to the same file.
+    fn find_actual_file_root(&self, module_path: &str, source_file: &Path) -> String {
+        trace!(
+            "Finding file root for module '{}' in file '{}'",
+            module_path,
+            source_file.display()
+        );
+
+        if module_path.is_empty() {
+            return String::new();
+        }
+
+        // First check if this file is the crate root (lib.rs or main.rs in src/)
+        let is_crate_root = source_file.to_string_lossy().ends_with("src/lib.rs")
+            || source_file.to_string_lossy().ends_with("src/main.rs");
+
+        if is_crate_root {
+            trace!(
+                "Source file is crate root, returning empty string for module '{}'",
+                module_path
+            );
+            return String::new();
+        }
+
+        let segments: Vec<&str> = module_path.split("::").collect();
+
+        // Try progressively shorter prefixes
+        for len in (1..segments.len()).rev() {
+            let prefix = segments[..len].join("::");
+
+            trace!("Trying prefix: '{}'", prefix);
+
+            // Check if this prefix resolves to the same file
+            match self.crate_info.resolve_module_path_to_file(&prefix) {
+                Ok(ref resolved) => {
+                    trace!("Prefix '{}' resolved to '{}'", prefix, resolved.display());
+                    if resolved == source_file {
+                        trace!("Found file root: '{}' for module '{}'", prefix, module_path);
+                        return prefix;
+                    }
+                }
+                Err(e) => {
+                    trace!("Prefix '{}' failed to resolve: {}", prefix, e);
+                }
+            }
+        }
+
+        // Fallback to the original module path
+        trace!("No shorter prefix found, using original: '{}'", module_path);
+        module_path.to_string()
     }
 
     /// Compute the inline scope for a module relative to its file root.
@@ -520,6 +578,9 @@ impl Analyzer {
     fn compute_inline_scope(module_path: &str, root_path: &str) -> Vec<String> {
         if module_path == root_path {
             vec![]
+        } else if root_path.is_empty() {
+            // When root_path is empty (crate root), the entire module_path is the inline scope
+            module_path.split("::").map(String::from).collect()
         } else {
             module_path
                 .strip_prefix(root_path)
@@ -564,7 +625,7 @@ impl Analyzer {
 #[allow(clippy::unwrap_used)]
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::AnalysisOptions;
 
     #[test]
     fn test_analysis_options_default() {

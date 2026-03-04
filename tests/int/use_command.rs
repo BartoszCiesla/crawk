@@ -36,8 +36,9 @@ fn should_use_command_provide_output(module: &str) {
 //   will be the module name in the output, which will be "lib" for lib and "crawk" for crawk.
 // - main should give the output for binary only.
 // - build should give the output for build script only.
+// - tests should give the output for test module in the lib only.
 #[test_matrix(
-  ["crawk", "module", "module::analyzer", "module::discover", "module::path", "module::resolve", "lib", "main", "build", "cli", "constants", "logger", "version"],
+  ["crawk", "module", "module::analyzer", "module::discover", "module::path", "module::resolve", "lib", "tests", "main", "build", "cli", "constants", "logger", "version"],
   [&["-t"],
    &["-t", "-e"],
    &["-t", "-e", "-d", "1"],

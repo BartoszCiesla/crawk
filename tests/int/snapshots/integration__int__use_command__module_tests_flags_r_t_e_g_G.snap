@@ -4,16 +4,17 @@ info:
   program: crawk
   args:
     - use
-    - lib
+    - tests
+    - "-r"
     - "-t"
     - "-e"
-    - "-d"
-    - "1"
+    - "-g"
+    - "-G"
 ---
 success: true
 exit_code: 0
 ----- stdout -----
-crate::AnalysisOptions
-crate::module
+tests
+ - crate::AnalysisOptions
 
 ----- stderr -----
