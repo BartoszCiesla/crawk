@@ -1,0 +1,30 @@
+---
+source: tests/int/use_command/flags.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/modules
+    - use
+    - visibility
+    - "-r"
+    - "-e"
+    - "--grouped"
+    - "--resolve-globs"
+---
+success: true
+exit_code: 0
+----- stdout -----
+visibility
+visibility::private_mod
+ - crate::nesting::level1::level2::level3
+visibility::pub_crate_mod
+ - crate::visibility::pub_mod::greet
+visibility::pub_mod
+ - crate::file_module
+visibility::pub_super_mod
+ - crate::dir_module::greet
+visibility::restricted_mod
+ - crate::nesting::depth
+
+----- stderr -----

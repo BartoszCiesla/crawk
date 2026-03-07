@@ -1,0 +1,21 @@
+---
+source: tests/int/use_command/flags.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/modules
+    - use
+    - nesting
+    - "-r"
+    - "-e"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::inline_modules
+crate::nesting::depth
+crate::nesting::level1::depth
+crate::nesting::level1::level2::depth
+
+----- stderr -----

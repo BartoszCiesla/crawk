@@ -507,7 +507,7 @@ impl Analyzer {
                 .entry(source_path)
                 .and_modify(|existing| {
                     if actual_root.len() < existing.len() {
-                        *existing = actual_root.clone();
+                        existing.clone_from(&actual_root);
                     }
                 })
                 .or_insert(actual_root);
@@ -625,12 +625,55 @@ impl Analyzer {
 #[allow(clippy::unwrap_used)]
 #[cfg(test)]
 mod tests {
-    use super::AnalysisOptions;
+    use super::*;
+    use std::path::PathBuf;
 
     #[test]
     fn test_analysis_options_default() {
         let options = AnalysisOptions::default();
         assert!(!options.include_tests);
         assert!(!options.expand_groups);
+    }
+
+    #[test]
+    fn test_analysis_result_source_file() {
+        let result = AnalysisResult {
+            module_path: "foo::bar".to_string(),
+            dependencies: HashMap::new(),
+            source_file: PathBuf::from("/tmp/test.rs"),
+        };
+        assert_eq!(result.source_file(), Path::new("/tmp/test.rs"));
+    }
+
+    #[test]
+    fn test_analysis_result_len_and_is_empty() {
+        let empty_result = AnalysisResult {
+            module_path: "empty".to_string(),
+            dependencies: HashMap::new(),
+            source_file: PathBuf::new(),
+        };
+        assert_eq!(empty_result.len(), 0);
+        assert!(empty_result.is_empty());
+
+        let mut deps = HashMap::new();
+        deps.insert("mod_a".to_string(), HashSet::new());
+        deps.insert("mod_b".to_string(), HashSet::new());
+        let non_empty_result = AnalysisResult {
+            module_path: "root".to_string(),
+            dependencies: deps,
+            source_file: PathBuf::new(),
+        };
+        assert_eq!(non_empty_result.len(), 2);
+        assert!(!non_empty_result.is_empty());
+    }
+
+    #[test]
+    fn test_analysis_result_module_path() {
+        let result = AnalysisResult {
+            module_path: "foo::bar::baz".to_string(),
+            dependencies: HashMap::new(),
+            source_file: PathBuf::new(),
+        };
+        assert_eq!(result.module_path(), "foo::bar::baz");
     }
 }

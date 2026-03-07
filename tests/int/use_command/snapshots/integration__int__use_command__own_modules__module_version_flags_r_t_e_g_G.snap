@@ -1,0 +1,20 @@
+---
+source: tests/int/use_command/own_modules.rs
+info:
+  program: crawk
+  args:
+    - use
+    - version
+    - "-r"
+    - "-t"
+    - "-e"
+    - "-g"
+    - "-G"
+---
+success: true
+exit_code: 0
+----- stdout -----
+version
+version::build_info
+
+----- stderr -----

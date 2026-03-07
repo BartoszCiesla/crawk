@@ -1,0 +1,26 @@
+---
+source: tests/int/use_command/flags.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/modules
+    - use
+    - reexports
+    - "-r"
+    - "-e"
+    - "--grouped"
+    - "--resolve-globs"
+---
+success: true
+exit_code: 0
+----- stdout -----
+reexports
+ - crate::file_module
+ - crate::nesting
+reexports::internal
+ - crate::item_visibility::PUB_STATIC
+reexports::types
+ - crate::visibility
+
+----- stderr -----

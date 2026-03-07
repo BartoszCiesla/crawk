@@ -1,0 +1,15 @@
+---
+source: tests/int/use_command/basic_output.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/modules
+    - use
+    - visibility
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+----- stderr -----

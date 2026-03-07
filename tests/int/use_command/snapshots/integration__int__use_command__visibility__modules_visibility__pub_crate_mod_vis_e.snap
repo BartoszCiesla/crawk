@@ -1,0 +1,17 @@
+---
+source: tests/int/use_command/visibility.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/modules
+    - use
+    - "visibility::pub_crate_mod"
+    - "-e"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::visibility::pub_mod::greet
+
+----- stderr -----

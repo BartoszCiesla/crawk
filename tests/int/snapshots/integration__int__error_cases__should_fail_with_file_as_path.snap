@@ -1,0 +1,20 @@
+---
+source: tests/int/error_cases.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/Cargo.toml
+    - use
+    - lib
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: Failed to execute cargo metadata: failed to start `cargo metadata`: Not a directory (os error 20)
+
+Caused by:
+    0: failed to start `cargo metadata`: Not a directory (os error 20)
+    1: Not a directory (os error 20)

@@ -1,0 +1,14 @@
+---
+source: tests/int/use_command/own_modules.rs
+info:
+  program: crawk
+  args:
+    - use
+    - nonexisting
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: Module 'nonexisting' not found

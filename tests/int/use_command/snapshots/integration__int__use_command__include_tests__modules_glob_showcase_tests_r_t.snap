@@ -1,0 +1,31 @@
+---
+source: tests/int/use_command/include_tests.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/modules
+    - use
+    - glob_showcase
+    - "-r"
+    - "-t"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::file_module::*
+crate::glob_showcase::ErrorKind
+crate::glob_showcase::Status
+crate::glob_showcase::api::{get_data, set_data, delete_data}
+crate::glob_showcase::config::client::*
+crate::glob_showcase::config::logging::*
+crate::glob_showcase::config::server::*
+crate::glob_showcase::database::{connect, disconnect, execute}
+crate::glob_showcase::errors::{NotFoundError, ValidationError}
+crate::glob_showcase::models::{User, Post, Comment}
+crate::glob_showcase::traits::{Identifiable, Nameable, Validatable}
+crate::glob_showcase::utils::math::{add, subtract}
+crate::inline_modules::*
+crate::nesting::level1::level2::*
+
+----- stderr -----

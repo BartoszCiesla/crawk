@@ -1,0 +1,13 @@
+---
+source: tests/int/version.rs
+info:
+  program: crawk
+  args:
+    - "-V"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crawk [VERSION]
+
+----- stderr -----

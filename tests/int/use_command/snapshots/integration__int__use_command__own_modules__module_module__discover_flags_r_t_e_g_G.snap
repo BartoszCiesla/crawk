@@ -1,0 +1,24 @@
+---
+source: tests/int/use_command/own_modules.rs
+info:
+  program: crawk
+  args:
+    - use
+    - "module::discover"
+    - "-r"
+    - "-t"
+    - "-e"
+    - "-g"
+    - "-G"
+---
+success: true
+exit_code: 0
+----- stdout -----
+module::discover
+ - crate::constants::ATTR_CFG
+ - crate::constants::LIB_FILE_NAME
+ - crate::constants::MAIN_FILE_NAME
+ - crate::constants::MODULE_FILE_NAME
+ - crate::constants::MODULE_NAME_TEST
+
+----- stderr -----

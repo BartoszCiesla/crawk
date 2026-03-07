@@ -600,6 +600,7 @@ impl CrateInfo {
         Ok(result)
     }
 
+    #[allow(clippy::doc_link_with_quotes)]
     /// Recursively collects all submodules from a file.
     ///
     /// The `inline_scope` parameter specifies which inline modules to descend into
@@ -810,6 +811,7 @@ impl CrateInfo {
         Ok(result)
     }
 
+    #[allow(clippy::doc_link_with_quotes)]
     /// Computes the inline scope for a module path within a file.
     ///
     /// Returns the segments of the module path that represent inline modules
@@ -829,12 +831,12 @@ impl CrateInfo {
         for len in (1..segments.len()).rev() {
             let prefix = segments[..len].join("::");
 
-            if let Ok(resolved) = self.resolve_module_path_to_file(&prefix) {
-                if resolved == *file_path {
-                    // Found file root at this prefix
-                    // The remaining segments are inline scope
-                    return segments[len..].iter().map(|s| s.to_string()).collect();
-                }
+            if let Ok(resolved) = self.resolve_module_path_to_file(&prefix)
+                && resolved == *file_path
+            {
+                // Found file root at this prefix
+                // The remaining segments are inline scope
+                return segments[len..].iter().map(ToString::to_string).collect();
             }
         }
 
@@ -844,13 +846,14 @@ impl CrateInfo {
 
         if is_crate_root {
             // The entire module path is inline scope within crate root
-            return segments.iter().map(|s| s.to_string()).collect();
+            return segments.iter().map(ToString::to_string).collect();
         }
 
         // Not an inline module
         vec![]
     }
 
+    #[allow(clippy::doc_link_with_quotes)]
     /// Navigates through nested inline modules and returns the items at the target scope.
     ///
     /// Given a list of items and an inline scope (e.g., ["tests", "submod"]), this function
@@ -869,17 +872,16 @@ impl CrateInfo {
         let module_name = &inline_scope[0];
 
         for item in items {
-            if let Item::Mod(item_mod) = item {
-                if item_mod.ident == module_name {
-                    if let Some((_, nested_items)) = &item_mod.content {
-                        // Found the inline module, recurse if there are more segments
-                        if inline_scope.len() > 1 {
-                            return Self::get_inline_module_items(nested_items, &inline_scope[1..]);
-                        } else {
-                            return Ok(nested_items);
-                        }
-                    }
+            if let Item::Mod(item_mod) = item
+                && item_mod.ident == module_name
+                && let Some((_, nested_items)) = &item_mod.content
+            {
+                // Found the inline module, recurse if there are more segments
+                if inline_scope.len() > 1 {
+                    return Self::get_inline_module_items(nested_items, &inline_scope[1..]);
                 }
+
+                return Ok(nested_items);
             }
         }
 

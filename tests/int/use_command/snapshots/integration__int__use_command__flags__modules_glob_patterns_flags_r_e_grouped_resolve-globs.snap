@@ -1,0 +1,34 @@
+---
+source: tests/int/use_command/flags.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/modules
+    - use
+    - glob_patterns
+    - "-r"
+    - "-e"
+    - "--grouped"
+    - "--resolve-globs"
+---
+success: true
+exit_code: 0
+----- stdout -----
+glob_patterns
+ - crate::dir_module
+ - crate::file_module
+ - crate::glob_patterns::self_ref::self_func_1
+ - crate::glob_patterns::self_ref::self_func_2
+glob_patterns::constants
+glob_patterns::mixed_exports
+glob_patterns::outer
+glob_patterns::outer::inner
+glob_patterns::self_ref
+glob_patterns::set_a
+glob_patterns::set_b
+glob_patterns::traits
+glob_patterns::types
+glob_patterns::utilities
+
+----- stderr -----

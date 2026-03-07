@@ -1,0 +1,31 @@
+---
+source: tests/int/use_command/binaries.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/modules
+    - use
+    - app
+    - "-d"
+    - "2"
+---
+success: true
+exit_code: 0
+----- stdout -----
+modules::advanced_globs::*
+modules::dir_module
+modules::file_module
+modules::glob_patterns
+modules::glob_patterns::*
+modules::glob_patterns::{demonstrate_glob_utilities, demonstrate_nested_glob, renamed_special}
+modules::glob_showcase::*
+modules::inline_modules
+modules::item_visibility::*
+modules::item_visibility::{PubEnum, PubStruct, PubTrait, PUB_CONST, PUB_STATIC}
+modules::mixed
+modules::nesting
+modules::reexports::*
+modules::visibility
+
+----- stderr -----

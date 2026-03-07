@@ -2,6 +2,7 @@
 # will have compiled files and executables
 /debug
 /target
+/modules/target
 # Alternative cache directory for IDE's and other tools
 /.ide/
 

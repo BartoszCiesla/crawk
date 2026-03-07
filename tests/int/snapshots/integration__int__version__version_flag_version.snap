@@ -1,0 +1,15 @@
+---
+source: tests/int/version.rs
+info:
+  program: crawk
+  args:
+    - "--version"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crawk [VERSION]
+
+Author: Bartosz Cieśla <bartosz.ciesla@gmail.com>
+
+----- stderr -----

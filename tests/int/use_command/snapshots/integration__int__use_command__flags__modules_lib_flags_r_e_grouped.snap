@@ -1,0 +1,160 @@
+---
+source: tests/int/use_command/flags.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/modules
+    - use
+    - lib
+    - "-r"
+    - "-e"
+    - "--grouped"
+---
+success: true
+exit_code: 0
+----- stdout -----
+lib
+advanced_globs
+ - crate::advanced_globs::internal::*
+ - crate::dir_module::child_file
+ - crate::file_module
+ - crate::visibility
+advanced_globs::aliased_module
+advanced_globs::enum_variants
+advanced_globs::internal
+advanced_globs::layer1
+advanced_globs::layer1::layer2
+advanced_globs::layer1::layer2::layer3
+advanced_globs::macro_module
+advanced_globs::original
+advanced_globs::prelude
+ - crate::advanced_globs::Consumer
+ - crate::advanced_globs::MultiImpl
+ - crate::advanced_globs::Provider
+ - crate::advanced_globs::Transformer
+ - crate::advanced_globs::deep_function
+ - crate::advanced_globs::layer1_function
+ - crate::advanced_globs::layer2_function
+advanced_globs::shadowing
+advanced_globs::trait_providers
+advanced_globs::unix_specific
+advanced_globs::windows_specific
+custom_path
+ - crate::aliased
+ - crate::item_visibility::PUB_CONST
+dir_module
+ - crate::inline_modules::nested::deep::value
+dir_module::child_dir
+ - crate::file_module::greet
+dir_module::child_file
+ - crate::dir_module::greet
+empty_module
+file_module
+ - crate::nesting
+glob_patterns
+ - crate::dir_module
+ - crate::file_module
+ - crate::glob_patterns::self_ref::*
+glob_patterns::constants
+glob_patterns::mixed_exports
+glob_patterns::outer
+glob_patterns::outer::inner
+glob_patterns::self_ref
+glob_patterns::set_a
+glob_patterns::set_b
+glob_patterns::traits
+glob_patterns::types
+glob_patterns::utilities
+glob_showcase
+ - crate::file_module::*
+ - crate::inline_modules::*
+ - crate::nesting::level1::level2::*
+glob_showcase::api
+glob_showcase::config
+glob_showcase::config::all
+ - crate::glob_showcase::config::client::*
+ - crate::glob_showcase::config::logging::*
+ - crate::glob_showcase::config::server::*
+glob_showcase::config::client
+glob_showcase::config::logging
+glob_showcase::config::server
+glob_showcase::database
+glob_showcase::database::connection
+glob_showcase::database::query
+glob_showcase::database::transaction
+glob_showcase::errors
+glob_showcase::models
+glob_showcase::prelude
+ - crate::glob_showcase::ErrorKind
+ - crate::glob_showcase::Status
+ - crate::glob_showcase::api::delete_data
+ - crate::glob_showcase::api::get_data
+ - crate::glob_showcase::api::set_data
+ - crate::glob_showcase::database::connect
+ - crate::glob_showcase::database::disconnect
+ - crate::glob_showcase::database::execute
+ - crate::glob_showcase::errors::NotFoundError
+ - crate::glob_showcase::errors::ValidationError
+ - crate::glob_showcase::models::Comment
+ - crate::glob_showcase::models::Post
+ - crate::glob_showcase::models::User
+ - crate::glob_showcase::traits::Identifiable
+ - crate::glob_showcase::traits::Nameable
+ - crate::glob_showcase::traits::Validatable
+ - crate::glob_showcase::utils::math::add
+ - crate::glob_showcase::utils::math::subtract
+glob_showcase::traits
+glob_showcase::utils
+glob_showcase::utils::collection
+glob_showcase::utils::math
+glob_showcase::utils::string
+inline_modules
+ - crate::file_module::greet
+inline_modules::inner
+ - crate::file_module
+inline_modules::nested
+inline_modules::nested::deep
+ - crate::dir_module::greet
+inline_modules::private_inline
+item_visibility
+ - crate::reexports::Foo
+mixed
+mixed::file_child
+ - crate::custom_path::greet
+ - crate::mixed::greet
+mixed::inline_child
+ - crate::mixed::file_child::greet
+nesting
+ - crate::inline_modules
+nesting::level1
+ - crate::nesting::depth
+nesting::level1::level2
+ - crate::nesting::depth
+nesting::level1::level2::level3
+ - crate::nesting::depth
+ - crate::nesting::level1::depth
+ - crate::nesting::level1::level2::depth
+no_pub_items
+reexports
+ - crate::file_module
+ - crate::nesting
+reexports::internal
+ - crate::item_visibility::PUB_STATIC
+reexports::types
+ - crate::visibility
+uses_empty_glob
+ - crate::no_pub_items::*
+visibility
+visibility::private_mod
+ - crate::nesting::level1::level2::level3
+visibility::pub_crate_mod
+ - crate::visibility::pub_mod::greet
+visibility::pub_mod
+ - crate::file_module
+visibility::pub_super_mod
+ - crate::dir_module::greet
+visibility::restricted_mod
+ - crate::nesting::depth
+
+----- stderr -----

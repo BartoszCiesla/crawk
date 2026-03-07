@@ -1,0 +1,59 @@
+---
+source: tests/int/use_command/depth.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/modules
+    - use
+    - lib
+    - "-r"
+    - "-e"
+    - "-d"
+    - "2"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::advanced_globs::Consumer
+crate::advanced_globs::MultiImpl
+crate::advanced_globs::Provider
+crate::advanced_globs::Transformer
+crate::advanced_globs::deep_function
+crate::advanced_globs::internal::*
+crate::advanced_globs::layer1_function
+crate::advanced_globs::layer2_function
+crate::aliased
+crate::custom_path::greet
+crate::dir_module
+crate::dir_module::child_file
+crate::dir_module::greet
+crate::file_module
+crate::file_module::*
+crate::file_module::greet
+crate::glob_patterns::self_ref::*
+crate::glob_showcase::ErrorKind
+crate::glob_showcase::Status
+crate::glob_showcase::api
+crate::glob_showcase::config
+crate::glob_showcase::database
+crate::glob_showcase::errors
+crate::glob_showcase::models
+crate::glob_showcase::traits
+crate::glob_showcase::utils
+crate::inline_modules
+crate::inline_modules::*
+crate::inline_modules::nested
+crate::item_visibility::PUB_CONST
+crate::item_visibility::PUB_STATIC
+crate::mixed::file_child
+crate::mixed::greet
+crate::nesting
+crate::nesting::depth
+crate::nesting::level1
+crate::no_pub_items::*
+crate::reexports::Foo
+crate::visibility
+crate::visibility::pub_mod
+
+----- stderr -----

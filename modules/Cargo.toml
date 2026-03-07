@@ -1,0 +1,18 @@
+[package]
+name = "modules"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "modules"
+path = "src/lib.rs"
+
+[[bin]]
+name = "modules"
+path = "src/main.rs"
+
+[[bin]]
+name = "modules-cli"
+path = "src/app.rs"
+
+[dependencies]

@@ -1,0 +1,19 @@
+---
+source: tests/int/use_command/empty_and_glob.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/modules
+    - use
+    - empty_module
+    - "-r"
+    - "-e"
+    - "--grouped"
+---
+success: true
+exit_code: 0
+----- stdout -----
+empty_module
+
+----- stderr -----

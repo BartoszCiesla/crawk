@@ -1,0 +1,28 @@
+---
+source: tests/int/use_command/overview.rs
+info:
+  program: crawk
+  args:
+    - use
+    - "-h"
+---
+success: true
+exit_code: 0
+----- stdout -----
+Analyze a module and list its internal crate `use` statements
+
+Usage: crawk use [OPTIONS] <MODULE_PATH>
+
+Arguments:
+  <MODULE_PATH>  Module path relative to the crate root (e.g., "utils" or "foo::bar::baz")
+
+Options:
+  -r, --recursive      Recursively analyze all submodules (disabled by default)
+  -t, --include-tests  Include modules defined in `#[cfg(test)]` blocks (excluded by default)
+  -e, --expand         Expand grouped imports into individual paths
+  -d, --depth <DEPTH>  Limit displayed module path depth from the crate root
+  -g, --grouped        Group output by source module (disabled by default)
+  -G, --resolve-globs  Resolve glob imports (`use crate::foo::*`) to explicit items
+  -h, --help           Print help (see more with '--help')
+
+----- stderr -----

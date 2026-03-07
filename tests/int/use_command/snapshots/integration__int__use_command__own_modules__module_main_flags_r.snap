@@ -1,0 +1,17 @@
+---
+source: tests/int/use_command/own_modules.rs
+info:
+  program: crawk
+  args:
+    - use
+    - main
+    - "-r"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::cli::CrawkArgs
+crawk::version
+crawk::{AnalysisOptions, Analyzer, TypeReference, version}
+
+----- stderr -----

@@ -1,0 +1,80 @@
+---
+source: tests/int/use_command/include_tests.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/modules
+    - use
+    - lib
+    - "-r"
+    - "-t"
+    - "-e"
+    - "--resolve-globs"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::::*
+crate::advanced_globs::Consumer
+crate::advanced_globs::MultiImpl
+crate::advanced_globs::Provider
+crate::advanced_globs::Transformer
+crate::advanced_globs::deep_function
+crate::advanced_globs::internal::internal_a
+crate::advanced_globs::internal::internal_b
+crate::advanced_globs::internal::internal_c
+crate::advanced_globs::layer1_function
+crate::advanced_globs::layer2_function
+crate::aliased
+crate::custom_path::greet
+crate::dir_module
+crate::dir_module::child_file
+crate::dir_module::greet
+crate::file_module
+crate::file_module::greet
+crate::file_module::nesting_depth
+crate::glob_patterns::self_ref::self_func_1
+crate::glob_patterns::self_ref::self_func_2
+crate::glob_showcase::ErrorKind
+crate::glob_showcase::Status
+crate::glob_showcase::api::delete_data
+crate::glob_showcase::api::get_data
+crate::glob_showcase::api::set_data
+crate::glob_showcase::config::client::*
+crate::glob_showcase::config::logging::*
+crate::glob_showcase::config::server::*
+crate::glob_showcase::database::connect
+crate::glob_showcase::database::disconnect
+crate::glob_showcase::database::execute
+crate::glob_showcase::errors::NotFoundError
+crate::glob_showcase::errors::ValidationError
+crate::glob_showcase::models::Comment
+crate::glob_showcase::models::Post
+crate::glob_showcase::models::User
+crate::glob_showcase::traits::Identifiable
+crate::glob_showcase::traits::Nameable
+crate::glob_showcase::traits::Validatable
+crate::glob_showcase::utils::math::add
+crate::glob_showcase::utils::math::subtract
+crate::inline_modules
+crate::inline_modules::inner
+crate::inline_modules::nested
+crate::inline_modules::nested::deep::value
+crate::inline_modules::sibling_greet
+crate::inline_modules::use_private
+crate::item_visibility::PUB_CONST
+crate::item_visibility::PUB_STATIC
+crate::mixed::file_child::greet
+crate::mixed::greet
+crate::nesting
+crate::nesting::depth
+crate::nesting::level1::depth
+crate::nesting::level1::level2::depth
+crate::nesting::level1::level2::level3
+crate::nesting::level1::level2::root_depth
+crate::reexports::Foo
+crate::visibility
+crate::visibility::pub_mod::greet
+
+----- stderr -----

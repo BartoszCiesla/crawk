@@ -1,0 +1,14 @@
+---
+source: tests/int/use_command/own_modules.rs
+info:
+  program: crawk
+  args:
+    - use
+    - "module::resolve"
+    - "-r"
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+----- stderr -----

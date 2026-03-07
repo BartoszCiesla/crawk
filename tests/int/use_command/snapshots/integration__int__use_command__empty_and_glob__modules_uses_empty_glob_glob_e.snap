@@ -1,0 +1,17 @@
+---
+source: tests/int/use_command/empty_and_glob.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/modules
+    - use
+    - uses_empty_glob
+    - "-e"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::no_pub_items::*
+
+----- stderr -----

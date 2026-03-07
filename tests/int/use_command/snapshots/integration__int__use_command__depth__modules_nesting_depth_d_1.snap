@@ -1,0 +1,18 @@
+---
+source: tests/int/use_command/depth.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/modules
+    - use
+    - nesting
+    - "-d"
+    - "1"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::inline_modules
+
+----- stderr -----

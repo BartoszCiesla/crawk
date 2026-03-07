@@ -1,0 +1,17 @@
+---
+source: tests/int/use_command/basic_output.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/modules
+    - use
+    - custom_path
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::aliased
+crate::item_visibility::PUB_CONST
+
+----- stderr -----

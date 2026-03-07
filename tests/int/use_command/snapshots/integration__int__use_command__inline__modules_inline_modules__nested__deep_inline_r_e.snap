@@ -1,0 +1,18 @@
+---
+source: tests/int/use_command/inline.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/modules
+    - use
+    - "inline_modules::nested::deep"
+    - "-r"
+    - "-e"
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: Module 'deep' not found

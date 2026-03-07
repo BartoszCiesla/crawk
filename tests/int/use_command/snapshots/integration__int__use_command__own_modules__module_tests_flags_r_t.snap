@@ -1,0 +1,16 @@
+---
+source: tests/int/use_command/own_modules.rs
+info:
+  program: crawk
+  args:
+    - use
+    - tests
+    - "-r"
+    - "-t"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::::*
+
+----- stderr -----

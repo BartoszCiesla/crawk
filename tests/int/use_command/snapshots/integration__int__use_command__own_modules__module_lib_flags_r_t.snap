@@ -1,0 +1,28 @@
+---
+source: tests/int/use_command/own_modules.rs
+info:
+  program: crawk
+  args:
+    - use
+    - lib
+    - "-r"
+    - "-t"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::::*
+crate::constants::PATH_QUALIFIER_SELF
+crate::constants::{ATTR_CFG, LIB_FILE_NAME, MAIN_FILE_NAME, MODULE_FILE_NAME, MODULE_NAME_TEST}
+crate::constants::{ATTR_CFG, MODULE_NAME_TEST, PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER}
+crate::module::analyzer::*
+crate::module::analyzer::{AnalyzerError, CrateAnalyzer}
+crate::module::discover::ModuleInfo
+crate::module::discover::{CrateInfo, CrateInfoError}
+crate::module::path::*
+crate::module::path::{GroupItem, PathPrefix, PathSuffix, Segments, TypeReference}
+crate::module::path::{GroupItem, PathPrefix, PathSuffix, TypeReference}
+crate::module::resolve::*
+crate::module::resolve::extract_public_items
+
+----- stderr -----

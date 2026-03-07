@@ -1,0 +1,20 @@
+---
+source: tests/int/use_command/include_tests.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/modules
+    - use
+    - glob_patterns
+    - "-t"
+    - "-e"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::dir_module
+crate::file_module
+crate::glob_patterns::self_ref::*
+
+----- stderr -----

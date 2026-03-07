@@ -1,0 +1,121 @@
+---
+source: tests/int/use_command/flags.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/modules
+    - use
+    - main
+    - "-r"
+    - "--resolve-globs"
+---
+success: true
+exit_code: 0
+----- stdout -----
+modules::advanced_globs::AliasedStruct
+modules::advanced_globs::MultiImpl
+modules::advanced_globs::aliased_module
+modules::advanced_globs::demonstrate_internal
+modules::advanced_globs::demonstrate_multi_layer
+modules::advanced_globs::demonstrate_platform
+modules::advanced_globs::demonstrate_shadowing
+modules::advanced_globs::demonstrate_traits
+modules::advanced_globs::enum_variants
+modules::advanced_globs::layer1
+modules::advanced_globs::macro_module
+modules::advanced_globs::original
+modules::advanced_globs::prelude
+modules::advanced_globs::renamed_func
+modules::advanced_globs::shadowed_func
+modules::advanced_globs::shadowing
+modules::advanced_globs::trait_providers
+modules::advanced_globs::unix_specific
+modules::advanced_globs::use_color_variants
+modules::advanced_globs::use_multiple_crate_globs
+modules::advanced_globs::windows_specific
+modules::dir_module
+modules::file_module
+modules::glob_patterns::MyProcessor
+modules::glob_patterns::constants
+modules::glob_patterns::constants::API_VERSION
+modules::glob_patterns::constants::DEFAULT_TIMEOUT
+modules::glob_patterns::constants::MAX_SIZE
+modules::glob_patterns::constants::MIN_SIZE
+modules::glob_patterns::cross_module_glob_usage
+modules::glob_patterns::demonstrate_glob_types
+modules::glob_patterns::demonstrate_glob_utilities
+modules::glob_patterns::demonstrate_nested_glob
+modules::glob_patterns::mixed_exports
+modules::glob_patterns::outer
+modules::glob_patterns::pub_func_one
+modules::glob_patterns::renamed_special
+modules::glob_patterns::self_ref
+modules::glob_patterns::set_a
+modules::glob_patterns::set_b
+modules::glob_patterns::traits
+modules::glob_patterns::traits::Greetable
+modules::glob_patterns::traits::Processable
+modules::glob_patterns::traits::Serializable
+modules::glob_patterns::types
+modules::glob_patterns::types::Alpha
+modules::glob_patterns::types::Beta
+modules::glob_patterns::types::Delta
+modules::glob_patterns::types::Gamma
+modules::glob_patterns::types::OptionI32
+modules::glob_patterns::types::Result
+modules::glob_patterns::use_both_sets
+modules::glob_patterns::use_mixed_imports
+modules::glob_patterns::utilities
+modules::glob_patterns::utilities::UTIL_CONST_1
+modules::glob_patterns::utilities::UTIL_CONST_2
+modules::glob_patterns::utilities::UtilityEnum
+modules::glob_patterns::utilities::UtilityStruct
+modules::glob_patterns::utilities::helper_a
+modules::glob_patterns::utilities::helper_b
+modules::glob_patterns::utilities::helper_c
+modules::glob_patterns::{demonstrate_glob_utilities, demonstrate_nested_glob, renamed_special}
+modules::glob_showcase::api
+modules::glob_showcase::config
+modules::glob_showcase::database
+modules::glob_showcase::demonstrate_all
+modules::glob_showcase::demonstrate_api
+modules::glob_showcase::demonstrate_config
+modules::glob_showcase::demonstrate_database
+modules::glob_showcase::demonstrate_models
+modules::glob_showcase::demonstrate_traits
+modules::glob_showcase::demonstrate_utils
+modules::glob_showcase::errors
+modules::glob_showcase::models
+modules::glob_showcase::prelude
+modules::glob_showcase::traits
+modules::glob_showcase::use_cross_crate_globs
+modules::glob_showcase::utils
+modules::inline_modules
+modules::item_visibility::PUB_CONST
+modules::item_visibility::PUB_STATIC
+modules::item_visibility::PubAlias
+modules::item_visibility::PubEnum
+modules::item_visibility::PubStruct
+modules::item_visibility::PubTrait
+modules::item_visibility::exercise_all
+modules::item_visibility::pub_function
+modules::item_visibility::{PubEnum, PubStruct, PubTrait, PUB_CONST, PUB_STATIC}
+modules::mixed
+modules::nesting
+modules::reexports::Bar
+modules::reexports::Baz
+modules::reexports::Foo
+modules::reexports::INTERNAL_CONST_A
+modules::reexports::INTERNAL_CONST_B
+modules::reexports::InternalEnum
+modules::reexports::InternalTrait
+modules::reexports::Qux
+modules::reexports::file_module_greet
+modules::reexports::internal_helper_1
+modules::reexports::internal_helper_2
+modules::reexports::nesting_depth
+modules::reexports::secret_data
+modules::visibility
+
+----- stderr -----

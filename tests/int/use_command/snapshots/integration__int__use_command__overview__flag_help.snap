@@ -1,0 +1,59 @@
+---
+source: tests/int/use_command/overview.rs
+info:
+  program: crawk
+  args:
+    - use
+    - "--help"
+---
+success: true
+exit_code: 0
+----- stdout -----
+Analyze a module and list its internal crate `use` statements
+
+Inspects the given module's source and reports all `use` paths that
+reference other modules within the same crate.
+
+Usage: crawk use [OPTIONS] <MODULE_PATH>
+
+Arguments:
+  <MODULE_PATH>
+          Module path relative to the crate root (e.g., "utils" or "foo::bar::baz")
+
+Options:
+  -r, --recursive
+          Recursively analyze all submodules (disabled by default)
+
+  -t, --include-tests
+          Include modules defined in `#[cfg(test)]` blocks (excluded by default)
+
+  -e, --expand
+          Expand grouped imports into individual paths
+          
+          e.g., a::{x, y} becomes a::x, a::y
+
+  -d, --depth <DEPTH>
+          Limit displayed module path depth from the crate root
+          
+          e.g., --depth 1 shows x, --depth 2 shows x::y
+
+  -g, --grouped
+          Group output by source module (disabled by default)
+          
+          When enabled, dependencies are displayed grouped by their source module,
+          showing which module each dependency originates from.
+          
+          e.g., foo::bar and foo::baz are shown under the foo module
+
+  -G, --resolve-globs
+          Resolve glob imports (`use crate::foo::*`) to explicit items
+          
+          When enabled, glob imports are expanded into the individual items
+          they resolve to based on the target module's public API.
+          
+          e.g., foo::* becomes foo::Bar, foo::Baz
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+----- stderr -----

@@ -1,0 +1,19 @@
+---
+source: tests/int/use_command/custom_path.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/modules
+    - use
+    - custom_path
+    - "-r"
+    - "-e"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::aliased
+crate::item_visibility::PUB_CONST
+
+----- stderr -----

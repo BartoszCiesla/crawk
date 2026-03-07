@@ -1,0 +1,21 @@
+---
+source: tests/int/use_command/include_tests.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/modules
+    - use
+    - reexports
+    - "-r"
+    - "-t"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::file_module
+crate::item_visibility::PUB_STATIC
+crate::nesting
+crate::visibility
+
+----- stderr -----
