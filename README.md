@@ -56,3 +56,9 @@ Note: option `-h` gives short help, while `--help` provides detailed information
 ## License
 
 This project is licensed under the Apache License. See the [LICENSE](LICENSE) file for details.
+
+## Why "crawk"?
+
+The name `crawk` playfully blends `crawl` and `awk`, capturing the tool's mission to crawl Rust code for module dependency analysis.
+It sounds action-oriented, evoking exploration of crate structures.  It sounds action-oriented, evoking exploration of crate structures.
+It was created to help me understand and manage the often complex web of module dependencies in my projects.
