@@ -15,51 +15,50 @@ success: true
 exit_code: 0
 ----- stdout -----
 crawk
- - crate::module::analyzer::AnalyzerError
- - crate::module::analyzer::CrateAnalyzer
- - crate::module::discover::CrateInfo
- - crate::module::discover::CrateInfoError
- - crate::module::discover::ModuleInfo
- - crate::module::path::GroupItem
- - crate::module::path::PathPrefix
- - crate::module::path::PathSuffix
- - crate::module::path::Segments
- - crate::module::path::TypeReference
- - crate::module::resolve::extract_public_items
+ - crate::discover::CrateInfo
+ - crate::discover::CrateInfoError
+ - crate::discover::ModuleInfo
+ - crate::parser::AnalyzerError
+ - crate::parser::CrateAnalyzer
+ - crate::reference::GroupItem
+ - crate::reference::PathPrefix
+ - crate::reference::PathSuffix
+ - crate::reference::Segments
+ - crate::reference::TypeReference
+ - crate::resolve::extract_public_items
 constants
-module
-module::analyzer
- - crate::constants::ATTR_CFG
- - crate::constants::MODULE_NAME_TEST
- - crate::constants::PATH_QUALIFIER_CRATE
- - crate::constants::PATH_QUALIFIER_SELF
- - crate::constants::PATH_QUALIFIER_SUPER
- - crate::module::path::GroupItem
- - crate::module::path::PathPrefix
- - crate::module::path::PathSuffix
- - crate::module::path::TypeReference
-module::analyzer::tests
- - crate::module::analyzer::AnalyzerError
- - crate::module::analyzer::CrateAnalyzer
- - crate::module::analyzer::FileReferences
- - crate::module::analyzer::Result
-module::discover
+discover
  - crate::constants::ATTR_CFG
  - crate::constants::LIB_FILE_NAME
  - crate::constants::MAIN_FILE_NAME
  - crate::constants::MODULE_FILE_NAME
  - crate::constants::MODULE_NAME_TEST
-module::path
+parser
+ - crate::constants::ATTR_CFG
+ - crate::constants::MODULE_NAME_TEST
+ - crate::constants::PATH_QUALIFIER_CRATE
  - crate::constants::PATH_QUALIFIER_SELF
-module::path::tests
- - crate::module::path::GroupItem
- - crate::module::path::PathPrefix
- - crate::module::path::PathSuffix
- - crate::module::path::Segments
- - crate::module::path::TypeReference
-module::resolve
-module::resolve::tests
- - crate::module::resolve::extract_public_items
+ - crate::constants::PATH_QUALIFIER_SUPER
+ - crate::reference::GroupItem
+ - crate::reference::PathPrefix
+ - crate::reference::PathSuffix
+ - crate::reference::TypeReference
+parser::tests
+ - crate::parser::AnalyzerError
+ - crate::parser::CrateAnalyzer
+ - crate::parser::FileReferences
+ - crate::parser::Result
+reference
+ - crate::constants::PATH_QUALIFIER_SELF
+reference::tests
+ - crate::reference::GroupItem
+ - crate::reference::PathPrefix
+ - crate::reference::PathSuffix
+ - crate::reference::Segments
+ - crate::reference::TypeReference
+resolve
+resolve::tests
+ - crate::resolve::extract_public_items
 tests
  - crate::::*
 version

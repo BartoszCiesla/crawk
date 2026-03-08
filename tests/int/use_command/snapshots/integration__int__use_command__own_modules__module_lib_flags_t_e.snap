@@ -12,16 +12,16 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::::*
-crate::module::analyzer::AnalyzerError
-crate::module::analyzer::CrateAnalyzer
-crate::module::discover::CrateInfo
-crate::module::discover::CrateInfoError
-crate::module::discover::ModuleInfo
-crate::module::path::GroupItem
-crate::module::path::PathPrefix
-crate::module::path::PathSuffix
-crate::module::path::Segments
-crate::module::path::TypeReference
-crate::module::resolve::extract_public_items
+crate::discover::CrateInfo
+crate::discover::CrateInfoError
+crate::discover::ModuleInfo
+crate::parser::AnalyzerError
+crate::parser::CrateAnalyzer
+crate::reference::GroupItem
+crate::reference::PathPrefix
+crate::reference::PathSuffix
+crate::reference::Segments
+crate::reference::TypeReference
+crate::resolve::extract_public_items
 
 ----- stderr -----

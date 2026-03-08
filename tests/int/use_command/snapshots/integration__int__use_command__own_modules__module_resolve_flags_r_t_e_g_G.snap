@@ -4,19 +4,18 @@ info:
   program: crawk
   args:
     - use
-    - lib
+    - resolve
+    - "-r"
     - "-t"
     - "-e"
-    - "-d"
-    - "1"
+    - "-g"
+    - "-G"
 ---
 success: true
 exit_code: 0
 ----- stdout -----
-crate::::*
-crate::discover
-crate::parser
-crate::reference
-crate::resolve
+resolve
+resolve::tests
+ - crate::resolve::extract_public_items
 
 ----- stderr -----

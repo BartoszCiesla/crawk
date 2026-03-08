@@ -9,10 +9,10 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::module::analyzer::{AnalyzerError, CrateAnalyzer}
-crate::module::discover::ModuleInfo
-crate::module::discover::{CrateInfo, CrateInfoError}
-crate::module::path::{GroupItem, PathPrefix, PathSuffix, Segments, TypeReference}
-crate::module::resolve::extract_public_items
+crate::discover::ModuleInfo
+crate::discover::{CrateInfo, CrateInfoError}
+crate::parser::{AnalyzerError, CrateAnalyzer}
+crate::reference::{GroupItem, PathPrefix, PathSuffix, Segments, TypeReference}
+crate::resolve::extract_public_items
 
 ----- stderr -----

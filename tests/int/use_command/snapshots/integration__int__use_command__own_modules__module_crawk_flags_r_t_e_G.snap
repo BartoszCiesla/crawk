@@ -22,18 +22,18 @@ crate::constants::MODULE_NAME_TEST
 crate::constants::PATH_QUALIFIER_CRATE
 crate::constants::PATH_QUALIFIER_SELF
 crate::constants::PATH_QUALIFIER_SUPER
-crate::module::analyzer::AnalyzerError
-crate::module::analyzer::CrateAnalyzer
-crate::module::analyzer::FileReferences
-crate::module::analyzer::Result
-crate::module::discover::CrateInfo
-crate::module::discover::CrateInfoError
-crate::module::discover::ModuleInfo
-crate::module::path::GroupItem
-crate::module::path::PathPrefix
-crate::module::path::PathSuffix
-crate::module::path::Segments
-crate::module::path::TypeReference
-crate::module::resolve::extract_public_items
+crate::discover::CrateInfo
+crate::discover::CrateInfoError
+crate::discover::ModuleInfo
+crate::parser::AnalyzerError
+crate::parser::CrateAnalyzer
+crate::parser::FileReferences
+crate::parser::Result
+crate::reference::GroupItem
+crate::reference::PathPrefix
+crate::reference::PathSuffix
+crate::reference::Segments
+crate::reference::TypeReference
+crate::resolve::extract_public_items
 
 ----- stderr -----

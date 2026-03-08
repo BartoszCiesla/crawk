@@ -32,19 +32,22 @@
 //! - **Test module filtering**: Optionally include or exclude `#[cfg(test)]` modules
 //! - **Depth limiting**: Truncate [`TypeReference`] paths via [`TypeReference::truncate_to_depth`]
 
-use crate::module::analyzer::{AnalyzerError, CrateAnalyzer};
-use crate::module::discover::{CrateInfo, CrateInfoError};
-use crate::module::resolve::extract_public_items;
+use crate::discover::{CrateInfo, CrateInfoError};
+use crate::parser::{AnalyzerError, CrateAnalyzer};
+use crate::resolve::extract_public_items;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 use tracing::{debug, error, info, trace};
 
 mod constants;
-mod module;
+mod discover;
+mod parser;
+mod reference;
+mod resolve;
 pub mod version;
 
-pub use crate::module::path::{GroupItem, PathPrefix, PathSuffix, Segments, TypeReference};
+pub use crate::reference::{GroupItem, PathPrefix, PathSuffix, Segments, TypeReference};
 
 /// Options for dependency analysis.
 ///
@@ -496,7 +499,7 @@ impl Analyzer {
     /// the one with the shortest path is the file-level owner.
     fn build_file_root_map(
         &self,
-        modules: &[crate::module::discover::ModuleInfo],
+        modules: &[crate::discover::ModuleInfo],
     ) -> HashMap<PathBuf, String> {
         let mut file_root: HashMap<PathBuf, String> = HashMap::new();
         for module in modules {

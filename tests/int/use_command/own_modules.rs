@@ -9,10 +9,9 @@ use test_case::{test_case, test_matrix};
 #[test_case("cli"; "for cli module")]
 #[test_case("lib"; "for lib module")]
 #[test_case("main"; "for main module")]
-#[test_case("module"; "for module module")]
-#[test_case("module::analyzer"; "for module::analyzer module")]
-#[test_case("module::discover"; "for module::discover module")]
-#[test_case("module::path"; "for module::path module")]
+#[test_case("parser"; "for parser module")]
+#[test_case("discover"; "for discover module")]
+#[test_case("reference"; "for reference module")]
 #[test_case("nonexisting"; "for nonexisting module")]
 fn should_use_command_provide_output(module: &str) {
     let snapshot_name = format!("module_{}", module.replace("::", "__"));
@@ -28,7 +27,7 @@ fn should_use_command_provide_output(module: &str) {
 // - build should give the output for build script only.
 // - tests should give the output for test module in the lib only.
 #[test_matrix(
-        ["crawk", "module", "module::analyzer", "module::discover", "module::path", "module::resolve", "lib", "tests", "main", "build", "cli", "constants", "logger", "version"],
+        ["crawk", "parser", "discover", "reference", "resolve", "lib", "tests", "main", "build", "cli", "constants", "logger", "version"],
         [&["-t"],
          &["-t", "-e"],
          &["-t", "-e", "-d", "1"],

@@ -4,7 +4,7 @@ info:
   program: crawk
   args:
     - use
-    - lib
+    - reference
     - "-t"
     - "-e"
     - "-d"
@@ -13,10 +13,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::::*
-crate::discover
-crate::parser
-crate::reference
-crate::resolve
+crate::constants
+crate::reference::*
 
 ----- stderr -----

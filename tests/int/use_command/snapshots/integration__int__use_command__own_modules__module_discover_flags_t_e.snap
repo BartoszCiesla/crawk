@@ -4,19 +4,17 @@ info:
   program: crawk
   args:
     - use
-    - lib
+    - discover
     - "-t"
     - "-e"
-    - "-d"
-    - "1"
 ---
 success: true
 exit_code: 0
 ----- stdout -----
-crate::::*
-crate::discover
-crate::parser
-crate::reference
-crate::resolve
+crate::constants::ATTR_CFG
+crate::constants::LIB_FILE_NAME
+crate::constants::MAIN_FILE_NAME
+crate::constants::MODULE_FILE_NAME
+crate::constants::MODULE_NAME_TEST
 
 ----- stderr -----

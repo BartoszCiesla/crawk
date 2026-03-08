@@ -4,19 +4,12 @@ info:
   program: crawk
   args:
     - use
-    - lib
-    - "-t"
-    - "-e"
-    - "-d"
-    - "1"
+    - reference
+    - "-r"
 ---
 success: true
 exit_code: 0
 ----- stdout -----
-crate::::*
-crate::discover
-crate::parser
-crate::reference
-crate::resolve
+crate::constants::PATH_QUALIFIER_SELF
 
 ----- stderr -----

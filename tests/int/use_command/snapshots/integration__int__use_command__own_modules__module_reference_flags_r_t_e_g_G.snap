@@ -1,0 +1,26 @@
+---
+source: tests/int/use_command/own_modules.rs
+info:
+  program: crawk
+  args:
+    - use
+    - reference
+    - "-r"
+    - "-t"
+    - "-e"
+    - "-g"
+    - "-G"
+---
+success: true
+exit_code: 0
+----- stdout -----
+reference
+ - crate::constants::PATH_QUALIFIER_SELF
+reference::tests
+ - crate::reference::GroupItem
+ - crate::reference::PathPrefix
+ - crate::reference::PathSuffix
+ - crate::reference::Segments
+ - crate::reference::TypeReference
+
+----- stderr -----

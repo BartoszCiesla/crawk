@@ -4,36 +4,27 @@ info:
   program: crawk
   args:
     - use
-    - crawk
+    - parser
     - "-r"
     - "-t"
     - "-e"
+    - "-G"
 ---
 success: true
 exit_code: 0
 ----- stdout -----
-crate::::*
 crate::constants::ATTR_CFG
-crate::constants::LIB_FILE_NAME
-crate::constants::MAIN_FILE_NAME
-crate::constants::MODULE_FILE_NAME
 crate::constants::MODULE_NAME_TEST
 crate::constants::PATH_QUALIFIER_CRATE
 crate::constants::PATH_QUALIFIER_SELF
 crate::constants::PATH_QUALIFIER_SUPER
-crate::discover::CrateInfo
-crate::discover::CrateInfoError
-crate::discover::ModuleInfo
-crate::parser::*
 crate::parser::AnalyzerError
 crate::parser::CrateAnalyzer
-crate::reference::*
+crate::parser::FileReferences
+crate::parser::Result
 crate::reference::GroupItem
 crate::reference::PathPrefix
 crate::reference::PathSuffix
-crate::reference::Segments
 crate::reference::TypeReference
-crate::resolve::*
-crate::resolve::extract_public_items
 
 ----- stderr -----
