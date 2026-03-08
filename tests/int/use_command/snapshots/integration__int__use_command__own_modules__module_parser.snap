@@ -9,7 +9,6 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::constants::{ATTR_CFG, MODULE_NAME_TEST, PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER}
-crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference}
+crate::reference::TypeReference
 
 ----- stderr -----

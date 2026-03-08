@@ -30,12 +30,25 @@ lib
  - crate::resolve::extract_public_items
 constants
 discover
+discover::module_tree
  - crate::constants::ATTR_CFG
  - crate::constants::LIB_FILE_NAME
  - crate::constants::MAIN_FILE_NAME
  - crate::constants::MODULE_FILE_NAME
  - crate::constants::MODULE_NAME_TEST
+ - crate::discover::CrateInfo
+ - crate::discover::CrateInfoError
+ - crate::discover::ModuleInfo
+ - crate::discover::Result
 parser
+ - crate::reference::TypeReference
+parser::tests
+ - crate::parser::AnalyzerError
+ - crate::parser::CrateAnalyzer
+ - crate::parser::FileReferences
+ - crate::parser::Result
+ - crate::reference::PathPrefix
+parser::visitor
  - crate::constants::ATTR_CFG
  - crate::constants::MODULE_NAME_TEST
  - crate::constants::PATH_QUALIFIER_CRATE
@@ -45,11 +58,6 @@ parser
  - crate::reference::PathPrefix
  - crate::reference::PathSuffix
  - crate::reference::TypeReference
-parser::tests
- - crate::parser::AnalyzerError
- - crate::parser::CrateAnalyzer
- - crate::parser::FileReferences
- - crate::parser::Result
 reference
  - crate::constants::PATH_QUALIFIER_SELF
 reference::tests

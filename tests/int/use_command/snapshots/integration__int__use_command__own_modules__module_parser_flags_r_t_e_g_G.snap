@@ -15,6 +15,14 @@ success: true
 exit_code: 0
 ----- stdout -----
 parser
+ - crate::reference::TypeReference
+parser::tests
+ - crate::parser::AnalyzerError
+ - crate::parser::CrateAnalyzer
+ - crate::parser::FileReferences
+ - crate::parser::Result
+ - crate::reference::PathPrefix
+parser::visitor
  - crate::constants::ATTR_CFG
  - crate::constants::MODULE_NAME_TEST
  - crate::constants::PATH_QUALIFIER_CRATE
@@ -24,10 +32,5 @@ parser
  - crate::reference::PathPrefix
  - crate::reference::PathSuffix
  - crate::reference::TypeReference
-parser::tests
- - crate::parser::AnalyzerError
- - crate::parser::CrateAnalyzer
- - crate::parser::FileReferences
- - crate::parser::Result
 
 ----- stderr -----

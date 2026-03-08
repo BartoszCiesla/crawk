@@ -24,6 +24,7 @@ crate::constants::PATH_QUALIFIER_SUPER
 crate::discover::CrateInfo
 crate::discover::CrateInfoError
 crate::discover::ModuleInfo
+crate::discover::Result
 crate::parser::*
 crate::parser::AnalyzerError
 crate::parser::CrateAnalyzer
