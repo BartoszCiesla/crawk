@@ -1,7 +1,7 @@
+use anyhow::Context;
 use clap::{ArgAction, Parser, Subcommand};
 use crawk::version;
 use std::path::PathBuf;
-use tracing::error;
 use tracing_subscriber::filter::LevelFilter;
 
 /// Validates that depth is at least 1
@@ -92,26 +92,21 @@ pub struct CrawkOptions {
 impl CrawkArgs {
     /// Get the crate root directory
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if the current directory cannot be determined when no path is provided
-    #[must_use]
-    pub fn crate_root(&self) -> PathBuf {
-        self.options.path.as_ref().map_or_else(
-            || {
-                std::env::current_dir().unwrap_or_else(|_| {
-                    error!("Failed to get current directory");
-                    std::process::exit(1);
-                })
-            },
-            |path| {
+    /// Returns an error if:
+    /// - No path is provided and the current directory cannot be determined
+    /// - The provided path does not exist
+    pub fn crate_root(&self) -> anyhow::Result<PathBuf> {
+        match self.options.path.as_ref() {
+            Some(path) => {
                 if !path.exists() {
-                    error!("Provided path '{}' does not exist", path.display());
-                    std::process::exit(1);
+                    anyhow::bail!("Provided path '{}' does not exist", path.display());
                 }
-                path.clone()
-            },
-        )
+                Ok(path.clone())
+            }
+            None => std::env::current_dir().context("Failed to get current directory"),
+        }
     }
 
     /// Get the log level filter based on verbosity

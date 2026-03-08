@@ -17,7 +17,7 @@ fn main() -> anyhow::Result<()> {
     configure_tracing(&command)?;
 
     // Get crate root directory
-    let crate_root = command.crate_root();
+    let crate_root = command.crate_root()?;
 
     info!("Running {} v{}", version::NAME, version::VERSION);
     info!("Crate root: {}", crate_root.display());

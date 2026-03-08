@@ -11,6 +11,6 @@ info:
 success: false
 exit_code: 1
 ----- stdout -----
-[31mERROR[39m Provided path '/nonexistent/path' does not exist
 
 ----- stderr -----
+Error: Provided path '/nonexistent/path' does not exist
