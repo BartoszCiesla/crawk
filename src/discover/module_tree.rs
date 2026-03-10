@@ -54,7 +54,7 @@ impl CrateInfo {
             .packages
             .iter()
             .find(|p| p.name == self.root_package_name)
-            .ok_or(CrateInfoError::NoRootPackage)?;
+            .ok_or(CrateInfoError::PackageNotFound)?;
 
         self.resolve_module_path_with_crate(package, module_path)
     }

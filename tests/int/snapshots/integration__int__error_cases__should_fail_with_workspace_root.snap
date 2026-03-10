@@ -1,0 +1,16 @@
+---
+source: tests/int/error_cases.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/fixtures/workspace
+    - use
+    - lib-a
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: workspace support is not yet implemented

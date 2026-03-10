@@ -19,9 +19,13 @@ pub enum CrateInfoError {
     #[error("Failed to execute cargo metadata: {0}")]
     MetadataExecution(#[from] cargo_metadata::Error),
 
-    /// No root package found in the workspace.
-    #[error("No root package found in the workspace")]
-    NoRootPackage,
+    /// Path points to a workspace root rather than a single crate.
+    #[error("workspace support is not yet implemented")]
+    WorkspaceRoot,
+
+    /// Package not found in cargo metadata (internal inconsistency).
+    #[error("root package not found in cargo metadata")]
+    PackageNotFound,
 
     /// No crate root file (lib.rs or main.rs) found for the package.
     #[error("No crate root file found for package '{0}'")]
@@ -136,7 +140,7 @@ impl CrateInfo {
 
         let root_package_name = metadata
             .root_package()
-            .ok_or(CrateInfoError::NoRootPackage)?
+            .ok_or(CrateInfoError::WorkspaceRoot)?
             .name
             .to_string();
 
@@ -150,12 +154,6 @@ impl CrateInfo {
     #[must_use]
     pub fn root_package_name(&self) -> &str {
         &self.root_package_name
-    }
-
-    /// Returns whether the crate is part of a workspace with multiple members.
-    #[must_use]
-    pub const fn is_workspace(&self) -> bool {
-        self.metadata.workspace_members.len() > 1
     }
 
     /// Returns a list of the given module and all its submodules with their source files.

@@ -31,6 +31,21 @@ fn should_fail_with_file_as_path() {
     });
 }
 
+#[test]
+fn should_fail_with_workspace_root() {
+    with_settings!({
+        filters => vec![
+            (env!("CARGO_MANIFEST_DIR"), "[MANIFEST_DIR]"),
+        ],
+    }, {
+        assert_cmd_snapshot!(crawk()
+            .arg("-p")
+            .arg(concat!(env!("CARGO_MANIFEST_DIR"), "/fixtures/workspace"))
+            .arg("use")
+            .arg("lib-a"));
+    });
+}
+
 // ============================================================================
 // Unknown subcommand
 // ============================================================================

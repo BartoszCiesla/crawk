@@ -3,6 +3,7 @@
 /debug
 /target
 /modules/target
+/fixtures/workspace/target
 # Alternative cache directory for IDE's and other tools
 /.ide/
 
