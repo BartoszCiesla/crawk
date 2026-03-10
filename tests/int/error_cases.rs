@@ -1,4 +1,4 @@
-use crate::common::crawk;
+use crate::common::{crawk, crawk_workspace};
 use insta::with_settings;
 use insta_cmd::assert_cmd_snapshot;
 
@@ -38,9 +38,7 @@ fn should_fail_with_workspace_root() {
             (env!("CARGO_MANIFEST_DIR"), "[MANIFEST_DIR]"),
         ],
     }, {
-        assert_cmd_snapshot!(crawk()
-            .arg("-p")
-            .arg(concat!(env!("CARGO_MANIFEST_DIR"), "/fixtures/workspace"))
+        assert_cmd_snapshot!(crawk_workspace()
             .arg("use")
             .arg("lib-a"));
     });
