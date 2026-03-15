@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 //! Module for analyzing type usage in Rust source files.
 //!
 //! Provides a single unified type [`TypeReference`] to represent all forms of

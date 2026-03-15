@@ -28,7 +28,6 @@ crate::discover::ModuleInfo
 crate::discover::Result
 crate::parser::AnalyzerError
 crate::parser::CrateAnalyzer
-crate::parser::FileReferences
 crate::parser::Result
 crate::reference::GroupItem
 crate::reference::PathPrefix

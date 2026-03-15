@@ -29,6 +29,7 @@ pub(super) struct ModuleVisitor {
     include_tests: bool,
 }
 
+#[allow(dead_code)]
 impl ModuleVisitor {
     pub(super) fn new(module_name: impl Into<String>) -> Self {
         let module_name = module_name.into();

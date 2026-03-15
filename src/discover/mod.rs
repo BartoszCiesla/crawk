@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 //! Module for locating and resolving Rust module paths within a crate.
 //!
 //! This module provides the [`CrateInfo`] struct which wraps cargo metadata

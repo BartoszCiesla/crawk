@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 //! Module for parsing Rust source files and extracting type references.
 //!
 //! Provides [`CrateAnalyzer`] for collecting [`TypeReference`]s from multiple
@@ -34,54 +33,20 @@ pub enum AnalyzerError {
 /// Result type for analyzer operations.
 pub type Result<T> = std::result::Result<T, AnalyzerError>;
 
-/// Collected type references from a single source file.
-#[derive(Debug, Clone, Default)]
-pub struct FileReferences {
-    /// Path to the source file.
-    pub file_path: PathBuf,
-
-    /// All type references found in this file.
-    pub references: Vec<TypeReference>,
-}
-
-impl FileReferences {
-    /// Creates a new `FileReferences` for the given file path.
-    pub fn new(file_path: impl Into<PathBuf>) -> Self {
-        Self {
-            file_path: file_path.into(),
-            references: Vec::new(),
-        }
-    }
-
-    /// Adds a type reference.
-    pub fn push(&mut self, reference: TypeReference) {
-        self.references.push(reference);
-    }
-
-    /// Returns the number of references.
-    pub const fn len(&self) -> usize {
-        self.references.len()
-    }
-
-    /// Returns true if no references were found.
-    pub const fn is_empty(&self) -> bool {
-        self.references.is_empty()
-    }
-}
-
 /// Analyzer for collecting type references from a Rust crate.
 #[derive(Debug, Clone)]
 pub struct CrateAnalyzer {
     /// Name of the crate being analyzed.
     crate_name: String,
 
-    /// Collected references per file.
-    files: HashMap<String, FileReferences>,
+    /// Collected references per module path.
+    files: HashMap<String, Vec<TypeReference>>,
 
     /// Order in which files were parsed (for deterministic iteration).
     file_order: Vec<String>,
 }
 
+#[allow(dead_code)]
 impl CrateAnalyzer {
     /// Creates a new analyzer for the given crate.
     pub fn new(crate_name: impl Into<String>) -> Self {
@@ -130,23 +95,14 @@ impl CrateAnalyzer {
             }
         }
 
-        let mut file_refs = FileReferences::new(path);
         let result = visitor.references.clone();
-        file_refs.references = visitor.references;
 
         if !self.files.contains_key(&module) {
             self.file_order.push(module.clone());
         }
-        self.files.insert(module, file_refs);
+        self.files.insert(module, visitor.references);
 
         Ok(result)
-    }
-
-    /// Returns all collected references by module, in parse order.
-    pub fn all_references(&self) -> impl Iterator<Item = (&String, &FileReferences)> {
-        self.file_order
-            .iter()
-            .filter_map(|module| self.files.get(module).map(|refs| (module, refs)))
     }
 
     /// Returns all collected crate internal references by module, in parse order.
@@ -154,7 +110,6 @@ impl CrateAnalyzer {
         self.file_order.iter().filter_map(|module| {
             self.files.get(module).map(|refs| {
                 let crate_refs: Vec<&TypeReference> = refs
-                    .references
                     .iter()
                     .filter(|r| r.is_relative() || r.is_from_crate(&self.crate_name))
                     .collect();
@@ -163,34 +118,14 @@ impl CrateAnalyzer {
         })
     }
 
-    /// Returns an iterator over all references across all files.
-    pub fn iter_references(&self) -> impl Iterator<Item = &TypeReference> {
-        self.files.values().flat_map(|f| f.references.iter())
-    }
-
-    /// Returns an iterator over all crate internal references across all files.
-    pub fn iter_crate_references(&self) -> impl Iterator<Item = &TypeReference> {
-        self.files.values().flat_map(|f| {
-            f.references
-                .iter()
-                .filter(|r| r.is_relative() || r.is_from_crate(&self.crate_name))
-        })
-    }
-
     /// Returns total number of references across all files.
     pub fn total_references(&self) -> usize {
-        self.files.values().map(|f| f.references.len()).sum()
+        self.files.values().map(Vec::len).sum()
     }
 
     /// Returns number of parsed files.
     pub fn file_count(&self) -> usize {
         self.files.len()
-    }
-
-    /// Clears all collected data.
-    pub fn clear(&mut self) {
-        self.files.clear();
-        self.file_order.clear();
     }
 }
 
