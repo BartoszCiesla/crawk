@@ -46,7 +46,6 @@ pub struct CrateAnalyzer {
     file_order: Vec<String>,
 }
 
-#[allow(dead_code)]
 impl CrateAnalyzer {
     /// Creates a new analyzer for the given crate.
     pub fn new(crate_name: impl Into<String>) -> Self {
@@ -55,11 +54,6 @@ impl CrateAnalyzer {
             files: HashMap::new(),
             file_order: Vec::new(),
         }
-    }
-
-    /// Returns the crate name.
-    pub fn crate_name(&self) -> &str {
-        &self.crate_name
     }
 
     /// Parses a single source file and collects type references.
@@ -117,13 +111,18 @@ impl CrateAnalyzer {
             })
         })
     }
+}
 
-    /// Returns total number of references across all files.
+#[cfg(test)]
+impl CrateAnalyzer {
+    pub fn crate_name(&self) -> &str {
+        &self.crate_name
+    }
+
     pub fn total_references(&self) -> usize {
         self.files.values().map(Vec::len).sum()
     }
 
-    /// Returns number of parsed files.
     pub fn file_count(&self) -> usize {
         self.files.len()
     }
