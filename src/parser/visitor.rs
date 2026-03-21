@@ -23,13 +23,8 @@ pub(super) struct ModuleVisitor {
     /// Track if we're currently visiting inside a test module.
     /// Updated as we traverse nested modules to filter test-only references.
     in_test_module: bool,
-
-    /// Whether to include references from test modules (those marked with `#[cfg(test)]`).
-    /// When `false`, references found in test modules are excluded.
-    include_tests: bool,
 }
 
-#[allow(dead_code)]
 impl ModuleVisitor {
     pub(super) fn new(module_name: impl Into<String>) -> Self {
         let module_name = module_name.into();
@@ -44,7 +39,6 @@ impl ModuleVisitor {
             module_path,
             references: Vec::new(),
             in_test_module: false,
-            include_tests: false,
         }
     }
 
@@ -121,66 +115,7 @@ impl ModuleVisitor {
         }
     }
 
-    /// Checks if the use tree matches the module we're interested in.
-    /// Returns true if the tree starts with or references the target module.
-    fn matches_module(&self, tree: &UseTree, prefix: &[String], path_prefix: &PathPrefix) -> bool {
-        // If no module filter is set, allow all
-        if self.module_name.is_empty() {
-            return true;
-        }
-
-        let module_segments: Vec<&str> = self.module_name.split("::").collect();
-
-        // Build the full path being checked
-        let mut full_path: Vec<String> = match path_prefix {
-            PathPrefix::Crate => vec![PATH_QUALIFIER_CRATE.to_string()],
-            PathPrefix::SelfModule => vec![PATH_QUALIFIER_SELF.to_string()],
-            PathPrefix::Super(n) => vec![PATH_QUALIFIER_SUPER.to_string(); *n],
-            PathPrefix::None => Vec::new(),
-        };
-        full_path.extend(prefix.iter().cloned());
-
-        // Get the first segment of the use tree
-        let first_segment = Self::get_first_segment(tree);
-        if let Some(seg) = first_segment {
-            full_path.push(seg);
-        }
-
-        // Check if the path starts with or matches the module
-        if full_path.is_empty() {
-            return true;
-        }
-
-        // Check if the use path starts with the module name
-        for (i, module_seg) in module_segments.iter().enumerate() {
-            if i >= full_path.len() {
-                // Module path is longer than use path, could be a prefix match
-                return true;
-            }
-            if full_path[i] != *module_seg {
-                return false;
-            }
-        }
-
-        true
-    }
-
-    /// Gets the first segment identifier from a UseTree.
-    fn get_first_segment(tree: &UseTree) -> Option<String> {
-        match tree {
-            UseTree::Path(p) => Some(p.ident.to_string()),
-            UseTree::Name(n) => Some(n.ident.to_string()),
-            UseTree::Rename(r) => Some(r.ident.to_string()),
-            UseTree::Glob(_) | UseTree::Group(_) => None,
-        }
-    }
-
     fn process_use_tree(&mut self, tree: &UseTree, prefix: Vec<String>, path_prefix: PathPrefix) {
-        // Check if the use tree matches the module we're interested in
-        // if !self.matches_module(tree, &prefix, &path_prefix) {
-        //     return;
-        // }
-
         match tree {
             UseTree::Path(p) => {
                 let ident = p.ident.to_string();
@@ -353,7 +288,7 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
         let was_in_test = self.in_test_module;
 
         // Check if this module is a test module (has #[cfg(test)] attribute)
-        if !self.include_tests && Self::is_test_module(i) {
+        if Self::is_test_module(i) {
             self.in_test_module = true;
         }
 
@@ -387,14 +322,14 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
     }
 
     fn visit_item_use(&mut self, node: &'ast ItemUse) {
-        if !self.in_test_module || self.include_tests {
+        if !self.in_test_module {
             self.process_use_tree(&node.tree, Vec::new(), PathPrefix::None);
         }
     }
 
     /// Visit expression paths - captures paths in expressions like `crate::foo::bar()`
     fn visit_expr_path(&mut self, node: &'ast syn::ExprPath) {
-        if !self.in_test_module || self.include_tests {
+        if !self.in_test_module {
             self.process_path(&node.path);
         }
         syn::visit::visit_expr_path(self, node);
@@ -402,7 +337,7 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
 
     /// Visit type paths - captures type annotations like `let x: crate::Foo`
     fn visit_type_path(&mut self, node: &'ast syn::TypePath) {
-        if !self.in_test_module || self.include_tests {
+        if !self.in_test_module {
             self.process_path(&node.path);
 
             // Also check the qself if present (e.g., <crate::Foo as Trait>::Item)
@@ -415,7 +350,7 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
 
     /// Visit pattern structs - captures struct patterns in match arms
     fn visit_pat_struct(&mut self, node: &'ast syn::PatStruct) {
-        if !self.in_test_module || self.include_tests {
+        if !self.in_test_module {
             self.process_path(&node.path);
         }
         syn::visit::visit_pat_struct(self, node);
@@ -423,7 +358,7 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
 
     /// Visit pattern tuple structs - captures tuple struct patterns
     fn visit_pat_tuple_struct(&mut self, node: &'ast syn::PatTupleStruct) {
-        if !self.in_test_module || self.include_tests {
+        if !self.in_test_module {
             self.process_path(&node.path);
         }
         syn::visit::visit_pat_tuple_struct(self, node);
@@ -431,7 +366,7 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
 
     /// Visit struct expressions - captures struct literal construction
     fn visit_expr_struct(&mut self, node: &'ast syn::ExprStruct) {
-        if !self.in_test_module || self.include_tests {
+        if !self.in_test_module {
             self.process_path(&node.path);
         }
         syn::visit::visit_expr_struct(self, node);
@@ -439,7 +374,7 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
 
     /// Visit trait bounds - captures trait bounds in generics
     fn visit_trait_bound(&mut self, node: &'ast syn::TraitBound) {
-        if !self.in_test_module || self.include_tests {
+        if !self.in_test_module {
             self.process_path(&node.path);
         }
         syn::visit::visit_trait_bound(self, node);
@@ -447,7 +382,7 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
 
     /// Visit impl items - captures impl blocks
     fn visit_item_impl(&mut self, node: &'ast syn::ItemImpl) {
-        if !self.in_test_module || self.include_tests {
+        if !self.in_test_module {
             // Check the trait being implemented (if any)
             if let Some((_, trait_path, _)) = &node.trait_ {
                 self.process_path(trait_path);
@@ -458,7 +393,7 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
 
     /// Visit macro invocations - captures macro paths
     fn visit_macro(&mut self, node: &'ast syn::Macro) {
-        if !self.in_test_module || self.include_tests {
+        if !self.in_test_module {
             self.process_path(&node.path);
         }
         syn::visit::visit_macro(self, node);
