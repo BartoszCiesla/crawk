@@ -16,14 +16,14 @@ vergen = ["dep:vergen-git2"]
 [dependencies]
 anyhow = "1.0.102"
 cargo_metadata = "0.23.1"
-clap = { version = "4.5", features = ["derive", "cargo"] }
+clap = { version = "4.6", features = ["derive", "cargo"] }
 const_format = "0.2"
 owo-colors = "4.3.0"
 proc-macro2 = "1.0"
 syn = { version = "2.0", features = ["full", "parsing", "visit"] }
 thiserror = "2.0.18"
 tracing = "0.1.44"
-tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 
 [build-dependencies]
 anyhow = "1.0.102"
@@ -33,7 +33,7 @@ vergen-git2 = { version = "9.1.0", features = ["build", "cargo", "rustc", "si"],
 insta = { version = "1.46.3", features = ["filters"] }
 insta-cmd = "0.6.0"
 modules = { path = "fixtures/modules" }
-tempfile = "3.26"
+tempfile = "3.27"
 test-case = "3.3.1"
 # TODO: uncomment when RR fix SIGSEGV build script
 # build = "src/build.rs"
