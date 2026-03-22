@@ -13,6 +13,7 @@ jobs:
       contents: write # For pushing the release commit with the new versions and changelog, which is required for creating the release PR.
       id-token: write # For authenticating with the cargo registry when publishing the packages.
     runs-on: ubuntu-latest
+    environment: release
     concurrency:
       group: release-plz-release-${{ github.ref }}
       cancel-in-progress: false
@@ -39,12 +40,14 @@ jobs:
       pull-requests: write # For creating the release PR with the new versions and changelog.
       contents: write # For pushing the release commit with the new versions and changelog, which is required for creating the release PR.
     runs-on: ubuntu-latest
+    environment: release
     if: ${{ github.repository_owner == 'BartoszCiesla' }}
     concurrency:
       group: release-plz-pr-${{ github.ref }}
       cancel-in-progress: false
     steps:
       - name: Checkout repository
+        # zizmor: ignore[artipacked]
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
