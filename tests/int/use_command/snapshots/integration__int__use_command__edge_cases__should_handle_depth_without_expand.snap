@@ -11,10 +11,9 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::discover
-crate::discover::{CrateInfo, CrateInfoError}
-crate::parser::{AnalyzerError, CrateAnalyzer}
+crate::analyzer
+crate::error::{AnalysisError, Result}
+crate::model::{AnalysisOptions, AnalysisResult}
 crate::reference::{GroupItem, PathPrefix, PathSuffix, Segments, TypeReference}
-crate::resolve
 
 ----- stderr -----

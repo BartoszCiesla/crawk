@@ -11,6 +11,8 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+crate::discover::CrateInfo
+crate::reference::{PathPrefix, PathSuffix, Segments, TypeReference}
 crate::resolve::*
 
 ----- stderr -----

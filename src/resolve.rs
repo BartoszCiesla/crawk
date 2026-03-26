@@ -3,11 +3,16 @@
 //! Given a path to a `.rs` file, [`extract_public_items`] returns the names of
 //! all publicly visible items (structs, enums, functions, constants, traits,
 //! type aliases, modules, statics, and `pub use` re-exports).
+//!
+//! [`resolve_glob`] resolves a glob `TypeReference` (e.g., `crate::foo::bar::*`)
+//! into concrete references by reading the target module's public API.
 
+use crate::discover::CrateInfo;
+use crate::reference::{PathPrefix, PathSuffix, Segments, TypeReference};
 use std::fs;
 use std::path::Path;
-
 use syn::{Item, UseTree};
+use tracing::debug;
 
 /// Extract all public item names from a Rust source file.
 ///
@@ -137,6 +142,110 @@ fn extract_use_names(tree: &UseTree, items: &mut Vec<String>) {
             // Can't resolve nested globs without further context
         }
     }
+}
+
+/// Resolve a glob `TypeReference` (e.g., `crate::foo::bar::*`) into concrete
+/// references by reading the target module's public API.
+///
+/// Only `crate::` prefixed globs are resolved. Other prefixes pass through
+/// unchanged. If the module file cannot be found or parsed, the original
+/// glob reference is returned with a warning.
+pub fn resolve_glob(reference: &TypeReference, crate_info: &CrateInfo) -> Vec<TypeReference> {
+    // Determine the module path to resolve.
+    // Accept both `crate::foo::bar::*` (PathPrefix::Crate, segments=["foo","bar"])
+    // and `mycrate::foo::bar::*` (PathPrefix::None, first segment == crate name).
+    let is_crate_prefix = reference.prefix == PathPrefix::Crate;
+    let is_crate_name_prefix = reference.prefix == PathPrefix::None
+        && reference
+            .segments
+            .first()
+            .is_some_and(|s| s == crate_info.root_package_name());
+
+    if !is_crate_prefix && !is_crate_name_prefix {
+        return vec![reference.clone()];
+    }
+
+    let module_path = reference.segments.join("::");
+    if module_path.is_empty() {
+        return vec![reference.clone()];
+    }
+
+    // Resolve module path to file
+    let file_path = match crate_info.resolve_module_path_to_file(&module_path) {
+        Ok(path) => path,
+        Err(e) => {
+            debug!(
+                "Cannot resolve glob for '{}': {e}",
+                reference.to_path_string()
+            );
+            return vec![reference.clone()];
+        }
+    };
+
+    // Determine if the target is an inline module within the file.
+    // If resolving a shorter prefix yields the same file, the remaining
+    // segments are the inline module path.
+    let inline_path = detect_inline_path(reference, &file_path, crate_info);
+    let inline_refs: Vec<&str> = inline_path.iter().map(String::as_str).collect();
+
+    // Extract public items from the file (optionally descending into inline module)
+    let Some(public_items) = extract_public_items(&file_path, &inline_refs) else {
+        debug!("Cannot parse '{}' for glob resolution", file_path.display());
+        return vec![reference.clone()];
+    };
+
+    if public_items.is_empty() {
+        return vec![];
+    }
+
+    // Build one TypeReference per public item
+    public_items
+        .into_iter()
+        .map(|item| {
+            let mut segments = reference.segments.to_vec();
+            segments.push(item);
+            TypeReference {
+                segments: Segments::from(segments),
+                prefix: reference.prefix,
+                suffix: PathSuffix::None,
+            }
+        })
+        .collect()
+}
+
+/// Detect which trailing segments of a module path are inline modules
+/// within the resolved file.
+///
+/// Compares progressive shorter prefixes of the module path against the
+/// resolved file. Once a shorter prefix resolves to a *different* file
+/// (or fails), the remaining segments are the inline module path.
+fn detect_inline_path(
+    reference: &TypeReference,
+    resolved_file: &Path,
+    crate_info: &CrateInfo,
+) -> Vec<String> {
+    let segments = &reference.segments;
+
+    // Walk from the full path backwards, peeling off one segment at a time.
+    // The segments that resolve to the same file are "consumed by" the file;
+    // any remainder must be inline modules.
+    for split in (1..segments.len()).rev() {
+        let prefix_path = segments[..split].join("::");
+        match crate_info.resolve_module_path_to_file(&prefix_path) {
+            Ok(ref parent_file) if parent_file == resolved_file => {
+                // The shorter prefix still resolves to the same file,
+                // so segments[split..] are inline module names.
+                return segments[split..].to_vec();
+            }
+            _ => {
+                // Different file or resolution failed — this prefix is
+                // a different module, keep peeling.
+            }
+        }
+    }
+
+    // No inline path detected — the file directly corresponds to the module.
+    vec![]
 }
 
 #[cfg(test)]

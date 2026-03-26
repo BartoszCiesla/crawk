@@ -13,6 +13,8 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+crate::discover
+crate::reference
 crate::resolve::*
 
 ----- stderr -----

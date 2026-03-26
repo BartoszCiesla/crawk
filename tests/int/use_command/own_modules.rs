@@ -27,7 +27,7 @@ fn should_use_command_provide_output(module: &str) {
 // - build should give the output for build script only.
 // - tests should give the output for test module in the lib only.
 #[test_matrix(
-        ["crawk", "parser", "discover", "reference", "resolve", "lib", "tests", "main", "build", "cli", "constants", "logger", "version"],
+        ["crawk", "parser", "discover", "reference", "resolve", "lib", "main", "build", "cli", "constants", "logger", "version"],
         [&["-t"],
          &["-t", "-e"],
          &["-t", "-e", "-d", "1"],

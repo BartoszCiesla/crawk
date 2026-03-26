@@ -13,10 +13,9 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::::*
-crate::discover
-crate::parser
+crate::analyzer
+crate::error
+crate::model
 crate::reference
-crate::resolve
 
 ----- stderr -----

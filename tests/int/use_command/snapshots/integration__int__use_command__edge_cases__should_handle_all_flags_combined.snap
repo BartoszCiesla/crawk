@@ -18,17 +18,25 @@ success: true
 exit_code: 0
 ----- stdout -----
 lib
- - crate::discover::CrateInfo
- - crate::discover::CrateInfoError
- - crate::discover::ModuleInfo
- - crate::parser::AnalyzerError
- - crate::parser::CrateAnalyzer
+ - crate::analyzer::Analyzer
+ - crate::error::AnalysisError
+ - crate::error::Result
+ - crate::model::AnalysisOptions
+ - crate::model::AnalysisResult
  - crate::reference::GroupItem
  - crate::reference::PathPrefix
  - crate::reference::PathSuffix
  - crate::reference::Segments
  - crate::reference::TypeReference
- - crate::resolve::extract_public_items
+analyzer
+ - crate::discover::CrateInfo
+ - crate::discover::ModuleInfo
+ - crate::error::AnalysisError
+ - crate::error::Result
+ - crate::model::AnalysisOptions
+ - crate::model::AnalysisResult
+ - crate::parser::CrateAnalyzer
+ - crate::resolve::resolve_glob
 constants
 discover
 discover::module_tree
@@ -41,6 +49,14 @@ discover::module_tree
  - crate::discover::CrateInfoError
  - crate::discover::ModuleInfo
  - crate::discover::Result
+error
+ - crate::discover::CrateInfoError
+ - crate::parser::AnalyzerError
+model
+ - crate::reference::TypeReference
+model::tests
+ - crate::model::AnalysisOptions
+ - crate::model::AnalysisResult
 parser
  - crate::reference::TypeReference
 parser::tests
@@ -67,10 +83,14 @@ reference::tests
  - crate::reference::Segments
  - crate::reference::TypeReference
 resolve
+ - crate::discover::CrateInfo
+ - crate::reference::PathPrefix
+ - crate::reference::PathSuffix
+ - crate::reference::Segments
+ - crate::reference::TypeReference
 resolve::tests
  - crate::resolve::extract_public_items
-tests
- - crate::::*
+ - crate::resolve::resolve_glob
 version
 version::build_info
 

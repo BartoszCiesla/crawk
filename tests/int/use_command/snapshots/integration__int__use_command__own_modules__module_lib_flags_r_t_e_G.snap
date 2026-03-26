@@ -13,7 +13,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::::*
+crate::analyzer::Analyzer
 crate::constants::ATTR_CFG
 crate::constants::LIB_FILE_NAME
 crate::constants::MAIN_FILE_NAME
@@ -26,6 +26,10 @@ crate::discover::CrateInfo
 crate::discover::CrateInfoError
 crate::discover::ModuleInfo
 crate::discover::Result
+crate::error::AnalysisError
+crate::error::Result
+crate::model::AnalysisOptions
+crate::model::AnalysisResult
 crate::parser::AnalyzerError
 crate::parser::CrateAnalyzer
 crate::parser::Result
@@ -35,5 +39,6 @@ crate::reference::PathSuffix
 crate::reference::Segments
 crate::reference::TypeReference
 crate::resolve::extract_public_items
+crate::resolve::resolve_glob
 
 ----- stderr -----

@@ -10,9 +10,9 @@ info:
     - "-e"
     - "-G"
 ---
-success: true
-exit_code: 0
+success: false
+exit_code: 1
 ----- stdout -----
-crate::::*
 
 ----- stderr -----
+Error: Module 'tests' not found

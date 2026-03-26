@@ -16,7 +16,13 @@ success: true
 exit_code: 0
 ----- stdout -----
 resolve
+ - crate::discover::CrateInfo
+ - crate::reference::PathPrefix
+ - crate::reference::PathSuffix
+ - crate::reference::Segments
+ - crate::reference::TypeReference
 resolve::tests
  - crate::resolve::extract_public_items
+ - crate::resolve::resolve_glob
 
 ----- stderr -----

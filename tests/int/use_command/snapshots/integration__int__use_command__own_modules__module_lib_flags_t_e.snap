@@ -11,17 +11,15 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::::*
-crate::discover::CrateInfo
-crate::discover::CrateInfoError
-crate::discover::ModuleInfo
-crate::parser::AnalyzerError
-crate::parser::CrateAnalyzer
+crate::analyzer::Analyzer
+crate::error::AnalysisError
+crate::error::Result
+crate::model::AnalysisOptions
+crate::model::AnalysisResult
 crate::reference::GroupItem
 crate::reference::PathPrefix
 crate::reference::PathSuffix
 crate::reference::Segments
 crate::reference::TypeReference
-crate::resolve::extract_public_items
 
 ----- stderr -----
