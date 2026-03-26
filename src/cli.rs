@@ -1,6 +1,7 @@
 use anyhow::Context;
-use clap::{ArgAction, Parser, Subcommand};
+use clap::{ArgAction, Parser, Subcommand, ValueEnum};
 use crawk::version;
+use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::path::PathBuf;
 use tracing_subscriber::filter::LevelFilter;
 
@@ -149,6 +150,24 @@ pub enum CrawkCommands {
     Use(UseArgs),
 }
 
+#[derive(ValueEnum, Debug, Clone, Default, PartialEq, Eq)]
+pub enum UseOutputFormat {
+    /// Flat sorted list (default)
+    #[default]
+    Plain,
+    /// Grouped by source module
+    Grouped,
+}
+
+impl Display for UseOutputFormat {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        match self {
+            Self::Plain => f.write_str("plain"),
+            Self::Grouped => f.write_str("grouped"),
+        }
+    }
+}
+
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Parser, Debug, Clone)]
 pub struct UseArgs {
@@ -180,15 +199,13 @@ pub struct UseArgs {
     #[arg(short = 'd', long = "depth", value_parser = validate_depth)]
     pub depth: Option<usize>,
 
-    /// Group output by source module (disabled by default)
+    /// Output format
     ///
-    /// When enabled, dependencies are displayed grouped by their source module,
-    /// showing which module each dependency originates from.
-    ///
-    /// e.g., foo::bar and foo::baz are shown under the foo module
+    /// plain   — flat sorted list (default)
+    /// grouped — grouped by source module
     #[clap(verbatim_doc_comment)]
-    #[arg(short = 'g', long = "grouped", default_value_t = false)]
-    pub grouped: bool,
+    #[arg(short = 'f', long = "format", default_value_t = UseOutputFormat::Plain)]
+    pub format: UseOutputFormat,
 
     /// Resolve glob imports (`use crate::foo::*`) to explicit items
     ///

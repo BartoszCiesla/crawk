@@ -17,8 +17,11 @@ crate::cli::CrawkArgs
 crate::cli::CrawkCommands
 crate::cli::CrawkOptions
 crate::cli::UseArgs
+crate::cli::UseOutputFormat
 crate::cli::validate_depth
+crate::format::truncate_and_dedup
 crawk::AnalysisOptions
+crawk::AnalysisResult
 crawk::Analyzer
 crawk::TypeReference
 crawk::version

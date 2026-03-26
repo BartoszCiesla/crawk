@@ -1,0 +1,44 @@
+---
+source: tests/int/use_command/flags.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/fixtures/modules
+    - use
+    - advanced_globs
+    - "-r"
+    - "-e"
+    - "--format"
+    - grouped
+---
+success: true
+exit_code: 0
+----- stdout -----
+advanced_globs
+ - crate::advanced_globs::internal::*
+ - crate::dir_module::child_file
+ - crate::file_module
+ - crate::visibility
+advanced_globs::aliased_module
+advanced_globs::enum_variants
+advanced_globs::internal
+advanced_globs::layer1
+advanced_globs::layer1::layer2
+advanced_globs::layer1::layer2::layer3
+advanced_globs::macro_module
+advanced_globs::original
+advanced_globs::prelude
+ - crate::advanced_globs::Consumer
+ - crate::advanced_globs::MultiImpl
+ - crate::advanced_globs::Provider
+ - crate::advanced_globs::Transformer
+ - crate::advanced_globs::deep_function
+ - crate::advanced_globs::layer1_function
+ - crate::advanced_globs::layer2_function
+advanced_globs::shadowing
+advanced_globs::trait_providers
+advanced_globs::unix_specific
+advanced_globs::windows_specific
+
+----- stderr -----

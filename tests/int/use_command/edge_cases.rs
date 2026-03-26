@@ -7,7 +7,7 @@ use insta_cmd::assert_cmd_snapshot;
 
 #[test]
 fn should_handle_grouped_without_recursive() {
-    assert_cmd_snapshot!(crawk().arg("use").arg("lib").arg("-g"));
+    assert_cmd_snapshot!(crawk().arg("use").arg("lib").arg("--format").arg("grouped"));
 }
 
 #[test]
@@ -29,7 +29,8 @@ fn should_handle_all_flags_combined() {
             .arg("-r")
             .arg("-t")
             .arg("-e")
-            .arg("-g")
+            .arg("--format")
+            .arg("grouped")
             .arg("-G")
             .arg("-d")
             .arg("2")

@@ -14,7 +14,9 @@ exit_code: 0
 ----- stdout -----
 crate::cli::*
 crate::cli::CrawkArgs
+crate::format::truncate_and_dedup
 crawk::AnalysisOptions
+crawk::AnalysisResult
 crawk::Analyzer
 crawk::TypeReference
 crawk::version

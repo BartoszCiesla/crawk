@@ -35,7 +35,7 @@ fn should_use_command_provide_output(module: &str) {
          &["-r", "-t"],
          &["-r", "-t", "-e"],
          &["-r", "-t", "-e", "-G"],
-         &["-r", "-t", "-e", "-g", "-G"],
+         &["-r", "-t", "-e", "--format", "grouped", "-G"],
         ]
 )]
 fn should_use_command_provide_output_for_flags(module: &str, flags: &[&str]) {

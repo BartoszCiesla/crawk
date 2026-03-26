@@ -1,0 +1,23 @@
+---
+source: tests/int/use_command/nesting.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/fixtures/modules
+    - use
+    - "nesting::level1::level2::level3"
+    - "-r"
+    - "-e"
+    - "--format"
+    - grouped
+---
+success: true
+exit_code: 0
+----- stdout -----
+nesting::level1::level2::level3
+ - crate::nesting::depth
+ - crate::nesting::level1::depth
+ - crate::nesting::level1::level2::depth
+
+----- stderr -----

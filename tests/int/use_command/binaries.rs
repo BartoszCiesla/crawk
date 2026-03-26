@@ -15,8 +15,8 @@ use test_case::test_matrix;
      &["-t"],
      &["-t", "-e"],
      &["-t", "-e", "--resolve-globs"],
-     &["-e", "--grouped"],
-     &["-e", "--grouped", "--resolve-globs"],
+     &["-e", "--format", "grouped"],
+     &["-e", "--format", "grouped", "--resolve-globs"],
     ]
 )]
 fn should_modules_use_handle_binaries(module: &str, flags: &[&str]) {

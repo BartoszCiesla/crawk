@@ -17,8 +17,8 @@ use test_case::test_matrix;
      &["-r", "-e"],
      &["-r", "--resolve-globs"],
      &["-r", "-e", "--resolve-globs"],
-     &["-r", "-e", "--grouped"],
-     &["-r", "-e", "--grouped", "--resolve-globs"],
+     &["-r", "-e", "--format", "grouped"],
+     &["-r", "-e", "--format", "grouped", "--resolve-globs"],
     ]
 )]
 fn should_modules_use_provide_output_for_flags(module: &str, flags: &[&str]) {

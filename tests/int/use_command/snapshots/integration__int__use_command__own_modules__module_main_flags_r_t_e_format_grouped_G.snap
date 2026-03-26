@@ -1,0 +1,42 @@
+---
+source: tests/int/use_command/own_modules.rs
+info:
+  program: crawk
+  args:
+    - use
+    - main
+    - "-r"
+    - "-t"
+    - "-e"
+    - "--format"
+    - grouped
+    - "-G"
+---
+success: true
+exit_code: 0
+----- stdout -----
+main
+ - crawk::AnalysisOptions
+ - crawk::Analyzer
+ - crawk::version
+cli
+ - crawk::version
+cli::tests
+ - crate::cli::CrawkArgs
+ - crate::cli::CrawkCommands
+ - crate::cli::CrawkOptions
+ - crate::cli::UseArgs
+ - crate::cli::UseOutputFormat
+ - crate::cli::validate_depth
+format
+ - crawk::TypeReference
+format::flat
+ - crate::format::truncate_and_dedup
+ - crawk::AnalysisResult
+format::grouped
+ - crate::format::truncate_and_dedup
+ - crawk::AnalysisResult
+logger
+ - crate::cli::CrawkArgs
+
+----- stderr -----

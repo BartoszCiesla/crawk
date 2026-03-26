@@ -1,0 +1,22 @@
+---
+source: tests/int/use_command/own_modules.rs
+info:
+  program: crawk
+  args:
+    - use
+    - resolve
+    - "-r"
+    - "-t"
+    - "-e"
+    - "--format"
+    - grouped
+    - "-G"
+---
+success: true
+exit_code: 0
+----- stdout -----
+resolve
+resolve::tests
+ - crate::resolve::extract_public_items
+
+----- stderr -----

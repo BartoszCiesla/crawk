@@ -8,7 +8,8 @@ info:
     - "-r"
     - "-t"
     - "-e"
-    - "-g"
+    - "--format"
+    - grouped
     - "-G"
     - "-d"
     - "2"

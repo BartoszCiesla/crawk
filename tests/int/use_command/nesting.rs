@@ -13,7 +13,7 @@ use test_case::test_matrix;
      &["-r", "-e"],
      &["-r", "-e", "-d", "1"],
      &["-r", "-e", "-d", "2"],
-     &["-r", "-e", "--grouped"],
+     &["-r", "-e", "--format", "grouped"],
     ]
 )]
 fn should_modules_use_handle_deep_nesting(module: &str, flags: &[&str]) {

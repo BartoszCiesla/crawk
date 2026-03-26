@@ -13,7 +13,7 @@ use test_case::test_matrix;
     [&["-e"],
      &["-r"],
      &["-r", "-e"],
-     &["-r", "-e", "--grouped"],
+     &["-r", "-e", "--format", "grouped"],
     ]
 )]
 fn should_modules_use_handle_empty_module(module: &str, flags: &[&str]) {
@@ -37,7 +37,7 @@ fn should_modules_use_handle_empty_module(module: &str, flags: &[&str]) {
     [&["-e"],
      &["-e", "--resolve-globs"],
      &["-r", "-e", "--resolve-globs"],
-     &["-r", "-e", "--grouped", "--resolve-globs"],
+     &["-r", "-e", "--format", "grouped", "--resolve-globs"],
     ]
 )]
 fn should_modules_use_handle_empty_glob(module: &str, flags: &[&str]) {
