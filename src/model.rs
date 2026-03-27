@@ -75,7 +75,7 @@ pub struct AnalysisResult {
 impl AnalysisResult {
     /// Returns the analyzed module path.
     #[must_use]
-    pub const fn module_path(&self) -> &String {
+    pub fn module_path(&self) -> &str {
         &self.module_path
     }
 
