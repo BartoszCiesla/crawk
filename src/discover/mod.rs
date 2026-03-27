@@ -116,10 +116,10 @@ impl ModuleInfo {
 #[derive(Debug, Clone)]
 pub struct CrateInfo {
     /// The cargo metadata for the crate.
-    pub(super) metadata: Metadata,
+    metadata: Metadata,
 
     /// The name of the root package in the workspace.
-    pub(super) root_package_name: String,
+    root_package_name: String,
 }
 
 impl CrateInfo {
@@ -153,6 +153,14 @@ impl CrateInfo {
     #[must_use]
     pub fn root_package_name(&self) -> &str {
         &self.root_package_name
+    }
+
+    /// Returns the root package from cargo metadata.
+    fn root_package(&self) -> Option<&cargo_metadata::Package> {
+        self.metadata
+            .packages
+            .iter()
+            .find(|p| p.name == self.root_package_name)
     }
 
     /// Returns a list of the given module and all its submodules with their source files.
@@ -231,7 +239,7 @@ impl CrateInfo {
         let first_part = parts[0];
 
         // Check if first part is the crate name or "lib" alias
-        if first_part == self.root_package_name || first_part == "lib" {
+        if first_part == self.root_package_name() || first_part == "lib" {
             return if parts.len() == 1 {
                 // Just the crate name/lib - return empty (analyzing crate root)
                 String::new()
@@ -241,11 +249,7 @@ impl CrateInfo {
         }
 
         // Check if first part is a binary target file stem (e.g., "main", "app")
-        if let Some(package) = self
-            .metadata
-            .packages
-            .iter()
-            .find(|p| p.name == self.root_package_name)
+        if let Some(package) = self.root_package()
             && Self::find_binary_by_file_stem(package, first_part).is_some()
         {
             return if parts.len() == 1 {

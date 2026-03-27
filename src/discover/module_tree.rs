@@ -49,12 +49,7 @@ impl CrateInfo {
     /// - The module cannot be found
     /// - The crate root cannot be determined
     pub(super) fn resolve_module(&self, module_path: &str) -> Result<PathBuf> {
-        let package = self
-            .metadata
-            .packages
-            .iter()
-            .find(|p| p.name == self.root_package_name)
-            .ok_or(CrateInfoError::PackageNotFound)?;
+        let package = self.root_package().ok_or(CrateInfoError::PackageNotFound)?;
 
         self.resolve_module_path_with_crate(package, module_path)
     }
@@ -107,7 +102,7 @@ impl CrateInfo {
         }
 
         // Check if the first part is the crate name itself or "lib" alias
-        let is_lib_root = parts[0] == self.root_package_name || parts[0] == "lib";
+        let is_lib_root = parts[0] == self.root_package_name() || parts[0] == "lib";
 
         if is_lib_root {
             // Skip the crate name/alias and resolve the rest
