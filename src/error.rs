@@ -5,6 +5,7 @@ use thiserror::Error;
 
 /// Error types for analysis operations.
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum AnalysisError {
     /// The specified module was not found in the crate.
     #[error("Module not found: {module_path}")]

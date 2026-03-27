@@ -88,6 +88,7 @@ pub struct TypeReference {
 
 /// Suffix determining how a path ends (alias, glob, or group).
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+#[non_exhaustive]
 pub enum PathSuffix {
     /// No suffix - simple path
     #[default]
@@ -105,6 +106,7 @@ pub enum PathSuffix {
 
 /// Prefix determining how path is resolved.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[non_exhaustive]
 pub enum PathPrefix {
     /// No special prefix - external crate or prelude
     #[default]
@@ -123,6 +125,7 @@ pub enum PathPrefix {
 
 /// Item within a grouped import `{...}`.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub enum GroupItem {
     /// Simple name: `HashMap`
     Simple(String),
