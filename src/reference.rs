@@ -4,7 +4,7 @@
 //! type/path references in Rust code: `use` statements, fully qualified paths,
 //! and relative paths (`self`, `super`, `crate`).
 use std::fmt::{Display, Formatter, Result};
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 
 use crate::constants::PATH_QUALIFIER_SELF;
 
@@ -36,16 +36,10 @@ impl Segments {
 }
 
 impl Deref for Segments {
-    type Target = Vec<String>;
+    type Target = [String];
 
     fn deref(&self) -> &Self::Target {
         &self.0
-    }
-}
-
-impl DerefMut for Segments {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
     }
 }
 
@@ -241,7 +235,7 @@ impl TypeReference {
     }
 
     fn append_segment(mut self, segment: impl Into<String>) -> Self {
-        self.segments.push(segment.into());
+        self.segments.0.push(segment.into());
         self
     }
 
@@ -310,7 +304,7 @@ impl TypeReference {
                             items: nested_items,
                         } => {
                             let mut nested = self.clone_with(true, false);
-                            nested.segments.extend(prefix.iter().cloned());
+                            nested.segments.0.extend(prefix.iter().cloned());
                             nested.suffix = PathSuffix::Group(nested_items.clone());
                             result.extend(nested.expand_suffix());
                         }
@@ -812,10 +806,7 @@ mod tests {
         let resolved = r.resolve(&module_path);
 
         assert_eq!(resolved.prefix, PathPrefix::Crate);
-        assert_eq!(
-            resolved.segments.as_slice(),
-            &["utils", "parser", "foo", "Bar"]
-        );
+        assert_eq!(&*resolved.segments, &["utils", "parser", "foo", "Bar"]);
         assert_eq!(resolved.to_path_string(), "crate::utils::parser::foo::Bar");
     }
 
@@ -826,7 +817,7 @@ mod tests {
         let resolved = r.resolve(&module_path);
 
         assert_eq!(resolved.prefix, PathPrefix::Crate);
-        assert_eq!(resolved.segments.as_slice(), &["foo", "Bar"]);
+        assert_eq!(&*resolved.segments, &["foo", "Bar"]);
         assert_eq!(resolved.to_path_string(), "crate::foo::Bar");
     }
 
@@ -837,7 +828,7 @@ mod tests {
         let resolved = r.resolve(&module_path);
 
         assert_eq!(resolved.prefix, PathPrefix::Crate);
-        assert_eq!(resolved.segments.as_slice(), &["parent", "sibling", "Type"]);
+        assert_eq!(&*resolved.segments, &["parent", "sibling", "Type"]);
         assert_eq!(resolved.to_path_string(), "crate::parent::sibling::Type");
     }
 
@@ -848,7 +839,7 @@ mod tests {
         let resolved = r.resolve(&module_path);
 
         assert_eq!(resolved.prefix, PathPrefix::Crate);
-        assert_eq!(resolved.segments.as_slice(), &["a", "ancestor", "Type"]);
+        assert_eq!(&*resolved.segments, &["a", "ancestor", "Type"]);
         assert_eq!(resolved.to_path_string(), "crate::a::ancestor::Type");
     }
 
@@ -861,7 +852,7 @@ mod tests {
 
         // Should leave it as-is since we can't go up
         assert_eq!(resolved.prefix, PathPrefix::Super(1));
-        assert_eq!(resolved.segments.as_slice(), &["foo", "Bar"]);
+        assert_eq!(&*resolved.segments, &["foo", "Bar"]);
     }
 
     #[test]
@@ -873,7 +864,7 @@ mod tests {
 
         // Should leave it as-is since we can't go up that far
         assert_eq!(resolved.prefix, PathPrefix::Super(5));
-        assert_eq!(resolved.segments.as_slice(), &["foo", "Bar"]);
+        assert_eq!(&*resolved.segments, &["foo", "Bar"]);
     }
 
     #[test]
@@ -883,7 +874,7 @@ mod tests {
         let resolved = r.resolve(&module_path);
 
         assert_eq!(resolved.prefix, PathPrefix::Crate);
-        assert_eq!(resolved.segments.as_slice(), &["module", "Type"]);
+        assert_eq!(&*resolved.segments, &["module", "Type"]);
         assert_eq!(resolved.to_path_string(), "crate::module::Type");
     }
 
@@ -894,10 +885,7 @@ mod tests {
         let resolved = r.resolve(&module_path);
 
         assert_eq!(resolved.prefix, PathPrefix::None);
-        assert_eq!(
-            resolved.segments.as_slice(),
-            &["std", "collections", "HashMap"]
-        );
+        assert_eq!(&*resolved.segments, &["std", "collections", "HashMap"]);
         assert_eq!(resolved.to_path_string(), "std::collections::HashMap");
     }
 
