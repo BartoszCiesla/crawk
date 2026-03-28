@@ -12,8 +12,9 @@ exit_code: 0
 ----- stdout -----
 crate::analyzer::Analyzer
 crate::constants::PATH_QUALIFIER_SELF
-crate::constants::{ATTR_CFG, LIB_FILE_NAME, MAIN_FILE_NAME, MODULE_FILE_NAME, MODULE_NAME_TEST}
-crate::constants::{ATTR_CFG, MODULE_NAME_TEST, PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER}
+crate::constants::{ATTR_CFG, MODULE_NAME_TEST}
+crate::constants::{LIB_FILE_NAME, MAIN_FILE_NAME, MODULE_FILE_NAME}
+crate::constants::{PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER}
 crate::discover::CrateInfo
 crate::discover::CrateInfoError
 crate::discover::{CrateInfo, CrateInfoError, ModuleInfo, Result}
@@ -27,5 +28,6 @@ crate::reference::{GroupItem, PathPrefix, PathSuffix, Segments, TypeReference}
 crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference}
 crate::reference::{PathPrefix, PathSuffix, Segments, TypeReference}
 crate::resolve::resolve_glob
+crate::utils::has_cfg_test
 
 ----- stderr -----

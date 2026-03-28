@@ -1,10 +1,9 @@
 use syn::visit::Visit;
 use syn::{ItemMod, ItemUse, UseTree};
 
-use crate::constants::{
-    ATTR_CFG, MODULE_NAME_TEST, PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER,
-};
+use crate::constants::{PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER};
 use crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference};
+use crate::utils::has_cfg_test;
 
 /// Visitor for extracting type references from module AST.
 pub(super) struct ModuleVisitor {
@@ -40,16 +39,6 @@ impl ModuleVisitor {
             references: Vec::new(),
             in_test_module: false,
         }
-    }
-
-    /// Checks if a module is a test module (has #[cfg(test)] attribute).
-    fn is_test_module(node: &ItemMod) -> bool {
-        node.attrs.iter().any(|attr| {
-            attr.path().is_ident(ATTR_CFG)
-                && attr
-                    .parse_args::<syn::Ident>()
-                    .is_ok_and(|ident| ident == MODULE_NAME_TEST)
-        })
     }
 
     /// Checks if a syn::Path is an internal crate reference.
@@ -288,7 +277,7 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
         let was_in_test = self.in_test_module;
 
         // Check if this module is a test module (has #[cfg(test)] attribute)
-        if Self::is_test_module(i) {
+        if has_cfg_test(&i.attrs) {
             self.in_test_module = true;
         }
 

@@ -38,15 +38,14 @@ analyzer
 constants
 discover
 discover::module_tree
- - crate::constants::ATTR_CFG
  - crate::constants::LIB_FILE_NAME
  - crate::constants::MAIN_FILE_NAME
  - crate::constants::MODULE_FILE_NAME
- - crate::constants::MODULE_NAME_TEST
  - crate::discover::CrateInfo
  - crate::discover::CrateInfoError
  - crate::discover::ModuleInfo
  - crate::discover::Result
+ - crate::utils::has_cfg_test
 error
  - crate::discover::CrateInfoError
  - crate::parser::AnalyzerError
@@ -63,8 +62,6 @@ parser::tests
  - crate::parser::Result
  - crate::reference::PathPrefix
 parser::visitor
- - crate::constants::ATTR_CFG
- - crate::constants::MODULE_NAME_TEST
  - crate::constants::PATH_QUALIFIER_CRATE
  - crate::constants::PATH_QUALIFIER_SELF
  - crate::constants::PATH_QUALIFIER_SUPER
@@ -72,6 +69,7 @@ parser::visitor
  - crate::reference::PathPrefix
  - crate::reference::PathSuffix
  - crate::reference::TypeReference
+ - crate::utils::has_cfg_test
 reference
  - crate::constants::PATH_QUALIFIER_SELF
 reference::tests
@@ -89,6 +87,9 @@ resolve
 resolve::tests
  - crate::resolve::extract_public_items
  - crate::resolve::resolve_glob
+utils
+ - crate::constants::ATTR_CFG
+ - crate::constants::MODULE_NAME_TEST
 version
 version::build_info
 

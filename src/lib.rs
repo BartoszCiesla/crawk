@@ -40,6 +40,7 @@ mod model;
 mod parser;
 mod reference;
 mod resolve;
+mod utils;
 pub mod version;
 
 pub use crate::analyzer::Analyzer;

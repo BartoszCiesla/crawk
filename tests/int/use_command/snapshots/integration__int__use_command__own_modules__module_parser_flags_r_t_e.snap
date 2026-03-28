@@ -12,8 +12,6 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::constants::ATTR_CFG
-crate::constants::MODULE_NAME_TEST
 crate::constants::PATH_QUALIFIER_CRATE
 crate::constants::PATH_QUALIFIER_SELF
 crate::constants::PATH_QUALIFIER_SUPER
@@ -22,5 +20,6 @@ crate::reference::GroupItem
 crate::reference::PathPrefix
 crate::reference::PathSuffix
 crate::reference::TypeReference
+crate::utils::has_cfg_test
 
 ----- stderr -----

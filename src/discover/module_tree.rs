@@ -20,11 +20,10 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use cargo_metadata::Package;
-use syn::{Attribute, Item, Meta};
+use syn::Item;
 
-use crate::constants::{
-    ATTR_CFG, LIB_FILE_NAME, MAIN_FILE_NAME, MODULE_FILE_NAME, MODULE_NAME_TEST,
-};
+use crate::constants::{LIB_FILE_NAME, MAIN_FILE_NAME, MODULE_FILE_NAME};
+use crate::utils::has_cfg_test;
 
 use super::{CrateInfo, CrateInfoError, ModuleInfo, Result};
 
@@ -329,7 +328,7 @@ impl CrateInfo {
 
             for item in &syntax.items {
                 if let Item::Mod(item_mod) = item
-                    && Self::has_cfg_test(&item_mod.attrs)
+                    && has_cfg_test(&item_mod.attrs)
                 {
                     let mod_name = item_mod.ident.to_string();
                     let submodule_path = if current_module_path.is_empty() {
@@ -387,7 +386,7 @@ impl CrateInfo {
                 let mod_name = item_mod.ident.to_string();
 
                 // Check if this is a test module
-                let is_test_module = Self::has_cfg_test(&item_mod.attrs);
+                let is_test_module = has_cfg_test(&item_mod.attrs);
 
                 // Skip test modules if not including them
                 if is_test_module && !include_tests {
@@ -456,49 +455,6 @@ impl CrateInfo {
         }
     }
 
-    /// Checks if an item has a `#[cfg(test)]` attribute.
-    ///
-    /// Matches `#[cfg(test)]`, `#[cfg(all(test, ...))]`, `#[cfg(any(test, ...))]`,
-    /// but not `#[cfg(not(test))]`.
-    fn has_cfg_test(attrs: &[Attribute]) -> bool {
-        use proc_macro2::TokenTree;
-
-        fn stream_contains_test(stream: proc_macro2::TokenStream) -> bool {
-            let tokens: Vec<TokenTree> = stream.into_iter().collect();
-            let mut i = 0;
-            while i < tokens.len() {
-                match &tokens[i] {
-                    TokenTree::Ident(ident) if ident == MODULE_NAME_TEST => return true,
-                    TokenTree::Ident(ident) if ident == "not" => {
-                        // Skip the `not(...)` group entirely
-                        if matches!(tokens.get(i + 1), Some(TokenTree::Group(_))) {
-                            i += 2;
-                            continue;
-                        }
-                    }
-                    TokenTree::Group(group) => {
-                        if stream_contains_test(group.stream()) {
-                            return true;
-                        }
-                    }
-                    _ => {}
-                }
-                i += 1;
-            }
-            false
-        }
-
-        for attr in attrs {
-            if let Meta::List(meta_list) = &attr.meta
-                && meta_list.path.is_ident(ATTR_CFG)
-                && stream_contains_test(meta_list.tokens.clone())
-            {
-                return true;
-            }
-        }
-        false
-    }
-
     /// Collects submodules from inline module items.
     fn collect_inline_submodules(
         items: &[Item],
@@ -514,7 +470,7 @@ impl CrateInfo {
                 let mod_name = item_mod.ident.to_string();
 
                 // Check if this is a test module
-                let is_test_module = Self::has_cfg_test(&item_mod.attrs);
+                let is_test_module = has_cfg_test(&item_mod.attrs);
 
                 // Skip test modules if not including them
                 if is_test_module && !include_tests {

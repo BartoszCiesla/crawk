@@ -11,10 +11,11 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::constants::{ATTR_CFG, MODULE_NAME_TEST, PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER}
+crate::constants::{PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER}
 crate::parser::*
 crate::reference::PathPrefix
 crate::reference::TypeReference
 crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference}
+crate::utils::has_cfg_test
 
 ----- stderr -----

@@ -40,5 +40,6 @@ crate::reference::Segments
 crate::reference::TypeReference
 crate::resolve::extract_public_items
 crate::resolve::resolve_glob
+crate::utils::has_cfg_test
 
 ----- stderr -----
