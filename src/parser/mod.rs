@@ -203,7 +203,7 @@ mod tests {
         let refs = parse_use("use self::submodule::Type;");
         assert_eq!(refs.len(), 1);
         assert_eq!(refs[0].to_path_string(), "crate::submodule::Type");
-        assert_eq!(refs[0].prefix, PathPrefix::Crate);
+        assert_eq!(refs[0].prefix(), PathPrefix::Crate);
     }
 
     #[test]
@@ -212,7 +212,7 @@ mod tests {
         let refs = parse_use("use super::sibling::Type;");
         assert_eq!(refs.len(), 1);
         assert_eq!(refs[0].to_path_string(), "super::sibling::Type");
-        assert_eq!(refs[0].prefix, PathPrefix::Super(1));
+        assert_eq!(refs[0].prefix(), PathPrefix::Super(1));
     }
 
     #[test]
@@ -221,7 +221,7 @@ mod tests {
         let refs = parse_use("use super::super::ancestor::Type;");
         assert_eq!(refs.len(), 1);
         assert_eq!(refs[0].to_path_string(), "super::super::ancestor::Type");
-        assert_eq!(refs[0].prefix, PathPrefix::Super(2));
+        assert_eq!(refs[0].prefix(), PathPrefix::Super(2));
     }
 
     #[test]
@@ -340,7 +340,7 @@ mod tests {
             visitor.references[0].to_path_string(),
             "crate::utils::parser::submodule::Type"
         );
-        assert_eq!(visitor.references[0].prefix, PathPrefix::Crate);
+        assert_eq!(visitor.references[0].prefix(), PathPrefix::Crate);
     }
 
     #[test]
@@ -356,7 +356,7 @@ mod tests {
             visitor.references[0].to_path_string(),
             "crate::utils::sibling::Type"
         );
-        assert_eq!(visitor.references[0].prefix, PathPrefix::Crate);
+        assert_eq!(visitor.references[0].prefix(), PathPrefix::Crate);
     }
 
     #[test]
@@ -372,7 +372,7 @@ mod tests {
             visitor.references[0].to_path_string(),
             "crate::a::ancestor::Type"
         );
-        assert_eq!(visitor.references[0].prefix, PathPrefix::Crate);
+        assert_eq!(visitor.references[0].prefix(), PathPrefix::Crate);
     }
 
     #[test]
@@ -388,7 +388,7 @@ mod tests {
             visitor.references[0].to_path_string(),
             "crate::utils::{foo, bar::Baz}"
         );
-        assert_eq!(visitor.references[0].prefix, PathPrefix::Crate);
+        assert_eq!(visitor.references[0].prefix(), PathPrefix::Crate);
     }
 
     #[test]
@@ -404,7 +404,7 @@ mod tests {
             visitor.references[0].to_path_string(),
             "crate::utils::submodule::*"
         );
-        assert_eq!(visitor.references[0].prefix, PathPrefix::Crate);
+        assert_eq!(visitor.references[0].prefix(), PathPrefix::Crate);
         assert!(visitor.references[0].has_glob());
     }
 
@@ -421,7 +421,7 @@ mod tests {
             visitor.references[0].to_path_string(),
             "crate::utils::submodule::Type as MyType"
         );
-        assert_eq!(visitor.references[0].prefix, PathPrefix::Crate);
+        assert_eq!(visitor.references[0].prefix(), PathPrefix::Crate);
     }
 
     #[test]

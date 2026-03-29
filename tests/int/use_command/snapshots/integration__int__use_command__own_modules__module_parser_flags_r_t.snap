@@ -15,7 +15,7 @@ crate::constants::{PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUP
 crate::parser::*
 crate::reference::PathPrefix
 crate::reference::TypeReference
-crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference}
+crate::reference::{GroupItem, PathPrefix, TypeReference}
 crate::utils::has_cfg_test
 
 ----- stderr -----

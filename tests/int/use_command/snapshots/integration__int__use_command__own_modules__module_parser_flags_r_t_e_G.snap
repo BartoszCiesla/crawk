@@ -21,7 +21,6 @@ crate::parser::CrateAnalyzer
 crate::parser::Result
 crate::reference::GroupItem
 crate::reference::PathPrefix
-crate::reference::PathSuffix
 crate::reference::TypeReference
 crate::utils::has_cfg_test
 

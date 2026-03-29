@@ -12,7 +12,7 @@ exit_code: 0
 ----- stdout -----
 crate::constants::{PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER}
 crate::reference::TypeReference
-crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference}
+crate::reference::{GroupItem, PathPrefix, TypeReference}
 crate::utils::has_cfg_test
 
 ----- stderr -----

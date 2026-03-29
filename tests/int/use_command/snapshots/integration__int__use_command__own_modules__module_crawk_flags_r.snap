@@ -25,8 +25,8 @@ crate::parser::AnalyzerError
 crate::parser::CrateAnalyzer
 crate::reference::TypeReference
 crate::reference::{GroupItem, PathPrefix, PathSuffix, Segments, TypeReference}
-crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference}
-crate::reference::{PathPrefix, PathSuffix, Segments, TypeReference}
+crate::reference::{GroupItem, PathPrefix, TypeReference}
+crate::reference::{PathPrefix, TypeReference}
 crate::resolve::resolve_glob
 crate::utils::has_cfg_test
 

@@ -14,8 +14,6 @@ exit_code: 0
 ----- stdout -----
 crate::discover::CrateInfo
 crate::reference::PathPrefix
-crate::reference::PathSuffix
-crate::reference::Segments
 crate::reference::TypeReference
 crate::resolve::*
 

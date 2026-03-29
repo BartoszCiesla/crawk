@@ -67,7 +67,6 @@ parser::visitor
  - crate::constants::PATH_QUALIFIER_SUPER
  - crate::reference::GroupItem
  - crate::reference::PathPrefix
- - crate::reference::PathSuffix
  - crate::reference::TypeReference
  - crate::utils::has_cfg_test
 reference
@@ -81,8 +80,6 @@ reference::tests
 resolve
  - crate::discover::CrateInfo
  - crate::reference::PathPrefix
- - crate::reference::PathSuffix
- - crate::reference::Segments
  - crate::reference::TypeReference
 resolve::tests
  - crate::resolve::extract_public_items

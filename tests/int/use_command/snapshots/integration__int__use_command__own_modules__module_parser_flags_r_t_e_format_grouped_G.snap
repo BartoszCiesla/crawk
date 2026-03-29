@@ -28,7 +28,6 @@ parser::visitor
  - crate::constants::PATH_QUALIFIER_SUPER
  - crate::reference::GroupItem
  - crate::reference::PathPrefix
- - crate::reference::PathSuffix
  - crate::reference::TypeReference
  - crate::utils::has_cfg_test
 

@@ -8,7 +8,7 @@
 //! into concrete references by reading the target module's public API.
 
 use crate::discover::CrateInfo;
-use crate::reference::{PathPrefix, PathSuffix, Segments, TypeReference};
+use crate::reference::{PathPrefix, TypeReference};
 use std::fs;
 use std::path::Path;
 use syn::{Item, UseTree};
@@ -154,10 +154,10 @@ pub fn resolve_glob(reference: &TypeReference, crate_info: &CrateInfo) -> Vec<Ty
     // Determine the module path to resolve.
     // Accept both `crate::foo::bar::*` (PathPrefix::Crate, segments=["foo","bar"])
     // and `mycrate::foo::bar::*` (PathPrefix::None, first segment == crate name).
-    let is_crate_prefix = reference.prefix == PathPrefix::Crate;
-    let is_crate_name_prefix = reference.prefix == PathPrefix::None
+    let is_crate_prefix = reference.prefix() == PathPrefix::Crate;
+    let is_crate_name_prefix = reference.prefix() == PathPrefix::None
         && reference
-            .segments
+            .segments()
             .first()
             .is_some_and(|s| s == crate_info.root_package_name());
 
@@ -165,7 +165,7 @@ pub fn resolve_glob(reference: &TypeReference, crate_info: &CrateInfo) -> Vec<Ty
         return vec![reference.clone()];
     }
 
-    let module_path = reference.segments.join("::");
+    let module_path = reference.segments().join("::");
     if module_path.is_empty() {
         return vec![reference.clone()];
     }
@@ -202,13 +202,9 @@ pub fn resolve_glob(reference: &TypeReference, crate_info: &CrateInfo) -> Vec<Ty
     public_items
         .into_iter()
         .map(|item| {
-            let mut segments = reference.segments.to_vec();
+            let mut segments = reference.segments().to_vec();
             segments.push(item);
-            TypeReference {
-                segments: Segments::from(segments),
-                prefix: reference.prefix,
-                suffix: PathSuffix::None,
-            }
+            TypeReference::new(segments).with_prefix(reference.prefix())
         })
         .collect()
 }
@@ -224,7 +220,7 @@ fn detect_inline_path(
     resolved_file: &Path,
     crate_info: &CrateInfo,
 ) -> Vec<String> {
-    let segments = &reference.segments;
+    let segments = reference.segments();
 
     // Walk from the full path backwards, peeling off one segment at a time.
     // The segments that resolve to the same file are "consumed by" the file;

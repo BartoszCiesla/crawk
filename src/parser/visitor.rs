@@ -2,7 +2,7 @@ use syn::visit::Visit;
 use syn::{ItemMod, ItemUse, UseTree};
 
 use crate::constants::{PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER};
-use crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference};
+use crate::reference::{GroupItem, PathPrefix, TypeReference};
 use crate::utils::has_cfg_test;
 
 /// Visitor for extracting type references from module AST.
@@ -96,10 +96,9 @@ impl ModuleVisitor {
         }
 
         if !segments.is_empty() {
-            let mut reference = TypeReference::new(segments);
-            reference.prefix = path_prefix;
-            // Resolve relative paths to absolute paths
-            reference = reference.resolve(&self.module_path);
+            let reference = TypeReference::new(segments)
+                .with_prefix(path_prefix)
+                .resolve(&self.module_path);
             self.references.push(reference);
         }
     }
@@ -147,10 +146,9 @@ impl ModuleVisitor {
                 let mut segments = prefix;
                 segments.push(n.ident.to_string());
 
-                let mut reference = TypeReference::new(segments);
-                reference.prefix = path_prefix;
-                // Resolve relative paths to absolute paths
-                reference = reference.resolve(&self.module_path);
+                let reference = TypeReference::new(segments)
+                    .with_prefix(path_prefix)
+                    .resolve(&self.module_path);
                 self.references.push(reference);
             }
 
@@ -158,31 +156,28 @@ impl ModuleVisitor {
                 let mut segments = prefix;
                 segments.push(r.ident.to_string());
 
-                let mut reference = TypeReference::new(segments);
-                reference.prefix = path_prefix;
-                reference.suffix = PathSuffix::Alias(r.rename.to_string());
-                // Resolve relative paths to absolute paths
-                reference = reference.resolve(&self.module_path);
+                let reference = TypeReference::new(segments)
+                    .with_prefix(path_prefix)
+                    .with_alias(r.rename.to_string())
+                    .resolve(&self.module_path);
                 self.references.push(reference);
             }
 
             UseTree::Glob(_) => {
-                let mut reference = TypeReference::new(prefix);
-                reference.prefix = path_prefix;
-                reference.suffix = PathSuffix::Glob;
-                // Resolve relative paths to absolute paths
-                reference = reference.resolve(&self.module_path);
+                let reference = TypeReference::new(prefix)
+                    .with_prefix(path_prefix)
+                    .with_glob()
+                    .resolve(&self.module_path);
                 self.references.push(reference);
             }
 
             UseTree::Group(g) => {
                 let group_items = self.convert_group(&g.items);
 
-                let mut reference = TypeReference::new(prefix);
-                reference.prefix = path_prefix;
-                reference.suffix = PathSuffix::Group(group_items);
-                // Resolve relative paths to absolute paths
-                reference = reference.resolve(&self.module_path);
+                let reference = TypeReference::new(prefix)
+                    .with_prefix(path_prefix)
+                    .with_group(group_items)
+                    .resolve(&self.module_path);
                 self.references.push(reference);
             }
         }

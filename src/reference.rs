@@ -71,13 +71,13 @@ impl Display for TypeReference {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TypeReference {
     /// Path segments (e.g., `["std", "collections", "HashMap"]`)
-    pub segments: Segments,
+    segments: Segments,
 
     /// Path prefix type for relative resolution
-    pub prefix: PathPrefix,
+    prefix: PathPrefix,
 
     /// Path suffix type (alias, glob, or group)
-    pub suffix: PathSuffix,
+    suffix: PathSuffix,
 }
 
 /// Suffix determining how a path ends (alias, glob, or group).
@@ -193,6 +193,25 @@ impl TypeReference {
     #[must_use]
     pub fn with_group(mut self, items: Vec<GroupItem>) -> Self {
         self.suffix = PathSuffix::Group(items);
+        self
+    }
+
+    /// Returns the path segments.
+    #[must_use]
+    pub fn segments(&self) -> &[String] {
+        &self.segments
+    }
+
+    /// Returns the path prefix.
+    #[must_use]
+    pub const fn prefix(&self) -> PathPrefix {
+        self.prefix
+    }
+
+    /// Sets the path prefix.
+    #[must_use]
+    pub(crate) const fn with_prefix(mut self, prefix: PathPrefix) -> Self {
+        self.prefix = prefix;
         self
     }
 

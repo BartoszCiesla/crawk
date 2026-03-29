@@ -30,8 +30,8 @@ crate::reference::*
 crate::reference::PathPrefix
 crate::reference::TypeReference
 crate::reference::{GroupItem, PathPrefix, PathSuffix, Segments, TypeReference}
-crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference}
-crate::reference::{PathPrefix, PathSuffix, Segments, TypeReference}
+crate::reference::{GroupItem, PathPrefix, TypeReference}
+crate::reference::{PathPrefix, TypeReference}
 crate::resolve::*
 crate::resolve::resolve_glob
 crate::utils::has_cfg_test
