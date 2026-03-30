@@ -18,6 +18,9 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
+
+use crate::analyzer::ParseCache;
 
 use cargo_metadata::Package;
 use syn::Item;
@@ -313,6 +316,7 @@ impl CrateInfo {
         file_path: &Path,
         current_module_path: &str,
         include_tests: bool,
+        cache: &mut ParseCache,
     ) -> Result<Vec<ModuleInfo>> {
         let mut result = Vec::new();
 
@@ -324,7 +328,7 @@ impl CrateInfo {
 
         if include_tests {
             // Read and parse the file to find a direct test module
-            let syntax = Self::parse_source_file(file_path)?;
+            let syntax = Self::parse_cached(file_path, cache)?;
 
             for item in &syntax.items {
                 if let Item::Mod(item_mod) = item
@@ -356,6 +360,7 @@ impl CrateInfo {
         current_module_path: &str,
         inline_scope: &[String],
         include_tests: bool,
+        cache: &mut ParseCache,
     ) -> Result<Vec<ModuleInfo>> {
         let mut result = Vec::new();
 
@@ -366,7 +371,7 @@ impl CrateInfo {
         ));
 
         // Read and parse the file
-        let syntax = Self::parse_source_file(file_path)?;
+        let syntax = Self::parse_cached(file_path, cache)?;
 
         // Get the directory containing this file for resolving submodules
         let base_dir = Self::get_module_base_dir(file_path);
@@ -413,6 +418,7 @@ impl CrateInfo {
                         file_path,
                         &base_dir,
                         include_tests,
+                        cache,
                     )?);
                 } else {
                     // External module - find and parse its file
@@ -425,6 +431,7 @@ impl CrateInfo {
                             &submodule_path,
                             &[], // Empty inline scope for file-based modules
                             include_tests,
+                            cache,
                         )?);
                     }
                 }
@@ -462,6 +469,7 @@ impl CrateInfo {
         containing_file: &Path,
         base_dir: &Path,
         include_tests: bool,
+        cache: &mut ParseCache,
     ) -> Result<Vec<ModuleInfo>> {
         let mut result = Vec::new();
 
@@ -491,6 +499,7 @@ impl CrateInfo {
                         containing_file,
                         base_dir,
                         include_tests,
+                        cache,
                     )?);
                 } else {
                     // File-based module declared inside an inline module
@@ -503,6 +512,7 @@ impl CrateInfo {
                             &submodule_path,
                             &[], // Empty inline scope for file-based modules
                             include_tests,
+                            cache,
                         )?);
                     }
                 }
@@ -558,7 +568,7 @@ impl CrateInfo {
         vec![]
     }
 
-    /// Reads and parses a Rust source file.
+    /// Reads and parses a Rust source file (no cache).
     fn parse_source_file(path: &Path) -> Result<syn::File> {
         let content = fs::read_to_string(path).map_err(|e| CrateInfoError::FileRead {
             path: path.to_path_buf(),
@@ -568,6 +578,19 @@ impl CrateInfo {
             path: path.to_path_buf(),
             message: e.to_string(),
         })
+    }
+
+    /// Reads and parses a Rust source file, returning a cached `Rc<syn::File>`.
+    ///
+    /// On first access the file is read and parsed; subsequent calls for the same
+    /// path return a clone of the existing `Rc` without any I/O or parsing.
+    fn parse_cached(path: &Path, cache: &mut ParseCache) -> Result<Rc<syn::File>> {
+        if let Some(cached) = cache.get(path) {
+            return Ok(Rc::clone(cached));
+        }
+        let arc = Rc::new(Self::parse_source_file(path)?);
+        cache.insert(path.to_path_buf(), Rc::clone(&arc));
+        Ok(arc)
     }
 
     #[allow(clippy::doc_link_with_quotes)]

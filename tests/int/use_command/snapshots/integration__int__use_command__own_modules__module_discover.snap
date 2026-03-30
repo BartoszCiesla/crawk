@@ -9,5 +9,6 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+crate::analyzer::ParseCache
 
 ----- stderr -----

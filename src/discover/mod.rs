@@ -8,6 +8,8 @@ mod module_tree;
 
 use std::path::{Path, PathBuf};
 
+use crate::analyzer::ParseCache;
+
 use cargo_metadata::{Metadata, MetadataCommand};
 use thiserror::Error;
 
@@ -194,6 +196,7 @@ impl CrateInfo {
         module_path: &str,
         recursive: bool,
         include_tests: bool,
+        cache: &mut ParseCache,
     ) -> Result<Vec<ModuleInfo>> {
         let file_path = self.resolve_module(module_path)?;
 
@@ -209,9 +212,10 @@ impl CrateInfo {
                 &normalized_path,
                 &inline_scope,
                 include_tests,
+                cache,
             )
         } else {
-            Self::collect_submodules_shallow(&file_path, &normalized_path, include_tests)
+            Self::collect_submodules_shallow(&file_path, &normalized_path, include_tests, cache)
         }
     }
 

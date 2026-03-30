@@ -7,10 +7,12 @@
 //! [`resolve_glob`] resolves a glob `TypeReference` (e.g., `crate::foo::bar::*`)
 //! into concrete references by reading the target module's public API.
 
+use crate::analyzer::ParseCache;
 use crate::discover::CrateInfo;
 use crate::reference::{PathPrefix, TypeReference};
 use std::fs;
 use std::path::Path;
+use std::rc::Rc;
 use syn::{Item, UseTree};
 use tracing::debug;
 
@@ -24,9 +26,20 @@ use tracing::debug;
 /// before extracting items. For example, `&["constants"]` extracts only from
 /// `pub mod constants { ... }` within the file.
 #[must_use]
-pub fn extract_public_items(file_path: &Path, inline_module: &[&str]) -> Option<Vec<String>> {
-    let content = fs::read_to_string(file_path).ok()?;
-    let file = syn::parse_file(&content).ok()?;
+pub fn extract_public_items(
+    file_path: &Path,
+    inline_module: &[&str],
+    cache: &mut ParseCache,
+) -> Option<Vec<String>> {
+    let file = if let Some(cached) = cache.get(file_path) {
+        Rc::clone(cached)
+    } else {
+        let content = fs::read_to_string(file_path).ok()?;
+        let parsed = syn::parse_file(&content).ok()?;
+        let arc = Rc::new(parsed);
+        cache.insert(file_path.to_path_buf(), Rc::clone(&arc));
+        arc
+    };
 
     let items = if inline_module.is_empty() {
         &file.items
@@ -150,7 +163,11 @@ fn extract_use_names(tree: &UseTree, items: &mut Vec<String>) {
 /// Only `crate::` prefixed globs are resolved. Other prefixes pass through
 /// unchanged. If the module file cannot be found or parsed, the original
 /// glob reference is returned with a warning.
-pub fn resolve_glob(reference: &TypeReference, crate_info: &CrateInfo) -> Vec<TypeReference> {
+pub fn resolve_glob(
+    reference: &TypeReference,
+    crate_info: &CrateInfo,
+    cache: &mut ParseCache,
+) -> Vec<TypeReference> {
     // Determine the module path to resolve.
     // Accept both `crate::foo::bar::*` (PathPrefix::Crate, segments=["foo","bar"])
     // and `mycrate::foo::bar::*` (PathPrefix::None, first segment == crate name).
@@ -189,7 +206,7 @@ pub fn resolve_glob(reference: &TypeReference, crate_info: &CrateInfo) -> Vec<Ty
     let inline_refs: Vec<&str> = inline_path.iter().map(String::as_str).collect();
 
     // Extract public items from the file (optionally descending into inline module)
-    let Some(public_items) = extract_public_items(&file_path, &inline_refs) else {
+    let Some(public_items) = extract_public_items(&file_path, &inline_refs, cache) else {
         debug!("Cannot parse '{}' for glob resolution", file_path.display());
         return vec![reference.clone()];
     };
@@ -251,6 +268,11 @@ mod tests {
     use std::io::Write;
     use tempfile::NamedTempFile;
 
+    /// Wrapper around `extract_public_items` for tests that don't need a persistent cache.
+    fn extract(path: &Path, inline: &[&str]) -> Option<Vec<String>> {
+        extract_public_items(path, inline, &mut ParseCache::new())
+    }
+
     #[test]
     fn extracts_all_public_item_kinds() {
         let mut f = NamedTempFile::new().unwrap();
@@ -276,7 +298,7 @@ pub use std::collections::HashMap;
         )
         .unwrap();
 
-        let items = extract_public_items(f.path(), &[]).unwrap();
+        let items = extract(f.path(), &[]).unwrap();
 
         assert!(items.contains(&"PublicStruct".to_string()));
         assert!(items.contains(&"public_function".to_string()));
@@ -308,7 +330,7 @@ static PRIV_STATIC: u32 = 2;
         )
         .unwrap();
 
-        let items = extract_public_items(f.path(), &[]).unwrap();
+        let items = extract(f.path(), &[]).unwrap();
         assert!(items.contains(&"PUB_STATIC".to_string()));
         assert!(!items.contains(&"PRIV_STATIC".to_string()));
     }
@@ -324,7 +346,7 @@ pub use std::collections::HashMap as Map;
         )
         .unwrap();
 
-        let items = extract_public_items(f.path(), &[]).unwrap();
+        let items = extract(f.path(), &[]).unwrap();
         assert!(items.contains(&"Map".to_string()));
         assert!(!items.contains(&"HashMap".to_string()));
     }
@@ -340,14 +362,14 @@ pub use std::collections::{{HashMap, HashSet}};
         )
         .unwrap();
 
-        let items = extract_public_items(f.path(), &[]).unwrap();
+        let items = extract(f.path(), &[]).unwrap();
         assert!(items.contains(&"HashMap".to_string()));
         assert!(items.contains(&"HashSet".to_string()));
     }
 
     #[test]
     fn returns_none_for_nonexistent_file() {
-        let result = extract_public_items(Path::new("/nonexistent/file.rs"), &[]);
+        let result = extract(Path::new("/nonexistent/file.rs"), &[]);
         assert!(result.is_none());
     }
 
@@ -363,7 +385,7 @@ fn helper() {{}}
         )
         .unwrap();
 
-        let items = extract_public_items(f.path(), &[]).unwrap();
+        let items = extract(f.path(), &[]).unwrap();
         assert!(items.is_empty());
     }
 
@@ -385,12 +407,12 @@ pub mod inner {{
         .unwrap();
 
         // Extract from root — should see top_level and inner (the module)
-        let root_items = extract_public_items(f.path(), &[]).unwrap();
+        let root_items = extract(f.path(), &[]).unwrap();
         assert!(root_items.contains(&"top_level".to_string()));
         assert!(root_items.contains(&"inner".to_string()));
 
         // Extract from inline module "inner"
-        let inner_items = extract_public_items(f.path(), &["inner"]).unwrap();
+        let inner_items = extract(f.path(), &["inner"]).unwrap();
         assert!(inner_items.contains(&"inner_func".to_string()));
         assert!(inner_items.contains(&"InnerStruct".to_string()));
         assert!(!inner_items.contains(&"private_in_inner".to_string()));
@@ -414,7 +436,7 @@ pub mod outer {{
         )
         .unwrap();
 
-        let items = extract_public_items(f.path(), &["outer", "inner"]).unwrap();
+        let items = extract(f.path(), &["outer", "inner"]).unwrap();
         assert!(items.contains(&"DEEP".to_string()));
         assert!(items.contains(&"deep_fn".to_string()));
         assert!(!items.contains(&"outer_fn".to_string()));
@@ -431,7 +453,7 @@ pub fn top_level() {{}}
         )
         .unwrap();
 
-        let result = extract_public_items(f.path(), &["nonexistent"]);
+        let result = extract(f.path(), &["nonexistent"]);
         assert!(result.is_none());
     }
 }

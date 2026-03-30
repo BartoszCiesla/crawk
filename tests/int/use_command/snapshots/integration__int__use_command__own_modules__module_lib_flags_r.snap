@@ -11,6 +11,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::analyzer::Analyzer
+crate::analyzer::ParseCache
 crate::constants::PATH_QUALIFIER_SELF
 crate::constants::{ATTR_CFG, MODULE_NAME_TEST}
 crate::constants::{LIB_FILE_NAME, MAIN_FILE_NAME, MODULE_FILE_NAME}

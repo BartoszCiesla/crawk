@@ -7,6 +7,9 @@ mod visitor;
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
+
+use crate::analyzer::ParseCache;
 
 use syn::File;
 use syn::visit::Visit;
@@ -67,16 +70,23 @@ impl CrateAnalyzer {
         module: impl Into<String>,
         path: &Path,
         inline_scope: &[String],
+        cache: &mut ParseCache,
     ) -> Result<Vec<TypeReference>> {
-        let content = std::fs::read_to_string(path).map_err(|e| AnalyzerError::FileRead {
-            path: path.to_path_buf(),
-            source: e,
-        })?;
-
-        let syntax: File = syn::parse_file(&content).map_err(|e| AnalyzerError::Parse {
-            path: path.to_path_buf(),
-            message: e.to_string(),
-        })?;
+        let syntax: Rc<File> = if let Some(cached) = cache.get(path) {
+            Rc::clone(cached)
+        } else {
+            let content = std::fs::read_to_string(path).map_err(|e| AnalyzerError::FileRead {
+                path: path.to_path_buf(),
+                source: e,
+            })?;
+            let file = syn::parse_file(&content).map_err(|e| AnalyzerError::Parse {
+                path: path.to_path_buf(),
+                message: e.to_string(),
+            })?;
+            let arc = Rc::new(file);
+            cache.insert(path.to_path_buf(), Rc::clone(&arc));
+            arc
+        };
 
         let module = module.into();
         let mut visitor = ModuleVisitor::new(module.clone());

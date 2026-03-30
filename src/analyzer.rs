@@ -4,8 +4,17 @@ use crate::model::{AnalysisOptions, AnalysisResult};
 use crate::parser::CrateAnalyzer;
 use crate::resolve::resolve_glob;
 use std::collections::{HashMap, HashSet};
+use std::fmt::{Debug, Formatter, Result as FmtResult};
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
 use tracing::{debug, error, info, trace};
+
+/// Cache mapping source file paths to their parsed `syn::File` representations.
+///
+/// Avoids re-reading and parsing the same `.rs` file more than once per
+/// analysis run. `Rc` is used instead of `Arc` because `syn::File` is not
+/// `Send + Sync` and the analyzer is single-threaded.
+pub type ParseCache = HashMap<PathBuf, Rc<syn::File>>;
 
 /// Analyzer for Rust module dependencies.
 ///
@@ -34,12 +43,27 @@ use tracing::{debug, error, info, trace};
 /// let result = analyzer.analyze_module("foo::bar", &options)?;
 /// # Ok::<(), crawk::AnalysisError>(())
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Analyzer {
     /// Crate analyzer
     crate_info: CrateInfo,
     /// Module analyzer
-    crate_analyzer: CrateAnalyzer,
+    parser: CrateAnalyzer,
+    /// Parse cache: avoids re-reading and re-parsing the same `.rs` file more than once.
+    parse_cache: ParseCache,
+}
+
+impl Debug for Analyzer {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        f.debug_struct("Analyzer")
+            .field("crate_info", &self.crate_info)
+            .field("parser", &self.parser)
+            .field(
+                "parse_cache",
+                &format!("<{} entries>", self.parse_cache.len()),
+            )
+            .finish()
+    }
 }
 
 impl Analyzer {
@@ -70,11 +94,12 @@ impl Analyzer {
     pub fn new(crate_root: impl AsRef<Path>) -> Result<Self> {
         let crate_info = CrateInfo::new(crate_root.as_ref())?;
         let name = crate_info.root_package_name();
-        let crate_analyzer = CrateAnalyzer::new(name);
+        let parser = CrateAnalyzer::new(name);
 
         Ok(Self {
             crate_info,
-            crate_analyzer,
+            parser,
+            parse_cache: ParseCache::new(),
         })
     }
 
@@ -120,6 +145,7 @@ impl Analyzer {
             &module_path,
             options.recursive,
             options.include_tests,
+            &mut self.parse_cache,
         )?;
 
         let source_file = modules
@@ -145,10 +171,12 @@ impl Analyzer {
                 module.path(),
                 module.source().display()
             );
-            match self
-                .crate_analyzer
-                .parse_file(module.path(), module.source(), &inline_scope)
-            {
+            match self.parser.parse_file(
+                module.path(),
+                module.source(),
+                &inline_scope,
+                &mut self.parse_cache,
+            ) {
                 Err(e) => {
                     error!("Error while analyzing module: {e}");
                     return Err(AnalysisError::AnalyzerError(e));
@@ -164,7 +192,7 @@ impl Analyzer {
         }
 
         let mut dependencies = HashMap::new();
-        for (module, module_references) in self.crate_analyzer.all_crate_references() {
+        for (module, module_references) in self.parser.all_crate_references() {
             debug!("Processing module: {}", module);
             let mut refs = HashSet::new();
             for reference in module_references {
@@ -189,7 +217,7 @@ impl Analyzer {
                 for r in after_expand {
                     if options.resolve_globs && r.has_glob() {
                         debug!("Resolving glob: {}", r.to_path_string());
-                        let resolved = resolve_glob(&r, &self.crate_info);
+                        let resolved = resolve_glob(&r, &self.crate_info, &mut self.parse_cache);
                         for res in resolved {
                             debug!("Resolved glob item: {}", res.to_path_string());
                             refs.insert(res);
