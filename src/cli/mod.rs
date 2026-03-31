@@ -8,7 +8,7 @@ use overview::generate_after_help;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::path::PathBuf;
 use tracing_subscriber::filter::LevelFilter;
-use validation::validate_depth;
+use validation::{validate_depth, validate_module_path};
 
 #[derive(Parser, Debug, Clone)]
 #[command(
@@ -129,6 +129,7 @@ impl Display for UseOutputFormat {
 pub struct UseArgs {
     /// Module path relative to the crate root (e.g., "utils" or "foo::bar::baz")
     #[clap(verbatim_doc_comment)]
+    #[arg(value_parser = validate_module_path)]
     pub module_path: String,
 
     /// Recursively analyze all submodules (disabled by default)
