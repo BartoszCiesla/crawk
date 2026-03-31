@@ -80,11 +80,12 @@ impl CrateInfo {
             .parent()
             .ok_or_else(|| CrateInfoError::NoCrateRoot(package.name.to_string()))?;
 
-        Self::resolve_module_parts(crate_root_dir, &parts, Some(&crate_root))?.ok_or_else(|| {
-            CrateInfoError::ModuleNotFound {
+        let resolved = Self::resolve_module_parts(crate_root_dir, &parts, Some(&crate_root))?
+            .ok_or_else(|| CrateInfoError::ModuleNotFound {
                 module_path: module_path.to_string(),
-            }
-        })
+            })?;
+        Self::check_within_root(&resolved, crate_root_dir)?;
+        Ok(resolved)
     }
 
     /// Resolves a fully qualified module path that may include the crate name.
@@ -193,11 +194,64 @@ impl CrateInfo {
             .parent()
             .ok_or_else(|| CrateInfoError::NoCrateRoot(package.name.to_string()))?;
 
-        Self::resolve_module_parts(bin_root_dir, &parts, Some(&bin_root))?.ok_or_else(|| {
-            CrateInfoError::ModuleNotFound {
+        let resolved = Self::resolve_module_parts(bin_root_dir, &parts, Some(&bin_root))?
+            .ok_or_else(|| CrateInfoError::ModuleNotFound {
                 module_path: module_path.to_string(),
-            }
-        })
+            })?;
+        Self::check_within_root(&resolved, bin_root_dir)?;
+        Ok(resolved)
+    }
+
+    /// Validates a single module path segment against path traversal and illegal characters.
+    ///
+    /// A valid segment is a non-empty Rust identifier with no path separators or
+    /// parent-directory references.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CrateInfoError::InvalidModuleSegment`] if the segment is empty, equals `..`,
+    /// contains `/` or `\`, or is an absolute path.
+    fn validate_segment(part: &str) -> Result<()> {
+        if part.is_empty()
+            || part == ".."
+            || part.contains('/')
+            || part.contains('\\')
+            || Path::new(part).is_absolute()
+        {
+            return Err(CrateInfoError::InvalidModuleSegment {
+                segment: part.to_string(),
+            });
+        }
+        Ok(())
+    }
+
+    /// Verifies that `path` is contained within `root`.
+    ///
+    /// Uses [`std::fs::canonicalize`] to resolve symlinks before comparison,
+    /// acting as a safety net against traversal that bypasses segment validation.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CrateInfoError::PathTraversal`] if the resolved path escapes `root`,
+    /// or [`CrateInfoError::FileRead`] if canonicalization fails.
+    fn check_within_root(path: &Path, root: &Path) -> Result<()> {
+        let canonical_path = path
+            .canonicalize()
+            .map_err(|source| CrateInfoError::FileRead {
+                path: path.to_path_buf(),
+                source,
+            })?;
+        let canonical_root = root
+            .canonicalize()
+            .map_err(|source| CrateInfoError::FileRead {
+                path: root.to_path_buf(),
+                source,
+            })?;
+        if canonical_path.starts_with(&canonical_root) {
+            Ok(())
+        } else {
+            Err(CrateInfoError::PathTraversal)
+        }
     }
 
     /// Resolves module parts to a file path.
@@ -220,6 +274,7 @@ impl CrateInfo {
 
         // Navigate through all parts
         for (idx, &part) in parts.iter().enumerate() {
+            Self::validate_segment(part)?;
             let is_last = idx == parts.len() - 1;
 
             let part_dir = current_dir.join(part);
@@ -629,5 +684,65 @@ impl CrateInfo {
         Err(CrateInfoError::ModuleNotFound {
             module_path: inline_scope.join("::"),
         })
+    }
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_validate_segment_valid() {
+        assert!(CrateInfo::validate_segment("foo").is_ok());
+        assert!(CrateInfo::validate_segment("my_module").is_ok());
+        assert!(CrateInfo::validate_segment("module123").is_ok());
+    }
+
+    #[test]
+    fn test_validate_segment_rejects_dotdot() {
+        let err = CrateInfo::validate_segment("..").unwrap_err();
+        assert!(matches!(err, CrateInfoError::InvalidModuleSegment { .. }));
+    }
+
+    #[test]
+    fn test_validate_segment_rejects_forward_slash() {
+        let err = CrateInfo::validate_segment("foo/bar").unwrap_err();
+        assert!(matches!(err, CrateInfoError::InvalidModuleSegment { .. }));
+    }
+
+    #[test]
+    fn test_validate_segment_rejects_backslash() {
+        let err = CrateInfo::validate_segment("foo\\bar").unwrap_err();
+        assert!(matches!(err, CrateInfoError::InvalidModuleSegment { .. }));
+    }
+
+    #[test]
+    fn test_validate_segment_rejects_absolute_path() {
+        let err = CrateInfo::validate_segment("/etc/passwd").unwrap_err();
+        assert!(matches!(err, CrateInfoError::InvalidModuleSegment { .. }));
+    }
+
+    #[test]
+    fn test_validate_segment_rejects_empty() {
+        let err = CrateInfo::validate_segment("").unwrap_err();
+        assert!(matches!(err, CrateInfoError::InvalidModuleSegment { .. }));
+    }
+
+    #[test]
+    fn test_check_within_root_accepts_child() {
+        let dir = tempfile::tempdir().unwrap();
+        let child = dir.path().join("foo.rs");
+        fs::write(&child, "").unwrap();
+        assert!(CrateInfo::check_within_root(&child, dir.path()).is_ok());
+    }
+
+    #[test]
+    fn test_check_within_root_rejects_escape() {
+        let parent = tempfile::tempdir().unwrap();
+        let child = tempfile::tempdir().unwrap();
+        // child is outside parent
+        let err = CrateInfo::check_within_root(child.path(), parent.path()).unwrap_err();
+        assert!(matches!(err, CrateInfoError::PathTraversal));
     }
 }

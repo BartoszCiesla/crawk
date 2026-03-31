@@ -60,6 +60,17 @@ pub enum CrateInfoError {
         /// The parse error message.
         message: String,
     },
+
+    /// Module path segment is invalid (path traversal or illegal characters).
+    #[error("Invalid module path segment '{segment}'")]
+    InvalidModuleSegment {
+        /// The offending segment.
+        segment: String,
+    },
+
+    /// Resolved path escapes the crate root directory.
+    #[error("Resolved path escapes crate root")]
+    PathTraversal,
 }
 
 /// Result type alias for crate info operations.

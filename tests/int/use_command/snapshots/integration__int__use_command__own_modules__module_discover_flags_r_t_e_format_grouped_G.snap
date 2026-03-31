@@ -27,5 +27,6 @@ discover::module_tree
  - crate::discover::ModuleInfo
  - crate::discover::Result
  - crate::utils::has_cfg_test
+discover::module_tree::tests
 
 ----- stderr -----

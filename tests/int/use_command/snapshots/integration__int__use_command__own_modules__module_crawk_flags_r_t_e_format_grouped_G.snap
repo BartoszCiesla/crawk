@@ -48,6 +48,7 @@ discover::module_tree
  - crate::discover::ModuleInfo
  - crate::discover::Result
  - crate::utils::has_cfg_test
+discover::module_tree::tests
 error
  - crate::discover::CrateInfoError
  - crate::parser::AnalyzerError

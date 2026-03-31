@@ -26,6 +26,7 @@ crate::discover::CrateInfo
 crate::discover::CrateInfoError
 crate::discover::ModuleInfo
 crate::discover::Result
+crate::discover::module_tree::*
 crate::error::AnalysisError
 crate::error::Result
 crate::model::*

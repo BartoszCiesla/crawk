@@ -19,6 +19,7 @@ crate::constants::{LIB_FILE_NAME, MAIN_FILE_NAME, MODULE_FILE_NAME}
 crate::constants::{PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER}
 crate::discover::CrateInfo
 crate::discover::CrateInfoError
+crate::discover::module_tree::*
 crate::discover::{CrateInfo, CrateInfoError, ModuleInfo, Result}
 crate::discover::{CrateInfo, ModuleInfo}
 crate::error::{AnalysisError, Result}
