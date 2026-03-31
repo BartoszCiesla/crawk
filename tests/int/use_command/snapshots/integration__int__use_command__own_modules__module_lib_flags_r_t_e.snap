@@ -43,6 +43,7 @@ crate::reference::Segments
 crate::reference::TypeReference
 crate::resolve::*
 crate::resolve::resolve_glob
+crate::utils::*
 crate::utils::has_cfg_test
 
 ----- stderr -----

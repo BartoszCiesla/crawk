@@ -36,6 +36,7 @@ crate::reference::{GroupItem, PathPrefix, TypeReference}
 crate::reference::{PathPrefix, TypeReference}
 crate::resolve::*
 crate::resolve::resolve_glob
+crate::utils::*
 crate::utils::has_cfg_test
 
 ----- stderr -----

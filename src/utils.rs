@@ -45,3 +45,72 @@ pub fn has_cfg_test(attrs: &[Attribute]) -> bool {
     }
     false
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use syn::parse_quote;
+
+    #[test]
+    fn test_simple_cfg_test() {
+        let attrs: Vec<Attribute> = vec![parse_quote!(#[cfg(test)])];
+        assert!(has_cfg_test(&attrs));
+    }
+
+    #[test]
+    fn test_cfg_all_with_test() {
+        let attrs: Vec<Attribute> = vec![parse_quote!(#[cfg(all(test, feature = "foo"))])];
+        assert!(has_cfg_test(&attrs));
+    }
+
+    #[test]
+    fn test_cfg_any_with_test() {
+        let attrs: Vec<Attribute> = vec![parse_quote!(#[cfg(any(test, doc))])];
+        assert!(has_cfg_test(&attrs));
+    }
+
+    #[test]
+    fn test_cfg_test_among_multiple_attrs() {
+        let attrs: Vec<Attribute> = vec![
+            parse_quote!(#[derive(Debug)]),
+            parse_quote!(#[cfg(test)]),
+            parse_quote!(#[allow(unused)]),
+        ];
+        assert!(has_cfg_test(&attrs));
+    }
+
+    #[test]
+    fn test_cfg_not_test_returns_false() {
+        let attrs: Vec<Attribute> = vec![parse_quote!(#[cfg(not(test))])];
+        assert!(!has_cfg_test(&attrs));
+    }
+
+    #[test]
+    fn test_no_cfg_attr_returns_false() {
+        let attrs: Vec<Attribute> = vec![parse_quote!(#[derive(Debug)])];
+        assert!(!has_cfg_test(&attrs));
+    }
+
+    #[test]
+    fn test_cfg_other_target_returns_false() {
+        let attrs: Vec<Attribute> = vec![parse_quote!(#[cfg(target_os = "linux")])];
+        assert!(!has_cfg_test(&attrs));
+    }
+
+    #[test]
+    fn test_empty_attrs_returns_false() {
+        assert!(!has_cfg_test(&[]));
+    }
+
+    #[test]
+    fn test_cfg_all_with_not_test_returns_false() {
+        let attrs: Vec<Attribute> = vec![parse_quote!(#[cfg(all(not(test)))])];
+        assert!(!has_cfg_test(&attrs));
+    }
+
+    #[test]
+    fn test_cfg_all_test_and_not_test() {
+        let attrs: Vec<Attribute> = vec![parse_quote!(#[cfg(all(test, not(feature = "x")))])];
+        assert!(has_cfg_test(&attrs));
+    }
+}

@@ -94,6 +94,8 @@ resolve::tests
 utils
  - crate::constants::ATTR_CFG
  - crate::constants::MODULE_NAME_TEST
+utils::tests
+ - crate::utils::has_cfg_test
 version
 version::build_info
 
