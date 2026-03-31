@@ -13,12 +13,6 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::cli::CrawkArgs
-crate::cli::CrawkCommands
-crate::cli::CrawkOptions
-crate::cli::UseArgs
-crate::cli::UseOutputFormat
-crate::cli::validate_depth
 crawk::version
 
 ----- stderr -----

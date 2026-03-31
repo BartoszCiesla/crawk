@@ -21,13 +21,10 @@ main
  - crawk::version
 cli
  - crawk::version
-cli::tests
- - crate::cli::CrawkArgs
- - crate::cli::CrawkCommands
- - crate::cli::CrawkOptions
- - crate::cli::UseArgs
- - crate::cli::UseOutputFormat
- - crate::cli::validate_depth
+cli::overview
+ - crawk::version
+cli::validation
+cli::validation::tests
 format
  - crawk::TypeReference
 format::flat

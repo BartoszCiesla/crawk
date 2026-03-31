@@ -11,8 +11,8 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::cli::*
 crate::cli::CrawkArgs
+crate::cli::validation::*
 crate::format::truncate_and_dedup
 crawk::AnalysisResult
 crawk::TypeReference

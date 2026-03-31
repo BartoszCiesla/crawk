@@ -1,58 +1,14 @@
+mod overview;
+mod validation;
+
 use anyhow::Context;
 use clap::{ArgAction, Parser, Subcommand, ValueEnum};
 use crawk::version;
+use overview::generate_after_help;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::path::PathBuf;
 use tracing_subscriber::filter::LevelFilter;
-
-/// Validates that depth is at least 1
-/// Validate that the depth argument is a positive integer
-///
-/// # Errors
-///
-/// Returns an error if:
-/// - The input is not a valid number
-/// - The depth value is less than 1
-pub fn validate_depth(s: &str) -> Result<usize, String> {
-    let value: usize = s
-        .parse()
-        .map_err(|_| format!("'{s}' is not a valid number"))?;
-    if value < 1 {
-        Err(String::from("depth must be at least 1"))
-    } else {
-        Ok(value)
-    }
-}
-
-/// Generate after help message
-/// # Arguments
-/// * `long_help` - Whether to generate the long help message
-/// # Returns
-/// A formatted after help message string
-fn generate_after_help(long_help: bool) -> String {
-    let name = version::NAME;
-    let after_help = format!(
-        "Run '{name} --help' for full help message.\n\
-         Run '{name} COMMAND --help' for more information on a command.\n\n"
-    );
-
-    if long_help {
-        let timestamp = version::BUILD_TIMESTAMP;
-        let timestamp = &timestamp[0..timestamp.rfind('.').unwrap_or(timestamp.len())];
-        let target = version::BUILD_TARGET;
-        let rustc = version::RUSTC_VERSION;
-        let user = version::BUILD_USER;
-        let homepage = version::HOMEPAGE;
-        let build_info = format!("Built on {timestamp}Z for {target} ({rustc}) by {user}");
-
-        format!(
-            "{after_help}For more about the tool head to {homepage}\n\n\
-             {build_info}\n"
-        )
-    } else {
-        after_help
-    }
-}
+use validation::validate_depth;
 
 #[derive(Parser, Debug, Clone)]
 #[command(
@@ -216,37 +172,4 @@ pub struct UseArgs {
     #[clap(verbatim_doc_comment)]
     #[arg(short = 'G', long = "resolve-globs", default_value_t = false)]
     pub resolve_globs: bool,
-}
-
-#[cfg(test)]
-#[allow(clippy::unwrap_used)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_validate_depth_valid() {
-        assert_eq!(validate_depth("1").unwrap(), 1);
-        assert_eq!(validate_depth("5").unwrap(), 5);
-        assert_eq!(validate_depth("100").unwrap(), 100);
-    }
-
-    #[test]
-    fn test_validate_depth_zero_rejected() {
-        let result = validate_depth("0");
-        assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), "depth must be at least 1");
-    }
-
-    #[test]
-    fn test_validate_depth_invalid_number() {
-        let result = validate_depth("abc");
-        assert!(result.is_err());
-        assert!(result.unwrap_err().contains("not a valid number"));
-    }
-
-    #[test]
-    fn test_validate_depth_negative() {
-        let result = validate_depth("-1");
-        assert!(result.is_err());
-    }
 }

@@ -12,7 +12,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::cli::*
+crate::cli::validation::*
 crawk::version
 
 ----- stderr -----
