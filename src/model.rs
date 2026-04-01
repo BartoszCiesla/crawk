@@ -63,16 +63,30 @@ pub struct AnalysisOptions {
 #[derive(Debug, Clone)]
 pub struct AnalysisResult {
     /// The analyzed module path (e.g., `"utils::parser"`).
-    pub(crate) module_path: String,
+    module_path: String,
 
     /// Set of internal dependencies found for the analyzed modules.
-    pub(crate) dependencies: HashMap<String, HashSet<TypeReference>>,
+    dependencies: HashMap<String, HashSet<TypeReference>>,
 
     /// Path to the source file that was analyzed.
-    pub(crate) source_file: PathBuf,
+    source_file: PathBuf,
 }
 
 impl AnalysisResult {
+    /// Creates a new analysis result.
+    #[must_use]
+    pub(crate) const fn new(
+        module_path: String,
+        dependencies: HashMap<String, HashSet<TypeReference>>,
+        source_file: PathBuf,
+    ) -> Self {
+        Self {
+            module_path,
+            dependencies,
+            source_file,
+        }
+    }
+
     /// Returns the analyzed module path.
     #[must_use]
     pub fn module_path(&self) -> &str {
@@ -127,43 +141,32 @@ mod tests {
 
     #[test]
     fn test_analysis_result_source_file() {
-        let result = AnalysisResult {
-            module_path: "foo::bar".to_string(),
-            dependencies: HashMap::new(),
-            source_file: PathBuf::from("/tmp/test.rs"),
-        };
+        let result = AnalysisResult::new(
+            "foo::bar".to_string(),
+            HashMap::new(),
+            PathBuf::from("/tmp/test.rs"),
+        );
         assert_eq!(result.source_file(), Path::new("/tmp/test.rs"));
     }
 
     #[test]
     fn test_analysis_result_len_and_is_empty() {
-        let empty_result = AnalysisResult {
-            module_path: "empty".to_string(),
-            dependencies: HashMap::new(),
-            source_file: PathBuf::new(),
-        };
+        let empty_result = AnalysisResult::new("empty".to_string(), HashMap::new(), PathBuf::new());
         assert_eq!(empty_result.len(), 0);
         assert!(empty_result.is_empty());
 
         let mut deps = HashMap::new();
         deps.insert("mod_a".to_string(), HashSet::new());
         deps.insert("mod_b".to_string(), HashSet::new());
-        let non_empty_result = AnalysisResult {
-            module_path: "root".to_string(),
-            dependencies: deps,
-            source_file: PathBuf::new(),
-        };
+        let non_empty_result = AnalysisResult::new("root".to_string(), deps, PathBuf::new());
         assert_eq!(non_empty_result.len(), 2);
         assert!(!non_empty_result.is_empty());
     }
 
     #[test]
     fn test_analysis_result_module_path() {
-        let result = AnalysisResult {
-            module_path: "foo::bar::baz".to_string(),
-            dependencies: HashMap::new(),
-            source_file: PathBuf::new(),
-        };
+        let result =
+            AnalysisResult::new("foo::bar::baz".to_string(), HashMap::new(), PathBuf::new());
         assert_eq!(result.module_path(), "foo::bar::baz");
     }
 }

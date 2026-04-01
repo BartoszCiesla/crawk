@@ -228,11 +228,7 @@ impl Analyzer {
             dependencies.insert(module.clone(), refs);
         }
 
-        Ok(AnalysisResult {
-            module_path,
-            dependencies,
-            source_file,
-        })
+        Ok(AnalysisResult::new(module_path, dependencies, source_file))
     }
 
     /// Build a mapping from source file to the shortest (file-level) module path.
