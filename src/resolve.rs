@@ -7,7 +7,7 @@
 //! [`resolve_glob`] resolves a glob `TypeReference` (e.g., `crate::foo::bar::*`)
 //! into concrete references by reading the target module's public API.
 
-use crate::analyzer::ParseCache;
+use crate::cache::ParseCache;
 use crate::discover::CrateInfo;
 use crate::reference::{PathPrefix, TypeReference};
 use std::fs;
@@ -31,14 +31,16 @@ pub fn extract_public_items(
     inline_module: &[&str],
     cache: &mut ParseCache,
 ) -> Option<Vec<String>> {
+    // Can't use `cache.get_or_parse` here: this function returns `Option`,
+    // but `get_or_parse` requires a `Result`-returning closure.
     let file = if let Some(cached) = cache.get(file_path) {
-        Rc::clone(cached)
+        cached
     } else {
         let content = fs::read_to_string(file_path).ok()?;
         let parsed = syn::parse_file(&content).ok()?;
-        let arc = Rc::new(parsed);
-        cache.insert(file_path.to_path_buf(), Rc::clone(&arc));
-        arc
+        let rc = Rc::new(parsed);
+        cache.insert(file_path.to_path_buf(), Rc::clone(&rc));
+        rc
     };
 
     let items = if inline_module.is_empty() {

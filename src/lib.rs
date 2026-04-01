@@ -33,6 +33,7 @@
 //! - **Depth limiting**: Truncate [`TypeReference`] paths via [`TypeReference::truncate_to_depth`]
 
 mod analyzer;
+mod cache;
 mod constants;
 mod discover;
 mod error;

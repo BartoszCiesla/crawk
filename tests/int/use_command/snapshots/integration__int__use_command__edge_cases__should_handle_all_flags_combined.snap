@@ -29,6 +29,7 @@ lib
  - crate::reference::Segments
  - crate::reference::TypeReference
 analyzer
+ - crate::cache::ParseCache
  - crate::discover::CrateInfo
  - crate::discover::ModuleInfo
  - crate::error::AnalysisError
@@ -37,11 +38,12 @@ analyzer
  - crate::model::AnalysisResult
  - crate::parser::CrateAnalyzer
  - crate::resolve::resolve_glob
+cache
 constants
 discover
- - crate::analyzer::ParseCache
+ - crate::cache::ParseCache
 discover::module_tree
- - crate::analyzer::ParseCache
+ - crate::cache::ParseCache
  - crate::constants::LIB_FILE_NAME
  - crate::constants::MAIN_FILE_NAME
  - crate::constants::MODULE_FILE_NAME
@@ -60,7 +62,7 @@ model::tests
  - crate::model::AnalysisOptions
  - crate::model::AnalysisResult
 parser
- - crate::analyzer::ParseCache
+ - crate::cache::ParseCache
  - crate::reference::TypeReference
 parser::tests
  - crate::parser::AnalyzerError
@@ -84,7 +86,7 @@ reference::tests
  - crate::reference::Segments
  - crate::reference::TypeReference
 resolve
- - crate::analyzer::ParseCache
+ - crate::cache::ParseCache
  - crate::discover::CrateInfo
  - crate::reference::PathPrefix
  - crate::reference::TypeReference

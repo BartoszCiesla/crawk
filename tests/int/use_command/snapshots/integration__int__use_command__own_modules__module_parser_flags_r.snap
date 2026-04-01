@@ -10,7 +10,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::analyzer::ParseCache
+crate::cache::ParseCache
 crate::constants::{PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER}
 crate::reference::TypeReference
 crate::reference::{GroupItem, PathPrefix, TypeReference}

@@ -10,7 +10,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::analyzer::ParseCache
+crate::cache::ParseCache
 crate::parser::*
 crate::reference::PathPrefix
 crate::reference::TypeReference

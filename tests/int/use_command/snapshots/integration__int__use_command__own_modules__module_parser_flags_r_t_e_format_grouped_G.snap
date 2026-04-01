@@ -16,7 +16,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 parser
- - crate::analyzer::ParseCache
+ - crate::cache::ParseCache
  - crate::reference::TypeReference
 parser::tests
  - crate::parser::AnalyzerError

@@ -8,7 +8,7 @@ mod module_tree;
 
 use std::path::{Path, PathBuf};
 
-use crate::analyzer::ParseCache;
+use crate::cache::ParseCache;
 
 use cargo_metadata::{Metadata, MetadataCommand};
 use thiserror::Error;

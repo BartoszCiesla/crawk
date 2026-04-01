@@ -16,9 +16,9 @@ success: true
 exit_code: 0
 ----- stdout -----
 discover
- - crate::analyzer::ParseCache
+ - crate::cache::ParseCache
 discover::module_tree
- - crate::analyzer::ParseCache
+ - crate::cache::ParseCache
  - crate::constants::LIB_FILE_NAME
  - crate::constants::MAIN_FILE_NAME
  - crate::constants::MODULE_FILE_NAME

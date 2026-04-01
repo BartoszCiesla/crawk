@@ -13,7 +13,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::analyzer::ParseCache
+crate::cache::ParseCache
 crate::constants::LIB_FILE_NAME
 crate::constants::MAIN_FILE_NAME
 crate::constants::MODULE_FILE_NAME

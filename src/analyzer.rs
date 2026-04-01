@@ -1,3 +1,4 @@
+use crate::cache::ParseCache;
 use crate::discover::{CrateInfo, ModuleInfo};
 use crate::error::{AnalysisError, Result};
 use crate::model::{AnalysisOptions, AnalysisResult};
@@ -6,15 +7,7 @@ use crate::resolve::resolve_glob;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Formatter, Result as FmtResult};
 use std::path::{Path, PathBuf};
-use std::rc::Rc;
 use tracing::{debug, error, info, trace};
-
-/// Cache mapping source file paths to their parsed `syn::File` representations.
-///
-/// Avoids re-reading and parsing the same `.rs` file more than once per
-/// analysis run. `Rc` is used instead of `Arc` because `syn::File` is not
-/// `Send + Sync` and the analyzer is single-threaded.
-pub type ParseCache = HashMap<PathBuf, Rc<syn::File>>;
 
 /// Analyzer for Rust module dependencies.
 ///

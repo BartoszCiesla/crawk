@@ -20,7 +20,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
-use crate::analyzer::ParseCache;
+use crate::cache::ParseCache;
 
 use cargo_metadata::Package;
 use syn::Item;
@@ -640,12 +640,7 @@ impl CrateInfo {
     /// On first access the file is read and parsed; subsequent calls for the same
     /// path return a clone of the existing `Rc` without any I/O or parsing.
     fn parse_cached(path: &Path, cache: &mut ParseCache) -> Result<Rc<syn::File>> {
-        if let Some(cached) = cache.get(path) {
-            return Ok(Rc::clone(cached));
-        }
-        let arc = Rc::new(Self::parse_source_file(path)?);
-        cache.insert(path.to_path_buf(), Rc::clone(&arc));
-        Ok(arc)
+        cache.get_or_parse(path, Self::parse_source_file)
     }
 
     #[allow(clippy::doc_link_with_quotes)]
