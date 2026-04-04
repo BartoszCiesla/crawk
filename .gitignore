@@ -33,3 +33,12 @@
 
 # Project log file
 /crawk.log
+
+# Folder for notes and other temporary files
+/notes/
+
+# AI assistant files
+/CLAUDE.md
+/.remember
+/.github/prompts
+/.github/copilot-instructions.md
