@@ -20,8 +20,6 @@ parser
  - crate::reference::TypeReference
 parser::tests
  - crate::parser::AnalyzerError
- - crate::parser::CrateAnalyzer
- - crate::parser::Result
  - crate::reference::PathPrefix
 parser::visitor
  - crate::constants::PATH_QUALIFIER_CRATE

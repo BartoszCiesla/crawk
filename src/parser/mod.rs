@@ -34,11 +34,11 @@ pub enum AnalyzerError {
 }
 
 /// Result type for analyzer operations.
-pub type Result<T> = std::result::Result<T, AnalyzerError>;
+pub(crate) type Result<T> = std::result::Result<T, AnalyzerError>;
 
 /// Analyzer for collecting type references from a Rust crate.
 #[derive(Debug, Clone)]
-pub struct CrateAnalyzer {
+pub(crate) struct CrateAnalyzer {
     /// Name of the crate being analyzed.
     crate_name: String,
 
@@ -51,7 +51,7 @@ pub struct CrateAnalyzer {
 
 impl CrateAnalyzer {
     /// Creates a new analyzer for the given crate.
-    pub fn new(crate_name: impl Into<String>) -> Self {
+    pub(crate) fn new(crate_name: impl Into<String>) -> Self {
         Self {
             crate_name: crate_name.into(),
             files: HashMap::new(),
@@ -65,7 +65,7 @@ impl CrateAnalyzer {
     /// inside the target inline module instead of visiting the entire file.
     /// For example, if parsing `glob_patterns::utilities` from `glob_patterns.rs`,
     /// `inline_scope` would be `["utilities"]`.
-    pub fn parse_file(
+    pub(crate) fn parse_file(
         &mut self,
         module: impl Into<String>,
         path: &Path,
@@ -105,7 +105,9 @@ impl CrateAnalyzer {
     }
 
     /// Returns all collected crate internal references by module, in parse order.
-    pub fn all_crate_references(&self) -> impl Iterator<Item = (&String, Vec<&TypeReference>)> {
+    pub(crate) fn all_crate_references(
+        &self,
+    ) -> impl Iterator<Item = (&String, Vec<&TypeReference>)> {
         self.file_order.iter().filter_map(|module| {
             self.files.get(module).map(|refs| {
                 let crate_refs: Vec<&TypeReference> = refs
@@ -120,15 +122,15 @@ impl CrateAnalyzer {
 
 #[cfg(test)]
 impl CrateAnalyzer {
-    pub fn crate_name(&self) -> &str {
+    pub(crate) fn crate_name(&self) -> &str {
         &self.crate_name
     }
 
-    pub fn total_references(&self) -> usize {
+    pub(crate) fn total_references(&self) -> usize {
         self.files.values().map(Vec::len).sum()
     }
 
-    pub fn file_count(&self) -> usize {
+    pub(crate) fn file_count(&self) -> usize {
         self.files.len()
     }
 }

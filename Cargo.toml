@@ -48,6 +48,7 @@ path = "tests/mod.rs"
 [lints.rust]
 unsafe_code = "deny"
 unused_must_use = "deny"
+unreachable_pub = "warn"
 
 [lints.clippy]
 unwrap_used = "deny"
@@ -57,6 +58,11 @@ pedantic = { level = "deny", priority = -1 }
 nursery = { level = "deny", priority = -1 }
 doc_markdown = "allow"
 panic = "deny"
+dbg_macro = "deny"
+clone_on_ref_ptr = "deny"
+str_to_string = "deny"
+redundant_pub_crate = "allow"
+todo = "warn"
 
 [profile.release]
 opt-level = 'z'

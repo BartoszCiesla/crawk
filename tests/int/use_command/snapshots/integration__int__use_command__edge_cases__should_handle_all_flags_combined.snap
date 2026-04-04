@@ -66,8 +66,6 @@ parser
  - crate::reference::TypeReference
 parser::tests
  - crate::parser::AnalyzerError
- - crate::parser::CrateAnalyzer
- - crate::parser::Result
  - crate::reference::PathPrefix
 parser::visitor
  - crate::constants::PATH_QUALIFIER_CRATE
@@ -91,13 +89,10 @@ resolve
  - crate::reference::PathPrefix
  - crate::reference::TypeReference
 resolve::tests
- - crate::resolve::extract_public_items
- - crate::resolve::resolve_glob
 utils
  - crate::constants::ATTR_CFG
  - crate::constants::MODULE_NAME_TEST
 utils::tests
- - crate::utils::has_cfg_test
 version
 version::build_info
 

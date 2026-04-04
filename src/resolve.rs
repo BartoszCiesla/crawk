@@ -26,7 +26,7 @@ use tracing::debug;
 /// before extracting items. For example, `&["constants"]` extracts only from
 /// `pub mod constants { ... }` within the file.
 #[must_use]
-pub fn extract_public_items(
+pub(crate) fn extract_public_items(
     file_path: &Path,
     inline_module: &[&str],
     cache: &mut ParseCache,
@@ -165,7 +165,7 @@ fn extract_use_names(tree: &UseTree, items: &mut Vec<String>) {
 /// Only `crate::` prefixed globs are resolved. Other prefixes pass through
 /// unchanged. If the module file cannot be found or parsed, the original
 /// glob reference is returned with a warning.
-pub fn resolve_glob(
+pub(crate) fn resolve_glob(
     reference: &TypeReference,
     crate_info: &CrateInfo,
     cache: &mut ParseCache,
@@ -264,7 +264,6 @@ fn detect_inline_path(
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use std::io::Write;
@@ -302,22 +301,22 @@ pub use std::collections::HashMap;
 
         let items = extract(f.path(), &[]).unwrap();
 
-        assert!(items.contains(&"PublicStruct".to_string()));
-        assert!(items.contains(&"public_function".to_string()));
-        assert!(items.contains(&"PUBLIC_CONST".to_string()));
-        assert!(items.contains(&"PublicEnum".to_string()));
-        assert!(items.contains(&"PublicType".to_string()));
-        assert!(items.contains(&"public_module".to_string()));
-        assert!(items.contains(&"PublicTrait".to_string()));
-        assert!(items.contains(&"HashMap".to_string()));
+        assert!(items.contains(&"PublicStruct".to_owned()));
+        assert!(items.contains(&"public_function".to_owned()));
+        assert!(items.contains(&"PUBLIC_CONST".to_owned()));
+        assert!(items.contains(&"PublicEnum".to_owned()));
+        assert!(items.contains(&"PublicType".to_owned()));
+        assert!(items.contains(&"public_module".to_owned()));
+        assert!(items.contains(&"PublicTrait".to_owned()));
+        assert!(items.contains(&"HashMap".to_owned()));
 
-        assert!(!items.contains(&"PrivateStruct".to_string()));
-        assert!(!items.contains(&"private_function".to_string()));
-        assert!(!items.contains(&"PRIVATE_CONST".to_string()));
-        assert!(!items.contains(&"PrivateEnum".to_string()));
-        assert!(!items.contains(&"PrivateType".to_string()));
-        assert!(!items.contains(&"private_module".to_string()));
-        assert!(!items.contains(&"PrivateTrait".to_string()));
+        assert!(!items.contains(&"PrivateStruct".to_owned()));
+        assert!(!items.contains(&"private_function".to_owned()));
+        assert!(!items.contains(&"PRIVATE_CONST".to_owned()));
+        assert!(!items.contains(&"PrivateEnum".to_owned()));
+        assert!(!items.contains(&"PrivateType".to_owned()));
+        assert!(!items.contains(&"private_module".to_owned()));
+        assert!(!items.contains(&"PrivateTrait".to_owned()));
     }
 
     #[test]
@@ -333,8 +332,8 @@ static PRIV_STATIC: u32 = 2;
         .unwrap();
 
         let items = extract(f.path(), &[]).unwrap();
-        assert!(items.contains(&"PUB_STATIC".to_string()));
-        assert!(!items.contains(&"PRIV_STATIC".to_string()));
+        assert!(items.contains(&"PUB_STATIC".to_owned()));
+        assert!(!items.contains(&"PRIV_STATIC".to_owned()));
     }
 
     #[test]
@@ -349,8 +348,8 @@ pub use std::collections::HashMap as Map;
         .unwrap();
 
         let items = extract(f.path(), &[]).unwrap();
-        assert!(items.contains(&"Map".to_string()));
-        assert!(!items.contains(&"HashMap".to_string()));
+        assert!(items.contains(&"Map".to_owned()));
+        assert!(!items.contains(&"HashMap".to_owned()));
     }
 
     #[test]
@@ -365,8 +364,8 @@ pub use std::collections::{{HashMap, HashSet}};
         .unwrap();
 
         let items = extract(f.path(), &[]).unwrap();
-        assert!(items.contains(&"HashMap".to_string()));
-        assert!(items.contains(&"HashSet".to_string()));
+        assert!(items.contains(&"HashMap".to_owned()));
+        assert!(items.contains(&"HashSet".to_owned()));
     }
 
     #[test]
@@ -410,15 +409,15 @@ pub mod inner {{
 
         // Extract from root — should see top_level and inner (the module)
         let root_items = extract(f.path(), &[]).unwrap();
-        assert!(root_items.contains(&"top_level".to_string()));
-        assert!(root_items.contains(&"inner".to_string()));
+        assert!(root_items.contains(&"top_level".to_owned()));
+        assert!(root_items.contains(&"inner".to_owned()));
 
         // Extract from inline module "inner"
         let inner_items = extract(f.path(), &["inner"]).unwrap();
-        assert!(inner_items.contains(&"inner_func".to_string()));
-        assert!(inner_items.contains(&"InnerStruct".to_string()));
-        assert!(!inner_items.contains(&"private_in_inner".to_string()));
-        assert!(!inner_items.contains(&"top_level".to_string()));
+        assert!(inner_items.contains(&"inner_func".to_owned()));
+        assert!(inner_items.contains(&"InnerStruct".to_owned()));
+        assert!(!inner_items.contains(&"private_in_inner".to_owned()));
+        assert!(!inner_items.contains(&"top_level".to_owned()));
     }
 
     #[test]
@@ -439,9 +438,9 @@ pub mod outer {{
         .unwrap();
 
         let items = extract(f.path(), &["outer", "inner"]).unwrap();
-        assert!(items.contains(&"DEEP".to_string()));
-        assert!(items.contains(&"deep_fn".to_string()));
-        assert!(!items.contains(&"outer_fn".to_string()));
+        assert!(items.contains(&"DEEP".to_owned()));
+        assert!(items.contains(&"deep_fn".to_owned()));
+        assert!(!items.contains(&"outer_fn".to_owned()));
     }
 
     #[test]

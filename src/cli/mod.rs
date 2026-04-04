@@ -23,7 +23,7 @@ use validation::{validate_depth, validate_module_path};
 /// crawk analyzes your Rust codebase and reveals every module dependency — not
 /// just `use` statements, but every type annotation, trait bound, struct literal,
 /// and macro invocation that ties your code together.
-pub struct CrawkArgs {
+pub(crate) struct CrawkArgs {
     #[clap(flatten)]
     options: CrawkOptions,
 
@@ -32,7 +32,7 @@ pub struct CrawkArgs {
 }
 
 #[derive(Parser, Debug, Clone)]
-pub struct CrawkOptions {
+pub(crate) struct CrawkOptions {
     /// Specify path to the crate root directory (defaults to current directory)
     #[arg(short = 'p', long = "path")]
     path: Option<PathBuf>,
@@ -54,7 +54,7 @@ impl CrawkArgs {
     /// Returns an error if:
     /// - No path is provided and the current directory cannot be determined
     /// - The provided path does not exist
-    pub fn crate_root(&self) -> anyhow::Result<PathBuf> {
+    pub(crate) fn crate_root(&self) -> anyhow::Result<PathBuf> {
         match self.options.path.as_ref() {
             Some(path) => {
                 if !path.exists() {
@@ -70,7 +70,7 @@ impl CrawkArgs {
     /// # Returns
     /// LevelFilter: WARN (default), INFO (-v), or DEBUG (-vv)
     #[must_use]
-    pub const fn verbosity(&self) -> LevelFilter {
+    pub(crate) const fn verbosity(&self) -> LevelFilter {
         match self.options.verbose {
             0 => LevelFilter::WARN,
             1 => LevelFilter::INFO,
@@ -80,7 +80,7 @@ impl CrawkArgs {
 
     /// Get the log file path if specified
     #[must_use]
-    pub const fn log_file(&self) -> Option<&PathBuf> {
+    pub(crate) const fn log_file(&self) -> Option<&PathBuf> {
         self.options.log_file.as_ref()
     }
 
@@ -88,7 +88,7 @@ impl CrawkArgs {
     /// # Returns
     /// LevelFilter: INFO (default), or DEBUG (-vv)
     #[must_use]
-    pub const fn file_verbosity(&self) -> LevelFilter {
+    pub(crate) const fn file_verbosity(&self) -> LevelFilter {
         match self.options.verbose {
             0 | 1 => LevelFilter::INFO,
             _ => LevelFilter::DEBUG,
@@ -97,7 +97,7 @@ impl CrawkArgs {
 }
 
 #[derive(Subcommand, Debug, Clone)]
-pub enum CrawkCommands {
+pub(crate) enum CrawkCommands {
     /// Analyze a module and list its internal crate `use` statements
     ///
     /// Inspects the given module's source and reports all `use` paths that
@@ -107,7 +107,7 @@ pub enum CrawkCommands {
 }
 
 #[derive(ValueEnum, Debug, Clone, Default, PartialEq, Eq)]
-pub enum UseOutputFormat {
+pub(crate) enum UseOutputFormat {
     /// Flat sorted list (default)
     #[default]
     Plain,
@@ -126,7 +126,7 @@ impl Display for UseOutputFormat {
 
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Parser, Debug, Clone)]
-pub struct UseArgs {
+pub(crate) struct UseArgs {
     /// Module path relative to the crate root (e.g., "utils" or "foo::bar::baz")
     #[clap(verbatim_doc_comment)]
     #[arg(value_parser = validate_module_path)]

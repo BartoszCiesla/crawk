@@ -21,7 +21,5 @@ resolve
  - crate::reference::PathPrefix
  - crate::reference::TypeReference
 resolve::tests
- - crate::resolve::extract_public_items
- - crate::resolve::resolve_glob
 
 ----- stderr -----

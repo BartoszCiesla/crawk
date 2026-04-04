@@ -9,7 +9,7 @@ use crate::constants::{ATTR_CFG, MODULE_NAME_TEST};
 /// that includes `test` (e.g., `#[cfg(all(test, ...))]`, `#[cfg(any(test, ...))]`).
 ///
 /// Returns `false` for `#[cfg(not(test))]` — the `not(...)` group is skipped.
-pub fn has_cfg_test(attrs: &[Attribute]) -> bool {
+pub(crate) fn has_cfg_test(attrs: &[Attribute]) -> bool {
     fn stream_contains_test(stream: proc_macro2::TokenStream) -> bool {
         let tokens: Vec<TokenTree> = stream.into_iter().collect();
         let mut i = 0;

@@ -33,13 +33,11 @@ crate::model::AnalysisOptions
 crate::model::AnalysisResult
 crate::parser::AnalyzerError
 crate::parser::CrateAnalyzer
-crate::parser::Result
 crate::reference::GroupItem
 crate::reference::PathPrefix
 crate::reference::PathSuffix
 crate::reference::Segments
 crate::reference::TypeReference
-crate::resolve::extract_public_items
 crate::resolve::resolve_glob
 crate::utils::has_cfg_test
 

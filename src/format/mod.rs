@@ -1,8 +1,8 @@
 use crawk::TypeReference;
 use std::collections::BTreeSet;
 
-pub mod flat;
-pub mod grouped;
+pub(crate) mod flat;
+pub(crate) mod grouped;
 
 fn truncate_and_dedup<'a>(
     refs: impl IntoIterator<Item = &'a TypeReference>,

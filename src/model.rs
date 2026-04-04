@@ -142,7 +142,7 @@ mod tests {
     #[test]
     fn test_analysis_result_source_file() {
         let result = AnalysisResult::new(
-            "foo::bar".to_string(),
+            "foo::bar".to_owned(),
             HashMap::new(),
             PathBuf::from("/tmp/test.rs"),
         );
@@ -151,14 +151,14 @@ mod tests {
 
     #[test]
     fn test_analysis_result_len_and_is_empty() {
-        let empty_result = AnalysisResult::new("empty".to_string(), HashMap::new(), PathBuf::new());
+        let empty_result = AnalysisResult::new("empty".to_owned(), HashMap::new(), PathBuf::new());
         assert_eq!(empty_result.len(), 0);
         assert!(empty_result.is_empty());
 
         let mut deps = HashMap::new();
-        deps.insert("mod_a".to_string(), HashSet::new());
-        deps.insert("mod_b".to_string(), HashSet::new());
-        let non_empty_result = AnalysisResult::new("root".to_string(), deps, PathBuf::new());
+        deps.insert("mod_a".to_owned(), HashSet::new());
+        deps.insert("mod_b".to_owned(), HashSet::new());
+        let non_empty_result = AnalysisResult::new("root".to_owned(), deps, PathBuf::new());
         assert_eq!(non_empty_result.len(), 2);
         assert!(!non_empty_result.is_empty());
     }
@@ -166,7 +166,7 @@ mod tests {
     #[test]
     fn test_analysis_result_module_path() {
         let result =
-            AnalysisResult::new("foo::bar::baz".to_string(), HashMap::new(), PathBuf::new());
+            AnalysisResult::new("foo::bar::baz".to_owned(), HashMap::new(), PathBuf::new());
         assert_eq!(result.module_path(), "foo::bar::baz");
     }
 }

@@ -82,7 +82,7 @@ impl CrateInfo {
 
         let resolved = Self::resolve_module_parts(crate_root_dir, &parts, Some(&crate_root))?
             .ok_or_else(|| CrateInfoError::ModuleNotFound {
-                module_path: module_path.to_string(),
+                module_path: module_path.to_owned(),
             })?;
         Self::check_within_root(&resolved, crate_root_dir)?;
         Ok(resolved)
@@ -196,7 +196,7 @@ impl CrateInfo {
 
         let resolved = Self::resolve_module_parts(bin_root_dir, &parts, Some(&bin_root))?
             .ok_or_else(|| CrateInfoError::ModuleNotFound {
-                module_path: module_path.to_string(),
+                module_path: module_path.to_owned(),
             })?;
         Self::check_within_root(&resolved, bin_root_dir)?;
         Ok(resolved)
@@ -219,7 +219,7 @@ impl CrateInfo {
             || Path::new(part).is_absolute()
         {
             return Err(CrateInfoError::InvalidModuleSegment {
-                segment: part.to_string(),
+                segment: part.to_owned(),
             });
         }
         Ok(())
@@ -377,7 +377,7 @@ impl CrateInfo {
 
         // Add only the current module itself
         result.push(ModuleInfo::new(
-            current_module_path.to_string(),
+            current_module_path.to_owned(),
             file_path.to_path_buf(),
         ));
 
@@ -421,7 +421,7 @@ impl CrateInfo {
 
         // Add the current module to results
         result.push(ModuleInfo::new(
-            current_module_path.to_string(),
+            current_module_path.to_owned(),
             file_path.to_path_buf(),
         ));
 

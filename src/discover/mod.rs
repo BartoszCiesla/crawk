@@ -74,7 +74,7 @@ pub enum CrateInfoError {
 }
 
 /// Result type alias for crate info operations.
-pub type Result<T> = std::result::Result<T, CrateInfoError>;
+pub(crate) type Result<T> = std::result::Result<T, CrateInfoError>;
 
 /// A struct representing information about a Rust module, including its path and source file.
 ///
@@ -83,7 +83,7 @@ pub type Result<T> = std::result::Result<T, CrateInfoError>;
 /// Modules can be defined either as separate files or as inline modules within
 /// another file.
 #[derive(Debug, Clone)]
-pub struct ModuleInfo {
+pub(crate) struct ModuleInfo {
     /// The full module path (e.g., "analysis::collect")
     module_path: String,
 
@@ -98,7 +98,7 @@ impl ModuleInfo {
     ///
     /// * `module_path` - The fully qualified module path (e.g., "analysis::collect")
     /// * `source_file` - The file system path where this module is defined
-    pub const fn new(module_path: String, source_file: PathBuf) -> Self {
+    pub(crate) const fn new(module_path: String, source_file: PathBuf) -> Self {
         Self {
             module_path,
             source_file,
@@ -107,7 +107,7 @@ impl ModuleInfo {
 
     /// Returns the fully qualified module path.
     #[must_use]
-    pub fn path(&self) -> &str {
+    pub(crate) fn path(&self) -> &str {
         &self.module_path
     }
 
@@ -116,7 +116,7 @@ impl ModuleInfo {
     /// For inline modules (such as test modules defined with `#[cfg(test)]`),
     /// this returns the path of the file containing the inline module definition.
     #[must_use]
-    pub fn source(&self) -> &Path {
+    pub(crate) fn source(&self) -> &Path {
         &self.source_file
     }
 }
@@ -127,7 +127,7 @@ impl ModuleInfo {
 /// resolve module paths (like `analysis::collect`) to their corresponding
 /// file paths on disk.
 #[derive(Debug, Clone)]
-pub struct CrateInfo {
+pub(crate) struct CrateInfo {
     /// The cargo metadata for the crate.
     metadata: Metadata,
 
@@ -147,7 +147,7 @@ impl CrateInfo {
     /// Returns an error if:
     /// - The cargo metadata command fails to execute
     /// - No root package is found in the workspace
-    pub fn new(crate_path: &Path) -> Result<Self> {
+    pub(crate) fn new(crate_path: &Path) -> Result<Self> {
         let metadata = MetadataCommand::new().current_dir(crate_path).exec()?;
 
         let root_package_name = metadata
@@ -164,7 +164,7 @@ impl CrateInfo {
 
     /// Returns the name of the root package.
     #[must_use]
-    pub fn root_package_name(&self) -> &str {
+    pub(crate) fn root_package_name(&self) -> &str {
         &self.root_package_name
     }
 
@@ -202,7 +202,7 @@ impl CrateInfo {
     /// - The module path cannot be resolved
     /// - The source file cannot be read
     /// - The source file cannot be parsed
-    pub fn get_module_tree(
+    pub(crate) fn get_module_tree(
         &self,
         module_path: &str,
         recursive: bool,
@@ -237,7 +237,7 @@ impl CrateInfo {
     /// # Errors
     ///
     /// Returns an error if the module cannot be found or the crate root is invalid.
-    pub fn resolve_module_path_to_file(&self, module_path: &str) -> Result<PathBuf> {
+    pub(crate) fn resolve_module_path_to_file(&self, module_path: &str) -> Result<PathBuf> {
         self.resolve_module(module_path)
     }
 
@@ -248,7 +248,7 @@ impl CrateInfo {
     fn normalize_module_path(&self, module_path: &str) -> String {
         let parts: Vec<&str> = module_path.split("::").collect();
         if parts.is_empty() {
-            return module_path.to_string();
+            return module_path.to_owned();
         }
 
         let first_part = parts[0];
@@ -276,6 +276,6 @@ impl CrateInfo {
             };
         }
 
-        module_path.to_string()
+        module_path.to_owned()
     }
 }

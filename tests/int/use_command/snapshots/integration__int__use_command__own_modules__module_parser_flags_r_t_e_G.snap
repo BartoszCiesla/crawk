@@ -18,8 +18,6 @@ crate::constants::PATH_QUALIFIER_CRATE
 crate::constants::PATH_QUALIFIER_SELF
 crate::constants::PATH_QUALIFIER_SUPER
 crate::parser::AnalyzerError
-crate::parser::CrateAnalyzer
-crate::parser::Result
 crate::reference::GroupItem
 crate::reference::PathPrefix
 crate::reference::TypeReference

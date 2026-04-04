@@ -32,7 +32,7 @@ pub(super) fn validate_module_path(s: &str) -> Result<String, String> {
     if s.starts_with("::") || s.ends_with("::") || s.contains(":::") {
         return Err(format!("module path '{s}' has malformed '::' separator"));
     }
-    Ok(s.to_string())
+    Ok(s.to_owned())
 }
 
 /// Validate that the depth argument is a positive integer

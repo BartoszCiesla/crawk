@@ -40,7 +40,7 @@ where
     }
 }
 
-pub fn configure_tracing(command: &CrawkArgs) -> anyhow::Result<()> {
+pub(crate) fn configure_tracing(command: &CrawkArgs) -> anyhow::Result<()> {
     if let Some(log_file_path) = command.log_file() {
         let file = File::create(log_file_path)
             .with_context(|| format!("Failed to create log file '{}'", log_file_path.display()))?;

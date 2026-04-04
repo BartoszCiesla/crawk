@@ -472,7 +472,7 @@ impl From<&str> for GroupItem {
         } else if s == PATH_QUALIFIER_SELF {
             Self::SelfItem { alias: None }
         } else {
-            Self::Simple(s.to_string())
+            Self::Simple(s.to_owned())
         }
     }
 }
@@ -821,7 +821,7 @@ mod tests {
     #[test]
     fn test_resolve_self_prefix() {
         let r = TypeReference::new(["foo", "Bar"]).with_self_prefix();
-        let module_path = vec!["utils".to_string(), "parser".to_string()];
+        let module_path = vec!["utils".to_owned(), "parser".to_owned()];
         let resolved = r.resolve(&module_path);
 
         assert_eq!(resolved.prefix, PathPrefix::Crate);
@@ -843,7 +843,7 @@ mod tests {
     #[test]
     fn test_resolve_super_single_level() {
         let r = TypeReference::new(["sibling", "Type"]).with_super(1);
-        let module_path = vec!["parent".to_string(), "child".to_string()];
+        let module_path = vec!["parent".to_owned(), "child".to_owned()];
         let resolved = r.resolve(&module_path);
 
         assert_eq!(resolved.prefix, PathPrefix::Crate);
@@ -854,7 +854,7 @@ mod tests {
     #[test]
     fn test_resolve_super_multiple_levels() {
         let r = TypeReference::new(["ancestor", "Type"]).with_super(2);
-        let module_path = vec!["a".to_string(), "b".to_string(), "c".to_string()];
+        let module_path = vec!["a".to_owned(), "b".to_owned(), "c".to_owned()];
         let resolved = r.resolve(&module_path);
 
         assert_eq!(resolved.prefix, PathPrefix::Crate);
@@ -878,7 +878,7 @@ mod tests {
     fn test_resolve_super_too_many_levels() {
         // Trying to go up more levels than exist
         let r = TypeReference::new(["foo", "Bar"]).with_super(5);
-        let module_path = vec!["a".to_string(), "b".to_string()];
+        let module_path = vec!["a".to_owned(), "b".to_owned()];
         let resolved = r.resolve(&module_path);
 
         // Should leave it as-is since we can't go up that far
@@ -889,7 +889,7 @@ mod tests {
     #[test]
     fn test_resolve_crate_prefix_unchanged() {
         let r = TypeReference::new(["module", "Type"]).with_crate_prefix();
-        let module_path = vec!["utils".to_string()];
+        let module_path = vec!["utils".to_owned()];
         let resolved = r.resolve(&module_path);
 
         assert_eq!(resolved.prefix, PathPrefix::Crate);
@@ -900,7 +900,7 @@ mod tests {
     #[test]
     fn test_resolve_no_prefix_unchanged() {
         let r = TypeReference::new(["std", "collections", "HashMap"]);
-        let module_path = vec!["utils".to_string()];
+        let module_path = vec!["utils".to_owned()];
         let resolved = r.resolve(&module_path);
 
         assert_eq!(resolved.prefix, PathPrefix::None);
@@ -913,7 +913,7 @@ mod tests {
         let r = TypeReference::new(["foo", "Bar"])
             .with_self_prefix()
             .with_alias("MyBar");
-        let module_path = vec!["utils".to_string()];
+        let module_path = vec!["utils".to_owned()];
         let resolved = r.resolve(&module_path);
 
         assert_eq!(resolved.to_path_string(), "crate::utils::foo::Bar as MyBar");
@@ -922,7 +922,7 @@ mod tests {
     #[test]
     fn test_resolve_with_glob() {
         let r = TypeReference::new(["foo"]).with_self_prefix().with_glob();
-        let module_path = vec!["utils".to_string()];
+        let module_path = vec!["utils".to_owned()];
         let resolved = r.resolve(&module_path);
 
         assert_eq!(resolved.to_path_string(), "crate::utils::foo::*");

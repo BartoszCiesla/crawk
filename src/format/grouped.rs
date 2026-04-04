@@ -2,7 +2,7 @@ use crawk::AnalysisResult;
 
 use super::truncate_and_dedup;
 
-pub fn render_grouped(result: &AnalysisResult, depth: Option<usize>) -> String {
+pub(crate) fn render_grouped(result: &AnalysisResult, depth: Option<usize>) -> String {
     let dependencies = result.dependencies();
     let mut modules = dependencies.keys().cloned().collect::<Vec<_>>();
     modules.sort();

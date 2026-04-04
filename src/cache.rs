@@ -10,37 +10,37 @@ use std::rc::Rc;
 
 /// Cache mapping source file paths to their parsed `syn::File` representations.
 #[derive(Clone, Default)]
-pub struct ParseCache(HashMap<PathBuf, Rc<syn::File>>);
+pub(crate) struct ParseCache(HashMap<PathBuf, Rc<syn::File>>);
 
 impl ParseCache {
     /// Creates an empty cache.
     #[must_use]
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self(HashMap::new())
     }
 
     /// Returns a clone of the cached `Rc<syn::File>` for `path`, or `None` if
     /// the file has not been parsed yet.
     #[must_use]
-    pub fn get(&self, path: &Path) -> Option<Rc<syn::File>> {
+    pub(crate) fn get(&self, path: &Path) -> Option<Rc<syn::File>> {
         self.0.get(path).map(Rc::clone)
     }
 
     /// Inserts a parsed file into the cache.
-    pub fn insert(&mut self, path: PathBuf, file: Rc<syn::File>) {
+    pub(crate) fn insert(&mut self, path: PathBuf, file: Rc<syn::File>) {
         self.0.insert(path, file);
     }
 
     /// Returns the number of entries in the cache.
     #[must_use]
-    pub fn len(&self) -> usize {
+    pub(crate) fn len(&self) -> usize {
         self.0.len()
     }
 
     /// Returns `true` if the cache contains no entries.
     #[must_use]
     #[allow(dead_code)]
-    pub fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
 
@@ -53,7 +53,11 @@ impl ParseCache {
     /// # Errors
     ///
     /// Propagates any error returned by `read_and_parse`.
-    pub fn get_or_parse<E, F>(&mut self, path: &Path, read_and_parse: F) -> Result<Rc<syn::File>, E>
+    pub(crate) fn get_or_parse<E, F>(
+        &mut self,
+        path: &Path,
+        read_and_parse: F,
+    ) -> Result<Rc<syn::File>, E>
     where
         F: FnOnce(&Path) -> Result<syn::File, E>,
     {

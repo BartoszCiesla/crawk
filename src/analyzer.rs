@@ -305,7 +305,7 @@ impl Analyzer {
 
         // Fallback to the original module path
         trace!("No shorter prefix found, using original: '{}'", module_path);
-        module_path.to_string()
+        module_path.to_owned()
     }
 
     /// Compute the inline scope for a module relative to its file root.
