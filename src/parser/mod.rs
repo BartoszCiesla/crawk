@@ -161,7 +161,6 @@ fn find_inline_items<'a>(items: &'a [syn::Item], scope: &[String]) -> Option<&'a
     None
 }
 
-#[allow(clippy::unwrap_used)]
 #[cfg(test)]
 mod tests {
     use super::*;
