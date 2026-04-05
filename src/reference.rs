@@ -927,4 +927,48 @@ mod tests {
 
         assert_eq!(resolved.to_path_string(), "crate::utils::foo::*");
     }
+
+    #[test]
+    fn truncate_to_depth_zero_yields_empty_segments() {
+        let r = TypeReference::new(["a", "b", "c"]).with_crate_prefix();
+        let t = r.truncate_to_depth(0);
+        assert_eq!(t.segments().len(), 0);
+        assert_eq!(t.prefix(), PathPrefix::Crate);
+    }
+
+    #[test]
+    fn truncate_to_depth_reduces_to_given_depth() {
+        let r = TypeReference::new(["a", "b", "c"]);
+        let t = r.truncate_to_depth(2);
+        assert_eq!(t.to_path_string(), "a::b");
+    }
+
+    #[test]
+    fn truncate_to_depth_equal_to_len_returns_clone() {
+        let r = TypeReference::new(["a", "b", "c"]);
+        let t = r.truncate_to_depth(3);
+        assert_eq!(t.to_path_string(), "a::b::c");
+    }
+
+    #[test]
+    fn truncate_to_depth_greater_than_len_returns_clone() {
+        let r = TypeReference::new(["a", "b"]);
+        let t = r.truncate_to_depth(10);
+        assert_eq!(t.to_path_string(), "a::b");
+    }
+
+    #[test]
+    fn truncate_to_depth_drops_suffix() {
+        let r = TypeReference::new(["a", "b", "c"]).with_glob();
+        let t = r.truncate_to_depth(2);
+        assert!(!t.has_glob());
+        assert_eq!(t.to_path_string(), "a::b");
+    }
+
+    #[test]
+    fn truncate_to_depth_drops_alias() {
+        let r = TypeReference::new(["a", "b", "c"]).with_alias("X");
+        let t = r.truncate_to_depth(2);
+        assert_eq!(t.to_path_string(), "a::b");
+    }
 }

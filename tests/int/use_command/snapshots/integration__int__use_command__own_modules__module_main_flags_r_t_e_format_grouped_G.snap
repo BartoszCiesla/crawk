@@ -33,6 +33,7 @@ format::flat
 format::grouped
  - crate::format::truncate_and_dedup
  - crawk::AnalysisResult
+format::tests
 logger
  - crate::cli::CrawkArgs
 

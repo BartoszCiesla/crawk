@@ -13,6 +13,7 @@ exit_code: 0
 ----- stdout -----
 crate::cli::CrawkArgs
 crate::cli::validation::*
+crate::format::*
 crate::format::truncate_and_dedup
 crawk::AnalysisResult
 crawk::TypeReference

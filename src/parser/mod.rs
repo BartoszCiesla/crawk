@@ -165,6 +165,9 @@ fn find_inline_items<'a>(items: &'a [syn::Item], scope: &[String]) -> Option<&'a
 mod tests {
     use super::*;
     use crate::reference::PathPrefix;
+    use std::io::Write;
+    use std::path::Path;
+    use tempfile::NamedTempFile;
 
     fn parse_use(code: &str) -> Vec<TypeReference> {
         let syntax: File = syn::parse_file(code).unwrap();
@@ -458,5 +461,27 @@ mod tests {
                 .any(|p| p.contains("crate::utils::parser::helper"))
         );
         assert!(paths.iter().any(|p| p.contains("crate::utils::sibling")));
+    }
+
+    #[test]
+    fn parse_file_returns_file_read_error_for_nonexistent_file() {
+        let mut analyzer = CrateAnalyzer::new("test");
+        let mut cache = ParseCache::new();
+        let err = analyzer
+            .parse_file("mod", Path::new("/nonexistent/file.rs"), &[], &mut cache)
+            .unwrap_err();
+        assert!(matches!(err, AnalyzerError::FileRead { .. }));
+    }
+
+    #[test]
+    fn parse_file_returns_parse_error_for_invalid_syntax() {
+        let mut f = NamedTempFile::new().unwrap();
+        writeln!(f, "this is not valid rust !!!").unwrap();
+        let mut analyzer = CrateAnalyzer::new("test");
+        let mut cache = ParseCache::new();
+        let err = analyzer
+            .parse_file("mod", f.path(), &[], &mut cache)
+            .unwrap_err();
+        assert!(matches!(err, AnalyzerError::Parse { .. }));
     }
 }
