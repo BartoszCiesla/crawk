@@ -686,6 +686,135 @@ impl CrateInfo {
 mod tests {
     use super::*;
 
+    fn items_from(code: &str) -> Vec<syn::Item> {
+        syn::parse_file(code).unwrap().items
+    }
+
+    #[test]
+    fn base_dir_mod_rs_returns_parent() {
+        assert_eq!(
+            CrateInfo::get_module_base_dir(Path::new("/src/foo/mod.rs")),
+            Path::new("/src/foo")
+        );
+    }
+
+    #[test]
+    fn base_dir_lib_rs_returns_parent() {
+        assert_eq!(
+            CrateInfo::get_module_base_dir(Path::new("/src/lib.rs")),
+            Path::new("/src")
+        );
+    }
+
+    #[test]
+    fn base_dir_main_rs_returns_parent() {
+        assert_eq!(
+            CrateInfo::get_module_base_dir(Path::new("/src/main.rs")),
+            Path::new("/src")
+        );
+    }
+
+    #[test]
+    fn base_dir_named_file_returns_stem_subdir() {
+        assert_eq!(
+            CrateInfo::get_module_base_dir(Path::new("/src/parser.rs")),
+            Path::new("/src/parser")
+        );
+    }
+
+    #[test]
+    fn find_nested_inline_module_empty_parts_returns_file() {
+        let items = items_from("pub fn foo() {}");
+        let path = Path::new("/fake/file.rs");
+        assert_eq!(
+            CrateInfo::find_nested_inline_module(&items, &[], path),
+            Some(path.to_path_buf())
+        );
+    }
+
+    #[test]
+    fn find_nested_inline_module_finds_existing_module() {
+        let items = items_from("pub mod foo { pub fn inner() {} }");
+        let path = Path::new("/fake/file.rs");
+        assert_eq!(
+            CrateInfo::find_nested_inline_module(&items, &["foo"], path),
+            Some(path.to_path_buf())
+        );
+    }
+
+    #[test]
+    fn find_nested_inline_module_returns_none_for_missing() {
+        let items = items_from("pub fn foo() {}");
+        assert!(
+            CrateInfo::find_nested_inline_module(&items, &["missing"], Path::new("/f.rs"))
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn find_nested_inline_module_finds_nested() {
+        let items = items_from("pub mod outer { pub mod inner { pub fn f() {} } }");
+        let path = Path::new("/fake/file.rs");
+        assert_eq!(
+            CrateInfo::find_nested_inline_module(&items, &["outer", "inner"], path),
+            Some(path.to_path_buf())
+        );
+    }
+
+    #[test]
+    fn find_nested_inline_module_returns_none_for_missing_nested() {
+        let items = items_from("pub mod outer {}");
+        assert!(
+            CrateInfo::find_nested_inline_module(
+                &items,
+                &["outer", "nonexistent"],
+                Path::new("/f.rs")
+            )
+            .is_none()
+        );
+    }
+
+    #[test]
+    fn get_inline_module_items_empty_scope_returns_all_items() {
+        let items = items_from("pub fn foo() {} pub struct Bar;");
+        let result = CrateInfo::get_inline_module_items(&items, &[]).unwrap();
+        assert_eq!(result.len(), 2);
+    }
+
+    #[test]
+    fn get_inline_module_items_finds_named_module() {
+        let items = items_from("pub mod foo { pub fn inner() {} pub struct S; }");
+        let result = CrateInfo::get_inline_module_items(&items, &["foo".to_owned()]).unwrap();
+        assert_eq!(result.len(), 2);
+    }
+
+    #[test]
+    fn get_inline_module_items_finds_nested_scope() {
+        let items = items_from("pub mod a { pub mod b { pub fn deep() {} } }");
+        let result =
+            CrateInfo::get_inline_module_items(&items, &["a".to_owned(), "b".to_owned()]).unwrap();
+        assert_eq!(result.len(), 1);
+    }
+
+    #[test]
+    fn get_inline_module_items_returns_error_for_missing_module() {
+        let items = items_from("pub fn foo() {}");
+        let err = CrateInfo::get_inline_module_items(&items, &["nonexistent".to_owned()])
+            .err()
+            .unwrap();
+        assert!(matches!(err, CrateInfoError::ModuleNotFound { .. }));
+    }
+
+    #[test]
+    fn get_inline_module_items_returns_error_for_missing_nested() {
+        let items = items_from("pub mod a { pub fn foo() {} }");
+        let err =
+            CrateInfo::get_inline_module_items(&items, &["a".to_owned(), "missing".to_owned()])
+                .err()
+                .unwrap();
+        assert!(matches!(err, CrateInfoError::ModuleNotFound { .. }));
+    }
+
     #[test]
     fn test_validate_segment_valid() {
         assert!(CrateInfo::validate_segment("foo").is_ok());
@@ -738,5 +867,111 @@ mod tests {
         // child is outside parent
         let err = CrateInfo::check_within_root(child.path(), parent.path()).unwrap_err();
         assert!(matches!(err, CrateInfoError::PathTraversal));
+    }
+
+    #[test]
+    fn resolve_module_parts_empty_parts_returns_none() {
+        let dir = tempfile::tempdir().unwrap();
+        let result = CrateInfo::resolve_module_parts(dir.path(), &[], None).unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn resolve_module_parts_2018_style_foo_rs() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("foo.rs");
+        fs::write(&file, "").unwrap();
+
+        let result = CrateInfo::resolve_module_parts(dir.path(), &["foo"], None).unwrap();
+        assert_eq!(result, Some(file));
+    }
+
+    #[test]
+    fn resolve_module_parts_legacy_mod_rs() {
+        let dir = tempfile::tempdir().unwrap();
+        let mod_dir = dir.path().join("bar");
+        fs::create_dir(&mod_dir).unwrap();
+        let file = mod_dir.join("mod.rs");
+        fs::write(&file, "").unwrap();
+
+        let result = CrateInfo::resolve_module_parts(dir.path(), &["bar"], None).unwrap();
+        assert_eq!(result, Some(file));
+    }
+
+    #[test]
+    fn resolve_module_parts_nested_via_companion_dir() {
+        // foo.rs + foo/ companion directory — submodule is in foo/sub.rs
+        let dir = tempfile::tempdir().unwrap();
+        fs::write(dir.path().join("foo.rs"), "").unwrap();
+        let sub_dir = dir.path().join("foo");
+        fs::create_dir(&sub_dir).unwrap();
+        let sub_file = sub_dir.join("sub.rs");
+        fs::write(&sub_file, "").unwrap();
+
+        let result = CrateInfo::resolve_module_parts(dir.path(), &["foo", "sub"], None).unwrap();
+        assert_eq!(result, Some(sub_file));
+    }
+
+    #[test]
+    fn resolve_module_parts_nested_via_legacy_subdir() {
+        // bar/mod.rs + bar/sub.rs
+        let dir = tempfile::tempdir().unwrap();
+        let bar_dir = dir.path().join("bar");
+        fs::create_dir(&bar_dir).unwrap();
+        fs::write(bar_dir.join("mod.rs"), "").unwrap();
+        let sub_file = bar_dir.join("sub.rs");
+        fs::write(&sub_file, "").unwrap();
+
+        let result = CrateInfo::resolve_module_parts(dir.path(), &["bar", "sub"], None).unwrap();
+        assert_eq!(result, Some(sub_file));
+    }
+
+    #[test]
+    fn resolve_module_parts_inline_fallback_when_no_companion_dir() {
+        // foo.rs exists (with inline mod inner {}), no foo/ directory
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("foo.rs");
+        fs::write(&file, "pub mod inner {}").unwrap();
+
+        let result = CrateInfo::resolve_module_parts(dir.path(), &["foo", "inner"], None).unwrap();
+        assert_eq!(result, Some(file));
+    }
+
+    #[test]
+    fn resolve_module_parts_inline_module_via_root_file() {
+        // root_file contains `mod tests {}`, no tests.rs on disk
+        let dir = tempfile::tempdir().unwrap();
+        let lib_rs = dir.path().join("lib.rs");
+        fs::write(&lib_rs, "pub mod tests {}").unwrap();
+
+        let result =
+            CrateInfo::resolve_module_parts(dir.path(), &["tests"], Some(&lib_rs)).unwrap();
+        assert_eq!(result, Some(lib_rs));
+    }
+
+    #[test]
+    fn resolve_module_parts_returns_none_for_nonexistent() {
+        let dir = tempfile::tempdir().unwrap();
+        let result = CrateInfo::resolve_module_parts(dir.path(), &["missing"], None).unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn resolve_module_parts_rejects_invalid_segment() {
+        let dir = tempfile::tempdir().unwrap();
+        let err = CrateInfo::resolve_module_parts(dir.path(), &[".."], None).unwrap_err();
+        assert!(matches!(err, CrateInfoError::InvalidModuleSegment { .. }));
+    }
+
+    #[test]
+    fn resolve_module_parts_inline_module_not_found_returns_none() {
+        // foo.rs exists but has no inline mod missing {}
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("foo.rs");
+        fs::write(&file, "pub fn bar() {}").unwrap();
+
+        let result =
+            CrateInfo::resolve_module_parts(dir.path(), &["foo", "missing"], None).unwrap();
+        assert!(result.is_none());
     }
 }
