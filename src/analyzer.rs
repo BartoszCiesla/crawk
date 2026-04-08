@@ -73,7 +73,7 @@ impl Analyzer {
     ///
     /// Returns [`AnalysisError::InvalidCrateRoot`] if the path does not exist or is not a valid Rust project.
     /// Returns [`AnalysisError::CrateInfoError`] if there are issues retrieving crate metadata.
-    /// Returns [`AnalysisError::AnalyzerError`] if there are issues initializing the crate analyzer.
+    /// Returns [`AnalysisError::ModuleAnalysisFailed`] if there are issues initializing the crate analyzer.
     /// Returns `Ok(Analyzer)` if the crate root is valid and the analyzer is successfully initialized.
     ///
     /// # Examples
@@ -171,8 +171,12 @@ impl Analyzer {
                 &mut self.parse_cache,
             ) {
                 Err(e) => {
-                    error!("Error while analyzing module: {e}");
-                    return Err(AnalysisError::AnalyzerError(e));
+                    error!("Error while analyzing module '{}': {e}", module.path());
+                    return Err(AnalysisError::ModuleAnalysisFailed {
+                        module_path: module.path().to_owned(),
+                        file: module.source().to_path_buf(),
+                        source: e,
+                    });
                 }
                 Ok(type_list) => {
                     info!("Analyzed {}", module.path());

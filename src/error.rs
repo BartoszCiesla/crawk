@@ -27,9 +27,16 @@ pub enum AnalysisError {
     #[error(transparent)]
     CrateInfoError(#[from] CrateInfoError),
 
-    /// Errors that occur during module parsing and analysis.
-    #[error("Error analyzing module: {0}")]
-    AnalyzerError(#[from] AnalyzerError),
+    /// Error analyzing a specific module — includes module name and file for context.
+    #[error("Error analyzing module '{module_path}' (file '{file}'): {source}")]
+    ModuleAnalysisFailed {
+        /// The Rust module path being analyzed (e.g. `crate::parser::visitor`).
+        module_path: String,
+        /// The source file being parsed.
+        file: PathBuf,
+        /// The underlying parser error.
+        source: AnalyzerError,
+    },
 }
 
 /// Result type alias for analysis info operations.
