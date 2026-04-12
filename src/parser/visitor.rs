@@ -5,6 +5,40 @@ use crate::constants::{PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER
 use crate::reference::{GroupItem, PathPrefix, TypeReference};
 use crate::utils::has_cfg_test;
 
+/// Type references collected from a single module, grouped by syntactic role.
+///
+/// Each category represents a distinct kind of dependency signal:
+/// - `use_statements` — explicit imports (`use crate::foo::Bar`)
+/// - `type_refs` — type-level dependencies (annotations, trait bounds, impl traits)
+/// - `value_refs` — value-level dependencies (calls, struct construction, patterns)
+/// - `macro_calls` — macro invocations (semantically opaque to static analysis)
+pub(super) struct CollectedReferences {
+    pub use_statements: Vec<TypeReference>,
+    pub type_refs: Vec<TypeReference>,
+    pub value_refs: Vec<TypeReference>,
+    pub macro_calls: Vec<TypeReference>,
+}
+
+impl CollectedReferences {
+    const fn new() -> Self {
+        Self {
+            use_statements: Vec::new(),
+            type_refs: Vec::new(),
+            value_refs: Vec::new(),
+            macro_calls: Vec::new(),
+        }
+    }
+
+    /// Iterates over all references in a consistent order.
+    pub(super) fn all(&self) -> impl Iterator<Item = &TypeReference> {
+        self.use_statements
+            .iter()
+            .chain(self.type_refs.iter())
+            .chain(self.value_refs.iter())
+            .chain(self.macro_calls.iter())
+    }
+}
+
 /// Visitor for extracting type references from module AST.
 pub(super) struct ModuleVisitor {
     /// Module name for filtering and identification (e.g., "foo::bar").
@@ -15,9 +49,9 @@ pub(super) struct ModuleVisitor {
     /// Used to convert `self::` and `super::` references to absolute `crate::` paths.
     module_path: Vec<String>,
 
-    /// Collected type references found in this module.
+    /// Collected type references found in this module, grouped by syntactic role.
     /// All relative paths are resolved to absolute paths before being added.
-    pub(super) references: Vec<TypeReference>,
+    pub(super) references: CollectedReferences,
 
     /// Track if we're currently visiting inside a test module.
     /// Updated as we traverse nested modules to filter test-only references.
@@ -36,7 +70,7 @@ impl ModuleVisitor {
         Self {
             module_name,
             module_path,
-            references: Vec::new(),
+            references: CollectedReferences::new(),
             in_test_module: false,
         }
     }
@@ -53,10 +87,10 @@ impl ModuleVisitor {
         })
     }
 
-    /// Processes a syn::Path and converts it to a TypeReference if it's internal.
-    fn process_path(&mut self, path: &syn::Path) {
+    /// Builds a TypeReference from a syn::Path if it's an internal crate reference.
+    fn build_reference(&self, path: &syn::Path) -> Option<TypeReference> {
         if !Self::is_internal_path(path) {
-            return;
+            return None;
         }
 
         let mut segments = Vec::new();
@@ -95,12 +129,15 @@ impl ModuleVisitor {
             segments.push(ident);
         }
 
-        if !segments.is_empty() {
-            let reference = TypeReference::new(segments)
-                .with_prefix(path_prefix)
-                .resolve(&self.module_path);
-            self.references.push(reference);
+        if segments.is_empty() {
+            return None;
         }
+
+        Some(
+            TypeReference::new(segments)
+                .with_prefix(path_prefix)
+                .resolve(&self.module_path),
+        )
     }
 
     fn process_use_tree(&mut self, tree: &UseTree, prefix: Vec<String>, path_prefix: PathPrefix) {
@@ -149,7 +186,7 @@ impl ModuleVisitor {
                 let reference = TypeReference::new(segments)
                     .with_prefix(path_prefix)
                     .resolve(&self.module_path);
-                self.references.push(reference);
+                self.references.use_statements.push(reference);
             }
 
             UseTree::Rename(r) => {
@@ -160,7 +197,7 @@ impl ModuleVisitor {
                     .with_prefix(path_prefix)
                     .with_alias(r.rename.to_string())
                     .resolve(&self.module_path);
-                self.references.push(reference);
+                self.references.use_statements.push(reference);
             }
 
             UseTree::Glob(_) => {
@@ -168,7 +205,7 @@ impl ModuleVisitor {
                     .with_prefix(path_prefix)
                     .with_glob()
                     .resolve(&self.module_path);
-                self.references.push(reference);
+                self.references.use_statements.push(reference);
             }
 
             UseTree::Group(g) => {
@@ -178,7 +215,7 @@ impl ModuleVisitor {
                     .with_prefix(path_prefix)
                     .with_group(group_items)
                     .resolve(&self.module_path);
-                self.references.push(reference);
+                self.references.use_statements.push(reference);
             }
         }
     }
@@ -314,7 +351,9 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
     /// Visit expression paths - captures paths in expressions like `crate::foo::bar()`
     fn visit_expr_path(&mut self, node: &'ast syn::ExprPath) {
         if !self.in_test_module {
-            self.process_path(&node.path);
+            if let Some(r) = self.build_reference(&node.path) {
+                self.references.value_refs.push(r);
+            }
         }
         syn::visit::visit_expr_path(self, node);
     }
@@ -322,7 +361,9 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
     /// Visit type paths - captures type annotations like `let x: crate::Foo`
     fn visit_type_path(&mut self, node: &'ast syn::TypePath) {
         if !self.in_test_module {
-            self.process_path(&node.path);
+            if let Some(r) = self.build_reference(&node.path) {
+                self.references.type_refs.push(r);
+            }
 
             // Also check the qself if present (e.g., <crate::Foo as Trait>::Item)
             if let Some(qself) = &node.qself {
@@ -335,7 +376,9 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
     /// Visit pattern structs - captures struct patterns in match arms
     fn visit_pat_struct(&mut self, node: &'ast syn::PatStruct) {
         if !self.in_test_module {
-            self.process_path(&node.path);
+            if let Some(r) = self.build_reference(&node.path) {
+                self.references.value_refs.push(r);
+            }
         }
         syn::visit::visit_pat_struct(self, node);
     }
@@ -343,7 +386,9 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
     /// Visit pattern tuple structs - captures tuple struct patterns
     fn visit_pat_tuple_struct(&mut self, node: &'ast syn::PatTupleStruct) {
         if !self.in_test_module {
-            self.process_path(&node.path);
+            if let Some(r) = self.build_reference(&node.path) {
+                self.references.value_refs.push(r);
+            }
         }
         syn::visit::visit_pat_tuple_struct(self, node);
     }
@@ -351,7 +396,9 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
     /// Visit struct expressions - captures struct literal construction
     fn visit_expr_struct(&mut self, node: &'ast syn::ExprStruct) {
         if !self.in_test_module {
-            self.process_path(&node.path);
+            if let Some(r) = self.build_reference(&node.path) {
+                self.references.value_refs.push(r);
+            }
         }
         syn::visit::visit_expr_struct(self, node);
     }
@@ -359,7 +406,9 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
     /// Visit trait bounds - captures trait bounds in generics
     fn visit_trait_bound(&mut self, node: &'ast syn::TraitBound) {
         if !self.in_test_module {
-            self.process_path(&node.path);
+            if let Some(r) = self.build_reference(&node.path) {
+                self.references.type_refs.push(r);
+            }
         }
         syn::visit::visit_trait_bound(self, node);
     }
@@ -369,7 +418,9 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
         if !self.in_test_module {
             // Check the trait being implemented (if any)
             if let Some((_, trait_path, _)) = &node.trait_ {
-                self.process_path(trait_path);
+                if let Some(r) = self.build_reference(trait_path) {
+                    self.references.type_refs.push(r);
+                }
             }
         }
         syn::visit::visit_item_impl(self, node);
@@ -378,7 +429,9 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
     /// Visit macro invocations - captures macro paths
     fn visit_macro(&mut self, node: &'ast syn::Macro) {
         if !self.in_test_module {
-            self.process_path(&node.path);
+            if let Some(r) = self.build_reference(&node.path) {
+                self.references.macro_calls.push(r);
+            }
         }
         syn::visit::visit_macro(self, node);
     }

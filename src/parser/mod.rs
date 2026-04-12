@@ -110,12 +110,12 @@ impl CrateAnalyzer {
             }
         }
 
-        let result = visitor.references.clone();
+        let result: Vec<TypeReference> = visitor.references.all().cloned().collect();
 
         if !self.files.contains_key(&module) {
             self.file_order.push(module.clone());
         }
-        self.files.insert(module, visitor.references);
+        self.files.insert(module, result.clone());
 
         Ok(result)
     }
@@ -189,7 +189,7 @@ mod tests {
         let syntax: File = syn::parse_file(code).unwrap();
         let mut visitor = ModuleVisitor::new("");
         visitor.visit_file(&syntax);
-        visitor.references
+        visitor.references.all().cloned().collect()
     }
 
     #[test]
@@ -360,12 +360,13 @@ mod tests {
         let mut visitor = ModuleVisitor::new("utils::parser");
         visitor.visit_file(&syntax);
 
-        assert_eq!(visitor.references.len(), 1);
+        let uses = &visitor.references.use_statements;
+        assert_eq!(uses.len(), 1);
         assert_eq!(
-            visitor.references[0].to_path_string(),
+            uses[0].to_path_string(),
             "crate::utils::parser::submodule::Type"
         );
-        assert_eq!(visitor.references[0].prefix(), PathPrefix::Crate);
+        assert_eq!(uses[0].prefix(), PathPrefix::Crate);
     }
 
     #[test]
@@ -376,12 +377,10 @@ mod tests {
         let mut visitor = ModuleVisitor::new("utils::parser");
         visitor.visit_file(&syntax);
 
-        assert_eq!(visitor.references.len(), 1);
-        assert_eq!(
-            visitor.references[0].to_path_string(),
-            "crate::utils::sibling::Type"
-        );
-        assert_eq!(visitor.references[0].prefix(), PathPrefix::Crate);
+        let uses = &visitor.references.use_statements;
+        assert_eq!(uses.len(), 1);
+        assert_eq!(uses[0].to_path_string(), "crate::utils::sibling::Type");
+        assert_eq!(uses[0].prefix(), PathPrefix::Crate);
     }
 
     #[test]
@@ -392,12 +391,10 @@ mod tests {
         let mut visitor = ModuleVisitor::new("a::b::c");
         visitor.visit_file(&syntax);
 
-        assert_eq!(visitor.references.len(), 1);
-        assert_eq!(
-            visitor.references[0].to_path_string(),
-            "crate::a::ancestor::Type"
-        );
-        assert_eq!(visitor.references[0].prefix(), PathPrefix::Crate);
+        let uses = &visitor.references.use_statements;
+        assert_eq!(uses.len(), 1);
+        assert_eq!(uses[0].to_path_string(), "crate::a::ancestor::Type");
+        assert_eq!(uses[0].prefix(), PathPrefix::Crate);
     }
 
     #[test]
@@ -408,12 +405,10 @@ mod tests {
         let mut visitor = ModuleVisitor::new("utils");
         visitor.visit_file(&syntax);
 
-        assert_eq!(visitor.references.len(), 1);
-        assert_eq!(
-            visitor.references[0].to_path_string(),
-            "crate::utils::{foo, bar::Baz}"
-        );
-        assert_eq!(visitor.references[0].prefix(), PathPrefix::Crate);
+        let uses = &visitor.references.use_statements;
+        assert_eq!(uses.len(), 1);
+        assert_eq!(uses[0].to_path_string(), "crate::utils::{foo, bar::Baz}");
+        assert_eq!(uses[0].prefix(), PathPrefix::Crate);
     }
 
     #[test]
@@ -424,13 +419,11 @@ mod tests {
         let mut visitor = ModuleVisitor::new("utils");
         visitor.visit_file(&syntax);
 
-        assert_eq!(visitor.references.len(), 1);
-        assert_eq!(
-            visitor.references[0].to_path_string(),
-            "crate::utils::submodule::*"
-        );
-        assert_eq!(visitor.references[0].prefix(), PathPrefix::Crate);
-        assert!(visitor.references[0].has_glob());
+        let uses = &visitor.references.use_statements;
+        assert_eq!(uses.len(), 1);
+        assert_eq!(uses[0].to_path_string(), "crate::utils::submodule::*");
+        assert_eq!(uses[0].prefix(), PathPrefix::Crate);
+        assert!(uses[0].has_glob());
     }
 
     #[test]
@@ -441,12 +434,13 @@ mod tests {
         let mut visitor = ModuleVisitor::new("utils");
         visitor.visit_file(&syntax);
 
-        assert_eq!(visitor.references.len(), 1);
+        let uses = &visitor.references.use_statements;
+        assert_eq!(uses.len(), 1);
         assert_eq!(
-            visitor.references[0].to_path_string(),
+            uses[0].to_path_string(),
             "crate::utils::submodule::Type as MyType"
         );
-        assert_eq!(visitor.references[0].prefix(), PathPrefix::Crate);
+        assert_eq!(uses[0].prefix(), PathPrefix::Crate);
     }
 
     #[test]
@@ -462,11 +456,12 @@ mod tests {
         let mut visitor = ModuleVisitor::new("utils::parser");
         visitor.visit_file(&syntax);
 
-        assert!(visitor.references.len() >= 2);
+        assert!(visitor.references.value_refs.len() >= 2);
 
         // Check that paths are resolved
         let paths: Vec<String> = visitor
             .references
+            .value_refs
             .iter()
             .map(TypeReference::to_path_string)
             .collect();
