@@ -245,14 +245,16 @@ impl Analyzer {
             let source_path = module.source().to_path_buf();
             let actual_root = self.find_actual_file_root(module.path(), &source_path);
 
-            file_root
-                .entry(source_path)
-                .and_modify(|existing| {
-                    if actual_root.len() < existing.len() {
-                        existing.clone_from(&actual_root);
+            match file_root.entry(source_path) {
+                std::collections::hash_map::Entry::Occupied(mut e) => {
+                    if actual_root.len() < e.get().len() {
+                        *e.get_mut() = actual_root;
                     }
-                })
-                .or_insert(actual_root);
+                }
+                std::collections::hash_map::Entry::Vacant(e) => {
+                    e.insert(actual_root);
+                }
+            }
         }
         file_root
     }
