@@ -72,58 +72,40 @@ fn extract_from_inline_module(items: &[Item], module_path: &[&str]) -> Option<Ve
     None
 }
 
+/// Extract visibility and ident from items that have a single exported name.
+///
+/// Returns `None` for items without a simple ident (`Item::Use`, `Item::Impl`,
+/// `Item::Verbatim`, etc.) — those are handled separately or ignored.
+const fn item_vis_and_ident(item: &Item) -> Option<(&syn::Visibility, &proc_macro2::Ident)> {
+    match item {
+        Item::Const(i) => Some((&i.vis, &i.ident)),
+        Item::Enum(i) => Some((&i.vis, &i.ident)),
+        Item::Fn(i) => Some((&i.vis, &i.sig.ident)),
+        Item::ExternCrate(i) => Some((&i.vis, &i.ident)),
+        Item::Mod(i) => Some((&i.vis, &i.ident)),
+        Item::Static(i) => Some((&i.vis, &i.ident)),
+        Item::Struct(i) => Some((&i.vis, &i.ident)),
+        Item::Trait(i) => Some((&i.vis, &i.ident)),
+        Item::TraitAlias(i) => Some((&i.vis, &i.ident)),
+        Item::Type(i) => Some((&i.vis, &i.ident)),
+        Item::Union(i) => Some((&i.vis, &i.ident)),
+        _ => None,
+    }
+}
+
 /// Collect names of all `pub` items from a list of syn items.
 fn collect_public_items(items: &[Item]) -> Vec<String> {
     let mut public_items = Vec::new();
 
     for item in items {
-        match item {
-            Item::Fn(func) => {
-                if matches!(func.vis, syn::Visibility::Public(_)) {
-                    public_items.push(func.sig.ident.to_string());
-                }
+        if let Item::Use(use_item) = item {
+            if matches!(use_item.vis, syn::Visibility::Public(_)) {
+                extract_use_names(&use_item.tree, &mut public_items);
             }
-            Item::Struct(struct_item) => {
-                if matches!(struct_item.vis, syn::Visibility::Public(_)) {
-                    public_items.push(struct_item.ident.to_string());
-                }
+        } else if let Some((vis, ident)) = item_vis_and_ident(item) {
+            if matches!(vis, syn::Visibility::Public(_)) {
+                public_items.push(ident.to_string());
             }
-            Item::Enum(enum_item) => {
-                if matches!(enum_item.vis, syn::Visibility::Public(_)) {
-                    public_items.push(enum_item.ident.to_string());
-                }
-            }
-            Item::Const(const_item) => {
-                if matches!(const_item.vis, syn::Visibility::Public(_)) {
-                    public_items.push(const_item.ident.to_string());
-                }
-            }
-            Item::Static(static_item) => {
-                if matches!(static_item.vis, syn::Visibility::Public(_)) {
-                    public_items.push(static_item.ident.to_string());
-                }
-            }
-            Item::Type(type_item) => {
-                if matches!(type_item.vis, syn::Visibility::Public(_)) {
-                    public_items.push(type_item.ident.to_string());
-                }
-            }
-            Item::Mod(mod_item) => {
-                if matches!(mod_item.vis, syn::Visibility::Public(_)) {
-                    public_items.push(mod_item.ident.to_string());
-                }
-            }
-            Item::Trait(trait_item) => {
-                if matches!(trait_item.vis, syn::Visibility::Public(_)) {
-                    public_items.push(trait_item.ident.to_string());
-                }
-            }
-            Item::Use(use_item) => {
-                if matches!(use_item.vis, syn::Visibility::Public(_)) {
-                    extract_use_names(&use_item.tree, &mut public_items);
-                }
-            }
-            _ => {}
         }
     }
 
