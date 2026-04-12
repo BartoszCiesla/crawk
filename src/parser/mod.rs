@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use crate::cache::ParseCache;
+use crate::utils::{ReadFileError, read_source_file};
 
 use syn::File;
 use syn::visit::Visit;
@@ -26,6 +27,14 @@ pub enum AnalyzerError {
     FileRead {
         path: PathBuf,
         source: std::io::Error,
+    },
+
+    /// Source file exceeds the maximum allowed size.
+    #[error("File too large '{path}': {size} bytes (limit {limit} bytes)")]
+    FileTooLarge {
+        path: PathBuf,
+        size: u64,
+        limit: u64,
     },
 
     /// Failed to parse source file.
@@ -73,9 +82,16 @@ impl CrateAnalyzer {
         cache: &mut ParseCache,
     ) -> Result<Vec<TypeReference>> {
         let syntax: Rc<File> = cache.get_or_parse(path, |p| {
-            let content = std::fs::read_to_string(p).map_err(|e| AnalyzerError::FileRead {
-                path: p.to_path_buf(),
-                source: e,
+            let content = read_source_file(p).map_err(|e| match e {
+                ReadFileError::Io(source) => AnalyzerError::FileRead {
+                    path: p.to_path_buf(),
+                    source,
+                },
+                ReadFileError::TooLarge { size, limit } => AnalyzerError::FileTooLarge {
+                    path: p.to_path_buf(),
+                    size,
+                    limit,
+                },
             })?;
             syn::parse_file(&content).map_err(|e| AnalyzerError::Parse {
                 path: p.to_path_buf(),
@@ -483,5 +499,19 @@ mod tests {
             .parse_file("mod", f.path(), &[], &mut cache)
             .unwrap_err();
         assert!(matches!(err, AnalyzerError::Parse { .. }));
+    }
+
+    #[test]
+    fn read_source_file_returns_file_too_large_when_size_exceeds_limit() {
+        use crate::utils::{MAX_FILE_BYTES, ReadFileError};
+        use std::io::Write;
+        let mut f = NamedTempFile::new().unwrap();
+        let chunk = vec![b' '; 1024];
+        for _ in 0..=(MAX_FILE_BYTES / 1024) {
+            f.write_all(&chunk).unwrap();
+        }
+        f.flush().unwrap();
+        let err = read_source_file(f.path()).unwrap_err();
+        assert!(matches!(err, ReadFileError::TooLarge { limit, .. } if limit == MAX_FILE_BYTES));
     }
 }

@@ -1,9 +1,35 @@
 //! Shared utility functions used across multiple modules.
 
 use proc_macro2::TokenTree;
+use std::path::Path;
 use syn::{Attribute, Meta};
+use thiserror::Error;
 
 use crate::constants::{ATTR_CFG, MODULE_NAME_TEST};
+
+/// Maximum source file size accepted by the analyzer (10 MiB).
+pub(crate) const MAX_FILE_BYTES: u64 = 10 * 1024 * 1024;
+
+/// Error returned by [`read_source_file`].
+#[derive(Debug, Error)]
+pub(crate) enum ReadFileError {
+    #[error("I/O error: {0}")]
+    Io(#[from] std::io::Error),
+    #[error("file too large: {size} bytes (limit {limit} bytes)")]
+    TooLarge { size: u64, limit: u64 },
+}
+
+/// Reads a source file, rejecting files larger than [`MAX_FILE_BYTES`].
+pub(crate) fn read_source_file(path: &Path) -> Result<String, ReadFileError> {
+    let size = std::fs::metadata(path)?.len();
+    if size > MAX_FILE_BYTES {
+        return Err(ReadFileError::TooLarge {
+            size,
+            limit: MAX_FILE_BYTES,
+        });
+    }
+    Ok(std::fs::read_to_string(path)?)
+}
 
 /// Checks if a slice of attributes contains `#[cfg(test)]` or a compound form
 /// that includes `test` (e.g., `#[cfg(all(test, ...))]`, `#[cfg(any(test, ...))]`).

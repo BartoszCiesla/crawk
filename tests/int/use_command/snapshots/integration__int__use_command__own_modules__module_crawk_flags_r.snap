@@ -30,5 +30,7 @@ crate::reference::{GroupItem, PathPrefix, TypeReference}
 crate::reference::{PathPrefix, TypeReference}
 crate::resolve::resolve_glob
 crate::utils::has_cfg_test
+crate::utils::read_source_file
+crate::utils::{ReadFileError, read_source_file}
 
 ----- stderr -----

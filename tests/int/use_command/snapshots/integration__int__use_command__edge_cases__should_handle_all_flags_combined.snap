@@ -64,9 +64,13 @@ model::tests
 parser
  - crate::cache::ParseCache
  - crate::reference::TypeReference
+ - crate::utils::ReadFileError
+ - crate::utils::read_source_file
 parser::tests
  - crate::parser::AnalyzerError
  - crate::reference::PathPrefix
+ - crate::utils::MAX_FILE_BYTES
+ - crate::utils::ReadFileError
 parser::visitor
  - crate::constants::PATH_QUALIFIER_CRATE
  - crate::constants::PATH_QUALIFIER_SELF
@@ -88,6 +92,7 @@ resolve
  - crate::discover::CrateInfo
  - crate::reference::PathPrefix
  - crate::reference::TypeReference
+ - crate::utils::read_source_file
 resolve::tests
 utils
  - crate::constants::ATTR_CFG

@@ -16,5 +16,6 @@ exit_code: 0
 crate::cache
 crate::parser::*
 crate::reference
+crate::utils
 
 ----- stderr -----

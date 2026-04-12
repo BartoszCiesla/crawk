@@ -10,7 +10,7 @@
 use crate::cache::ParseCache;
 use crate::discover::CrateInfo;
 use crate::reference::{PathPrefix, TypeReference};
-use std::fs;
+use crate::utils::read_source_file;
 use std::path::Path;
 use std::rc::Rc;
 use syn::{Item, UseTree};
@@ -36,7 +36,7 @@ pub(crate) fn extract_public_items(
     let file = if let Some(cached) = cache.get(file_path) {
         cached
     } else {
-        let content = fs::read_to_string(file_path).ok()?;
+        let content = read_source_file(file_path).ok()?;
         let parsed = syn::parse_file(&content).ok()?;
         let rc = Rc::new(parsed);
         cache.insert(file_path.to_path_buf(), Rc::clone(&rc));

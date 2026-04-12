@@ -16,5 +16,6 @@ crate::discover::CrateInfo
 crate::reference::PathPrefix
 crate::reference::TypeReference
 crate::resolve::*
+crate::utils::read_source_file
 
 ----- stderr -----

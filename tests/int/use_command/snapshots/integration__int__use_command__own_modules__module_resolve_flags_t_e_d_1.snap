@@ -17,5 +17,6 @@ crate::cache
 crate::discover
 crate::reference
 crate::resolve::*
+crate::utils
 
 ----- stderr -----

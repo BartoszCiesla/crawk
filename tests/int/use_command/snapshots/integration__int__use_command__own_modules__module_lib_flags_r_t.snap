@@ -38,5 +38,8 @@ crate::resolve::*
 crate::resolve::resolve_glob
 crate::utils::*
 crate::utils::has_cfg_test
+crate::utils::read_source_file
+crate::utils::{MAX_FILE_BYTES, ReadFileError}
+crate::utils::{ReadFileError, read_source_file}
 
 ----- stderr -----

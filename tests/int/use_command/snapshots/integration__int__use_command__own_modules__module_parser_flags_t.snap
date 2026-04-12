@@ -14,5 +14,7 @@ crate::cache::ParseCache
 crate::parser::*
 crate::reference::PathPrefix
 crate::reference::TypeReference
+crate::utils::{MAX_FILE_BYTES, ReadFileError}
+crate::utils::{ReadFileError, read_source_file}
 
 ----- stderr -----

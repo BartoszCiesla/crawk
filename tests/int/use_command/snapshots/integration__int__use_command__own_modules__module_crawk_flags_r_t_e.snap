@@ -44,6 +44,9 @@ crate::reference::TypeReference
 crate::resolve::*
 crate::resolve::resolve_glob
 crate::utils::*
+crate::utils::MAX_FILE_BYTES
+crate::utils::ReadFileError
 crate::utils::has_cfg_test
+crate::utils::read_source_file
 
 ----- stderr -----
