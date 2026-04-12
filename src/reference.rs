@@ -253,13 +253,13 @@ impl TypeReference {
         }
     }
 
-    fn append_segment(mut self, segment: impl Into<String>) -> Self {
+    pub(crate) fn append_segment(mut self, segment: impl Into<String>) -> Self {
         self.segments.0.push(segment.into());
         self
     }
 
     #[must_use]
-    fn clone_with(&self, prefix: bool, suffix: bool) -> Self {
+    pub(crate) fn clone_with(&self, prefix: bool, suffix: bool) -> Self {
         Self {
             segments: self.segments.clone(),
             prefix: if prefix {
@@ -273,6 +273,24 @@ impl TypeReference {
                 PathSuffix::None
             },
         }
+    }
+
+    /// Returns the path suffix.
+    #[must_use]
+    pub(crate) const fn suffix(&self) -> &PathSuffix {
+        &self.suffix
+    }
+
+    /// Sets segments and prefix directly (used by resolve logic).
+    #[must_use]
+    pub(crate) fn with_segments_and_prefix(
+        mut self,
+        segments: Vec<String>,
+        prefix: PathPrefix,
+    ) -> Self {
+        self.segments = Segments::from(segments);
+        self.prefix = prefix;
+        self
     }
 
     /// Truncates the path to the given depth (number of segments).
@@ -297,89 +315,6 @@ impl TypeReference {
             prefix: self.prefix,
             suffix: PathSuffix::None,
         }
-    }
-
-    #[must_use]
-    pub fn expand_suffix(&self) -> Vec<Self> {
-        match &self.suffix {
-            PathSuffix::None | PathSuffix::Alias(_) => vec![self.clone_with(true, false)],
-            PathSuffix::Glob => vec![self.clone_with(true, true)],
-            PathSuffix::Group(items) => {
-                let mut result = Vec::new();
-                for item in items {
-                    match item {
-                        GroupItem::Simple(name) | GroupItem::Aliased { name, alias: _ } => {
-                            result.push(self.clone_with(true, false).append_segment(name));
-                        }
-                        GroupItem::SelfItem { alias: _ } => {
-                            result.push(self.clone_with(true, false));
-                        }
-                        GroupItem::Glob => {
-                            // Cannot expand glob without context, return as-is
-                            result.push(self.clone_with(true, true));
-                        }
-                        GroupItem::Nested {
-                            prefix,
-                            items: nested_items,
-                        } => {
-                            let mut nested = self.clone_with(true, false);
-                            nested.segments.0.extend(prefix.iter().cloned());
-                            nested.suffix = PathSuffix::Group(nested_items.clone());
-                            result.extend(nested.expand_suffix());
-                        }
-                    }
-                }
-                result
-            }
-        }
-    }
-
-    /// Resolves relative paths (`self::`, `super::`) to absolute paths (`crate::`).
-    ///
-    /// Given the current module path, converts relative references to absolute ones:
-    /// - `self::foo` in module `a::b` becomes `crate::a::b::foo`
-    /// - `super::foo` in module `a::b` becomes `crate::a::foo`
-    /// - `super::super::foo` in module `a::b::c` becomes `crate::a::foo`
-    /// - `crate::foo` stays as `crate::foo`
-    ///
-    /// # Arguments
-    ///
-    /// * `module_path` - The current module path as segments (e.g., `["utils", "parser"]`)
-    ///
-    /// # Examples
-    ///
-    /// ```ignore
-    /// let ref = TypeReference::new(["foo", "Bar"]).with_self_prefix();
-    /// let resolved = ref.resolve(&["utils", "parser"]);
-    /// assert_eq!(resolved.to_path_string(), "crate::utils::parser::foo::Bar");
-    /// ```
-    #[must_use]
-    pub fn resolve(mut self, module_path: &[String]) -> Self {
-        match self.prefix {
-            PathPrefix::SelfModule => {
-                // self::foo in module a::b becomes crate::a::b::foo
-                let mut new_segments = module_path.to_vec();
-                new_segments.extend(self.segments.0.clone());
-                self.segments = Segments::from(new_segments);
-                self.prefix = PathPrefix::Crate;
-            }
-            PathPrefix::Super(levels) => {
-                // super::foo in module a::b becomes crate::a::foo
-                // super::super::foo in module a::b::c becomes crate::a::foo
-                if module_path.len() >= levels {
-                    let parent_depth = module_path.len() - levels;
-                    let mut new_segments = module_path[..parent_depth].to_vec();
-                    new_segments.extend(self.segments.0.clone());
-                    self.segments = Segments::from(new_segments);
-                    self.prefix = PathPrefix::Crate;
-                }
-                // If we can't go up that many levels, leave as-is (invalid but don't crash)
-            }
-            PathPrefix::Crate | PathPrefix::None => {
-                // Already absolute or external, no changes needed
-            }
-        }
-        self
     }
 
     /// Converts to string representation.
@@ -620,312 +555,6 @@ mod tests {
         );
         assert!(r.has_group());
         assert!(r.is_relative());
-    }
-
-    fn make_ref(segments: &[&str], suffix: PathSuffix) -> TypeReference {
-        let mut r = TypeReference::new(segments.iter().copied());
-        r.suffix = suffix;
-        r
-    }
-
-    fn expand_segments(r: &TypeReference) -> Vec<Vec<String>> {
-        r.expand_suffix()
-            .into_iter()
-            .map(|t| t.segments.0)
-            .collect()
-    }
-
-    #[test]
-    fn test_expand_suffix_none_passthrough() {
-        let r = make_ref(&["std", "collections"], PathSuffix::None);
-        assert_eq!(expand_segments(&r), vec![vec!["std", "collections"]]);
-    }
-
-    #[test]
-    fn test_expand_suffix_alias_passthrough() {
-        let r = make_ref(
-            &["std", "collections", "HashMap"],
-            PathSuffix::Alias("Map".into()),
-        );
-        // Alias doesn't change the segments, just passes through
-        assert_eq!(
-            expand_segments(&r),
-            vec![vec!["std", "collections", "HashMap"]]
-        );
-    }
-
-    #[test]
-    fn test_expand_suffix_glob_passthrough() {
-        let r = make_ref(&["std", "collections"], PathSuffix::Glob);
-        assert_eq!(expand_segments(&r), vec![vec!["std", "collections"]]);
-    }
-
-    #[test]
-    fn test_expand_suffix_group_simple() {
-        let r = make_ref(
-            &["std", "collections"],
-            PathSuffix::Group(vec![
-                GroupItem::Simple("HashMap".into()),
-                GroupItem::Simple("HashSet".into()),
-            ]),
-        );
-        assert_eq!(
-            expand_segments(&r),
-            vec![
-                vec!["std", "collections", "HashMap"],
-                vec!["std", "collections", "HashSet"],
-            ]
-        );
-    }
-
-    #[test]
-    fn test_expand_suffix_group_aliased_uses_original_name() {
-        let r = make_ref(
-            &["std", "collections"],
-            PathSuffix::Group(vec![GroupItem::Aliased {
-                name: "HashMap".into(),
-                alias: "Map".into(),
-            }]),
-        );
-        // Aliased items expand to the original name (alias is discarded in segments)
-        assert_eq!(
-            expand_segments(&r),
-            vec![vec!["std", "collections", "HashMap"]]
-        );
-    }
-
-    #[test]
-    fn test_expand_suffix_group_self_item_no_alias() {
-        let r = make_ref(
-            &["std", "collections", "module"],
-            PathSuffix::Group(vec![GroupItem::SelfItem { alias: None }]),
-        );
-        assert_eq!(
-            expand_segments(&r),
-            vec![vec!["std", "collections", "module"]]
-        );
-    }
-
-    #[test]
-    fn test_expand_suffix_group_self_item_with_alias() {
-        let r = make_ref(
-            &["std", "collections", "module"],
-            PathSuffix::Group(vec![GroupItem::SelfItem {
-                alias: Some("Alias".into()),
-            }]),
-        );
-        assert_eq!(
-            expand_segments(&r),
-            vec![vec!["std", "collections", "module"]]
-        );
-    }
-
-    #[test]
-    fn test_expand_suffix_group_self_item_empty_base_no_alias() {
-        // SelfItem without alias on empty base: nothing appended
-        let r = make_ref(
-            &[],
-            PathSuffix::Group(vec![GroupItem::SelfItem { alias: None }]),
-        );
-        assert_eq!(expand_segments(&r), vec![vec![] as Vec<String>]);
-    }
-
-    #[test]
-    fn test_expand_suffix_group_glob_returns_base() {
-        let r = make_ref(
-            &["std", "collections"],
-            PathSuffix::Group(vec![GroupItem::Glob]),
-        );
-        // Glob inside group cannot be expanded, base segments returned as-is
-        assert_eq!(expand_segments(&r), vec![vec!["std", "collections"]]);
-    }
-
-    #[test]
-    fn test_expand_suffix_group_nested() {
-        let r = make_ref(
-            &["std"],
-            PathSuffix::Group(vec![GroupItem::Nested {
-                prefix: vec!["collections".into()],
-                items: vec![
-                    GroupItem::Simple("HashMap".into()),
-                    GroupItem::Simple("HashSet".into()),
-                ],
-            }]),
-        );
-        assert_eq!(
-            expand_segments(&r),
-            vec![
-                vec!["std", "collections", "HashMap"],
-                vec!["std", "collections", "HashSet"],
-            ]
-        );
-    }
-
-    #[test]
-    fn test_expand_suffix_group_mixed() {
-        // m::n::{a, b as B, c::{x, y}, *}
-        let r = make_ref(
-            &["m", "n"],
-            PathSuffix::Group(vec![
-                GroupItem::Simple("a".into()),
-                GroupItem::Aliased {
-                    name: "b".into(),
-                    alias: "B".into(),
-                },
-                GroupItem::Nested {
-                    prefix: vec!["c".into()],
-                    items: vec![GroupItem::Simple("x".into()), GroupItem::Simple("y".into())],
-                },
-                GroupItem::Glob,
-            ]),
-        );
-        assert_eq!(
-            expand_segments(&r),
-            vec![
-                vec!["m", "n", "a"],
-                vec!["m", "n", "b"],
-                vec!["m", "n", "c", "x"],
-                vec!["m", "n", "c", "y"],
-                vec!["m", "n"], // glob returns base
-            ]
-        );
-    }
-
-    #[test]
-    fn test_expand_suffix_deeply_nested() {
-        // a::{b::{c::{d,e,f}}}
-        let r = make_ref(
-            &["a"],
-            PathSuffix::Group(vec![GroupItem::Nested {
-                prefix: vec!["b".into()],
-                items: vec![GroupItem::Nested {
-                    prefix: vec!["c".into()],
-                    items: vec![
-                        GroupItem::Simple("d".into()),
-                        GroupItem::Simple("e".into()),
-                        GroupItem::Simple("f".into()),
-                    ],
-                }],
-            }]),
-        );
-        assert_eq!(
-            expand_segments(&r),
-            vec![
-                vec!["a", "b", "c", "d"],
-                vec!["a", "b", "c", "e"],
-                vec!["a", "b", "c", "f"],
-            ]
-        );
-    }
-
-    #[test]
-    fn test_resolve_self_prefix() {
-        let r = TypeReference::new(["foo", "Bar"]).with_self_prefix();
-        let module_path = vec!["utils".to_owned(), "parser".to_owned()];
-        let resolved = r.resolve(&module_path);
-
-        assert_eq!(resolved.prefix, PathPrefix::Crate);
-        assert_eq!(&*resolved.segments, &["utils", "parser", "foo", "Bar"]);
-        assert_eq!(resolved.to_path_string(), "crate::utils::parser::foo::Bar");
-    }
-
-    #[test]
-    fn test_resolve_self_prefix_at_crate_root() {
-        let r = TypeReference::new(["foo", "Bar"]).with_self_prefix();
-        let module_path: Vec<String> = vec![];
-        let resolved = r.resolve(&module_path);
-
-        assert_eq!(resolved.prefix, PathPrefix::Crate);
-        assert_eq!(&*resolved.segments, &["foo", "Bar"]);
-        assert_eq!(resolved.to_path_string(), "crate::foo::Bar");
-    }
-
-    #[test]
-    fn test_resolve_super_single_level() {
-        let r = TypeReference::new(["sibling", "Type"]).with_super(1);
-        let module_path = vec!["parent".to_owned(), "child".to_owned()];
-        let resolved = r.resolve(&module_path);
-
-        assert_eq!(resolved.prefix, PathPrefix::Crate);
-        assert_eq!(&*resolved.segments, &["parent", "sibling", "Type"]);
-        assert_eq!(resolved.to_path_string(), "crate::parent::sibling::Type");
-    }
-
-    #[test]
-    fn test_resolve_super_multiple_levels() {
-        let r = TypeReference::new(["ancestor", "Type"]).with_super(2);
-        let module_path = vec!["a".to_owned(), "b".to_owned(), "c".to_owned()];
-        let resolved = r.resolve(&module_path);
-
-        assert_eq!(resolved.prefix, PathPrefix::Crate);
-        assert_eq!(&*resolved.segments, &["a", "ancestor", "Type"]);
-        assert_eq!(resolved.to_path_string(), "crate::a::ancestor::Type");
-    }
-
-    #[test]
-    fn test_resolve_super_at_crate_root() {
-        // super at crate root is invalid but shouldn't crash
-        let r = TypeReference::new(["foo", "Bar"]).with_super(1);
-        let module_path: Vec<String> = vec![];
-        let resolved = r.resolve(&module_path);
-
-        // Should leave it as-is since we can't go up
-        assert_eq!(resolved.prefix, PathPrefix::Super(1));
-        assert_eq!(&*resolved.segments, &["foo", "Bar"]);
-    }
-
-    #[test]
-    fn test_resolve_super_too_many_levels() {
-        // Trying to go up more levels than exist
-        let r = TypeReference::new(["foo", "Bar"]).with_super(5);
-        let module_path = vec!["a".to_owned(), "b".to_owned()];
-        let resolved = r.resolve(&module_path);
-
-        // Should leave it as-is since we can't go up that far
-        assert_eq!(resolved.prefix, PathPrefix::Super(5));
-        assert_eq!(&*resolved.segments, &["foo", "Bar"]);
-    }
-
-    #[test]
-    fn test_resolve_crate_prefix_unchanged() {
-        let r = TypeReference::new(["module", "Type"]).with_crate_prefix();
-        let module_path = vec!["utils".to_owned()];
-        let resolved = r.resolve(&module_path);
-
-        assert_eq!(resolved.prefix, PathPrefix::Crate);
-        assert_eq!(&*resolved.segments, &["module", "Type"]);
-        assert_eq!(resolved.to_path_string(), "crate::module::Type");
-    }
-
-    #[test]
-    fn test_resolve_no_prefix_unchanged() {
-        let r = TypeReference::new(["std", "collections", "HashMap"]);
-        let module_path = vec!["utils".to_owned()];
-        let resolved = r.resolve(&module_path);
-
-        assert_eq!(resolved.prefix, PathPrefix::None);
-        assert_eq!(&*resolved.segments, &["std", "collections", "HashMap"]);
-        assert_eq!(resolved.to_path_string(), "std::collections::HashMap");
-    }
-
-    #[test]
-    fn test_resolve_preserves_suffix() {
-        let r = TypeReference::new(["foo", "Bar"])
-            .with_self_prefix()
-            .with_alias("MyBar");
-        let module_path = vec!["utils".to_owned()];
-        let resolved = r.resolve(&module_path);
-
-        assert_eq!(resolved.to_path_string(), "crate::utils::foo::Bar as MyBar");
-    }
-
-    #[test]
-    fn test_resolve_with_glob() {
-        let r = TypeReference::new(["foo"]).with_self_prefix().with_glob();
-        let module_path = vec!["utils".to_owned()];
-        let resolved = r.resolve(&module_path);
-
-        assert_eq!(resolved.to_path_string(), "crate::utils::foo::*");
     }
 
     #[test]

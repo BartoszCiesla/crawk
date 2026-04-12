@@ -17,6 +17,7 @@ crate::constants::PATH_QUALIFIER_CRATE
 crate::constants::PATH_QUALIFIER_SELF
 crate::constants::PATH_QUALIFIER_SUPER
 crate::parser::*
+crate::parser::visitor::*
 crate::reference::GroupItem
 crate::reference::PathPrefix
 crate::reference::TypeReference

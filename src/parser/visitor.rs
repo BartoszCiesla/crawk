@@ -5,6 +5,35 @@ use crate::constants::{PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER
 use crate::reference::{GroupItem, PathPrefix, TypeReference};
 use crate::utils::has_cfg_test;
 
+/// Resolves relative paths (`self::`, `super::`) to absolute paths (`crate::`).
+///
+/// Given the current module path, converts relative references to absolute ones:
+/// - `self::foo` in module `a::b` becomes `crate::a::b::foo`
+/// - `super::foo` in module `a::b` becomes `crate::a::foo`
+/// - `super::super::foo` in module `a::b::c` becomes `crate::a::foo`
+/// - `crate::foo` stays as `crate::foo`
+pub(crate) fn resolve_reference(reference: TypeReference, module_path: &[String]) -> TypeReference {
+    match reference.prefix() {
+        PathPrefix::SelfModule => {
+            let mut new_segments = module_path.to_vec();
+            new_segments.extend(reference.segments().iter().cloned());
+            reference.with_segments_and_prefix(new_segments, PathPrefix::Crate)
+        }
+        PathPrefix::Super(levels) => {
+            if module_path.len() >= levels {
+                let parent_depth = module_path.len() - levels;
+                let mut new_segments = module_path[..parent_depth].to_vec();
+                new_segments.extend(reference.segments().iter().cloned());
+                reference.with_segments_and_prefix(new_segments, PathPrefix::Crate)
+            } else {
+                // Can't go up that many levels, leave as-is
+                reference
+            }
+        }
+        PathPrefix::Crate | PathPrefix::None => reference,
+    }
+}
+
 /// Type references collected from a single module, grouped by syntactic role.
 ///
 /// Each category represents a distinct kind of dependency signal:
@@ -133,11 +162,10 @@ impl ModuleVisitor {
             return None;
         }
 
-        Some(
-            TypeReference::new(segments)
-                .with_prefix(path_prefix)
-                .resolve(&self.module_path),
-        )
+        Some(resolve_reference(
+            TypeReference::new(segments).with_prefix(path_prefix),
+            &self.module_path,
+        ))
     }
 
     fn process_use_tree(&mut self, tree: &UseTree, prefix: Vec<String>, path_prefix: PathPrefix) {
@@ -183,9 +211,10 @@ impl ModuleVisitor {
                 let mut segments = prefix;
                 segments.push(n.ident.to_string());
 
-                let reference = TypeReference::new(segments)
-                    .with_prefix(path_prefix)
-                    .resolve(&self.module_path);
+                let reference = resolve_reference(
+                    TypeReference::new(segments).with_prefix(path_prefix),
+                    &self.module_path,
+                );
                 self.references.use_statements.push(reference);
             }
 
@@ -193,28 +222,34 @@ impl ModuleVisitor {
                 let mut segments = prefix;
                 segments.push(r.ident.to_string());
 
-                let reference = TypeReference::new(segments)
-                    .with_prefix(path_prefix)
-                    .with_alias(r.rename.to_string())
-                    .resolve(&self.module_path);
+                let reference = resolve_reference(
+                    TypeReference::new(segments)
+                        .with_prefix(path_prefix)
+                        .with_alias(r.rename.to_string()),
+                    &self.module_path,
+                );
                 self.references.use_statements.push(reference);
             }
 
             UseTree::Glob(_) => {
-                let reference = TypeReference::new(prefix)
-                    .with_prefix(path_prefix)
-                    .with_glob()
-                    .resolve(&self.module_path);
+                let reference = resolve_reference(
+                    TypeReference::new(prefix)
+                        .with_prefix(path_prefix)
+                        .with_glob(),
+                    &self.module_path,
+                );
                 self.references.use_statements.push(reference);
             }
 
             UseTree::Group(g) => {
                 let group_items = self.convert_group(&g.items);
 
-                let reference = TypeReference::new(prefix)
-                    .with_prefix(path_prefix)
-                    .with_group(group_items)
-                    .resolve(&self.module_path);
+                let reference = resolve_reference(
+                    TypeReference::new(prefix)
+                        .with_prefix(path_prefix)
+                        .with_group(group_items),
+                    &self.module_path,
+                );
                 self.references.use_statements.push(reference);
             }
         }
@@ -434,5 +469,116 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
             }
         }
         syn::visit::visit_macro(self, node);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_resolve_self_prefix() {
+        let r = TypeReference::new(["foo", "Bar"]).with_self_prefix();
+        let module_path = vec!["utils".to_owned(), "parser".to_owned()];
+        let resolved = resolve_reference(r, &module_path);
+
+        assert_eq!(resolved.prefix(), PathPrefix::Crate);
+        assert_eq!(resolved.segments(), &["utils", "parser", "foo", "Bar"]);
+        assert_eq!(resolved.to_path_string(), "crate::utils::parser::foo::Bar");
+    }
+
+    #[test]
+    fn test_resolve_self_prefix_at_crate_root() {
+        let r = TypeReference::new(["foo", "Bar"]).with_self_prefix();
+        let module_path: Vec<String> = vec![];
+        let resolved = resolve_reference(r, &module_path);
+
+        assert_eq!(resolved.prefix(), PathPrefix::Crate);
+        assert_eq!(resolved.segments(), &["foo", "Bar"]);
+        assert_eq!(resolved.to_path_string(), "crate::foo::Bar");
+    }
+
+    #[test]
+    fn test_resolve_super_single_level() {
+        let r = TypeReference::new(["sibling", "Type"]).with_super(1);
+        let module_path = vec!["parent".to_owned(), "child".to_owned()];
+        let resolved = resolve_reference(r, &module_path);
+
+        assert_eq!(resolved.prefix(), PathPrefix::Crate);
+        assert_eq!(resolved.segments(), &["parent", "sibling", "Type"]);
+        assert_eq!(resolved.to_path_string(), "crate::parent::sibling::Type");
+    }
+
+    #[test]
+    fn test_resolve_super_multiple_levels() {
+        let r = TypeReference::new(["ancestor", "Type"]).with_super(2);
+        let module_path = vec!["a".to_owned(), "b".to_owned(), "c".to_owned()];
+        let resolved = resolve_reference(r, &module_path);
+
+        assert_eq!(resolved.prefix(), PathPrefix::Crate);
+        assert_eq!(resolved.segments(), &["a", "ancestor", "Type"]);
+        assert_eq!(resolved.to_path_string(), "crate::a::ancestor::Type");
+    }
+
+    #[test]
+    fn test_resolve_super_at_crate_root() {
+        let r = TypeReference::new(["foo", "Bar"]).with_super(1);
+        let module_path: Vec<String> = vec![];
+        let resolved = resolve_reference(r, &module_path);
+
+        assert_eq!(resolved.prefix(), PathPrefix::Super(1));
+        assert_eq!(resolved.segments(), &["foo", "Bar"]);
+    }
+
+    #[test]
+    fn test_resolve_super_too_many_levels() {
+        let r = TypeReference::new(["foo", "Bar"]).with_super(5);
+        let module_path = vec!["a".to_owned(), "b".to_owned()];
+        let resolved = resolve_reference(r, &module_path);
+
+        assert_eq!(resolved.prefix(), PathPrefix::Super(5));
+        assert_eq!(resolved.segments(), &["foo", "Bar"]);
+    }
+
+    #[test]
+    fn test_resolve_crate_prefix_unchanged() {
+        let r = TypeReference::new(["module", "Type"]).with_crate_prefix();
+        let module_path = vec!["utils".to_owned()];
+        let resolved = resolve_reference(r, &module_path);
+
+        assert_eq!(resolved.prefix(), PathPrefix::Crate);
+        assert_eq!(resolved.segments(), &["module", "Type"]);
+        assert_eq!(resolved.to_path_string(), "crate::module::Type");
+    }
+
+    #[test]
+    fn test_resolve_no_prefix_unchanged() {
+        let r = TypeReference::new(["std", "collections", "HashMap"]);
+        let module_path = vec!["utils".to_owned()];
+        let resolved = resolve_reference(r, &module_path);
+
+        assert_eq!(resolved.prefix(), PathPrefix::None);
+        assert_eq!(resolved.segments(), &["std", "collections", "HashMap"]);
+        assert_eq!(resolved.to_path_string(), "std::collections::HashMap");
+    }
+
+    #[test]
+    fn test_resolve_preserves_suffix() {
+        let r = TypeReference::new(["foo", "Bar"])
+            .with_self_prefix()
+            .with_alias("MyBar");
+        let module_path = vec!["utils".to_owned()];
+        let resolved = resolve_reference(r, &module_path);
+
+        assert_eq!(resolved.to_path_string(), "crate::utils::foo::Bar as MyBar");
+    }
+
+    #[test]
+    fn test_resolve_with_glob() {
+        let r = TypeReference::new(["foo"]).with_self_prefix().with_glob();
+        let module_path = vec!["utils".to_owned()];
+        let resolved = resolve_reference(r, &module_path);
+
+        assert_eq!(resolved.to_path_string(), "crate::utils::foo::*");
     }
 }

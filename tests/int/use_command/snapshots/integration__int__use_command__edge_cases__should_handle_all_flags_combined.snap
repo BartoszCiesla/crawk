@@ -37,8 +37,13 @@ analyzer
  - crate::model::AnalysisOptions
  - crate::model::AnalysisResult
  - crate::parser::CrateAnalyzer
+ - crate::reference::GroupItem
+ - crate::reference::PathSuffix
  - crate::reference::TypeReference
  - crate::resolve::resolve_glob
+analyzer::tests
+ - crate::analyzer::Analyzer
+ - crate::reference::PathSuffix
 cache
 constants
 discover
@@ -80,6 +85,7 @@ parser::visitor
  - crate::reference::PathPrefix
  - crate::reference::TypeReference
  - crate::utils::has_cfg_test
+parser::visitor::tests
 reference
  - crate::constants::PATH_QUALIFIER_SELF
 reference::tests

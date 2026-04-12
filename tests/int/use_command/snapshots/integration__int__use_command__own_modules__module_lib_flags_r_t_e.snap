@@ -12,6 +12,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+crate::analyzer::*
 crate::analyzer::Analyzer
 crate::cache::ParseCache
 crate::constants::ATTR_CFG
@@ -35,6 +36,7 @@ crate::model::AnalysisResult
 crate::parser::*
 crate::parser::AnalyzerError
 crate::parser::CrateAnalyzer
+crate::parser::visitor::*
 crate::reference::*
 crate::reference::GroupItem
 crate::reference::PathPrefix

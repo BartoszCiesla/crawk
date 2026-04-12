@@ -33,5 +33,6 @@ parser::visitor
  - crate::reference::PathPrefix
  - crate::reference::TypeReference
  - crate::utils::has_cfg_test
+parser::visitor::tests
 
 ----- stderr -----

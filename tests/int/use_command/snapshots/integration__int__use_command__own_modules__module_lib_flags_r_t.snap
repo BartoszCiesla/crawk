@@ -11,6 +11,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+crate::analyzer::*
 crate::analyzer::Analyzer
 crate::cache::ParseCache
 crate::constants::PATH_QUALIFIER_SELF
@@ -28,11 +29,14 @@ crate::model::{AnalysisOptions, AnalysisResult}
 crate::parser::*
 crate::parser::AnalyzerError
 crate::parser::CrateAnalyzer
+crate::parser::visitor::*
 crate::reference::*
 crate::reference::PathPrefix
+crate::reference::PathSuffix
 crate::reference::TypeReference
 crate::reference::{GroupItem, PathPrefix, PathSuffix, Segments, TypeReference}
 crate::reference::{GroupItem, PathPrefix, TypeReference}
+crate::reference::{GroupItem, PathSuffix, TypeReference}
 crate::reference::{PathPrefix, TypeReference}
 crate::resolve::*
 crate::resolve::resolve_glob
