@@ -3,6 +3,7 @@ use crate::discover::{CrateInfo, ModuleInfo};
 use crate::error::{AnalysisError, Result};
 use crate::model::{AnalysisOptions, AnalysisResult};
 use crate::parser::CrateAnalyzer;
+use crate::reference::TypeReference;
 use crate::resolve::resolve_glob;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Formatter, Result as FmtResult};
@@ -147,7 +148,18 @@ impl Analyzer {
             .unwrap_or_default();
 
         let file_root = self.build_file_root_map(&modules);
+        self.parse_all_modules(modules, &file_root)?;
+        let dependencies = self.collect_references(options);
 
+        Ok(AnalysisResult::new(module_path, dependencies, source_file))
+    }
+
+    /// Parse each discovered module and accumulate its references into the parser.
+    fn parse_all_modules(
+        &mut self,
+        modules: Vec<ModuleInfo>,
+        file_root: &HashMap<PathBuf, String>,
+    ) -> Result<()> {
         for module in modules {
             let root_path = &file_root[module.source()];
             let inline_scope = Self::compute_inline_scope(module.path(), root_path);
@@ -164,6 +176,7 @@ impl Analyzer {
                 module.path(),
                 module.source().display()
             );
+
             match self.parser.parse_file(
                 module.path(),
                 module.source(),
@@ -187,7 +200,14 @@ impl Analyzer {
                 }
             }
         }
+        Ok(())
+    }
 
+    /// Transform parsed references: expand groups and resolve globs per the given options.
+    fn collect_references(
+        &mut self,
+        options: &AnalysisOptions,
+    ) -> HashMap<String, HashSet<TypeReference>> {
         let mut dependencies = HashMap::new();
         for (module, module_references) in self.parser.all_crate_references() {
             debug!("Processing module: {}", module);
@@ -231,8 +251,7 @@ impl Analyzer {
             );
             dependencies.insert(module.clone(), refs);
         }
-
-        Ok(AnalysisResult::new(module_path, dependencies, source_file))
+        dependencies
     }
 
     /// Build a mapping from source file to the shortest (file-level) module path.

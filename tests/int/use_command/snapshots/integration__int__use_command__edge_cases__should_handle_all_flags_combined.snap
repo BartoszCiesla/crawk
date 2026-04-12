@@ -37,6 +37,7 @@ analyzer
  - crate::model::AnalysisOptions
  - crate::model::AnalysisResult
  - crate::parser::CrateAnalyzer
+ - crate::reference::TypeReference
  - crate::resolve::resolve_glob
 cache
 constants
