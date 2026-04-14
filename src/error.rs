@@ -34,7 +34,7 @@ pub enum AnalysisError {
         module_path: String,
         /// The source file being parsed.
         file: PathBuf,
-        /// The underlying parser error.
+        /// The underlying parser error — inspect [`AnalyzerError`] variants for details.
         source: AnalyzerError,
     },
 }

@@ -2,6 +2,11 @@ use crawk::AnalysisResult;
 
 use super::truncate_and_dedup;
 
+/// Renders dependencies grouped by source module, sorted alphabetically by module name.
+///
+/// Each module name appears as a header line, followed by its dependencies indented
+/// with ` - `. Within each group, duplicates produced by depth truncation are removed
+/// and entries are sorted alphabetically.
 pub(crate) fn render_grouped(result: &AnalysisResult, depth: Option<usize>) -> String {
     let dependencies = result.dependencies();
     let mut modules = dependencies.keys().cloned().collect::<Vec<_>>();

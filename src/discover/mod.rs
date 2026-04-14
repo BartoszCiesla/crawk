@@ -193,7 +193,7 @@ impl CrateInfo {
     ///
     /// # Returns
     ///
-    /// Returns `Ok(Vec<ModuleInfo>)` containing information about each module and its source file.
+    /// Returns <code>Ok(Vec<[ModuleInfo]>)</code> containing information about each module and its source file.
     /// For inline modules (like `#[cfg(test)] mod tests`), the source file is the containing file.
     ///
     /// # Errors

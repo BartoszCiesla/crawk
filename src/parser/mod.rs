@@ -19,27 +19,42 @@ use thiserror::Error;
 use crate::reference::TypeReference;
 use visitor::ModuleVisitor;
 
-/// Errors that can occur during analysis.
+/// Errors that can occur while reading or parsing a Rust source file.
+///
+/// Returned as the `source` field of [`AnalysisError::ModuleAnalysisFailed`](crate::AnalysisError::ModuleAnalysisFailed).
 #[derive(Debug, Error)]
 pub enum AnalyzerError {
-    /// Failed to read source file.
+    /// The source file could not be read from disk.
     #[error("Failed to read file '{path}': {source}")]
     FileRead {
+        /// Path to the file that could not be read.
         path: PathBuf,
+        /// The underlying I/O error.
+        #[source]
         source: std::io::Error,
     },
 
-    /// Source file exceeds the maximum allowed size.
+    /// The source file exceeds the maximum allowed size and was not parsed.
+    ///
+    /// This limit exists to prevent excessive memory usage on unexpectedly large files.
     #[error("File too large '{path}': {size} bytes (limit {limit} bytes)")]
     FileTooLarge {
+        /// Path to the oversized file.
         path: PathBuf,
+        /// Actual file size in bytes.
         size: u64,
+        /// Maximum allowed size in bytes.
         limit: u64,
     },
 
-    /// Failed to parse source file.
+    /// The source file could not be parsed as valid Rust syntax.
     #[error("Failed to parse file '{path}': {message}")]
-    Parse { path: PathBuf, message: String },
+    Parse {
+        /// Path to the file that failed to parse.
+        path: PathBuf,
+        /// Description of the parse error from `syn`.
+        message: String,
+    },
 }
 
 /// Result type for analyzer operations.

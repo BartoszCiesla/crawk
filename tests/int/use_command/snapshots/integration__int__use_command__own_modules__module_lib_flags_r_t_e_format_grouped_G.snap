@@ -21,6 +21,7 @@ lib
  - crate::error::Result
  - crate::model::AnalysisOptions
  - crate::model::AnalysisResult
+ - crate::parser::AnalyzerError
  - crate::reference::GroupItem
  - crate::reference::PathPrefix
  - crate::reference::PathSuffix

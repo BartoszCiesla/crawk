@@ -12,6 +12,7 @@ exit_code: 0
 crate::analyzer::Analyzer
 crate::error::{AnalysisError, Result}
 crate::model::{AnalysisOptions, AnalysisResult}
+crate::parser::AnalyzerError
 crate::reference::{GroupItem, PathPrefix, PathSuffix, Segments, TypeReference}
 
 ----- stderr -----

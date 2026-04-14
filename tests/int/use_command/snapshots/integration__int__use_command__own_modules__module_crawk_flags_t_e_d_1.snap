@@ -16,6 +16,7 @@ exit_code: 0
 crate::analyzer
 crate::error
 crate::model
+crate::parser
 crate::reference
 
 ----- stderr -----

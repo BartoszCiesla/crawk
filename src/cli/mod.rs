@@ -32,6 +32,7 @@ pub(crate) struct CrawkArgs {
 }
 
 #[derive(Parser, Debug, Clone)]
+/// Global options shared across all subcommands (path, verbosity, log file).
 pub(crate) struct CrawkOptions {
     /// Specify path to the crate root directory (defaults to current directory)
     #[arg(short = 'p', long = "path")]
@@ -126,6 +127,7 @@ impl Display for UseOutputFormat {
 
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Parser, Debug, Clone)]
+/// Arguments for the `use` subcommand — selects the module and controls analysis options.
 pub(crate) struct UseArgs {
     /// Module path relative to the crate root (e.g., "utils" or "foo::bar::baz")
     #[clap(verbatim_doc_comment)]

@@ -2,6 +2,7 @@
 name = "crawk"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.87.0"
 authors = ["Bartosz Cieśla <bartosz.ciesla@gmail.com>"]
 repository = "https://github.com/BartoszCiesla/crawk"
 homepage = "https://github.com/BartoszCiesla/crawk"

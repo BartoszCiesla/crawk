@@ -13,6 +13,9 @@ use tracing_subscriber::{
     registry::LookupSpan,
 };
 
+/// Custom `tracing` event formatter that emits only the log level and message.
+///
+/// Strips timestamps, targets, and spans to keep CLI output clean.
 struct MinimalFormat;
 
 impl<S, N> FormatEvent<S, N> for MinimalFormat
@@ -40,6 +43,15 @@ where
     }
 }
 
+/// Initialises the global `tracing` subscriber based on CLI flags.
+///
+/// If a log file is specified via [`CrawkArgs`], logs are written there at the file
+/// verbosity level without ANSI colours. Otherwise logs go to stderr using
+/// [`MinimalFormat`] with the console verbosity level.
+///
+/// # Errors
+///
+/// Returns an error if the log file cannot be created.
 pub(crate) fn configure_tracing(command: &CrawkArgs) -> anyhow::Result<()> {
     if let Some(log_file_path) = command.log_file() {
         let file = File::create(log_file_path)

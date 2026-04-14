@@ -59,7 +59,8 @@ pub struct AnalysisOptions {
 /// Result of analyzing a module's dependencies.
 ///
 /// Contains the set of internal crate dependencies found in the analyzed module
-/// and all its submodules.
+/// and all its submodules. Created by [`Analyzer::analyze_module`](crate::Analyzer::analyze_module)
+/// using the options specified in [`AnalysisOptions`].
 #[derive(Debug, Clone)]
 pub struct AnalysisResult {
     /// The analyzed module path (e.g., `"utils::parser"`).
@@ -93,7 +94,18 @@ impl AnalysisResult {
         &self.module_path
     }
 
-    /// Returns the set of dependencies found.
+    /// Returns the internal crate references found, grouped by module path.
+    ///
+    /// The map key is the **module path** (e.g., `"utils::parser"`). The value is the set of
+    /// [`TypeReference`] items found in that module's source.
+    ///
+    /// With [`AnalysisOptions::recursive`] set to `false` (default), the map contains exactly
+    /// one entry — for the module passed to [`Analyzer::analyze_module`](crate::Analyzer::analyze_module).
+    /// With `recursive: true`, the map contains one entry per discovered submodule (e.g.,
+    /// `"utils"`, `"utils::parser"`, `"utils::lexer"`, …).
+    ///
+    /// To get a flat, deduplicated list across all modules, use
+    /// [`into_sorted_vec`](Self::into_sorted_vec) instead.
     #[must_use]
     pub const fn dependencies(&self) -> &HashMap<String, HashSet<TypeReference>> {
         &self.dependencies

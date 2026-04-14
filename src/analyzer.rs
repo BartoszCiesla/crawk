@@ -56,6 +56,12 @@ pub(crate) fn expand_groups(reference: &TypeReference) -> Vec<TypeReference> {
 /// Create an analyzer with a crate root path, then call [`analyze_module`](Self::analyze_module)
 /// to analyze specific modules.
 ///
+/// # Thread Safety
+///
+/// `Analyzer` is **not** `Sync`: [`analyze_module`](Self::analyze_module) requires `&mut self`
+/// due to an internal parse cache. To analyze modules in parallel, create a separate
+/// `Analyzer` instance per thread.
+///
 /// # Examples
 ///
 /// ```no_run
@@ -140,7 +146,8 @@ impl Analyzer {
     /// Analyze dependencies for a specific module.
     ///
     /// Recursively analyzes the module and all its submodules, collecting
-    /// all internal crate dependencies.
+    /// all internal crate dependencies. Returns an [`AnalysisResult`]
+    /// populated according to the given [`AnalysisOptions`].
     ///
     /// # Arguments
     ///

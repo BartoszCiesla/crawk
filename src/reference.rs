@@ -56,12 +56,15 @@ impl From<Vec<String>> for Segments {
 }
 
 impl Display for Segments {
+    /// Formats segments as a `::` separated path string (e.g., `std::collections::HashMap`).
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{}", self.0.join("::"))
     }
 }
 
 impl Display for TypeReference {
+    /// Formats the full path string, including prefix (`crate::`, `self::`, etc.),
+    /// segments, and suffix (alias, glob, or group).
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{}", self.to_path_string())
     }
@@ -141,7 +144,11 @@ pub enum GroupItem {
 }
 
 impl TypeReference {
-    /// Creates a new type reference from path segments.
+    /// Creates a new [`TypeReference`] from path segments with no prefix or suffix.
+    ///
+    /// Use the builder methods ([`with_crate_prefix`](Self::with_crate_prefix),
+    /// [`with_alias`](Self::with_alias), [`with_glob`](Self::with_glob), etc.)
+    /// to set a prefix or suffix after construction.
     pub fn new<I, S>(segments: I) -> Self
     where
         I: IntoIterator<Item = S>,
@@ -253,11 +260,16 @@ impl TypeReference {
         }
     }
 
+    /// Appends a single segment to the end of the path.
     pub(crate) fn append_segment(mut self, segment: impl Into<String>) -> Self {
         self.segments.0.push(segment.into());
         self
     }
 
+    /// Clones this reference, optionally preserving the prefix and/or suffix.
+    ///
+    /// When `prefix` is `false`, the clone's prefix is reset to [`PathPrefix::None`].
+    /// When `suffix` is `false`, the clone's suffix is reset to [`PathSuffix::None`].
     #[must_use]
     pub(crate) fn clone_with(&self, prefix: bool, suffix: bool) -> Self {
         Self {
@@ -300,10 +312,14 @@ impl TypeReference {
     ///
     /// # Examples
     ///
-    /// ```ignore
-    /// // crate::module::analyzer::AnalyzerError (3 segments) with depth=2
-    /// // becomes crate::module::analyzer (2 segments, no suffix)
+    /// ```
+    /// use crawk::TypeReference;
+    ///
+    /// // "module::analyzer::Error" (3 segments) truncated to depth 2
+    /// // becomes "module::analyzer" (suffix dropped)
+    /// let reference = TypeReference::new(["module", "analyzer", "Error"]);
     /// let truncated = reference.truncate_to_depth(2);
+    /// assert_eq!(truncated.to_path_string(), "module::analyzer");
     /// ```
     #[must_use]
     pub fn truncate_to_depth(&self, depth: usize) -> Self {
@@ -365,6 +381,9 @@ impl TypeReference {
 }
 
 impl Display for GroupItem {
+    /// Formats a group item as it would appear in Rust source code.
+    ///
+    /// For example: `HashMap`, `HashMap as Map`, `self`, `*`, or `io::{Read, Write}`.
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         match self {
             Self::Simple(name) => write!(f, "{name}"),

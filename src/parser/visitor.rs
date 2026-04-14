@@ -49,6 +49,7 @@ pub(super) struct CollectedReferences {
 }
 
 impl CollectedReferences {
+    /// Creates a new empty [`CollectedReferences`] with all categories initialized.
     const fn new() -> Self {
         Self {
             use_statements: Vec::new(),
@@ -88,6 +89,11 @@ pub(super) struct ModuleVisitor {
 }
 
 impl ModuleVisitor {
+    /// Creates a new [`ModuleVisitor`] scoped to `module_name`.
+    ///
+    /// Pass an empty string to visit all modules without filtering.
+    /// The module path for relative-reference resolution is derived from `module_name`
+    /// by splitting on `::`.
     pub(super) fn new(module_name: impl Into<String>) -> Self {
         let module_name = module_name.into();
         let module_path: Vec<String> = if module_name.is_empty() {
@@ -168,6 +174,11 @@ impl ModuleVisitor {
         ))
     }
 
+    /// Recursively walks a `use` tree and pushes resolved [`TypeReference`]s into
+    /// `self.references.use_statements`.
+    ///
+    /// `prefix` accumulates path segments seen so far; `path_prefix` tracks any
+    /// leading keyword (`crate`, `self`, `super`) encountered during traversal.
     fn process_use_tree(&mut self, tree: &UseTree, prefix: Vec<String>, path_prefix: PathPrefix) {
         match tree {
             UseTree::Path(p) => {
