@@ -19,7 +19,6 @@ crate::parser::AnalyzerError
 crate::reference::GroupItem
 crate::reference::PathPrefix
 crate::reference::PathSuffix
-crate::reference::Segments
 crate::reference::TypeReference
 
 ----- stderr -----

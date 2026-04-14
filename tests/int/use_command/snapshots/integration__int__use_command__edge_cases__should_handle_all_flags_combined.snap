@@ -26,7 +26,6 @@ lib
  - crate::reference::GroupItem
  - crate::reference::PathPrefix
  - crate::reference::PathSuffix
- - crate::reference::Segments
  - crate::reference::TypeReference
 analyzer
  - crate::cache::ParseCache
@@ -92,7 +91,6 @@ reference::tests
  - crate::reference::GroupItem
  - crate::reference::PathPrefix
  - crate::reference::PathSuffix
- - crate::reference::Segments
  - crate::reference::TypeReference
 resolve
  - crate::cache::ParseCache

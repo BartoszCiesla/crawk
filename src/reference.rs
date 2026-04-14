@@ -10,11 +10,11 @@ use crate::constants::PATH_QUALIFIER_SELF;
 
 /// Ordered list of path segments (e.g., `["std", "collections", "HashMap"]`).
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
-pub struct Segments(Vec<String>);
+pub(crate) struct Segments(Vec<String>);
 
 impl Segments {
     /// Creates a new `Segments` from an iterator of string-like values.
-    pub fn new<I, S>(iter: I) -> Self
+    pub(crate) fn new<I, S>(iter: I) -> Self
     where
         I: IntoIterator<Item = S>,
         S: Into<String>,
@@ -24,13 +24,13 @@ impl Segments {
 
     /// Returns true if there are no segments.
     #[must_use]
-    pub const fn is_empty(&self) -> bool {
+    pub(crate) const fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
 
     /// Returns the number of segments.
     #[must_use]
-    pub const fn len(&self) -> usize {
+    pub(crate) const fn len(&self) -> usize {
         self.0.len()
     }
 }

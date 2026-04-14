@@ -26,7 +26,7 @@ crate::model::{AnalysisOptions, AnalysisResult}
 crate::parser::AnalyzerError
 crate::parser::CrateAnalyzer
 crate::reference::TypeReference
-crate::reference::{GroupItem, PathPrefix, PathSuffix, Segments, TypeReference}
+crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference}
 crate::reference::{GroupItem, PathPrefix, TypeReference}
 crate::reference::{GroupItem, PathSuffix, TypeReference}
 crate::reference::{PathPrefix, TypeReference}

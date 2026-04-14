@@ -86,4 +86,4 @@ pub use crate::analyzer::Analyzer;
 pub use crate::error::AnalysisError;
 pub use crate::model::{AnalysisOptions, AnalysisResult};
 pub use crate::parser::AnalyzerError;
-pub use crate::reference::{GroupItem, PathPrefix, PathSuffix, Segments, TypeReference};
+pub use crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference};

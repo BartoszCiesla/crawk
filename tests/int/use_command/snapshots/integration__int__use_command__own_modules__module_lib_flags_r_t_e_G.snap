@@ -36,7 +36,6 @@ crate::parser::CrateAnalyzer
 crate::reference::GroupItem
 crate::reference::PathPrefix
 crate::reference::PathSuffix
-crate::reference::Segments
 crate::reference::TypeReference
 crate::resolve::resolve_glob
 crate::utils::MAX_FILE_BYTES
