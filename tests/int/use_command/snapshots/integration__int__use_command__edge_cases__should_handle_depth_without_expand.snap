@@ -12,7 +12,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::analyzer
-crate::error::{AnalysisError, Result}
+crate::error
 crate::model::{AnalysisOptions, AnalysisResult}
 crate::parser
 crate::reference::{GroupItem, PathPrefix, PathSuffix, Segments, TypeReference}

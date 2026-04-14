@@ -13,7 +13,6 @@ exit_code: 0
 ----- stdout -----
 crate::analyzer::Analyzer
 crate::error::AnalysisError
-crate::error::Result
 crate::model::AnalysisOptions
 crate::model::AnalysisResult
 crate::parser::AnalyzerError

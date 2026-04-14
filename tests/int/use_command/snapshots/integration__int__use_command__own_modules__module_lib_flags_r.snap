@@ -20,6 +20,7 @@ crate::discover::CrateInfo
 crate::discover::CrateInfoError
 crate::discover::{CrateInfo, CrateInfoError, ModuleInfo, Result}
 crate::discover::{CrateInfo, ModuleInfo}
+crate::error::AnalysisError
 crate::error::{AnalysisError, Result}
 crate::model::{AnalysisOptions, AnalysisResult}
 crate::parser::AnalyzerError

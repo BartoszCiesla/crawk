@@ -10,7 +10,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::analyzer::Analyzer
-crate::error::{AnalysisError, Result}
+crate::error::AnalysisError
 crate::model::{AnalysisOptions, AnalysisResult}
 crate::parser::AnalyzerError
 crate::reference::{GroupItem, PathPrefix, PathSuffix, Segments, TypeReference}

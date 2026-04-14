@@ -23,6 +23,7 @@ crate::discover::CrateInfoError
 crate::discover::module_tree::*
 crate::discover::{CrateInfo, CrateInfoError, ModuleInfo, Result}
 crate::discover::{CrateInfo, ModuleInfo}
+crate::error::AnalysisError
 crate::error::{AnalysisError, Result}
 crate::model::*
 crate::model::{AnalysisOptions, AnalysisResult}

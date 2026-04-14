@@ -40,4 +40,4 @@ pub enum AnalysisError {
 }
 
 /// Result type alias for analysis info operations.
-pub type Result<T> = std::result::Result<T, AnalysisError>;
+pub(crate) type Result<T> = std::result::Result<T, AnalysisError>;

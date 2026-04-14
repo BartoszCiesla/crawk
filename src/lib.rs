@@ -9,7 +9,7 @@
 //! ```no_run
 //! # use crawk::{Analyzer, AnalysisOptions};
 //! # use std::path::Path;
-//! # fn main() -> crawk::Result<()> {
+//! # fn main() -> Result<(), crawk::AnalysisError> {
 //! let mut analyzer = Analyzer::new(Path::new("/path/to/crate"))?;
 //! let options = AnalysisOptions::default();
 //! let result = analyzer.analyze_module("utils::parser", &options)?;
@@ -83,7 +83,7 @@ mod utils;
 pub mod version;
 
 pub use crate::analyzer::Analyzer;
-pub use crate::error::{AnalysisError, Result};
+pub use crate::error::AnalysisError;
 pub use crate::model::{AnalysisOptions, AnalysisResult};
 pub use crate::parser::AnalyzerError;
 pub use crate::reference::{GroupItem, PathPrefix, PathSuffix, Segments, TypeReference};
