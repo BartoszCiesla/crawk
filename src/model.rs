@@ -26,6 +26,14 @@ use std::path::{Path, PathBuf};
 ///     resolve_globs: true,
 ///     ..Default::default()
 /// };
+///
+/// // Fully flatten all imports: groups first, then globs.
+/// // `use crate::foo::{Bar, *}` → `foo::Bar`, `foo::Baz`, `foo::Qux`, …
+/// let options = AnalysisOptions {
+///     expand_groups: true,
+///     resolve_globs: true,
+///     ..Default::default()
+/// };
 /// ```
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, Default)]
@@ -47,12 +55,23 @@ pub struct AnalysisOptions {
     ///
     /// When `true`, `use crate::foo::{Bar, Baz}` becomes two separate entries:
     /// `foo::Bar` and `foo::Baz`.
+    ///
+    /// This transformation runs **before** glob resolution (see [`resolve_globs`](Self::resolve_globs)).
+    /// A grouped glob `use crate::foo::{Bar, *}` is first split into `foo::Bar` and `foo::*`,
+    /// and then — if `resolve_globs` is also `true` — the glob is expanded further into
+    /// the individual items exported by `foo`.
     pub expand_groups: bool,
 
     /// Resolve glob imports to explicit items.
     ///
     /// When `true`, `use crate::foo::*` is expanded into the individual public
     /// items exported by module `foo` (e.g., `foo::Bar`, `foo::Baz`).
+    ///
+    /// Glob resolution runs **after** group expansion (see [`expand_groups`](Self::expand_groups)).
+    /// If `expand_groups` is `false`, a grouped glob such as `use crate::foo::{Bar, *}` is
+    /// kept as a single group entry and the glob inside it is **not** resolved, because the
+    /// resolver only processes top-level glob references. Enable both options together to
+    /// fully flatten all grouped and glob imports.
     pub resolve_globs: bool,
 }
 
