@@ -1,0 +1,20 @@
+---
+source: tests/int/use_command/own_modules.rs
+info:
+  program: crawk
+  args:
+    - use
+    - resolve
+    - "-e"
+    - "-G"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::cache::ParseCache
+crate::discover::CrateInfo
+crate::reference::PathPrefix
+crate::reference::TypeReference
+crate::utils::read_source_file
+
+----- stderr -----

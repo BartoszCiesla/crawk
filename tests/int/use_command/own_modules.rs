@@ -44,6 +44,7 @@ fn should_use_command_resolve_binary_submodule(module: &str) {
          &["-r", "-t", "-e"],
          &["-r", "-t", "-e", "-G"],
          &["-r", "-t", "-e", "--format", "grouped", "-G"],
+         &["-e", "-G"],
         ]
 )]
 fn should_use_command_provide_output_for_flags(module: &str, flags: &[&str]) {

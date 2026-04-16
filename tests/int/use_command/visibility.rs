@@ -12,6 +12,7 @@ use test_case::test_matrix;
      &["-e"],
      &["-r", "-e"],
      &["-r", "-e", "--format", "grouped"],
+     &["-e", "-G"],
     ]
 )]
 fn should_modules_use_handle_visibility(module: &str, flags: &[&str]) {

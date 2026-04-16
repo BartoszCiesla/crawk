@@ -16,6 +16,7 @@ use test_case::test_matrix;
      &["-e", "-d", "2"],
      &["-r", "-e", "-d", "1"],
      &["-r", "-e", "-d", "2"],
+     &["-e", "-G"],
     ]
 )]
 fn should_modules_use_respect_depth(module: &str, flags: &[&str]) {
