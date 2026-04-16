@@ -4,7 +4,7 @@ info:
   program: crawk
   args:
     - "-p"
-    - /home/barcie/coding/crawk/modules
+    - /home/barcie/coding/crawk/fixtures/modules
     - use
     - uses_empty_glob
     - "-e"
@@ -13,5 +13,6 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+crate::no_pub_items::exercise_private
 
 ----- stderr -----

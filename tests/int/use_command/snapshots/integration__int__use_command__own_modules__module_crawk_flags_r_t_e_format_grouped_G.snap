@@ -40,6 +40,7 @@ analyzer
  - crate::resolve::resolve_glob
 analyzer::tests
  - crate::analyzer::Analyzer
+ - crate::analyzer::expand_groups
  - crate::reference::PathSuffix
 cache
 constants
@@ -71,6 +72,8 @@ parser
  - crate::utils::read_source_file
 parser::tests
  - crate::parser::AnalyzerError
+ - crate::parser::CrateAnalyzer
+ - crate::parser::Result
  - crate::reference::PathPrefix
  - crate::utils::MAX_FILE_BYTES
  - crate::utils::ReadFileError
@@ -83,12 +86,16 @@ parser::visitor
  - crate::reference::TypeReference
  - crate::utils::has_cfg_test
 parser::visitor::tests
+ - crate::parser::visitor::CollectedReferences
+ - crate::parser::visitor::ModuleVisitor
+ - crate::parser::visitor::resolve_reference
 reference
  - crate::constants::PATH_QUALIFIER_SELF
 reference::tests
  - crate::reference::GroupItem
  - crate::reference::PathPrefix
  - crate::reference::PathSuffix
+ - crate::reference::Segments
  - crate::reference::TypeReference
 resolve
  - crate::cache::ParseCache
@@ -97,10 +104,16 @@ resolve
  - crate::reference::TypeReference
  - crate::utils::read_source_file
 resolve::tests
+ - crate::resolve::extract_public_items
+ - crate::resolve::resolve_glob
 utils
  - crate::constants::ATTR_CFG
  - crate::constants::MODULE_NAME_TEST
 utils::tests
+ - crate::utils::MAX_FILE_BYTES
+ - crate::utils::ReadFileError
+ - crate::utils::has_cfg_test
+ - crate::utils::read_source_file
 version
 version::build_info
 

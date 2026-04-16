@@ -17,5 +17,6 @@ success: true
 exit_code: 0
 ----- stdout -----
 uses_empty_glob
+ - crate::no_pub_items::exercise_private
 
 ----- stderr -----

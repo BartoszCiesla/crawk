@@ -96,12 +96,19 @@ app
  - modules::glob_showcase::utils
  - modules::inline_modules
  - modules::item_visibility::PUB_CONST
+ - modules::item_visibility::PUB_CRATE_CONST
+ - modules::item_visibility::PUB_CRATE_STATIC
  - modules::item_visibility::PUB_STATIC
  - modules::item_visibility::PubAlias
+ - modules::item_visibility::PubCrateAlias
+ - modules::item_visibility::PubCrateEnum
+ - modules::item_visibility::PubCrateStruct
+ - modules::item_visibility::PubCrateTrait
  - modules::item_visibility::PubEnum
  - modules::item_visibility::PubStruct
  - modules::item_visibility::PubTrait
  - modules::item_visibility::exercise_all
+ - modules::item_visibility::pub_crate_function
  - modules::item_visibility::pub_function
  - modules::mixed
  - modules::nesting
@@ -113,6 +120,7 @@ app
  - modules::reexports::InternalEnum
  - modules::reexports::InternalTrait
  - modules::reexports::Qux
+ - modules::reexports::Secret
  - modules::reexports::file_module_greet
  - modules::reexports::internal_helper_1
  - modules::reexports::internal_helper_2

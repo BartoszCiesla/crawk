@@ -13,6 +13,8 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+crate::cli::validation::validate_depth
+crate::cli::validation::validate_module_path
 crawk::version
 
 ----- stderr -----

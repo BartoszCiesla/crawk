@@ -19,16 +19,26 @@ use tracing::debug;
 /// Extract all public item names from a Rust source file.
 ///
 /// Returns `None` if the file cannot be read or parsed.
-/// Returns `Some(vec)` with the names of every `pub` item in the file.
-/// For `pub use` re-exports, the *imported* name (or alias) is included.
+/// Returns `Some(vec)` with the names of every item visible to `caller_module`
+/// declared in `target_module`. For `pub use` re-exports, the *imported* name
+/// (or alias) is included.
+///
+/// Visibility is resolved against `target_module` (the module being inspected)
+/// and `caller_module` (the module performing the glob-import). Both use the
+/// crawk-internal path format: segments joined by `::`, empty string for the
+/// crate root, no `crate::` prefix.
 ///
 /// When `inline_module` is non-empty, descends into the named inline module(s)
 /// before extracting items. For example, `&["constants"]` extracts only from
-/// `pub mod constants { ... }` within the file.
+/// `pub mod constants { ... }` within the file. Note that `target_module` must
+/// already contain the full path including any inline segments — this function
+/// does not adjust it while descending.
 #[must_use]
 pub(crate) fn extract_public_items(
     file_path: &Path,
     inline_module: &[&str],
+    target_module: &str,
+    caller_module: &str,
     cache: &mut ParseCache,
 ) -> Option<Vec<String>> {
     // Can't use `cache.get_or_parse` here: this function returns `Option`,
@@ -46,16 +56,26 @@ pub(crate) fn extract_public_items(
     let items = if inline_module.is_empty() {
         &file.items
     } else {
-        return extract_from_inline_module(&file.items, inline_module);
+        return extract_from_inline_module(
+            &file.items,
+            inline_module,
+            target_module,
+            caller_module,
+        );
     };
 
-    Some(collect_public_items(items))
+    Some(collect_public_items(items, target_module, caller_module))
 }
 
 /// Descend into nested inline modules and extract public items from the target.
-fn extract_from_inline_module(items: &[Item], module_path: &[&str]) -> Option<Vec<String>> {
+fn extract_from_inline_module(
+    items: &[Item],
+    module_path: &[&str],
+    target_module: &str,
+    caller_module: &str,
+) -> Option<Vec<String>> {
     if module_path.is_empty() {
-        return Some(collect_public_items(items));
+        return Some(collect_public_items(items, target_module, caller_module));
     }
 
     let target = module_path[0];
@@ -64,7 +84,12 @@ fn extract_from_inline_module(items: &[Item], module_path: &[&str]) -> Option<Ve
             && item_mod.ident == target
             && let Some((_, nested_items)) = &item_mod.content
         {
-            return extract_from_inline_module(nested_items, &module_path[1..]);
+            return extract_from_inline_module(
+                nested_items,
+                &module_path[1..],
+                target_module,
+                caller_module,
+            );
         }
     }
 
@@ -93,17 +118,71 @@ const fn item_vis_and_ident(item: &Item) -> Option<(&syn::Visibility, &proc_macr
     }
 }
 
-/// Collect names of all `pub` items from a list of syn items.
-fn collect_public_items(items: &[Item]) -> Vec<String> {
+/// Returns `true` if the item is visible from `caller_module` when declared
+/// inside `target_module`.
+///
+/// Both paths use the crawk-internal format: segments joined by `::`, empty
+/// string for the crate root, no `crate::` prefix.
+///
+/// Handles `pub`, `pub(crate)` and `pub(super)`. Other restricted forms
+/// (`pub(self)`, `pub(in some::path)`) return `false` — see the `resolve.rs`
+/// module documentation for the rationale.
+fn is_visible_from(vis: &syn::Visibility, target_module: &str, caller_module: &str) -> bool {
+    match vis {
+        syn::Visibility::Public(_) => true,
+        syn::Visibility::Restricted(r) => {
+            if r.path.is_ident("crate") {
+                // `pub(crate)` — visible across the whole crate.
+                true
+            } else if r.path.is_ident("super") {
+                // `pub(super)` — visible in the parent of `target_module`
+                // and all of that parent's descendants.
+                let parent = parent_module(target_module);
+                is_in_subtree(caller_module, parent)
+            } else {
+                // `pub(self)` and `pub(in path)` are treated as not visible;
+                // this is safe (may under-approximate) but keeps the logic
+                // tractable without a full path-normalization step.
+                false
+            }
+        }
+        syn::Visibility::Inherited => false,
+    }
+}
+
+/// Returns the parent module of `module` in crawk-internal path format.
+///
+/// - `"foo::bar"` → `"foo"`
+/// - `"foo"`      → `""` (crate root)
+/// - `""`         → `""` (root has no parent; `pub(super)` there is a Rust
+///   compile error, so we never need to answer meaningfully)
+fn parent_module(module: &str) -> &str {
+    module.rsplit_once("::").map_or("", |(parent, _)| parent)
+}
+
+/// Returns `true` if `module` lies in the subtree rooted at `ancestor`
+/// (including `ancestor` itself). Empty `ancestor` denotes the crate root,
+/// which contains every module.
+fn is_in_subtree(module: &str, ancestor: &str) -> bool {
+    if ancestor.is_empty() {
+        true
+    } else {
+        module == ancestor || module.starts_with(&format!("{ancestor}::"))
+    }
+}
+
+/// Collect names of items visible to `caller_module` from a list of syn items
+/// declared in `target_module`.
+fn collect_public_items(items: &[Item], target_module: &str, caller_module: &str) -> Vec<String> {
     let mut public_items = Vec::new();
 
     for item in items {
         if let Item::Use(use_item) = item {
-            if matches!(use_item.vis, syn::Visibility::Public(_)) {
+            if is_visible_from(&use_item.vis, target_module, caller_module) {
                 extract_use_names(&use_item.tree, &mut public_items);
             }
         } else if let Some((vis, ident)) = item_vis_and_ident(item) {
-            if matches!(vis, syn::Visibility::Public(_)) {
+            if is_visible_from(vis, target_module, caller_module) {
                 public_items.push(ident.to_string());
             }
         }
@@ -147,8 +226,13 @@ fn extract_use_names(tree: &UseTree, items: &mut Vec<String>) {
 /// Only `crate::` prefixed globs are resolved. Other prefixes pass through
 /// unchanged. If the module file cannot be found or parsed, the original
 /// glob reference is returned with a warning.
+///
+/// `caller_module` is the crawk-internal path of the module performing the
+/// glob-import (empty string for the crate root). It is used to decide
+/// visibility of `pub(super)` items in the target module.
 pub(crate) fn resolve_glob(
     reference: &TypeReference,
+    caller_module: &str,
     crate_info: &CrateInfo,
     cache: &mut ParseCache,
 ) -> Vec<TypeReference> {
@@ -189,8 +273,12 @@ pub(crate) fn resolve_glob(
     let inline_path = detect_inline_path(reference, &file_path, crate_info);
     let inline_refs: Vec<&str> = inline_path.iter().map(String::as_str).collect();
 
-    // Extract public items from the file (optionally descending into inline module)
-    let Some(public_items) = extract_public_items(&file_path, &inline_refs, cache) else {
+    // `module_path` is the full path (including any inline segments) of the
+    // module whose glob we're resolving — it is also the target for visibility
+    // checks. See `extract_public_items` docs for the path format.
+    let Some(public_items) =
+        extract_public_items(&file_path, &inline_refs, &module_path, caller_module, cache)
+    else {
         debug!("Cannot parse '{}' for glob resolution", file_path.display());
         return vec![reference.clone()];
     };
@@ -251,9 +339,22 @@ mod tests {
     use std::io::Write;
     use tempfile::NamedTempFile;
 
-    /// Wrapper around `extract_public_items` for tests that don't need a persistent cache.
+    /// Wrapper around `extract_public_items` for tests that don't care about
+    /// caller/target modules. Uses empty paths — visibility of `pub(super)`
+    /// items declared in the file root collapses to "visible from anywhere"
+    /// (super of the crate root = the crate root, which contains every module).
     fn extract(path: &Path, inline: &[&str]) -> Option<Vec<String>> {
-        extract_public_items(path, inline, &mut ParseCache::new())
+        extract_public_items(path, inline, "", "", &mut ParseCache::new())
+    }
+
+    /// Wrapper for tests that need to control caller/target modules explicitly.
+    fn extract_with(
+        path: &Path,
+        inline: &[&str],
+        target: &str,
+        caller: &str,
+    ) -> Option<Vec<String>> {
+        extract_public_items(path, inline, target, caller, &mut ParseCache::new())
     }
 
     #[test]
@@ -263,26 +364,35 @@ mod tests {
             f,
             r"
 pub struct PublicStruct;
+pub(crate) struct CrateStruct;
 struct PrivateStruct;
 pub fn public_function() {{}}
+pub(crate) fn crate_function() {{}}
 fn private_function() {{}}
 pub const PUBLIC_CONST: i32 = 42;
+pub(crate) const CRATE_CONST: i32 = 43;
 const PRIVATE_CONST: i32 = 42;
 pub enum PublicEnum {{ A, B }}
+pub(crate) enum CrateEnum {{ X, Y }}
 enum PrivateEnum {{ X, Y }}
 pub type PublicType = String;
+pub(crate) type CrateType = String;
 type PrivateType = String;
 pub mod public_module {{}}
+pub(crate) mod crate_module {{}}
 mod private_module {{}}
 pub trait PublicTrait {{}}
+pub(crate) trait CrateTrait {{}}
 trait PrivateTrait {{}}
 pub use std::collections::HashMap;
+pub(crate) use std::collections::BTreeMap;
 "
         )
         .unwrap();
 
         let items = extract(f.path(), &[]).unwrap();
 
+        // pub — visible
         assert!(items.contains(&"PublicStruct".to_owned()));
         assert!(items.contains(&"public_function".to_owned()));
         assert!(items.contains(&"PUBLIC_CONST".to_owned()));
@@ -292,6 +402,17 @@ pub use std::collections::HashMap;
         assert!(items.contains(&"PublicTrait".to_owned()));
         assert!(items.contains(&"HashMap".to_owned()));
 
+        // pub(crate) — visible across the crate
+        assert!(items.contains(&"CrateStruct".to_owned()));
+        assert!(items.contains(&"crate_function".to_owned()));
+        assert!(items.contains(&"CRATE_CONST".to_owned()));
+        assert!(items.contains(&"CrateEnum".to_owned()));
+        assert!(items.contains(&"CrateType".to_owned()));
+        assert!(items.contains(&"crate_module".to_owned()));
+        assert!(items.contains(&"CrateTrait".to_owned()));
+        assert!(items.contains(&"BTreeMap".to_owned()));
+
+        // private — hidden
         assert!(!items.contains(&"PrivateStruct".to_owned()));
         assert!(!items.contains(&"private_function".to_owned()));
         assert!(!items.contains(&"PRIVATE_CONST".to_owned()));
@@ -438,5 +559,104 @@ pub fn top_level() {{}}
 
         let result = extract(f.path(), &["nonexistent"]);
         assert!(result.is_none());
+    }
+
+    #[test]
+    fn pub_super_visible_from_parent_and_siblings() {
+        let mut f = NamedTempFile::new().unwrap();
+        writeln!(
+            f,
+            r"
+pub mod bar {{
+    pub(super) fn helper() {{}}
+    pub fn public_fn() {{}}
+}}
+"
+        )
+        .unwrap();
+
+        // Target: `foo::bar` (inline bar in a file representing `foo`).
+        // Caller: `foo` — helper is visible (caller is the parent of target).
+        let items = extract_with(f.path(), &["bar"], "foo::bar", "foo").unwrap();
+        assert!(items.contains(&"helper".to_owned()));
+        assert!(items.contains(&"public_fn".to_owned()));
+
+        // Caller: `foo::other` — sibling of bar, inside the parent subtree.
+        let items = extract_with(f.path(), &["bar"], "foo::bar", "foo::other").unwrap();
+        assert!(items.contains(&"helper".to_owned()));
+
+        // Caller: `foo::other::deep` — descendant of a sibling, still in
+        // the parent subtree.
+        let items = extract_with(f.path(), &["bar"], "foo::bar", "foo::other::deep").unwrap();
+        assert!(items.contains(&"helper".to_owned()));
+
+        // Caller: `baz` — outside `foo`, not in the parent subtree. helper
+        // must be hidden while public_fn remains visible.
+        let items = extract_with(f.path(), &["bar"], "foo::bar", "baz").unwrap();
+        assert!(!items.contains(&"helper".to_owned()));
+        assert!(items.contains(&"public_fn".to_owned()));
+
+        // Caller: crate root — also outside `foo`.
+        let items = extract_with(f.path(), &["bar"], "foo::bar", "").unwrap();
+        assert!(!items.contains(&"helper".to_owned()));
+    }
+
+    #[test]
+    fn pub_super_in_top_level_module_behaves_like_pub_crate() {
+        let mut f = NamedTempFile::new().unwrap();
+        writeln!(f, "pub(super) fn helper() {{}}").unwrap();
+
+        // Target: `foo` (top-level). Parent = crate root ("") → every caller
+        // is in the subtree, so helper is visible everywhere.
+        for caller in ["", "bar", "baz::deep", "foo"] {
+            let items = extract_with(f.path(), &[], "foo", caller).unwrap();
+            assert!(items.contains(&"helper".to_owned()), "caller = {caller:?}");
+        }
+    }
+
+    #[test]
+    fn pub_in_path_is_treated_as_hidden() {
+        // `pub(in some::path)` is not fully modeled — we conservatively hide
+        // the item. `extracts_all_public_item_kinds` covers the happy paths;
+        // this test pins down the fallback.
+        let mut f = NamedTempFile::new().unwrap();
+        writeln!(
+            f,
+            r"
+pub(in crate::visibility) fn restricted() {{}}
+pub fn public_fn() {{}}
+"
+        )
+        .unwrap();
+
+        let items = extract_with(f.path(), &[], "visibility", "visibility").unwrap();
+        assert!(!items.contains(&"restricted".to_owned()));
+        assert!(items.contains(&"public_fn".to_owned()));
+    }
+
+    #[test]
+    fn parent_module_handles_root_and_nested() {
+        assert_eq!(parent_module("foo::bar"), "foo");
+        assert_eq!(parent_module("foo::bar::baz"), "foo::bar");
+        assert_eq!(parent_module("foo"), "");
+        assert_eq!(parent_module(""), "");
+    }
+
+    #[test]
+    fn is_in_subtree_semantics() {
+        // Empty ancestor = crate root: every module is in its subtree.
+        assert!(is_in_subtree("", ""));
+        assert!(is_in_subtree("foo", ""));
+        assert!(is_in_subtree("foo::bar", ""));
+
+        // Exact match and descendants are in the subtree.
+        assert!(is_in_subtree("foo", "foo"));
+        assert!(is_in_subtree("foo::bar", "foo"));
+        assert!(is_in_subtree("foo::bar::baz", "foo"));
+
+        // Prefix-only matches are NOT enough (no `::` boundary).
+        assert!(!is_in_subtree("foobar", "foo"));
+        assert!(!is_in_subtree("baz", "foo"));
+        assert!(!is_in_subtree("", "foo"));
     }
 }

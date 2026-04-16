@@ -25,6 +25,8 @@ cli::overview
  - crawk::version
 cli::validation
 cli::validation::tests
+ - crate::cli::validation::validate_depth
+ - crate::cli::validation::validate_module_path
 format
  - crawk::TypeReference
 format::flat
@@ -34,6 +36,8 @@ format::grouped
  - crate::format::truncate_and_dedup
  - crawk::AnalysisResult
 format::tests
+ - crate::format::flat
+ - crate::format::grouped
 logger
  - crate::cli::CrawkArgs
 

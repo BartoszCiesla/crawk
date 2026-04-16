@@ -4,7 +4,7 @@ info:
   program: crawk
   args:
     - "-p"
-    - /home/barcie/coding/crawk/modules
+    - /home/barcie/coding/crawk/fixtures/modules
     - use
     - lib
     - "-r"
@@ -34,6 +34,8 @@ crate::dir_module::greet
 crate::file_module
 crate::file_module::greet
 crate::file_module::nesting_depth
+crate::foo::bar::helper
+crate::foo::bar::public_fn
 crate::glob_patterns::self_ref::self_func_1
 crate::glob_patterns::self_ref::self_func_2
 crate::glob_showcase::ErrorKind
@@ -73,6 +75,7 @@ crate::nesting::level1::depth
 crate::nesting::level1::level2::depth
 crate::nesting::level1::level2::level3
 crate::nesting::level1::level2::root_depth
+crate::no_pub_items::exercise_private
 crate::reexports::Foo
 crate::visibility
 crate::visibility::pub_mod::greet

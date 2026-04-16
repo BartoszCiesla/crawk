@@ -44,6 +44,8 @@ advanced_globs::shadowing
 advanced_globs::trait_providers
 advanced_globs::unix_specific
 advanced_globs::windows_specific
+baz
+ - crate::foo::bar::public_fn
 custom_path
  - crate::aliased
  - crate::item_visibility::PUB_CONST
@@ -56,6 +58,11 @@ dir_module::child_file
 empty_module
 file_module
  - crate::nesting
+foo
+foo::bar
+foo::other
+ - crate::foo::bar::helper
+ - crate::foo::bar::public_fn
 glob_patterns
  - crate::dir_module
  - crate::file_module
@@ -155,6 +162,7 @@ reexports::internal
 reexports::types
  - crate::visibility
 uses_empty_glob
+ - crate::no_pub_items::exercise_private
 visibility
 visibility::private_mod
  - crate::nesting::level1::level2::level3

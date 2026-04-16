@@ -22,5 +22,7 @@ resolve
  - crate::reference::TypeReference
  - crate::utils::read_source_file
 resolve::tests
+ - crate::resolve::extract_public_items
+ - crate::resolve::resolve_glob
 
 ----- stderr -----

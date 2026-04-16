@@ -4,7 +4,7 @@ info:
   program: crawk
   args:
     - "-p"
-    - /home/barcie/coding/crawk/modules
+    - /home/barcie/coding/crawk/fixtures/modules
     - use
     - lib
     - "-r"
@@ -31,6 +31,7 @@ crate::dir_module::greet
 crate::file_module
 crate::file_module::*
 crate::file_module::greet
+crate::foo::bar::*
 crate::glob_patterns::self_ref::*
 crate::glob_showcase::ErrorKind
 crate::glob_showcase::Status

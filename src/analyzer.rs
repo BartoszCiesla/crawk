@@ -281,7 +281,8 @@ impl Analyzer {
                 for r in after_expand {
                     if options.resolve_globs && r.has_glob() {
                         debug!("Resolving glob: {}", r.to_path_string());
-                        let resolved = resolve_glob(&r, &self.crate_info, &mut self.parse_cache);
+                        let resolved =
+                            resolve_glob(&r, module, &self.crate_info, &mut self.parse_cache);
                         for res in resolved {
                             debug!("Resolved glob item: {}", res.to_path_string());
                             refs.insert(res);

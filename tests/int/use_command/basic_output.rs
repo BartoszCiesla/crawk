@@ -38,6 +38,10 @@ use test_case::test_case;
 #[test_case("empty_module"; "for empty_module")]
 #[test_case("no_pub_items"; "for no_pub_items")]
 #[test_case("uses_empty_glob"; "for uses_empty_glob")]
+#[test_case("foo"; "for foo")]
+#[test_case("foo::bar"; "for foo bar")]
+#[test_case("foo::other"; "for foo other")]
+#[test_case("baz"; "for baz")]
 #[test_case("nonexisting"; "for nonexisting module")]
 fn should_modules_use_provide_output(module: &str) {
     let snapshot_name = format!("modules_{}", module.replace("::", "__"));

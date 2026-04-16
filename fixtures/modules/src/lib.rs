@@ -47,6 +47,12 @@ pub mod no_pub_items;
 // Module that glob-imports from no_pub_items (glob resolves to nothing)
 pub mod uses_empty_glob;
 
+// Fixture for `pub(super)` visibility: `foo::bar` exposes a `pub(super)`
+// helper visible only within `foo`'s subtree (`foo::other` sees it, `baz`
+// does not).
+pub mod foo;
+pub mod baz;
+
 #[cfg(test)]
 mod tests {
     use super::*;

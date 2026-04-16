@@ -41,6 +41,8 @@ advanced_globs::shadowing
 advanced_globs::trait_providers
 advanced_globs::unix_specific
 advanced_globs::windows_specific
+baz
+ - crate::foo::bar::*
 custom_path
  - crate::aliased
  - crate::item_visibility::PUB_CONST
@@ -53,6 +55,10 @@ dir_module::child_file
 empty_module
 file_module
  - crate::nesting
+foo
+foo::bar
+foo::other
+ - crate::foo::bar::*
 glob_patterns
  - crate::dir_module
  - crate::file_module

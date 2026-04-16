@@ -21,5 +21,7 @@ cli::overview
  - crawk::version
 cli::validation
 cli::validation::tests
+ - crate::cli::validation::validate_depth
+ - crate::cli::validation::validate_module_path
 
 ----- stderr -----

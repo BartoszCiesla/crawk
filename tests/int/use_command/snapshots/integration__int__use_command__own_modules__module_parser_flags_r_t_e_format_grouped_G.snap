@@ -22,6 +22,8 @@ parser
  - crate::utils::read_source_file
 parser::tests
  - crate::parser::AnalyzerError
+ - crate::parser::CrateAnalyzer
+ - crate::parser::Result
  - crate::reference::PathPrefix
  - crate::utils::MAX_FILE_BYTES
  - crate::utils::ReadFileError
@@ -34,5 +36,8 @@ parser::visitor
  - crate::reference::TypeReference
  - crate::utils::has_cfg_test
 parser::visitor::tests
+ - crate::parser::visitor::CollectedReferences
+ - crate::parser::visitor::ModuleVisitor
+ - crate::parser::visitor::resolve_reference
 
 ----- stderr -----
