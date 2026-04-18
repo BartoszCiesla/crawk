@@ -16,6 +16,8 @@ success: true
 exit_code: 0
 ----- stdout -----
 visibility
+visibility::inner
+ - crate::visibility::*
 visibility::private_mod
  - crate::nesting::level1::level2::level3
 visibility::pub_crate_mod
@@ -25,6 +27,6 @@ visibility::pub_mod
 visibility::pub_super_mod
  - crate::dir_module::greet
 visibility::restricted_mod
- - crate::nesting::depth
+ - crate::nesting
 
 ----- stderr -----

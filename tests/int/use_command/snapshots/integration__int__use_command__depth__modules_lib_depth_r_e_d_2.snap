@@ -55,6 +55,7 @@ crate::nesting::level1
 crate::no_pub_items::*
 crate::reexports::Foo
 crate::visibility
+crate::visibility::*
 crate::visibility::pub_mod
 
 ----- stderr -----

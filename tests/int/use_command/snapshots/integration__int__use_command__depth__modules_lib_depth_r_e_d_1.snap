@@ -32,5 +32,6 @@ crate::nesting
 crate::no_pub_items::*
 crate::reexports
 crate::visibility
+crate::visibility::*
 
 ----- stderr -----

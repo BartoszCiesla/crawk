@@ -78,6 +78,11 @@ crate::nesting::level1::level2::root_depth
 crate::no_pub_items::exercise_private
 crate::reexports::Foo
 crate::visibility
+crate::visibility::demonstrate_access
+crate::visibility::inner
+crate::visibility::pub_crate_mod
+crate::visibility::pub_mod
 crate::visibility::pub_mod::greet
+crate::visibility::pub_super_mod
 
 ----- stderr -----

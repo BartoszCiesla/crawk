@@ -1,12 +1,12 @@
 ---
-source: tests/int/use_command/flags.rs
+source: tests/int/use_command/visibility.rs
 info:
   program: crawk
   args:
     - "-p"
     - /home/barcie/coding/crawk/fixtures/modules
     - use
-    - visibility
+    - "visibility::inner"
     - "-r"
     - "-e"
     - "--format"
@@ -16,22 +16,11 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-visibility
 visibility::inner
  - crate::visibility::demonstrate_access
  - crate::visibility::inner
  - crate::visibility::pub_crate_mod
  - crate::visibility::pub_mod
  - crate::visibility::pub_super_mod
-visibility::private_mod
- - crate::nesting::level1::level2::level3
-visibility::pub_crate_mod
- - crate::visibility::pub_mod::greet
-visibility::pub_mod
- - crate::file_module
-visibility::pub_super_mod
- - crate::dir_module::greet
-visibility::restricted_mod
- - crate::nesting
 
 ----- stderr -----

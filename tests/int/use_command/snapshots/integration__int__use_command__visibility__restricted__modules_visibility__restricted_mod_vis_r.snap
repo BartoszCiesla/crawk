@@ -1,22 +1,17 @@
 ---
-source: tests/int/use_command/flags.rs
+source: tests/int/use_command/visibility.rs
 info:
   program: crawk
   args:
     - "-p"
     - /home/barcie/coding/crawk/fixtures/modules
     - use
-    - visibility
+    - "visibility::restricted_mod"
     - "-r"
 ---
 success: true
 exit_code: 0
 ----- stdout -----
-crate::dir_module::greet
-crate::file_module
 crate::nesting
-crate::nesting::level1::level2::level3
-crate::visibility::*
-crate::visibility::pub_mod::greet
 
 ----- stderr -----

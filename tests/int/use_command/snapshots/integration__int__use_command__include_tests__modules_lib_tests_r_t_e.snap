@@ -70,6 +70,7 @@ crate::nesting::level1::level2::level3
 crate::no_pub_items::*
 crate::reexports::Foo
 crate::visibility
+crate::visibility::*
 crate::visibility::pub_mod::greet
 
 ----- stderr -----

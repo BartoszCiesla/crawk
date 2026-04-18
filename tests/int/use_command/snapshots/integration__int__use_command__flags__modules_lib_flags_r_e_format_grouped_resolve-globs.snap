@@ -164,6 +164,12 @@ reexports::types
 uses_empty_glob
  - crate::no_pub_items::exercise_private
 visibility
+visibility::inner
+ - crate::visibility::demonstrate_access
+ - crate::visibility::inner
+ - crate::visibility::pub_crate_mod
+ - crate::visibility::pub_mod
+ - crate::visibility::pub_super_mod
 visibility::private_mod
  - crate::nesting::level1::level2::level3
 visibility::pub_crate_mod
@@ -173,6 +179,6 @@ visibility::pub_mod
 visibility::pub_super_mod
  - crate::dir_module::greet
 visibility::restricted_mod
- - crate::nesting::depth
+ - crate::nesting
 
 ----- stderr -----
