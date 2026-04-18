@@ -6,6 +6,19 @@
 //!
 //! [`resolve_glob`] resolves a glob `TypeReference` (e.g., `crate::foo::bar::*`)
 //! into concrete references by reading the target module's public API.
+//!
+//! ## Visibility handling
+//!
+//! Items are included if they are visible to the module performing the
+//! glob-import (`caller_module`). Supported visibility forms:
+//!
+//! | Form | Behaviour |
+//! |---|---|
+//! | `pub` | always visible |
+//! | `pub(crate)` | visible to all modules in the crate |
+//! | `pub(super)` | visible in the parent module and its descendants |
+//! | `pub(in path)` | visible to modules within the named path subtree |
+//! | `pub(self)` / private | not visible |
 
 use crate::cache::ParseCache;
 use crate::discover::CrateInfo;
@@ -124,9 +137,8 @@ const fn item_vis_and_ident(item: &Item) -> Option<(&syn::Visibility, &proc_macr
 /// Both paths use the crawk-internal format: segments joined by `::`, empty
 /// string for the crate root, no `crate::` prefix.
 ///
-/// Handles `pub`, `pub(crate)` and `pub(super)`. Other restricted forms
-/// (`pub(self)`, `pub(in some::path)`) return `false` — see the `resolve.rs`
-/// module documentation for the rationale.
+/// Handles `pub`, `pub(crate)`, `pub(super)`, and `pub(in some::path)`.
+/// `pub(self)` is treated as private and returns `false`.
 fn is_visible_from(vis: &syn::Visibility, target_module: &str, caller_module: &str) -> bool {
     match vis {
         syn::Visibility::Public(_) => true,
@@ -139,14 +151,68 @@ fn is_visible_from(vis: &syn::Visibility, target_module: &str, caller_module: &s
                 // and all of that parent's descendants.
                 let parent = parent_module(target_module);
                 is_in_subtree(caller_module, parent)
-            } else {
-                // `pub(self)` and `pub(in path)` are treated as not visible;
-                // this is safe (may under-approximate) but keeps the logic
-                // tractable without a full path-normalization step.
+            } else if r.path.is_ident("self") {
+                // `pub(self)` — semantically equivalent to private.
                 false
+            } else {
+                // `pub(in some::path)` — normalize the restriction path to
+                // crawk-internal format and check whether the caller lies
+                // within its subtree.
+                let ancestor = normalize_in_path(&r.path, target_module);
+                is_in_subtree(caller_module, &ancestor)
             }
         }
         syn::Visibility::Inherited => false,
+    }
+}
+
+/// Normalize a `pub(in path)` restriction path to crawk-internal format.
+///
+/// Converts the leading keyword of the syn path to an absolute module path
+/// using `target_module` as the resolution context:
+///
+/// - `crate::foo::bar` → `"foo::bar"`
+/// - `super` (from `foo::bar`) → `"foo"`
+/// - `super::baz` (from `foo::bar`) → `"foo::baz"`
+/// - `self` (from `foo::bar`) → `"foo::bar"` (caller must be in that subtree)
+/// - bare `foo::bar` → `"foo::bar"` (treated as crate-root-relative)
+///
+/// The result is used as the `ancestor` argument to [`is_in_subtree`].
+fn normalize_in_path(path: &syn::Path, target_module: &str) -> String {
+    let mut segs = path.segments.iter().map(|s| s.ident.to_string());
+    match segs.next().as_deref() {
+        Some("crate") => segs.collect::<Vec<_>>().join("::"),
+        Some("super") => {
+            let parent = parent_module(target_module);
+            let rest: Vec<_> = segs.collect();
+            if rest.is_empty() {
+                parent.to_owned()
+            } else if parent.is_empty() {
+                rest.join("::")
+            } else {
+                format!("{parent}::{}", rest.join("::"))
+            }
+        }
+        Some("self") => {
+            let rest: Vec<_> = segs.collect();
+            if rest.is_empty() {
+                target_module.to_owned()
+            } else if target_module.is_empty() {
+                rest.join("::")
+            } else {
+                format!("{target_module}::{}", rest.join("::"))
+            }
+        }
+        Some(first) => {
+            // Bare path — treat as crate-root-relative.
+            let rest: Vec<_> = segs.collect();
+            if rest.is_empty() {
+                first.to_owned()
+            } else {
+                format!("{first}::{}", rest.join("::"))
+            }
+        }
+        None => String::new(),
     }
 }
 
@@ -615,10 +681,7 @@ pub mod bar {{
     }
 
     #[test]
-    fn pub_in_path_is_treated_as_hidden() {
-        // `pub(in some::path)` is not fully modeled — we conservatively hide
-        // the item. `extracts_all_public_item_kinds` covers the happy paths;
-        // this test pins down the fallback.
+    fn pub_in_path_visible_from_within_scope() {
         let mut f = NamedTempFile::new().unwrap();
         writeln!(
             f,
@@ -629,9 +692,73 @@ pub fn public_fn() {{}}
         )
         .unwrap();
 
+        // Caller is exactly the restricted scope — visible.
         let items = extract_with(f.path(), &[], "visibility", "visibility").unwrap();
+        assert!(items.contains(&"restricted".to_owned()));
+        assert!(items.contains(&"public_fn".to_owned()));
+
+        // Caller is a sub-module of the restricted scope — also visible.
+        let items = extract_with(f.path(), &[], "visibility", "visibility::inner").unwrap();
+        assert!(items.contains(&"restricted".to_owned()));
+    }
+
+    #[test]
+    fn pub_in_path_hidden_from_outside_scope() {
+        let mut f = NamedTempFile::new().unwrap();
+        writeln!(
+            f,
+            r"
+pub(in crate::visibility) fn restricted() {{}}
+pub fn public_fn() {{}}
+"
+        )
+        .unwrap();
+
+        // Caller is outside the restricted scope.
+        let items = extract_with(f.path(), &[], "visibility", "other_mod").unwrap();
         assert!(!items.contains(&"restricted".to_owned()));
         assert!(items.contains(&"public_fn".to_owned()));
+
+        // Crate root is also outside.
+        let items = extract_with(f.path(), &[], "visibility", "").unwrap();
+        assert!(!items.contains(&"restricted".to_owned()));
+    }
+
+    #[test]
+    fn normalize_in_path_crate_prefix() {
+        let path: syn::Path = syn::parse_str("crate::foo::bar").unwrap();
+        assert_eq!(normalize_in_path(&path, "foo::bar"), "foo::bar");
+
+        let path: syn::Path = syn::parse_str("crate::visibility").unwrap();
+        assert_eq!(normalize_in_path(&path, "visibility::inner"), "visibility");
+
+        // `crate` alone → crate root
+        let path: syn::Path = syn::parse_str("crate").unwrap();
+        assert_eq!(normalize_in_path(&path, "foo"), "");
+    }
+
+    #[test]
+    fn normalize_in_path_super_prefix() {
+        // `pub(in super)` from within `foo::bar` → parent is `foo`
+        let path: syn::Path = syn::parse_str("super").unwrap();
+        assert_eq!(normalize_in_path(&path, "foo::bar"), "foo");
+
+        // `pub(in super::sibling)` from within `foo::bar` → `foo::sibling`
+        let path: syn::Path = syn::parse_str("super::sibling").unwrap();
+        assert_eq!(normalize_in_path(&path, "foo::bar"), "foo::sibling");
+
+        // `pub(in super)` from top-level module → crate root
+        let path: syn::Path = syn::parse_str("super").unwrap();
+        assert_eq!(normalize_in_path(&path, "foo"), "");
+    }
+
+    #[test]
+    fn normalize_in_path_self_prefix() {
+        let path: syn::Path = syn::parse_str("self").unwrap();
+        assert_eq!(normalize_in_path(&path, "foo::bar"), "foo::bar");
+
+        let path: syn::Path = syn::parse_str("self::inner").unwrap();
+        assert_eq!(normalize_in_path(&path, "foo::bar"), "foo::bar::inner");
     }
 
     #[test]

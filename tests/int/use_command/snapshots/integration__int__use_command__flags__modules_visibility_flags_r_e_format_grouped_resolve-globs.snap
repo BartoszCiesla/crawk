@@ -18,11 +18,14 @@ exit_code: 0
 ----- stdout -----
 visibility
 visibility::inner
+ - crate::visibility::InternalState
  - crate::visibility::demonstrate_access
  - crate::visibility::inner
+ - crate::visibility::internal_helper
  - crate::visibility::pub_crate_mod
  - crate::visibility::pub_mod
  - crate::visibility::pub_super_mod
+ - crate::visibility::restricted_mod
 visibility::private_mod
  - crate::nesting::level1::level2::level3
 visibility::pub_crate_mod

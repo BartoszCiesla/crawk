@@ -17,11 +17,14 @@ crate::dir_module::greet
 crate::file_module
 crate::nesting
 crate::nesting::level1::level2::level3
+crate::visibility::InternalState
 crate::visibility::demonstrate_access
 crate::visibility::inner
+crate::visibility::internal_helper
 crate::visibility::pub_crate_mod
 crate::visibility::pub_mod
 crate::visibility::pub_mod::greet
 crate::visibility::pub_super_mod
+crate::visibility::restricted_mod
 
 ----- stderr -----
