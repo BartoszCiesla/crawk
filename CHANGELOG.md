@@ -2,6 +2,94 @@
 
 ## [Unreleased]
 
+## [0.2.0](https://github.com/BartoszCiesla/crawk/compare/v0.1.0...v0.2.0)
+
+### ⛰️ Features
+
+
+- *(discover)* Add workspace root detection and rejection - ([886f6e1](https://github.com/BartoszCiesla/crawk/commit/886f6e19daa5d782d99686504702014ebd79acda))
+- *(parser)* Add file size limit to prevent DoS attacks - ([f793d2d](https://github.com/BartoszCiesla/crawk/commit/f793d2d204aa64ad45a2ef4ffdd5059aa92c59d0))
+- *(resolve)* Add pub(in path) visibility support in glob expansion - ([af4264e](https://github.com/BartoszCiesla/crawk/commit/af4264e0fb58ed57fcb372f004068559b091f507))
+- *(resolve)* Support restricted visibility in glob imports - ([e337b12](https://github.com/BartoszCiesla/crawk/commit/e337b122d8cf9f935fe28796a3427568542cc3db))
+
+### 🐛 Bug Fixes
+
+
+- *(cli)* Add input validation for module_path argument - ([4b946bc](https://github.com/BartoszCiesla/crawk/commit/4b946bc44f8c2c78cda38bd72332ef7f4210b7c3))
+- *(discover)* Add path traversal protection to module resolution - ([08ec2ff](https://github.com/BartoszCiesla/crawk/commit/08ec2ff9589efd6e5ff0544d6a26f2fe9980faba))
+- *(error)* Include module path in parse error messages - ([6572458](https://github.com/BartoszCiesla/crawk/commit/65724582ee6f8fcd35b5c67733d5cf3fd2b6ba25))
+- *(module)* Correctly resolve inline module dependencies - ([37b95e3](https://github.com/BartoszCiesla/crawk/commit/37b95e3ca1829f8b4364433db6475e154d895370))
+
+### 🚜 Refactor
+
+
+- *(analyzer)* Extract parse and collection logic - ([1014b62](https://github.com/BartoszCiesla/crawk/commit/1014b62e35f579287aa8520ddf0762243c4758e4))
+- *(analyzer)* Eliminate unnecessary clone in file root map - ([7a9b37d](https://github.com/BartoszCiesla/crawk/commit/7a9b37d27838ac8e2e075f32ec35fa5281ebf6c8))
+- *(cache)* Extract ParseCache to dedicated module - ([a1327aa](https://github.com/BartoszCiesla/crawk/commit/a1327aa61dce4f9ebb1231b293c431a3ebd48c6f))
+- *(cli)* Split monolithic module into focused submodules - ([dba8adf](https://github.com/BartoszCiesla/crawk/commit/dba8adf285ed8227c65579a511b8eba219f38a9b))
+- *(cli)* Replace --grouped flag with --format enum - ([b5e1e77](https://github.com/BartoszCiesla/crawk/commit/b5e1e77c6394050562e9e213efdd93be886d99c0))
+- *(cli)* Replace process::exit with Result error propagation - ([20dc31d](https://github.com/BartoszCiesla/crawk/commit/20dc31dca799bf291c4e169c728623257b7eaaee))
+- *(discover)* Make CrateInfo fields private - ([5a0ea80](https://github.com/BartoszCiesla/crawk/commit/5a0ea8000ae6e55f28faabcf4c3e777c1ff562c1))
+- *(error)* Remove Result re-export from crate top-level - ([710a86d](https://github.com/BartoszCiesla/crawk/commit/710a86d4439bd83c0ce0f73fcc3089c6a826229c))
+- *(lib)* Split god module into model, error, and analyzer - ([30a85ca](https://github.com/BartoszCiesla/crawk/commit/30a85caa44b1575c1a3e5e6a1896be7fc384194e))
+- *(lib)* Split parser and discover into directory modules - ([87421de](https://github.com/BartoszCiesla/crawk/commit/87421de195c71afe91e591d1e75e194d7dd41602))
+- *(lib)* Flatten module structure and rename for clarity - ([dde0068](https://github.com/BartoszCiesla/crawk/commit/dde0068c4a72a9b472e7379ef434c411b7b204ec))
+- *(model)* Make AnalysisResult fields private with constructor - ([988c6f8](https://github.com/BartoszCiesla/crawk/commit/988c6f855308f5a101ab61687085e65937cec6d1))
+- *(model)* Change module_path() return type to &str - ([cd8d9f0](https://github.com/BartoszCiesla/crawk/commit/cd8d9f07c6720aac9edc8b38c98734d2a281eae5))
+- *(parser)* Categorize collected references by syntactic role - ([fdf5aa7](https://github.com/BartoszCiesla/crawk/commit/fdf5aa7b78f2a630178724e3c1fbb65580ff1ddd))
+- *(parser)* Move test-only methods to cfg(test) impl block - ([6ddfff0](https://github.com/BartoszCiesla/crawk/commit/6ddfff0ccfadb7409cd94a35b002d603f1c30fb2))
+- *(parser)* Remove dead include_tests flag and unused methods - ([e815c59](https://github.com/BartoszCiesla/crawk/commit/e815c590a562a7135595b8845b0fd5e19e3f8ee4))
+- *(parser)* Remove FileReferences wrapper and clean up dead code - ([7acb8e3](https://github.com/BartoszCiesla/crawk/commit/7acb8e37556f8253318c8b92ff144ae035025bad))
+- *(reference)* Hide Segments type from public API - ([0d25b0c](https://github.com/BartoszCiesla/crawk/commit/0d25b0ce46cd87f537aa42771265957ae04b7e4a))
+- *(reference)* Extract transformation logic to consumer modules - ([4cde715](https://github.com/BartoszCiesla/crawk/commit/4cde715da72776674130f31aced2c0421ac25a5b))
+- *(reference)* Make TypeReference fields private - ([e5f9ba1](https://github.com/BartoszCiesla/crawk/commit/e5f9ba1724ad771b1fa1688e7136c0d444b8866f))
+- *(reference)* Fix Segments Deref antipattern - ([0b8262c](https://github.com/BartoszCiesla/crawk/commit/0b8262c9b712b71478a23925c018ea90e15841a1))
+- *(resolve)* Deduplicate item visibility extraction logic - ([92155e9](https://github.com/BartoszCiesla/crawk/commit/92155e93237bdec3ecf93ff2b4c865001141a729))
+- *(test)* Consolidate test fixtures under fixtures/ directory - ([f3331e8](https://github.com/BartoszCiesla/crawk/commit/f3331e81fa95f529f1010eb8a3337f0a06d334eb))
+- Extract shared test detection logic to utils module - ([8efabb0](https://github.com/BartoszCiesla/crawk/commit/8efabb03f5e7abafbfa3a852bf04a855a875ad3a))
+- Add #[non_exhaustive] to public enums - ([77356c7](https://github.com/BartoszCiesla/crawk/commit/77356c769de2b5bf1b8c7c3029f006007e2f9ea0))
+
+### 📚 Documentation
+
+
+- *(model)* Clarify expand_groups and resolve_globs interaction - ([9ec9363](https://github.com/BartoszCiesla/crawk/commit/9ec93633ca530c283ddc1f89eedba9467c71b9da))
+- Enhance public API documentation and specify MSRV - ([278579a](https://github.com/BartoszCiesla/crawk/commit/278579ab29066dda552fdf173737bee2d3813704))
+- Add origin story explaining the crawk name - ([f7db429](https://github.com/BartoszCiesla/crawk/commit/f7db42907b07df4a894b3bab0bd187fd0cc9c9c3))
+- Add comprehensive README with installation and usage guide - ([56e63f5](https://github.com/BartoszCiesla/crawk/commit/56e63f5f4bfafad53a77ce2bc857fb91fdb9115b))
+
+### ⚡ Performance
+
+
+- *(parser)* Add parse cache and ParseCache type alias - ([1b3ac22](https://github.com/BartoszCiesla/crawk/commit/1b3ac227546311794e1e2ef215e91d36f05515a5))
+
+### 🧪 Testing
+
+
+- *(discover)* Add unit tests for module path resolution - ([92ef988](https://github.com/BartoszCiesla/crawk/commit/92ef988c5d8f0be16e7fe8e9fc695b894b2153af))
+- *(fixtures)* Add pub(in path) test fixtures with glob expansion - ([bf7b43c](https://github.com/BartoszCiesla/crawk/commit/bf7b43c636b064820ec0b8972c1ebba1b7a36fa2))
+- *(use_command)* Add coverage for -e -G flag combination - ([a0bbca1](https://github.com/BartoszCiesla/crawk/commit/a0bbca179baf77ae54061a7c9c050e1e0346ce2c))
+- *(utils)* Add unit tests for has_cfg_test function - ([99d1a33](https://github.com/BartoszCiesla/crawk/commit/99d1a3348c5da0d54667a1343f5480121e4b1757))
+- Add error path and edge case tests - ([9538974](https://github.com/BartoszCiesla/crawk/commit/9538974f0fae1bdacb1ecd185dfa78f906114c84))
+- Add comprehensive integration test suite with fixture crate - ([8cd2854](https://github.com/BartoszCiesla/crawk/commit/8cd2854467c4d58bb4413384b17962daa04d7fa2))
+
+### ⚙️ Miscellaneous Tasks
+
+
+- *(ci)* Configure typos exception for CHANGELOG - ([170b01f](https://github.com/BartoszCiesla/crawk/commit/170b01ff6ca1de886fb2c438ae8c1faa59b7d037))
+- *(test)* Remove clippy unwrap_used allow directives - ([a5042e2](https://github.com/BartoszCiesla/crawk/commit/a5042e236490a655d4587234a6da1b491cf1f09d))
+- Update taiki-e/install-action to v2.75.7 - ([ff376c1](https://github.com/BartoszCiesla/crawk/commit/ff376c1c9c98cb2537872b00a73756399e2a1dd9))
+- Update prek-action to v2.0.1 - ([5480ada](https://github.com/BartoszCiesla/crawk/commit/5480adafda8ff559f49b8eb0eb47a971cb998819))
+- Ignore AI assistant and notes files - ([a111243](https://github.com/BartoszCiesla/crawk/commit/a111243cb64c13135095aa7f27a9b8801a1491fb))
+- Add clippy.toml and enforce stricter lints - ([2694361](https://github.com/BartoszCiesla/crawk/commit/2694361ec6805513429156fa715f563511055e28))
+- Disable semver check in release-plz config - ([cb39bff](https://github.com/BartoszCiesla/crawk/commit/cb39bff00a735e96c5ba2be585ea5a7a2b9f9403))
+- Update GitHub Actions workflow dependencies - ([49eda25](https://github.com/BartoszCiesla/crawk/commit/49eda2583b4374fd989e682b3b547936ef63e877))
+- Add release environment protection to workflows - ([e8bb04e](https://github.com/BartoszCiesla/crawk/commit/e8bb04e4bfa3f6e984537e2f905a002b1e2f267c))
+- Update zizmor-action to v0.5.2 - ([a9e11e7](https://github.com/BartoszCiesla/crawk/commit/a9e11e7eb118ee9f53ebd6aa4ef1020c7ac8c0ce))
+- Ignore fixtures/modules/target directory - ([1de080a](https://github.com/BartoszCiesla/crawk/commit/1de080a58468317f7fd9c67b4098532708014364))
+- Add cooldown periods to Dependabot configuration - ([b71bc5e](https://github.com/BartoszCiesla/crawk/commit/b71bc5e403651eb4371322df7a6f20e509db32eb))
+- Add Dependabot configuration for dependency updates - ([adb16b8](https://github.com/BartoszCiesla/crawk/commit/adb16b8664e658799fb47df063fa89fb319d6424))
+
+
 ## [0.1.0]
 
 ### ⛰️ Features
