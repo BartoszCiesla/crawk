@@ -59,10 +59,13 @@ jobs:
         if: matrix.target == 'x86_64-unknown-linux-musl'
         run: sudo apt-get install -y musl-tools
       - name: Build
-        run: cargo build --target ${{ matrix.target }}
-      - name: Test
-        run: cargo test --target ${{ matrix.target }}
+        run: cargo build --target "${TARGET}"
         env:
+          TARGET: ${{ matrix.target }}
+      - name: Test
+        run: cargo test --target "${TARGET}"
+        env:
+          TARGET: ${{ matrix.target }}
           RUST_BACKTRACE: "0"
   finalize:
     name: Finalize Checks
