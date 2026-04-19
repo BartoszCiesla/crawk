@@ -44,6 +44,8 @@ impl Drop for LogFile {
 // We use filters to strip non-deterministic content (absolute paths, etc.).
 fn log_filters() -> Vec<(&'static str, &'static str)> {
     vec![
+        // Strip version string
+        (r"Running crawk v\d+\.\d+\.\d+", "Running crawk version"),
         // Strip absolute paths
         (r"/[^ ]+/modules/src/", "[MODULES]/src/"),
         (r"/[^ ]+/modules", "[MODULES]"),

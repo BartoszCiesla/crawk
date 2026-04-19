@@ -4,7 +4,7 @@ info:
   program: crawk
   args:
     - "-p"
-    - /home/barcie/coding/crawk/modules
+    - /home/barcie/coding/crawk/fixtures/modules
     - "-v"
     - use
     - file_module
@@ -12,7 +12,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-[32mINFO[39m Running crawk v0.1.0
+[32mINFO[39m Running crawk version
 [32mINFO[39m Crate root: [MODULES]
 [32mINFO[39m Analyzing module: file_module
 [32mINFO[39m Analyzing module: file_module (file: [MODULES]/src/file_module.rs)
