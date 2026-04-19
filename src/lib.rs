@@ -83,6 +83,7 @@ mod utils;
 pub mod version;
 
 pub use crate::analyzer::Analyzer;
+pub use crate::discover::ModuleInfo;
 pub use crate::error::AnalysisError;
 pub use crate::model::{AnalysisOptions, AnalysisResult};
 pub use crate::parser::AnalyzerError;

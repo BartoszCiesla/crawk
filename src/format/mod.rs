@@ -3,6 +3,7 @@ use std::collections::BTreeSet;
 
 pub(crate) mod flat;
 pub(crate) mod grouped;
+pub(crate) mod list;
 
 fn truncate_and_dedup<'a>(
     refs: impl IntoIterator<Item = &'a TypeReference>,

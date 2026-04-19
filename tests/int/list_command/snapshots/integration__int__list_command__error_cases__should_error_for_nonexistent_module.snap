@@ -1,0 +1,16 @@
+---
+source: tests/int/list_command/error_cases.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/fixtures/modules
+    - list
+    - nonexistent_module
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: Module 'nonexistent_module' not found

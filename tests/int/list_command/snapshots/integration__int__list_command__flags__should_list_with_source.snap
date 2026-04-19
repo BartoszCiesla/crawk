@@ -1,0 +1,94 @@
+---
+source: tests/int/list_command/flags.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/fixtures/modules
+    - list
+    - "-s"
+---
+success: true
+exit_code: 0
+----- stdout -----
+advanced_globs                          src/advanced_globs.rs
+advanced_globs::aliased_module          src/advanced_globs.rs
+advanced_globs::enum_variants           src/advanced_globs.rs
+advanced_globs::internal                src/advanced_globs.rs
+advanced_globs::layer1                  src/advanced_globs.rs
+advanced_globs::layer1::layer2          src/advanced_globs.rs
+advanced_globs::layer1::layer2::layer3  src/advanced_globs.rs
+advanced_globs::macro_module            src/advanced_globs.rs
+advanced_globs::original                src/advanced_globs.rs
+advanced_globs::prelude                 src/advanced_globs.rs
+advanced_globs::shadowing               src/advanced_globs.rs
+advanced_globs::trait_providers         src/advanced_globs.rs
+advanced_globs::unix_specific           src/advanced_globs.rs
+advanced_globs::windows_specific        src/advanced_globs.rs
+baz                                     src/baz.rs
+custom_path                             src/custom_path.rs
+dir_module                              src/dir_module/mod.rs
+dir_module::child_dir                   src/dir_module/child_dir/mod.rs
+dir_module::child_file                  src/dir_module/child_file.rs
+empty_module                            src/empty_module.rs
+file_module                             src/file_module.rs
+foo                                     src/foo/mod.rs
+foo::bar                                src/foo/bar.rs
+foo::other                              src/foo/other.rs
+glob_patterns                           src/glob_patterns.rs
+glob_patterns::constants                src/glob_patterns.rs
+glob_patterns::mixed_exports            src/glob_patterns.rs
+glob_patterns::outer                    src/glob_patterns.rs
+glob_patterns::outer::inner             src/glob_patterns.rs
+glob_patterns::self_ref                 src/glob_patterns.rs
+glob_patterns::set_a                    src/glob_patterns.rs
+glob_patterns::set_b                    src/glob_patterns.rs
+glob_patterns::traits                   src/glob_patterns.rs
+glob_patterns::types                    src/glob_patterns.rs
+glob_patterns::utilities                src/glob_patterns.rs
+glob_showcase                           src/glob_showcase.rs
+glob_showcase::api                      src/glob_showcase.rs
+glob_showcase::config                   src/glob_showcase.rs
+glob_showcase::config::all              src/glob_showcase.rs
+glob_showcase::config::client           src/glob_showcase.rs
+glob_showcase::config::logging          src/glob_showcase.rs
+glob_showcase::config::server           src/glob_showcase.rs
+glob_showcase::database                 src/glob_showcase.rs
+glob_showcase::database::connection     src/glob_showcase.rs
+glob_showcase::database::query          src/glob_showcase.rs
+glob_showcase::database::transaction    src/glob_showcase.rs
+glob_showcase::errors                   src/glob_showcase.rs
+glob_showcase::models                   src/glob_showcase.rs
+glob_showcase::prelude                  src/glob_showcase.rs
+glob_showcase::traits                   src/glob_showcase.rs
+glob_showcase::utils                    src/glob_showcase.rs
+glob_showcase::utils::collection        src/glob_showcase.rs
+glob_showcase::utils::math              src/glob_showcase.rs
+glob_showcase::utils::string            src/glob_showcase.rs
+inline_modules                          src/inline_modules.rs
+inline_modules::inner                   src/inline_modules.rs
+inline_modules::nested                  src/inline_modules.rs
+inline_modules::nested::deep            src/inline_modules.rs
+inline_modules::private_inline          src/inline_modules.rs
+item_visibility                         src/item_visibility.rs
+mixed                                   src/mixed/mod.rs
+mixed::file_child                       src/mixed/file_child.rs
+mixed::inline_child                     src/mixed/mod.rs
+nesting                                 src/nesting/mod.rs
+nesting::level1                         src/nesting/level1/mod.rs
+nesting::level1::level2                 src/nesting/level1/level2/mod.rs
+nesting::level1::level2::level3         src/nesting/level1/level2/level3.rs
+no_pub_items                            src/no_pub_items.rs
+reexports                               src/reexports/mod.rs
+reexports::internal                     src/reexports/internal.rs
+reexports::types                        src/reexports/types.rs
+uses_empty_glob                         src/uses_empty_glob.rs
+visibility                              src/visibility/mod.rs
+visibility::inner                       src/visibility/inner.rs
+visibility::private_mod                 src/visibility/private_mod.rs
+visibility::pub_crate_mod               src/visibility/pub_crate_mod.rs
+visibility::pub_mod                     src/visibility/pub_mod.rs
+visibility::pub_super_mod               src/visibility/pub_super_mod.rs
+visibility::restricted_mod              src/visibility/mod.rs
+
+----- stderr -----

@@ -17,6 +17,7 @@ exit_code: 0
 ----- stdout -----
 crawk
  - crate::analyzer::Analyzer
+ - crate::discover::ModuleInfo
  - crate::error::AnalysisError
  - crate::model::AnalysisOptions
  - crate::model::AnalysisResult

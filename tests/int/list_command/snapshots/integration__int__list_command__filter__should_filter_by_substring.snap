@@ -1,0 +1,61 @@
+---
+source: tests/int/list_command/filter.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/fixtures/modules
+    - list
+    - "-F"
+    - glob
+---
+success: true
+exit_code: 0
+----- stdout -----
+advanced_globs
+advanced_globs::aliased_module
+advanced_globs::enum_variants
+advanced_globs::internal
+advanced_globs::layer1
+advanced_globs::layer1::layer2
+advanced_globs::layer1::layer2::layer3
+advanced_globs::macro_module
+advanced_globs::original
+advanced_globs::prelude
+advanced_globs::shadowing
+advanced_globs::trait_providers
+advanced_globs::unix_specific
+advanced_globs::windows_specific
+glob_patterns
+glob_patterns::constants
+glob_patterns::mixed_exports
+glob_patterns::outer
+glob_patterns::outer::inner
+glob_patterns::self_ref
+glob_patterns::set_a
+glob_patterns::set_b
+glob_patterns::traits
+glob_patterns::types
+glob_patterns::utilities
+glob_showcase
+glob_showcase::api
+glob_showcase::config
+glob_showcase::config::all
+glob_showcase::config::client
+glob_showcase::config::logging
+glob_showcase::config::server
+glob_showcase::database
+glob_showcase::database::connection
+glob_showcase::database::query
+glob_showcase::database::transaction
+glob_showcase::errors
+glob_showcase::models
+glob_showcase::prelude
+glob_showcase::traits
+glob_showcase::utils
+glob_showcase::utils::collection
+glob_showcase::utils::math
+glob_showcase::utils::string
+uses_empty_glob
+
+----- stderr -----

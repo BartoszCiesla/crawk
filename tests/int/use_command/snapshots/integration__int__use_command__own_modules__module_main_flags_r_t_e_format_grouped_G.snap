@@ -35,9 +35,12 @@ format::flat
 format::grouped
  - crate::format::truncate_and_dedup
  - crawk::AnalysisResult
+format::list
+ - crawk::ModuleInfo
 format::tests
  - crate::format::flat
  - crate::format::grouped
+ - crate::format::list
 logger
  - crate::cli::CrawkArgs
 

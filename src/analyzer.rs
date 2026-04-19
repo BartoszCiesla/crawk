@@ -143,6 +143,35 @@ impl Analyzer {
         })
     }
 
+    /// List all modules discovered under the given module path.
+    ///
+    /// Returns a sorted list of all modules found recursively under
+    /// `module_path`. If `module_path` is `"lib"`, lists the entire crate.
+    ///
+    /// # Arguments
+    ///
+    /// * `module_path` - Root module to list from (e.g., `"lib"`, `"parser"`)
+    /// * `include_tests` - Whether to include `#[cfg(test)]` modules
+    ///
+    /// # Errors
+    ///
+    /// Returns [`AnalysisError::ModuleNotFound`] if the module doesn't exist.
+    pub fn list_modules(
+        &mut self,
+        module_path: &str,
+        include_tests: bool,
+    ) -> Result<Vec<ModuleInfo>> {
+        let mut modules = self.crate_info.get_module_tree(
+            module_path,
+            true,
+            include_tests,
+            &mut self.parse_cache,
+        )?;
+        modules.sort_by(|a, b| a.path().cmp(b.path()));
+        modules.dedup_by(|a, b| a.path() == b.path());
+        Ok(modules)
+    }
+
     /// Analyze dependencies for a specific module.
     ///
     /// Recursively analyzes the module and all its submodules, collecting

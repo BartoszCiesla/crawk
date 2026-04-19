@@ -1,0 +1,27 @@
+---
+source: tests/int/list_command/overview.rs
+info:
+  program: crawk
+  args:
+    - list
+    - "-h"
+---
+success: true
+exit_code: 0
+----- stdout -----
+List all modules in the crate
+
+Usage: crawk list [OPTIONS] [MODULE_PATH]
+
+Arguments:
+  [MODULE_PATH]  Module path to scope the listing (default: entire crate)
+
+Options:
+  -t, --include-tests    Include modules defined in `#[cfg(test)]` blocks (excluded by default)
+  -s, --source           Show source file paths alongside module names
+  -d, --depth <DEPTH>    Limit displayed module depth
+  -F, --filter <FILTER>  Filter modules by substring match on module path
+  -f, --format <FORMAT>  Output format [default: plain] [possible values: plain, table]
+  -h, --help             Print help (see more with '--help')
+
+----- stderr -----

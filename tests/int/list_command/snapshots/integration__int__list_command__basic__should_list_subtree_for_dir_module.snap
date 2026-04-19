@@ -1,0 +1,18 @@
+---
+source: tests/int/list_command/basic.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/fixtures/modules
+    - list
+    - dir_module
+---
+success: true
+exit_code: 0
+----- stdout -----
+dir_module
+dir_module::child_dir
+dir_module::child_file
+
+----- stderr -----

@@ -12,6 +12,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::analyzer
+crate::discover
 crate::error
 crate::model::{AnalysisOptions, AnalysisResult}
 crate::parser

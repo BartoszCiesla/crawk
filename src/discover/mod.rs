@@ -83,7 +83,7 @@ pub(crate) type Result<T> = std::result::Result<T, CrateInfoError>;
 /// Modules can be defined either as separate files or as inline modules within
 /// another file.
 #[derive(Debug, Clone)]
-pub(crate) struct ModuleInfo {
+pub struct ModuleInfo {
     /// The full module path (e.g., "analysis::collect")
     module_path: String,
 
@@ -98,7 +98,8 @@ impl ModuleInfo {
     ///
     /// * `module_path` - The fully qualified module path (e.g., "analysis::collect")
     /// * `source_file` - The file system path where this module is defined
-    pub(crate) const fn new(module_path: String, source_file: PathBuf) -> Self {
+    #[must_use]
+    pub const fn new(module_path: String, source_file: PathBuf) -> Self {
         Self {
             module_path,
             source_file,
@@ -107,7 +108,7 @@ impl ModuleInfo {
 
     /// Returns the fully qualified module path.
     #[must_use]
-    pub(crate) fn path(&self) -> &str {
+    pub fn path(&self) -> &str {
         &self.module_path
     }
 
@@ -116,7 +117,7 @@ impl ModuleInfo {
     /// For inline modules (such as test modules defined with `#[cfg(test)]`),
     /// this returns the path of the file containing the inline module definition.
     #[must_use]
-    pub(crate) fn source(&self) -> &Path {
+    pub fn source(&self) -> &Path {
         &self.source_file
     }
 }

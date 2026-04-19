@@ -105,6 +105,14 @@ pub(crate) enum CrawkCommands {
     /// reference other modules within the same crate.
     #[clap(verbatim_doc_comment)]
     Use(UseArgs),
+
+    /// List all modules in the crate
+    ///
+    /// Discovers and displays the module structure of a Rust crate.
+    /// By default lists all modules recursively from the crate root.
+    /// Optionally scope to a subtree by providing a module path.
+    #[clap(verbatim_doc_comment)]
+    List(ListArgs),
 }
 
 #[derive(ValueEnum, Debug, Clone, Default, PartialEq, Eq)]
@@ -175,4 +183,65 @@ pub(crate) struct UseArgs {
     #[clap(verbatim_doc_comment)]
     #[arg(short = 'G', long = "resolve-globs", default_value_t = false)]
     pub resolve_globs: bool,
+}
+
+#[derive(ValueEnum, Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) enum ListOutputFormat {
+    /// One module per line (default)
+    #[default]
+    Plain,
+    /// Unicode table
+    Table,
+}
+
+impl Display for ListOutputFormat {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        match self {
+            Self::Plain => f.write_str("plain"),
+            Self::Table => f.write_str("table"),
+        }
+    }
+}
+
+#[derive(Parser, Debug, Clone)]
+/// Arguments for the `list` subcommand — lists modules in the crate.
+pub(crate) struct ListArgs {
+    /// Module path to scope the listing (default: entire crate)
+    ///
+    /// e.g., "parser" lists only parser and its submodules
+    #[clap(verbatim_doc_comment)]
+    #[arg(value_parser = validate_module_path)]
+    pub module_path: Option<String>,
+
+    /// Include modules defined in `#[cfg(test)]` blocks (excluded by default)
+    #[clap(verbatim_doc_comment)]
+    #[arg(short = 't', long = "include-tests", default_value_t = false)]
+    pub include_tests: bool,
+
+    /// Show source file paths alongside module names
+    #[clap(verbatim_doc_comment)]
+    #[arg(short = 's', long = "source", default_value_t = false)]
+    pub source: bool,
+
+    /// Limit displayed module depth
+    ///
+    /// e.g., --depth 1 shows only top-level modules
+    #[clap(verbatim_doc_comment)]
+    #[arg(short = 'd', long = "depth", value_parser = validate_depth)]
+    pub depth: Option<usize>,
+
+    /// Filter modules by substring match on module path
+    ///
+    /// e.g., --filter parser matches "parser", "parser::visitor"
+    #[clap(verbatim_doc_comment)]
+    #[arg(short = 'F', long = "filter")]
+    pub filter: Option<String>,
+
+    /// Output format
+    ///
+    /// plain — one module per line (default)
+    /// table — unicode table
+    #[clap(verbatim_doc_comment)]
+    #[arg(short = 'f', long = "format", default_value_t = ListOutputFormat::Plain)]
+    pub format: ListOutputFormat,
 }

@@ -3,7 +3,7 @@ mod format;
 mod logger;
 
 use clap::Parser;
-use cli::{CrawkArgs, CrawkCommands, UseArgs, UseOutputFormat};
+use cli::{CrawkArgs, CrawkCommands, ListArgs, ListOutputFormat, UseArgs, UseOutputFormat};
 use crawk::{AnalysisOptions, Analyzer, version};
 use logger::configure_tracing;
 use std::path::Path;
@@ -25,6 +25,46 @@ fn main() -> anyhow::Result<()> {
     // Dispatch to the appropriate subcommand
     match command.command {
         CrawkCommands::Use(ref args) => handle_use_command(&crate_root, args)?,
+        CrawkCommands::List(ref args) => handle_list_command(&crate_root, args)?,
+    }
+
+    Ok(())
+}
+
+/// Handle the 'list' subcommand
+fn handle_list_command(crate_root: &Path, args: &ListArgs) -> anyhow::Result<()> {
+    let mut analyzer = Analyzer::new(crate_root)?;
+
+    let module_path = args.module_path.as_deref().unwrap_or("lib");
+    info!("Listing modules from: {module_path}");
+
+    let mut modules = analyzer.list_modules(module_path, args.include_tests)?;
+
+    // Filter out the crate root (empty path)
+    modules.retain(|m| !m.path().is_empty());
+
+    // Apply depth filter
+    if let Some(depth) = args.depth {
+        modules.retain(|m| m.path().matches("::").count() < depth);
+    }
+
+    // Apply substring filter
+    if let Some(ref filter) = args.filter {
+        modules.retain(|m| m.path().contains(filter.as_str()));
+    }
+
+    if modules.is_empty() {
+        info!("No modules found.");
+    } else {
+        let output = match args.format {
+            ListOutputFormat::Plain => {
+                format::list::render_list_plain(&modules, args.source, crate_root)
+            }
+            ListOutputFormat::Table => {
+                format::list::render_list_table(&modules, args.source, crate_root)
+            }
+        };
+        print!("{output}");
     }
 
     Ok(())

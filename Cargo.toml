@@ -18,6 +18,7 @@ vergen = ["dep:vergen-git2"]
 anyhow = "1.0.102"
 cargo_metadata = "0.23.1"
 clap = { version = "4.6", features = ["derive", "cargo"] }
+comfy-table = "7.2.2"
 const_format = "0.2"
 owo-colors = "4.3.0"
 proc-macro2 = "1.0"

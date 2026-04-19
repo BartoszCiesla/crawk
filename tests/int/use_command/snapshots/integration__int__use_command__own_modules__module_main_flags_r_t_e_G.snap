@@ -18,10 +18,12 @@ crate::cli::validation::validate_depth
 crate::cli::validation::validate_module_path
 crate::format::flat
 crate::format::grouped
+crate::format::list
 crate::format::truncate_and_dedup
 crawk::AnalysisOptions
 crawk::AnalysisResult
 crawk::Analyzer
+crawk::ModuleInfo
 crawk::TypeReference
 crawk::version
 

@@ -1,0 +1,58 @@
+---
+source: tests/int/list_command/overview.rs
+info:
+  program: crawk
+  args:
+    - list
+    - "--help"
+---
+success: true
+exit_code: 0
+----- stdout -----
+List all modules in the crate
+
+Discovers and displays the module structure of a Rust crate.
+By default lists all modules recursively from the crate root.
+Optionally scope to a subtree by providing a module path.
+
+Usage: crawk list [OPTIONS] [MODULE_PATH]
+
+Arguments:
+  [MODULE_PATH]
+          Module path to scope the listing (default: entire crate)
+          
+          e.g., "parser" lists only parser and its submodules
+
+Options:
+  -t, --include-tests
+          Include modules defined in `#[cfg(test)]` blocks (excluded by default)
+
+  -s, --source
+          Show source file paths alongside module names
+
+  -d, --depth <DEPTH>
+          Limit displayed module depth
+          
+          e.g., --depth 1 shows only top-level modules
+
+  -F, --filter <FILTER>
+          Filter modules by substring match on module path
+          
+          e.g., --filter parser matches "parser", "parser::visitor"
+
+  -f, --format <FORMAT>
+          Output format
+          
+          plain — one module per line (default)
+          table — unicode table
+
+          Possible values:
+          - plain: One module per line (default)
+          - table: Unicode table
+          
+          [default: plain]
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+----- stderr -----

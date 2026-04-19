@@ -12,6 +12,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::analyzer::Analyzer
+crate::discover::ModuleInfo
 crate::error::AnalysisError
 crate::model::AnalysisOptions
 crate::model::AnalysisResult

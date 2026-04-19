@@ -1,0 +1,79 @@
+---
+source: tests/int/list_command/flags.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/fixtures/modules
+    - list
+    - "-d"
+    - "2"
+---
+success: true
+exit_code: 0
+----- stdout -----
+advanced_globs
+advanced_globs::aliased_module
+advanced_globs::enum_variants
+advanced_globs::internal
+advanced_globs::layer1
+advanced_globs::macro_module
+advanced_globs::original
+advanced_globs::prelude
+advanced_globs::shadowing
+advanced_globs::trait_providers
+advanced_globs::unix_specific
+advanced_globs::windows_specific
+baz
+custom_path
+dir_module
+dir_module::child_dir
+dir_module::child_file
+empty_module
+file_module
+foo
+foo::bar
+foo::other
+glob_patterns
+glob_patterns::constants
+glob_patterns::mixed_exports
+glob_patterns::outer
+glob_patterns::self_ref
+glob_patterns::set_a
+glob_patterns::set_b
+glob_patterns::traits
+glob_patterns::types
+glob_patterns::utilities
+glob_showcase
+glob_showcase::api
+glob_showcase::config
+glob_showcase::database
+glob_showcase::errors
+glob_showcase::models
+glob_showcase::prelude
+glob_showcase::traits
+glob_showcase::utils
+inline_modules
+inline_modules::inner
+inline_modules::nested
+inline_modules::private_inline
+item_visibility
+mixed
+mixed::file_child
+mixed::inline_child
+nesting
+nesting::level1
+no_pub_items
+reexports
+reexports::internal
+reexports::types
+uses_empty_glob
+visibility
+visibility::inner
+visibility::private_mod
+visibility::pub_crate_mod
+visibility::pub_mod
+visibility::pub_super_mod
+visibility::restricted_mod
+
+----- stderr -----

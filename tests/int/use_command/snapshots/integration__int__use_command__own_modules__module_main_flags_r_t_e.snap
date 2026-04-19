@@ -19,6 +19,7 @@ crate::format::truncate_and_dedup
 crawk::AnalysisOptions
 crawk::AnalysisResult
 crawk::Analyzer
+crawk::ModuleInfo
 crawk::TypeReference
 crawk::version
 
