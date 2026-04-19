@@ -62,6 +62,8 @@ jobs:
         run: cargo build --target ${{ matrix.target }}
       - name: Test
         run: cargo test --target ${{ matrix.target }}
+        env:
+          RUST_BACKTRACE: "0"
   finalize:
     name: Finalize Checks
     runs-on: ubuntu-latest
