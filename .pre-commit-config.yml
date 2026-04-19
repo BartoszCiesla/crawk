@@ -32,6 +32,15 @@ repos:
     hooks:
       - id: gitlint
         stages: [commit-msg]
+  # Zizmor pre-commit hooks for linting, formatting, and other checks on GitHub workflow files
+  # By default, typos exec is downloaded from GH artifacts which does not work under NixOS. As a workaround
+  # that executable is replaced with the symlink to the typos installed in the system (via Nix or cargo).
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    # Zizmor version.
+    rev: v1.24.1
+    hooks:
+      # Run the linter.
+      - id: zizmor
   # Rust project-specific local hooks
   - repo: local
     hooks:
