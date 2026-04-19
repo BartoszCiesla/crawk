@@ -33,6 +33,35 @@ jobs:
         uses: j178/prek-action@53276d8b0d10f8b6672aa85b4588c6921d0370cc # v2.0.1
         with:
           extra-args: '--all-files'
+  build-checks:
+    name: Build Checks
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    concurrency:
+      group: build-checks-${{ github.ref }}-${{ matrix.target }}
+      cancel-in-progress: false
+    strategy:
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+          - x86_64-unknown-linux-musl
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@150fca883cd4034361b621bd4e6a9d34e5143606 # v1.15.4
+        with:
+          target: ${{ matrix.target }}
+      - name: Install musl tools
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: sudo apt-get install -y musl-tools
+      - name: Build
+        run: cargo build --target ${{ matrix.target }}
+      - name: Test
+        run: cargo test --target ${{ matrix.target }}
   finalize:
     name: Finalize Checks
     runs-on: ubuntu-latest
@@ -41,6 +70,7 @@ jobs:
       cancel-in-progress: false
     needs:
       - prek-checks
+      - build-checks
     if: always()
     steps:
       - name: Exit with appropriate code

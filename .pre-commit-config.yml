@@ -35,6 +35,14 @@ repos:
   # Rust project-specific local hooks
   - repo: local
     hooks:
+      - id: cargo-build
+        name: cargo build
+        entry: cargo
+        language: system
+        args: ["build"]
+        types_or: [rust, cargo]
+        pass_filenames: false
+        stages: [pre-push]
       - id: cargo-check
         name: cargo check
         entry: cargo
@@ -63,6 +71,14 @@ repos:
         entry: cargo
         language: system
         args: ["nextest", "run", "--all-features"]
+        types_or: [rust, cargo]
+        pass_filenames: false
+        stages: [pre-push]
+      - id: cargo-doc-test
+        name: cargo doc tests
+        entry: cargo
+        language: system
+        args: ["test", "--doc", "--all-features"]
         types_or: [rust, cargo]
         pass_filenames: false
         stages: [pre-push]
