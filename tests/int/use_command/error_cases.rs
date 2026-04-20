@@ -42,3 +42,62 @@ fn should_fail_with_invalid_depth(depth: &str) {
         crawk().arg("use").arg("lib").arg("-d").arg(depth)
     );
 }
+
+// ============================================================================
+// Path traversal defense — CLI validation layer (layer 1)
+// ============================================================================
+
+#[test_case("foo::..::lib"; "dotdot segment")]
+#[test_case("foo::/etc/passwd"; "absolute path segment")]
+fn should_reject_path_traversal_at_cli(module_path: &str) {
+    let snapshot_name = format!(
+        "path_traversal_{}",
+        module_path
+            .chars()
+            .map(|c| if c.is_alphanumeric() { c } else { '_' })
+            .collect::<String>()
+    );
+
+    assert_cmd_snapshot!(snapshot_name, crawk().arg("use").arg(module_path));
+}
+
+// ============================================================================
+// Path traversal defense — symlink escape (layer 2: check_within_root)
+// ============================================================================
+
+#[cfg(unix)]
+#[test]
+fn should_reject_symlink_escaping_crate_root() {
+    use std::fs;
+    use std::os::unix::fs::symlink;
+    use tempfile::TempDir;
+
+    // Create a file outside the future crate root
+    let outside = TempDir::new().unwrap();
+    let outside_file = outside.path().join("secret.rs");
+    fs::write(&outside_file, "// outside crate root").unwrap();
+
+    // Build a minimal crate with src/escape.rs → symlink pointing outside
+    let root = TempDir::new().unwrap();
+    let src = root.path().join("src");
+    fs::create_dir(&src).unwrap();
+    fs::write(src.join("lib.rs"), "").unwrap();
+    fs::write(
+        root.path().join("Cargo.toml"),
+        "[package]\nname = \"test-escape\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+    )
+    .unwrap();
+    symlink(&outside_file, src.join("escape.rs")).unwrap();
+
+    with_settings!({
+        filters => vec![
+            (root.path().to_str().unwrap_or(""), "[ROOT]"),
+            (outside.path().to_str().unwrap_or(""), "[OUTSIDE]"),
+        ],
+    }, {
+        assert_cmd_snapshot!(crawk()
+            .arg("-p").arg(root.path())
+            .arg("use")
+            .arg("escape"));
+    });
+}

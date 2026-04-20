@@ -1,0 +1,16 @@
+---
+source: tests/int/use_command/error_cases.rs
+info:
+  program: crawk
+  args:
+    - use
+    - "foo::..::lib"
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+error: invalid value 'foo::..::lib' for '<MODULE_PATH>': module path 'foo::..::lib' contains invalid characters (only a-z, A-Z, 0-9, _, - and :: are allowed)
+
+For more information, try '--help'.

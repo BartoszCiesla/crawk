@@ -1,0 +1,16 @@
+---
+source: tests/int/use_command/error_cases.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /tmp/.tmprUFepJ
+    - use
+    - escape
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: Resolved path escapes crate root

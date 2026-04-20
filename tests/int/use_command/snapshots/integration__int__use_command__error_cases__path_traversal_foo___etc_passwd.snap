@@ -1,0 +1,16 @@
+---
+source: tests/int/use_command/error_cases.rs
+info:
+  program: crawk
+  args:
+    - use
+    - "foo::/etc/passwd"
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+error: invalid value 'foo::/etc/passwd' for '<MODULE_PATH>': module path 'foo::/etc/passwd' contains invalid characters (only a-z, A-Z, 0-9, _, - and :: are allowed)
+
+For more information, try '--help'.
