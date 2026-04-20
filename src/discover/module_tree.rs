@@ -144,17 +144,20 @@ impl CrateInfo {
         // Prefer lib.rs
         for target in &package.targets {
             if target.is_lib() {
-                return Some(target.src_path.clone().into());
+                return Some(target.src_path.as_std_path().to_path_buf());
             }
         }
         // Then main.rs
         for target in &package.targets {
             if target.is_bin() {
-                return Some(target.src_path.clone().into());
+                return Some(target.src_path.as_std_path().to_path_buf());
             }
         }
         // Fallback to first target
-        package.targets.first().map(|t| t.src_path.clone().into())
+        package
+            .targets
+            .first()
+            .map(|t| t.src_path.as_std_path().to_path_buf())
     }
 
     /// Finds a binary target by matching its source file's filename against `"{file_stem}.rs"`.
@@ -170,7 +173,7 @@ impl CrateInfo {
                         .and_then(|f| f.to_str())
                         .is_some_and(|name| name == expected_filename)
             })
-            .map(|t| t.src_path.clone().into())
+            .map(|t| t.src_path.as_std_path().to_path_buf())
     }
 
     /// Resolves a module path relative to a binary target identified by its source file stem.
