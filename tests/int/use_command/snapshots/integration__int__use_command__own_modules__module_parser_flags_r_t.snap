@@ -20,6 +20,6 @@ crate::reference::TypeReference
 crate::reference::{GroupItem, PathPrefix, TypeReference}
 crate::utils::has_cfg_test
 crate::utils::{MAX_FILE_BYTES, ReadFileError}
-crate::utils::{ReadFileError, read_source_file}
+crate::utils::{ReadFileError, descend_inline_module, read_source_file}
 
 ----- stderr -----

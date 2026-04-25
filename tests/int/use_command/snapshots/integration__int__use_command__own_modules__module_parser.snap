@@ -11,6 +11,6 @@ exit_code: 0
 ----- stdout -----
 crate::cache::ParseCache
 crate::reference::TypeReference
-crate::utils::{ReadFileError, read_source_file}
+crate::utils::{ReadFileError, descend_inline_module, read_source_file}
 
 ----- stderr -----

@@ -19,6 +19,7 @@ parser
  - crate::cache::ParseCache
  - crate::reference::TypeReference
  - crate::utils::ReadFileError
+ - crate::utils::descend_inline_module
  - crate::utils::read_source_file
 parser::tests
  - crate::parser::AnalyzerError

@@ -19,6 +19,7 @@ crate::reference::PathPrefix
 crate::reference::TypeReference
 crate::resolve::extract_public_items
 crate::resolve::resolve_glob
+crate::utils::descend_inline_module
 crate::utils::read_source_file
 
 ----- stderr -----

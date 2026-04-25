@@ -70,6 +70,7 @@ parser
  - crate::cache::ParseCache
  - crate::reference::TypeReference
  - crate::utils::ReadFileError
+ - crate::utils::descend_inline_module
  - crate::utils::read_source_file
 parser::tests
  - crate::parser::AnalyzerError
@@ -101,6 +102,7 @@ resolve
  - crate::discover::CrateInfo
  - crate::reference::PathPrefix
  - crate::reference::TypeReference
+ - crate::utils::descend_inline_module
  - crate::utils::read_source_file
 resolve::tests
  - crate::resolve::extract_public_items
@@ -111,6 +113,7 @@ utils
 utils::tests
  - crate::utils::MAX_FILE_BYTES
  - crate::utils::ReadFileError
+ - crate::utils::descend_inline_module
  - crate::utils::has_cfg_test
  - crate::utils::read_source_file
 version

@@ -47,6 +47,7 @@ crate::resolve::extract_public_items
 crate::resolve::resolve_glob
 crate::utils::MAX_FILE_BYTES
 crate::utils::ReadFileError
+crate::utils::descend_inline_module
 crate::utils::has_cfg_test
 crate::utils::read_source_file
 

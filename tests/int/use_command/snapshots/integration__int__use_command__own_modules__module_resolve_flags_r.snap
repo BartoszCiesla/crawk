@@ -13,6 +13,6 @@ exit_code: 0
 crate::cache::ParseCache
 crate::discover::CrateInfo
 crate::reference::{PathPrefix, TypeReference}
-crate::utils::read_source_file
+crate::utils::{descend_inline_module, read_source_file}
 
 ----- stderr -----

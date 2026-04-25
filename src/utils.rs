@@ -2,7 +2,7 @@
 
 use proc_macro2::TokenTree;
 use std::path::Path;
-use syn::{Attribute, Meta};
+use syn::{Attribute, Item, Meta};
 use thiserror::Error;
 
 use crate::constants::{ATTR_CFG, MODULE_NAME_TEST};
@@ -29,6 +29,34 @@ pub(crate) fn read_source_file(path: &Path) -> Result<String, ReadFileError> {
         });
     }
     Ok(std::fs::read_to_string(path)?)
+}
+
+/// Navigate the AST into nested inline modules by path segments.
+///
+/// Given `items` and a path like `["a", "b"]`, descends into `mod a { mod b { ... } }`
+/// and returns the items of the innermost matched module.
+///
+/// Returns `None` if `path` is empty, any segment is not found,
+/// or the matched module has no inline body (`mod foo;`).
+pub(crate) fn descend_inline_module<'a, T: AsRef<str>>(
+    items: &'a [Item],
+    path: &[T],
+) -> Option<&'a [Item]> {
+    let (head, tail) = path.split_first()?;
+    let head = head.as_ref();
+    for item in items {
+        if let Item::Mod(m) = item
+            && m.ident == head
+            && let Some((_, nested)) = &m.content
+        {
+            return if tail.is_empty() {
+                Some(nested)
+            } else {
+                descend_inline_module(nested, tail)
+            };
+        }
+    }
+    None
 }
 
 /// Checks if a slice of attributes contains `#[cfg(test)]` or a compound form
@@ -138,5 +166,62 @@ mod tests {
     fn test_cfg_all_test_and_not_test() {
         let attrs: Vec<Attribute> = vec![parse_quote!(#[cfg(all(test, not(feature = "x")))])];
         assert!(has_cfg_test(&attrs));
+    }
+
+    // --- descend_inline_module ---
+
+    fn inline_mod(name: &str, items: &[Item]) -> Item {
+        let ident: syn::Ident = syn::parse_str(name).expect("valid ident");
+        Item::Mod(syn::parse_quote! { mod #ident { #(#items)* } })
+    }
+
+    fn struct_item(name: &str) -> Item {
+        let ident: syn::Ident = syn::parse_str(name).expect("valid ident");
+        syn::parse_quote! { struct #ident; }
+    }
+
+    #[test]
+    fn descend_inline_module_finds_single_level() {
+        let inner = struct_item("Foo");
+        let items = vec![inline_mod("utils", &[inner])];
+        let result = descend_inline_module(&items, &["utils"]);
+        assert!(result.is_some());
+        assert_eq!(result.unwrap().len(), 1);
+    }
+
+    #[test]
+    fn descend_inline_module_finds_two_levels() {
+        let leaf = struct_item("Leaf");
+        let inner = inline_mod("inner", &[leaf]);
+        let items = vec![inline_mod("outer", &[inner])];
+        let result = descend_inline_module(&items, &["outer", "inner"]);
+        assert!(result.is_some());
+        assert_eq!(result.unwrap().len(), 1);
+    }
+
+    #[test]
+    fn descend_inline_module_empty_path_returns_none() {
+        let items = vec![struct_item("Foo")];
+        assert!(descend_inline_module(&items, &[] as &[&str]).is_none());
+    }
+
+    #[test]
+    fn descend_inline_module_missing_segment_returns_none() {
+        let items = vec![inline_mod("present", &[])];
+        assert!(descend_inline_module(&items, &["absent"]).is_none());
+    }
+
+    #[test]
+    fn descend_inline_module_no_body_returns_none() {
+        // `mod foo;` — declaration without inline body
+        let items: Vec<syn::Item> = vec![syn::parse_quote! { mod foo; }];
+        assert!(descend_inline_module(&items, &["foo"]).is_none());
+    }
+
+    #[test]
+    fn descend_inline_module_works_with_owned_strings() {
+        let items = vec![inline_mod("utils", &[struct_item("Bar")])];
+        let path: Vec<String> = vec!["utils".to_owned()];
+        assert!(descend_inline_module(&items, &path).is_some());
     }
 }

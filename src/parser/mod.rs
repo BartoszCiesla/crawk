@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use crate::cache::ParseCache;
-use crate::utils::{ReadFileError, read_source_file};
+use crate::utils::{ReadFileError, descend_inline_module, read_source_file};
 
 use syn::File;
 use syn::visit::Visit;
@@ -119,7 +119,7 @@ impl CrateAnalyzer {
 
         if inline_scope.is_empty() {
             visitor.visit_file(&syntax);
-        } else if let Some(items) = find_inline_items(&syntax.items, inline_scope) {
+        } else if let Some(items) = descend_inline_module(&syntax.items, inline_scope) {
             for item in items {
                 visitor.visit_item(item);
             }
@@ -164,32 +164,6 @@ impl CrateAnalyzer {
     pub(crate) fn file_count(&self) -> usize {
         self.files.len()
     }
-}
-
-/// Navigate the AST to find items inside a nested inline module.
-///
-/// Given a list of items and a scope path like `["utilities"]`, descends into the
-/// `mod utilities { ... }` item and returns its items. For deeper scopes like
-/// `["a", "b"]`, it descends recursively: first into `mod a`, then into `mod b`.
-///
-/// Returns `None` if the scope is empty or if the target inline module is not found.
-fn find_inline_items<'a>(items: &'a [syn::Item], scope: &[String]) -> Option<&'a Vec<syn::Item>> {
-    if scope.is_empty() {
-        return None;
-    }
-    let target = &scope[0];
-    for item in items {
-        if let syn::Item::Mod(item_mod) = item
-            && item_mod.ident == *target
-            && let Some((_, nested)) = &item_mod.content
-        {
-            if scope.len() == 1 {
-                return Some(nested);
-            }
-            return find_inline_items(nested, &scope[1..]);
-        }
-    }
-    None
 }
 
 #[cfg(test)]

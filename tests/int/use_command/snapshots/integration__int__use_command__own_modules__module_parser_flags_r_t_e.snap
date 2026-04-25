@@ -23,6 +23,7 @@ crate::reference::PathPrefix
 crate::reference::TypeReference
 crate::utils::MAX_FILE_BYTES
 crate::utils::ReadFileError
+crate::utils::descend_inline_module
 crate::utils::has_cfg_test
 crate::utils::read_source_file
 

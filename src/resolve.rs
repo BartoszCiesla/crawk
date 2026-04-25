@@ -23,7 +23,7 @@
 use crate::cache::ParseCache;
 use crate::discover::CrateInfo;
 use crate::reference::{PathPrefix, TypeReference};
-use crate::utils::read_source_file;
+use crate::utils::{descend_inline_module, read_source_file};
 use std::path::Path;
 use std::rc::Rc;
 use syn::{Item, UseTree};
@@ -87,27 +87,16 @@ fn extract_from_inline_module(
     target_module: &str,
     caller_module: &str,
 ) -> Option<Vec<String>> {
-    if module_path.is_empty() {
-        return Some(collect_public_items(items, target_module, caller_module));
-    }
-
-    let target = module_path[0];
-    for item in items {
-        if let Item::Mod(item_mod) = item
-            && item_mod.ident == target
-            && let Some((_, nested_items)) = &item_mod.content
-        {
-            return extract_from_inline_module(
-                nested_items,
-                &module_path[1..],
-                target_module,
-                caller_module,
-            );
-        }
-    }
-
-    // Inline module not found
-    None
+    let container = if module_path.is_empty() {
+        items
+    } else {
+        descend_inline_module(items, module_path)?
+    };
+    Some(collect_public_items(
+        container,
+        target_module,
+        caller_module,
+    ))
 }
 
 /// Extract visibility and ident from items that have a single exported name.
