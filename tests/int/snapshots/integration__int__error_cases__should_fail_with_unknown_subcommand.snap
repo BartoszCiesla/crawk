@@ -12,6 +12,8 @@ exit_code: 2
 ----- stderr -----
 error: unrecognized subcommand 'unknown'
 
+  tip: a similar subcommand exists: 'u'
+
 Usage: crawk [OPTIONS] <COMMAND>
 
 For more information, try '--help'.

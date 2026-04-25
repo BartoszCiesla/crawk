@@ -103,7 +103,7 @@ pub(crate) enum CrawkCommands {
     ///
     /// Inspects the given module's source and reports all `use` paths that
     /// reference other modules within the same crate.
-    #[clap(verbatim_doc_comment)]
+    #[clap(verbatim_doc_comment, visible_alias = "u", alias = "deps")]
     Use(UseArgs),
 
     /// List all modules in the crate
@@ -111,7 +111,7 @@ pub(crate) enum CrawkCommands {
     /// Discovers and displays the module structure of a Rust crate.
     /// By default lists all modules recursively from the crate root.
     /// Optionally scope to a subtree by providing a module path.
-    #[clap(verbatim_doc_comment)]
+    #[clap(verbatim_doc_comment, visible_alias = "ls", alias = "l")]
     List(ListArgs),
 }
 
