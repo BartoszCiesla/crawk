@@ -83,7 +83,7 @@ mod utils;
 pub mod version;
 
 pub use crate::analyzer::Analyzer;
-pub use crate::discover::ModuleInfo;
+pub use crate::discover::{ModuleInfo, ModuleVisibility};
 pub use crate::error::AnalysisError;
 pub use crate::model::{AnalysisOptions, AnalysisResult};
 pub use crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference};

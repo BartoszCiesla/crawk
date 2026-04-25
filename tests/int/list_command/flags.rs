@@ -53,3 +53,29 @@ fn should_list_subtree_with_depth() {
             .arg("2")
     );
 }
+
+#[test]
+fn should_list_with_visibility() {
+    assert_cmd_snapshot!(crawk_modules().arg("list").arg("-V"));
+}
+
+#[test]
+fn should_list_with_visibility_and_source() {
+    assert_cmd_snapshot!(crawk_modules().arg("list").arg("-V").arg("-s"));
+}
+
+#[test]
+fn should_list_with_table_format_and_visibility() {
+    assert_cmd_snapshot!(
+        crawk_modules()
+            .arg("list")
+            .arg("--format")
+            .arg("table")
+            .arg("-V")
+    );
+}
+
+#[test]
+fn should_list_subtree_with_visibility() {
+    assert_cmd_snapshot!(crawk_modules().arg("list").arg("visibility").arg("-V"));
+}

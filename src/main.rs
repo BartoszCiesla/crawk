@@ -57,12 +57,18 @@ fn handle_list_command(crate_root: &Path, args: &ListArgs) -> anyhow::Result<()>
         info!("No modules found.");
     } else {
         let output = match args.format {
-            ListOutputFormat::Plain => {
-                format::list::render_list_plain(&modules, args.source, crate_root)
-            }
-            ListOutputFormat::Table => {
-                format::list::render_list_table(&modules, args.source, crate_root)
-            }
+            ListOutputFormat::Plain => format::list::render_list_plain(
+                &modules,
+                args.source,
+                args.show_visibility,
+                crate_root,
+            ),
+            ListOutputFormat::Table => format::list::render_list_table(
+                &modules,
+                args.source,
+                args.show_visibility,
+                crate_root,
+            ),
         };
         print!("{output}");
     }

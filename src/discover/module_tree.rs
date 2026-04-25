@@ -27,8 +27,52 @@ use syn::Item;
 
 use crate::constants::{LIB_FILE_NAME, MAIN_FILE_NAME, MODULE_FILE_NAME};
 use crate::utils::has_cfg_test;
+use tracing::debug;
 
-use super::{CrateInfo, CrateInfoError, ModuleInfo, Result};
+use super::{CrateInfo, CrateInfoError, ModuleInfo, ModuleVisibility, Result};
+
+impl From<&syn::Visibility> for ModuleVisibility {
+    fn from(vis: &syn::Visibility) -> Self {
+        match vis {
+            syn::Visibility::Public(_) => Self::Public,
+            syn::Visibility::Inherited => Self::Inherited,
+            syn::Visibility::Restricted(r) => {
+                if r.in_token.is_some() {
+                    let path = r
+                        .path
+                        .segments
+                        .iter()
+                        .map(|s| s.ident.to_string())
+                        .collect::<Vec<_>>()
+                        .join("::");
+                    Self::InPath(path)
+                } else if r.path.is_ident("crate") {
+                    Self::Crate
+                } else if r.path.is_ident("super") {
+                    Self::Super
+                } else {
+                    // `pub(self)` is semantically private; any other unrecognised
+                    // restriction (e.g. a future syn variant) is also treated as
+                    // private and logged so it does not go unnoticed.
+                    let path = r
+                        .path
+                        .segments
+                        .iter()
+                        .map(|s| s.ident.to_string())
+                        .collect::<Vec<_>>()
+                        .join("::");
+                    if path != "self" {
+                        debug!(
+                            restriction = %path,
+                            "unrecognised pub(…) restriction; treating as private"
+                        );
+                    }
+                    Self::Inherited
+                }
+            }
+        }
+    }
+}
 
 impl CrateInfo {
     /// Resolves a module path to a file path.
@@ -373,6 +417,7 @@ impl CrateInfo {
     pub(super) fn collect_submodules_shallow(
         file_path: &Path,
         current_module_path: &str,
+        current_visibility: ModuleVisibility,
         include_tests: bool,
         cache: &mut ParseCache,
     ) -> Result<Vec<ModuleInfo>> {
@@ -382,6 +427,7 @@ impl CrateInfo {
         result.push(ModuleInfo::new(
             current_module_path.to_owned(),
             file_path.to_path_buf(),
+            current_visibility,
         ));
 
         if include_tests {
@@ -398,7 +444,11 @@ impl CrateInfo {
                     } else {
                         format!("{current_module_path}::{mod_name}")
                     };
-                    result.push(ModuleInfo::new(submodule_path, file_path.to_path_buf()));
+                    result.push(ModuleInfo::new(
+                        submodule_path,
+                        file_path.to_path_buf(),
+                        ModuleVisibility::from(&item_mod.vis),
+                    ));
                 }
             }
         }
@@ -416,6 +466,7 @@ impl CrateInfo {
     pub(super) fn collect_submodules_recursive(
         file_path: &Path,
         current_module_path: &str,
+        current_visibility: ModuleVisibility,
         inline_scope: &[String],
         include_tests: bool,
         cache: &mut ParseCache,
@@ -426,6 +477,7 @@ impl CrateInfo {
         result.push(ModuleInfo::new(
             current_module_path.to_owned(),
             file_path.to_path_buf(),
+            current_visibility,
         ));
 
         // Read and parse the file
@@ -464,11 +516,13 @@ impl CrateInfo {
                 };
 
                 // Check if this is an inline module (has content) or external (file-based)
+                let submodule_visibility = ModuleVisibility::from(&item_mod.vis);
                 if let Some((_, items)) = &item_mod.content {
                     // Inline module - add it with current file path and recursively process its items
                     result.push(ModuleInfo::new(
                         submodule_path.clone(),
                         file_path.to_path_buf(),
+                        submodule_visibility,
                     ));
                     result.extend(Self::collect_inline_submodules(
                         items,
@@ -487,6 +541,7 @@ impl CrateInfo {
                         result.extend(Self::collect_submodules_recursive(
                             &sub_mod_file,
                             &submodule_path,
+                            submodule_visibility,
                             &[], // Empty inline scope for file-based modules
                             include_tests,
                             cache,
@@ -544,12 +599,14 @@ impl CrateInfo {
                 }
 
                 let submodule_path = format!("{current_module_path}::{mod_name}");
+                let submodule_visibility = ModuleVisibility::from(&item_mod.vis);
 
                 if let Some((_, nested_items)) = &item_mod.content {
                     // Inline module - record with containing file and recurse into items
                     result.push(ModuleInfo::new(
                         submodule_path.clone(),
                         containing_file.to_path_buf(),
+                        submodule_visibility,
                     ));
                     result.extend(Self::collect_inline_submodules(
                         nested_items,
@@ -568,6 +625,7 @@ impl CrateInfo {
                         result.extend(Self::collect_submodules_recursive(
                             &sub_mod_file,
                             &submodule_path,
+                            submodule_visibility,
                             &[], // Empty inline scope for file-based modules
                             include_tests,
                             cache,
@@ -578,6 +636,84 @@ impl CrateInfo {
         }
 
         Ok(result)
+    }
+
+    /// Computes the visibility of the root module passed to [`CrateInfo::get_module_tree`].
+    ///
+    /// For the crate root (empty path) this is always [`ModuleVisibility::Public`].
+    /// For inline modules the visibility comes from the `mod` declaration inside the file.
+    /// For file-based modules the visibility comes from the `mod` declaration in the parent file.
+    pub(super) fn compute_root_visibility(
+        &self,
+        normalized_path: &str,
+        file_path: &Path,
+        inline_scope: &[String],
+        cache: &mut ParseCache,
+    ) -> Result<ModuleVisibility> {
+        if normalized_path.is_empty() {
+            return Ok(ModuleVisibility::Public);
+        }
+
+        if !inline_scope.is_empty() {
+            // Inline module: navigate the scope within the file to find the `mod` declaration.
+            let syntax = Self::parse_cached(file_path, cache)?;
+            return Ok(Self::find_visibility_in_scope(&syntax.items, inline_scope));
+        }
+
+        // File-based module: locate the `mod name;` in the parent file.
+        let segments: Vec<&str> = normalized_path.split("::").collect();
+        let module_name = match segments.last() {
+            Some(s) => *s,
+            None => return Ok(ModuleVisibility::Inherited),
+        };
+
+        let parent_file = if segments.len() == 1 {
+            // Top-level module — parent is the crate root.
+            let package = self.root_package().ok_or(CrateInfoError::PackageNotFound)?;
+            Self::find_crate_root(package)
+                .ok_or_else(|| CrateInfoError::NoCrateRoot(self.root_package_name().to_owned()))?
+        } else {
+            let parent_path = segments[..segments.len() - 1].join("::");
+            self.resolve_module(&parent_path)?
+        };
+
+        let parent_syntax = Self::parse_cached(&parent_file, cache)?;
+        Ok(Self::find_mod_visibility_in_items(
+            &parent_syntax.items,
+            module_name,
+        ))
+    }
+
+    /// Walks nested inline modules following `scope` and returns the visibility of the last one.
+    fn find_visibility_in_scope(items: &[Item], scope: &[String]) -> ModuleVisibility {
+        let Some(target) = scope.first() else {
+            return ModuleVisibility::Inherited;
+        };
+        for item in items {
+            if let Item::Mod(item_mod) = item
+                && item_mod.ident == target.as_str()
+            {
+                if scope.len() == 1 {
+                    return ModuleVisibility::from(&item_mod.vis);
+                }
+                if let Some((_, nested)) = &item_mod.content {
+                    return Self::find_visibility_in_scope(nested, &scope[1..]);
+                }
+            }
+        }
+        ModuleVisibility::Inherited
+    }
+
+    /// Searches `items` for a `mod name;` or `mod name { }` declaration and returns its visibility.
+    fn find_mod_visibility_in_items(items: &[Item], module_name: &str) -> ModuleVisibility {
+        for item in items {
+            if let Item::Mod(item_mod) = item
+                && item_mod.ident == module_name
+            {
+                return ModuleVisibility::from(&item_mod.vis);
+            }
+        }
+        ModuleVisibility::Inherited
     }
 
     #[allow(clippy::doc_link_with_quotes)]
@@ -976,5 +1112,59 @@ mod tests {
         let result =
             CrateInfo::resolve_module_parts(dir.path(), &["foo", "missing"], None).unwrap();
         assert!(result.is_none());
+    }
+
+    // ── ModuleVisibility conversion ──────────────────────────────────────────
+
+    fn parse_vis(s: &str) -> syn::Visibility {
+        syn::parse_str(s).unwrap()
+    }
+
+    #[test]
+    fn vis_pub_maps_to_public() {
+        assert_eq!(
+            ModuleVisibility::from(&parse_vis("pub")),
+            ModuleVisibility::Public
+        );
+    }
+
+    #[test]
+    fn vis_pub_crate_maps_to_crate() {
+        assert_eq!(
+            ModuleVisibility::from(&parse_vis("pub(crate)")),
+            ModuleVisibility::Crate
+        );
+    }
+
+    #[test]
+    fn vis_pub_super_maps_to_super() {
+        assert_eq!(
+            ModuleVisibility::from(&parse_vis("pub(super)")),
+            ModuleVisibility::Super
+        );
+    }
+
+    #[test]
+    fn vis_pub_self_maps_to_inherited() {
+        assert_eq!(
+            ModuleVisibility::from(&parse_vis("pub(self)")),
+            ModuleVisibility::Inherited
+        );
+    }
+
+    #[test]
+    fn vis_inherited_maps_to_inherited() {
+        assert_eq!(
+            ModuleVisibility::from(&syn::Visibility::Inherited),
+            ModuleVisibility::Inherited,
+        );
+    }
+
+    #[test]
+    fn vis_pub_in_path_maps_to_in_path() {
+        assert_eq!(
+            ModuleVisibility::from(&parse_vis("pub(in crate::foo::bar)")),
+            ModuleVisibility::InPath("crate::foo::bar".to_owned()),
+        );
     }
 }

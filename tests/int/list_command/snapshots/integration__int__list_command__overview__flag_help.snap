@@ -40,6 +40,9 @@ Options:
           
           e.g., --filter parser matches "parser", "parser::visitor"
 
+  -V, --visibility
+          Show module visibility (pub, pub(crate), pub(super), …)
+
   -f, --format <FORMAT>
           Output format
           

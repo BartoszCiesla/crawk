@@ -11,7 +11,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::analyzer::Analyzer
-crate::discover::ModuleInfo
+crate::discover::{ModuleInfo, ModuleVisibility}
 crate::error::AnalysisError
 crate::model::{AnalysisOptions, AnalysisResult}
 crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference}

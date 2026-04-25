@@ -18,6 +18,7 @@ exit_code: 0
 crawk
  - crate::analyzer::Analyzer
  - crate::discover::ModuleInfo
+ - crate::discover::ModuleVisibility
  - crate::error::AnalysisError
  - crate::model::AnalysisOptions
  - crate::model::AnalysisResult
@@ -54,6 +55,7 @@ discover::module_tree
  - crate::discover::CrateInfo
  - crate::discover::CrateInfoError
  - crate::discover::ModuleInfo
+ - crate::discover::ModuleVisibility
  - crate::discover::Result
  - crate::utils::has_cfg_test
 discover::module_tree::tests

@@ -12,7 +12,7 @@ exit_code: 0
 ----- stdout -----
 crate::cache::ParseCache
 crate::constants::{LIB_FILE_NAME, MAIN_FILE_NAME, MODULE_FILE_NAME}
-crate::discover::{CrateInfo, CrateInfoError, ModuleInfo, Result}
+crate::discover::{CrateInfo, CrateInfoError, ModuleInfo, ModuleVisibility, Result}
 crate::utils::has_cfg_test
 
 ----- stderr -----

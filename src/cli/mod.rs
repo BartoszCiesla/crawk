@@ -237,6 +237,11 @@ pub(crate) struct ListArgs {
     #[arg(short = 'F', long = "filter")]
     pub filter: Option<String>,
 
+    /// Show module visibility (pub, pub(crate), pub(super), …)
+    #[clap(verbatim_doc_comment)]
+    #[arg(short = 'V', long = "visibility", default_value_t = false)]
+    pub show_visibility: bool,
+
     /// Output format
     ///
     /// plain — one module per line (default)

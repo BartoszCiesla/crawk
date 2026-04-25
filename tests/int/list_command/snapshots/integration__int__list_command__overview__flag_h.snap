@@ -21,6 +21,7 @@ Options:
   -s, --source           Show source file paths alongside module names
   -d, --depth <DEPTH>    Limit displayed module depth
   -F, --filter <FILTER>  Filter modules by substring match on module path
+  -V, --visibility       Show module visibility (pub, pub(crate), pub(super), …)
   -f, --format <FORMAT>  Output format [default: plain] [possible values: plain, table]
   -h, --help             Print help (see more with '--help')
 

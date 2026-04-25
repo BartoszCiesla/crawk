@@ -6,12 +6,46 @@
 
 mod module_tree;
 
+use std::fmt;
 use std::path::{Path, PathBuf};
 
 use crate::cache::ParseCache;
 
 use cargo_metadata::{Metadata, MetadataCommand};
 use thiserror::Error;
+
+/// Visibility of a Rust module as declared in source code.
+///
+/// Mirrors the Rust visibility syntax: `pub`, `pub(crate)`, `pub(super)`,
+/// `pub(in path)`, or no keyword (private to the declaring module).
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum ModuleVisibility {
+    /// `pub` — visible to everyone.
+    Public,
+    /// `pub(crate)` — visible anywhere within the crate.
+    Crate,
+    /// `pub(super)` — visible to the parent module and its descendants.
+    Super,
+    /// `pub(in path)` — visible within the subtree rooted at `path`.
+    InPath(String),
+    /// No visibility modifier — private to the declaring module.
+    ///
+    /// Note: `pub(self)` is semantically equivalent to no modifier and is also
+    /// represented as this variant.
+    Inherited,
+}
+
+impl fmt::Display for ModuleVisibility {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Public => f.write_str("pub"),
+            Self::Crate => f.write_str("pub(crate)"),
+            Self::Super => f.write_str("pub(super)"),
+            Self::InPath(path) => write!(f, "pub(in {path})"),
+            Self::Inherited => Ok(()),
+        }
+    }
+}
 
 /// Errors that can occur during crate info operations.
 #[derive(Debug, Error)]
@@ -89,6 +123,9 @@ pub struct ModuleInfo {
 
     /// The file path where this module is defined
     source_file: PathBuf,
+
+    /// The visibility of this module as declared in its parent
+    visibility: ModuleVisibility,
 }
 
 impl ModuleInfo {
@@ -98,11 +135,17 @@ impl ModuleInfo {
     ///
     /// * `module_path` - The fully qualified module path (e.g., "analysis::collect")
     /// * `source_file` - The file system path where this module is defined
+    /// * `visibility` - The declared visibility of the module
     #[must_use]
-    pub const fn new(module_path: String, source_file: PathBuf) -> Self {
+    pub const fn new(
+        module_path: String,
+        source_file: PathBuf,
+        visibility: ModuleVisibility,
+    ) -> Self {
         Self {
             module_path,
             source_file,
+            visibility,
         }
     }
 
@@ -119,6 +162,12 @@ impl ModuleInfo {
     #[must_use]
     pub fn source(&self) -> &Path {
         &self.source_file
+    }
+
+    /// Returns the declared visibility of this module.
+    #[must_use]
+    pub const fn visibility(&self) -> &ModuleVisibility {
+        &self.visibility
     }
 }
 
@@ -218,16 +267,26 @@ impl CrateInfo {
         // Determine if this is an inline module and compute inline scope
         let inline_scope = self.compute_inline_scope_for_path(&normalized_path, &file_path);
 
+        let root_visibility =
+            self.compute_root_visibility(&normalized_path, &file_path, &inline_scope, cache)?;
+
         if recursive {
             Self::collect_submodules_recursive(
                 &file_path,
                 &normalized_path,
+                root_visibility,
                 &inline_scope,
                 include_tests,
                 cache,
             )
         } else {
-            Self::collect_submodules_shallow(&file_path, &normalized_path, include_tests, cache)
+            Self::collect_submodules_shallow(
+                &file_path,
+                &normalized_path,
+                root_visibility,
+                include_tests,
+                cache,
+            )
         }
     }
 

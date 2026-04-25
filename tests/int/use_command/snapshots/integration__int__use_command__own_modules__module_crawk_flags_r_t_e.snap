@@ -26,6 +26,7 @@ crate::constants::PATH_QUALIFIER_SUPER
 crate::discover::CrateInfo
 crate::discover::CrateInfoError
 crate::discover::ModuleInfo
+crate::discover::ModuleVisibility
 crate::discover::Result
 crate::discover::module_tree::*
 crate::error::AnalysisError
