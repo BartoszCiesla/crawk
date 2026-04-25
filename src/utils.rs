@@ -224,4 +224,20 @@ mod tests {
         let path: Vec<String> = vec!["utils".to_owned()];
         assert!(descend_inline_module(&items, &path).is_some());
     }
+
+    // --- read_source_file ---
+
+    #[test]
+    fn read_source_file_rejects_file_exceeding_limit() {
+        let file = tempfile::NamedTempFile::new().expect("create temp file");
+        file.as_file()
+            .set_len(MAX_FILE_BYTES + 1)
+            .expect("set file length");
+        let err = read_source_file(file.path()).unwrap_err();
+        assert!(matches!(
+            err,
+            ReadFileError::TooLarge { size, limit }
+                if size == MAX_FILE_BYTES + 1 && limit == MAX_FILE_BYTES
+        ));
+    }
 }
