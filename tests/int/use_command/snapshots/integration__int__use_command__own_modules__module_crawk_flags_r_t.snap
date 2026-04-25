@@ -29,7 +29,6 @@ crate::error::{AnalysisError, Result}
 crate::model::*
 crate::model::{AnalysisOptions, AnalysisResult}
 crate::parser::*
-crate::parser::AnalyzerError
 crate::parser::CrateAnalyzer
 crate::parser::visitor::*
 crate::reference::*

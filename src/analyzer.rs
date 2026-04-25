@@ -264,7 +264,7 @@ impl Analyzer {
                     return Err(AnalysisError::ModuleAnalysisFailed {
                         module_path: module.path().to_owned(),
                         file: module.source().to_path_buf(),
-                        source: e,
+                        message: e.to_string(),
                     });
                 }
                 Ok(type_list) => {

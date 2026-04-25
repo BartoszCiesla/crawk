@@ -17,7 +17,6 @@ crate::analyzer
 crate::discover
 crate::error
 crate::model
-crate::parser
 crate::reference
 
 ----- stderr -----

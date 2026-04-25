@@ -15,7 +15,6 @@ crate::analyzer
 crate::discover
 crate::error
 crate::model::{AnalysisOptions, AnalysisResult}
-crate::parser
 crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference}
 
 ----- stderr -----

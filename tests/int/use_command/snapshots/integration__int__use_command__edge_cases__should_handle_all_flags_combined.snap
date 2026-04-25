@@ -23,7 +23,6 @@ lib
  - crate::error::AnalysisError
  - crate::model::AnalysisOptions
  - crate::model::AnalysisResult
- - crate::parser::AnalyzerError
  - crate::reference::GroupItem
  - crate::reference::PathPrefix
  - crate::reference::PathSuffix
@@ -62,7 +61,6 @@ discover::module_tree
 discover::module_tree::tests
 error
  - crate::discover::CrateInfoError
- - crate::parser::AnalyzerError
 model
  - crate::reference::TypeReference
 model::tests

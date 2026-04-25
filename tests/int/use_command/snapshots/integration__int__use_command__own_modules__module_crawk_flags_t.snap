@@ -14,7 +14,6 @@ crate::analyzer::Analyzer
 crate::discover::ModuleInfo
 crate::error::AnalysisError
 crate::model::{AnalysisOptions, AnalysisResult}
-crate::parser::AnalyzerError
 crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference}
 
 ----- stderr -----

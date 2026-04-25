@@ -15,6 +15,3 @@ exit_code: 1
 
 ----- stderr -----
 Error: Error analyzing module 'broken' (file '[MANIFEST_DIR]/fixtures/broken_syntax/src/broken.rs'): Failed to parse file '[MANIFEST_DIR]/fixtures/broken_syntax/src/broken.rs': expected `!`
-
-Caused by:
-    Failed to parse file '[MANIFEST_DIR]/fixtures/broken_syntax/src/broken.rs': expected `!`

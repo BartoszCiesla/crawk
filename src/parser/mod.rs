@@ -23,7 +23,7 @@ use visitor::ModuleVisitor;
 ///
 /// Returned as the `source` field of [`AnalysisError::ModuleAnalysisFailed`](crate::AnalysisError::ModuleAnalysisFailed).
 #[derive(Debug, Error)]
-pub enum AnalyzerError {
+pub(crate) enum AnalyzerError {
     /// The source file could not be read from disk.
     #[error("Failed to read file '{path}': {source}")]
     FileRead {

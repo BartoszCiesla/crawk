@@ -16,7 +16,6 @@ crate::discover::ModuleInfo
 crate::error::AnalysisError
 crate::model::AnalysisOptions
 crate::model::AnalysisResult
-crate::parser::AnalyzerError
 crate::reference::GroupItem
 crate::reference::PathPrefix
 crate::reference::PathSuffix

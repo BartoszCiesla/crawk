@@ -1,5 +1,4 @@
 use crate::discover::CrateInfoError;
-use crate::parser::AnalyzerError;
 use std::path::PathBuf;
 use thiserror::Error;
 
@@ -28,14 +27,14 @@ pub enum AnalysisError {
     CrateInfoError(#[from] CrateInfoError),
 
     /// Error analyzing a specific module — includes module name and file for context.
-    #[error("Error analyzing module '{module_path}' (file '{file}'): {source}")]
+    #[error("Error analyzing module '{module_path}' (file '{file}'): {message}")]
     ModuleAnalysisFailed {
         /// The Rust module path being analyzed (e.g. `crate::parser::visitor`).
         module_path: String,
         /// The source file being parsed.
         file: PathBuf,
-        /// The underlying parser error — inspect [`AnalyzerError`] variants for details.
-        source: AnalyzerError,
+        /// Human-readable description of the parse or read error.
+        message: String,
     },
 }
 
