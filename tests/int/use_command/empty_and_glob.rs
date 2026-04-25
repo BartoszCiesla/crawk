@@ -1,4 +1,4 @@
-use crate::common::crawk_modules;
+use crate::common::{crawk, crawk_modules};
 use insta_cmd::assert_cmd_snapshot;
 use test_case::test_matrix;
 
@@ -27,6 +27,24 @@ fn should_modules_use_handle_empty_module(module: &str, flags: &[&str]) {
     assert_cmd_snapshot!(
         snapshot_name,
         crawk_modules().arg("use").arg(module).args(flags)
+    );
+}
+
+// Test fallback: glob referencing a module that does not exist in the crate.
+// With --resolve-globs, resolve_module_path_to_file returns Err → original glob
+// must be preserved in output (not dropped, not panic).
+#[test]
+fn should_preserve_glob_when_module_unresolvable() {
+    assert_cmd_snapshot!(
+        crawk()
+            .arg("-p")
+            .arg(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/fixtures/glob_fallback"
+            ))
+            .arg("use")
+            .arg("importer")
+            .arg("--resolve-globs")
     );
 }
 
