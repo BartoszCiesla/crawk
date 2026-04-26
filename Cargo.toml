@@ -8,6 +8,16 @@ repository = "https://github.com/BartoszCiesla/crawk"
 homepage = "https://github.com/BartoszCiesla/crawk"
 description = "Dependency crawler for Rust. It crawls so you don't have to untangle"
 license = "Apache-2.0"
+readme = "README.md"
+exclude = [
+    "fixtures/",
+    "tests/",
+    ".github/",
+    ".envrc",
+    "justfile",
+]
+keywords = ["rust", "modules", "dependencies", "ast", "analysis"]
+categories = ["command-line-utilities", "development-tools"]
 
 [features]
 default = ["static-build-config"]
