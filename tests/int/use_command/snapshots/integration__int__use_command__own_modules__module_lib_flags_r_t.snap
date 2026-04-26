@@ -13,6 +13,7 @@ exit_code: 0
 ----- stdout -----
 crate::analyzer::*
 crate::analyzer::Analyzer
+crate::cache::*
 crate::cache::ParseCache
 crate::constants::PATH_QUALIFIER_SELF
 crate::constants::{ATTR_CFG, MODULE_NAME_TEST}

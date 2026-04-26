@@ -70,3 +70,45 @@ impl ParseCache {
         Ok(rc)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::cell::Cell;
+    use std::path::Path;
+
+    #[test]
+    fn get_or_parse_calls_closure_exactly_once_for_same_path() {
+        let mut cache = ParseCache::new();
+        let call_count = Cell::new(0u32);
+        let path = Path::new("/fake/path.rs");
+
+        let first = cache
+            .get_or_parse(
+                path,
+                |_: &Path| -> Result<syn::File, std::convert::Infallible> {
+                    call_count.set(call_count.get() + 1);
+                    Ok(syn::parse_str("").expect("empty source parses"))
+                },
+            )
+            .expect("first call succeeds");
+
+        assert_eq!(call_count.get(), 1, "closure must run on first call");
+
+        let second = cache
+            .get_or_parse(
+                path,
+                |_: &Path| -> Result<syn::File, std::convert::Infallible> {
+                    call_count.set(call_count.get() + 1);
+                    Ok(syn::parse_str("").expect("empty source parses"))
+                },
+            )
+            .expect("second call succeeds");
+
+        assert_eq!(call_count.get(), 1, "closure must not run on second call");
+        assert!(
+            Rc::ptr_eq(&first, &second),
+            "both calls must return same Rc allocation"
+        );
+    }
+}

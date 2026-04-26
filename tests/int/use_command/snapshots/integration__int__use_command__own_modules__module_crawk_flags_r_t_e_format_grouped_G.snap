@@ -44,6 +44,8 @@ analyzer::tests
  - crate::analyzer::expand_groups
  - crate::reference::PathSuffix
 cache
+cache::tests
+ - crate::cache::ParseCache
 constants
 discover
  - crate::cache::ParseCache

@@ -14,6 +14,7 @@ exit_code: 0
 ----- stdout -----
 crate::analyzer::*
 crate::analyzer::Analyzer
+crate::cache::*
 crate::cache::ParseCache
 crate::constants::ATTR_CFG
 crate::constants::LIB_FILE_NAME
