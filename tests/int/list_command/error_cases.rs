@@ -1,9 +1,14 @@
-use crate::common::crawk_modules;
+use crate::common::{backtrace_filters, crawk_modules};
+use insta::with_settings;
 use insta_cmd::assert_cmd_snapshot;
 
 #[test]
 fn should_error_for_nonexistent_module() {
-    assert_cmd_snapshot!(crawk_modules().arg("list").arg("nonexistent_module"));
+    with_settings!({
+        filters => backtrace_filters(),
+    }, {
+        assert_cmd_snapshot!(crawk_modules().arg("list").arg("nonexistent_module"));
+    });
 }
 
 #[test]

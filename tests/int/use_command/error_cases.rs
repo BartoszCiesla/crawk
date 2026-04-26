@@ -1,4 +1,4 @@
-use crate::common::crawk;
+use crate::common::{backtrace_filters, crawk};
 use insta::with_settings;
 use insta_cmd::assert_cmd_snapshot;
 use test_case::test_case;
@@ -9,10 +9,10 @@ use test_case::test_case;
 
 #[test]
 fn should_fail_with_parse_error_including_module_context() {
+    let mut filters = backtrace_filters();
+    filters.push((env!("CARGO_MANIFEST_DIR"), "[MANIFEST_DIR]"));
     with_settings!({
-        filters => vec![
-            (env!("CARGO_MANIFEST_DIR"), "[MANIFEST_DIR]"),
-        ],
+        filters => filters,
     }, {
         assert_cmd_snapshot!(crawk()
             .arg("-p")
@@ -89,11 +89,12 @@ fn should_reject_symlink_escaping_crate_root() {
     .unwrap();
     symlink(&outside_file, src.join("escape.rs")).unwrap();
 
+    let root_str = root.path().to_str().unwrap_or("");
+    let outside_str = outside.path().to_str().unwrap_or("");
+    let mut filters: Vec<(&str, &str)> = vec![(root_str, "[ROOT]"), (outside_str, "[OUTSIDE]")];
+    filters.extend(backtrace_filters());
     with_settings!({
-        filters => vec![
-            (root.path().to_str().unwrap_or(""), "[ROOT]"),
-            (outside.path().to_str().unwrap_or(""), "[OUTSIDE]"),
-        ],
+        filters => filters,
     }, {
         assert_cmd_snapshot!(crawk()
             .arg("-p").arg(root.path())

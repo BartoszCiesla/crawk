@@ -1,4 +1,5 @@
-use crate::common::crawk_modules;
+use crate::common::{backtrace_filters, crawk_modules};
+use insta::with_settings;
 use insta_cmd::assert_cmd_snapshot;
 use test_case::test_case;
 
@@ -46,5 +47,9 @@ use test_case::test_case;
 fn should_modules_use_provide_output(module: &str) {
     let snapshot_name = format!("modules_{}", module.replace("::", "__"));
 
-    assert_cmd_snapshot!(snapshot_name, crawk_modules().arg("use").arg(module));
+    with_settings!({
+        filters => backtrace_filters(),
+    }, {
+        assert_cmd_snapshot!(snapshot_name, crawk_modules().arg("use").arg(module));
+    });
 }

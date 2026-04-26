@@ -1,6 +1,13 @@
 use insta_cmd::get_cargo_bin;
 use std::process::Command;
 
+/// Returns insta filters that strip anyhow's "Stack backtrace:" block from snapshot output.
+/// Apply to any test that captures stderr from a `exit_code: 1` error path so the test
+/// is not sensitive to the `RUST_BACKTRACE` environment variable.
+pub(crate) fn backtrace_filters() -> Vec<(&'static str, &'static str)> {
+    vec![(r"(?s)\n\nStack backtrace:.*", "")]
+}
+
 pub(crate) fn crawk() -> Command {
     Command::new(get_cargo_bin("crawk"))
 }

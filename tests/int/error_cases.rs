@@ -1,4 +1,4 @@
-use crate::common::{crawk, crawk_workspace};
+use crate::common::{backtrace_filters, crawk, crawk_workspace};
 use insta::with_settings;
 use insta_cmd::assert_cmd_snapshot;
 
@@ -7,21 +7,25 @@ use insta_cmd::assert_cmd_snapshot;
 // ============================================================================
 #[test]
 fn should_fail_with_nonexistent_path() {
-    assert_cmd_snapshot!(
-        crawk()
-            .arg("-p")
-            .arg("/nonexistent/path")
-            .arg("use")
-            .arg("lib")
-    );
+    with_settings!({
+        filters => backtrace_filters(),
+    }, {
+        assert_cmd_snapshot!(
+            crawk()
+                .arg("-p")
+                .arg("/nonexistent/path")
+                .arg("use")
+                .arg("lib")
+        );
+    });
 }
 
 #[test]
 fn should_fail_with_file_as_path() {
+    let mut filters = backtrace_filters();
+    filters.push((env!("CARGO_MANIFEST_DIR"), "[MANIFEST_DIR]"));
     with_settings!({
-        filters => vec![
-            (env!("CARGO_MANIFEST_DIR"), "[MANIFEST_DIR]"),
-        ],
+        filters => filters,
     }, {
         assert_cmd_snapshot!(crawk()
             .arg("-p")
@@ -33,10 +37,10 @@ fn should_fail_with_file_as_path() {
 
 #[test]
 fn should_fail_with_workspace_root() {
+    let mut filters = backtrace_filters();
+    filters.push((env!("CARGO_MANIFEST_DIR"), "[MANIFEST_DIR]"));
     with_settings!({
-        filters => vec![
-            (env!("CARGO_MANIFEST_DIR"), "[MANIFEST_DIR]"),
-        ],
+        filters => filters,
     }, {
         assert_cmd_snapshot!(crawk_workspace()
             .arg("use")

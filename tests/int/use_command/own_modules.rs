@@ -1,4 +1,5 @@
-use crate::common::crawk;
+use crate::common::{backtrace_filters, crawk};
+use insta::with_settings;
 use insta_cmd::assert_cmd_snapshot;
 use test_case::{test_case, test_matrix};
 
@@ -16,7 +17,11 @@ use test_case::{test_case, test_matrix};
 fn should_use_command_provide_output(module: &str) {
     let snapshot_name = format!("module_{}", module.replace("::", "__"));
 
-    assert_cmd_snapshot!(snapshot_name, crawk().arg("use").arg(module));
+    with_settings!({
+        filters => backtrace_filters(),
+    }, {
+        assert_cmd_snapshot!(snapshot_name, crawk().arg("use").arg(module));
+    });
 }
 
 // Binary submodule resolution — exercises resolve_module_path_from_binary
@@ -55,5 +60,9 @@ fn should_use_command_provide_output_for_flags(module: &str, flags: &[&str]) {
         .join("_");
     let snapshot_name = format!("module_{}_flags_{flags_part}", module.replace("::", "__"));
 
-    assert_cmd_snapshot!(snapshot_name, crawk().arg("use").arg(module).args(flags));
+    with_settings!({
+        filters => backtrace_filters(),
+    }, {
+        assert_cmd_snapshot!(snapshot_name, crawk().arg("use").arg(module).args(flags));
+    });
 }

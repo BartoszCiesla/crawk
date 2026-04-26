@@ -1,4 +1,5 @@
-use crate::common::crawk_modules;
+use crate::common::{backtrace_filters, crawk_modules};
+use insta::with_settings;
 use insta_cmd::assert_cmd_snapshot;
 use test_case::test_matrix;
 
@@ -22,8 +23,12 @@ fn should_modules_use_handle_inline_modules(module: &str, flags: &[&str]) {
         .join("_");
     let snapshot_name = format!("modules_{}_inline_{flags_part}", module.replace("::", "__"));
 
-    assert_cmd_snapshot!(
-        snapshot_name,
-        crawk_modules().arg("use").arg(module).args(flags)
-    );
+    with_settings!({
+        filters => backtrace_filters(),
+    }, {
+        assert_cmd_snapshot!(
+            snapshot_name,
+            crawk_modules().arg("use").arg(module).args(flags)
+        );
+    });
 }
