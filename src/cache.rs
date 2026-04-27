@@ -7,6 +7,7 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use tracing::debug;
 
 /// Cache mapping source file paths to their parsed `syn::File` representations.
 #[derive(Clone, Default)]
@@ -62,8 +63,10 @@ impl ParseCache {
         F: FnOnce(&Path) -> Result<syn::File, E>,
     {
         if let Some(cached) = self.0.get(path) {
+            debug!("Cache hit: {}", path.display());
             return Ok(Rc::clone(cached));
         }
+        debug!("Cache miss: {}", path.display());
         let file = read_and_parse(path)?;
         let rc = Rc::new(file);
         self.0.insert(path.to_path_buf(), Rc::clone(&rc));

@@ -27,7 +27,7 @@ use crate::utils::{descend_inline_module, read_source_file};
 use std::path::Path;
 use std::rc::Rc;
 use syn::{Item, UseTree};
-use tracing::debug;
+use tracing::{debug, info};
 
 /// Extract all public item names from a Rust source file.
 ///
@@ -77,7 +77,13 @@ pub(crate) fn extract_public_items(
         );
     };
 
-    Some(collect_public_items(items, target_module, caller_module))
+    let result = collect_public_items(items, target_module, caller_module);
+    info!(
+        "Extracted {} public items from {}",
+        result.len(),
+        file_path.display()
+    );
+    Some(result)
 }
 
 /// Descend into nested inline modules and extract public items from the target.
@@ -92,11 +98,12 @@ fn extract_from_inline_module(
     } else {
         descend_inline_module(items, module_path)?
     };
-    Some(collect_public_items(
-        container,
-        target_module,
-        caller_module,
-    ))
+    let result = collect_public_items(container, target_module, caller_module);
+    info!(
+        "Extracted {} public items from inline module '{target_module}'",
+        result.len()
+    );
+    Some(result)
 }
 
 /// Extract visibility and ident from items that have a single exported name.
@@ -139,7 +146,11 @@ fn is_visible_from(vis: &syn::Visibility, target_module: &str, caller_module: &s
                 // `pub(super)` — visible in the parent of `target_module`
                 // and all of that parent's descendants.
                 let parent = parent_module(target_module);
-                is_in_subtree(caller_module, parent)
+                let visible = is_in_subtree(caller_module, parent);
+                debug!(
+                    "Visibility pub(super): target={target_module}, caller={caller_module}, parent={parent}, visible={visible}"
+                );
+                visible
             } else if r.path.is_ident("self") {
                 // `pub(self)` — semantically equivalent to private.
                 false
@@ -148,7 +159,11 @@ fn is_visible_from(vis: &syn::Visibility, target_module: &str, caller_module: &s
                 // crawk-internal format and check whether the caller lies
                 // within its subtree.
                 let ancestor = normalize_in_path(&r.path, target_module);
-                is_in_subtree(caller_module, &ancestor)
+                let visible = is_in_subtree(caller_module, &ancestor);
+                debug!(
+                    "Visibility pub(in ...): ancestor={ancestor}, caller={caller_module}, visible={visible}"
+                );
+                visible
             }
         }
         syn::Visibility::Inherited => false,
@@ -291,6 +306,10 @@ pub(crate) fn resolve_glob(
     crate_info: &CrateInfo,
     cache: &mut ParseCache,
 ) -> Vec<TypeReference> {
+    info!(
+        "Resolving glob: {} (caller: '{caller_module}')",
+        reference.to_path_string()
+    );
     // Determine the module path to resolve.
     // Accept both `crate::foo::bar::*` (PathPrefix::Crate, segments=["foo","bar"])
     // and `mycrate::foo::bar::*` (PathPrefix::None, first segment == crate name).
@@ -338,6 +357,8 @@ pub(crate) fn resolve_glob(
         return vec![reference.clone()];
     };
 
+    info!("Glob resolved to {} public items", public_items.len());
+
     if public_items.is_empty() {
         return vec![];
     }
@@ -375,7 +396,9 @@ fn detect_inline_path(
             Ok(ref parent_file) if parent_file == resolved_file => {
                 // The shorter prefix still resolves to the same file,
                 // so segments[split..] are inline module names.
-                return segments[split..].to_vec();
+                let inline = segments[split..].to_vec();
+                debug!("Inline path for {}: {inline:?}", reference.to_path_string());
+                return inline;
             }
             _ => {
                 // Different file or resolution failed — this prefix is
@@ -385,6 +408,7 @@ fn detect_inline_path(
     }
 
     // No inline path detected — the file directly corresponds to the module.
+    debug!("Inline path for {}: (none)", reference.to_path_string());
     vec![]
 }
 

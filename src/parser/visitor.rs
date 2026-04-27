@@ -1,6 +1,8 @@
 use syn::visit::Visit;
 use syn::{ItemMod, ItemUse, UseTree};
 
+use tracing::debug;
+
 use crate::constants::{PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER};
 use crate::reference::{GroupItem, PathPrefix, TypeReference};
 use crate::utils::has_cfg_test;
@@ -27,6 +29,10 @@ pub(crate) fn resolve_reference(reference: TypeReference, module_path: &[String]
                 reference.with_segments_and_prefix(new_segments, PathPrefix::Crate)
             } else {
                 // Can't go up that many levels, leave as-is
+                debug!(
+                    "Cannot resolve super::{} — {levels} levels from module {module_path:?}",
+                    reference.segments().join("::")
+                );
                 reference
             }
         }
@@ -378,6 +384,12 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
             self.module_name == module_ident
         };
 
+        if !should_visit {
+            debug!(
+                "Skipping module '{module_ident}' (filter: '{}')",
+                self.module_name
+            );
+        }
         if should_visit && let Some((_, items)) = &i.content {
             for item in items {
                 self.visit_item(item);

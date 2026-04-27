@@ -10,6 +10,7 @@ use std::fmt;
 use std::path::{Path, PathBuf};
 
 use crate::cache::ParseCache;
+use tracing::info;
 
 use cargo_metadata::{Metadata, MetadataCommand};
 use thiserror::Error;
@@ -263,6 +264,11 @@ impl CrateInfo {
 
         // Normalize the module path (remove crate name prefix if present)
         let normalized_path = self.normalize_module_path(module_path);
+        info!(
+            "Module tree: '{}' \u{2192} {}, recursive={recursive}",
+            normalized_path,
+            file_path.display()
+        );
 
         // Determine if this is an inline module and compute inline scope
         let inline_scope = self.compute_inline_scope_for_path(&normalized_path, &file_path);

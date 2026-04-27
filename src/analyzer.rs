@@ -169,6 +169,7 @@ impl Analyzer {
         )?;
         modules.sort_by(|a, b| a.path().cmp(b.path()));
         modules.dedup_by(|a, b| a.path() == b.path());
+        info!("Listed {} modules (after dedup)", modules.len());
         Ok(modules)
     }
 
@@ -268,10 +269,8 @@ impl Analyzer {
                     });
                 }
                 Ok(type_list) => {
-                    info!("Analyzed {}", module.path());
                     for reference in &type_list {
-                        debug!("Analyzed {reference:?}");
-                        info!("Found reference: {}", reference.to_path_string());
+                        debug!("Found reference: {}", reference.to_path_string());
                     }
                 }
             }
@@ -340,6 +339,12 @@ impl Analyzer {
         for module in modules {
             let source_path = module.source().to_path_buf();
             let actual_root = self.find_actual_file_root(module.path(), &source_path);
+            debug!(
+                "File root: '{}' \u{2192} '{}' (file: {})",
+                module.path(),
+                actual_root,
+                source_path.display()
+            );
 
             match file_root.entry(source_path) {
                 std::collections::hash_map::Entry::Occupied(mut e) => {
@@ -352,6 +357,11 @@ impl Analyzer {
                 }
             }
         }
+        info!(
+            "File root map: {} files for {} modules",
+            file_root.len(),
+            modules.len()
+        );
         file_root
     }
 

@@ -81,9 +81,6 @@ fn handle_use_command(crate_root: &Path, args: &UseArgs) -> anyhow::Result<()> {
     // Create analyzer and validate crate root
     let mut analyzer = Analyzer::new(crate_root)?;
 
-    // Log the module being analyzed
-    info!("Analyzing module: {}", args.module_path);
-
     // Configure analysis options
     let options = AnalysisOptions {
         recursive: args.recursive,

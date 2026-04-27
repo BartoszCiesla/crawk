@@ -16,21 +16,26 @@ exit_code: 0
 ----- stdout -----
 [32mINFO[39m Running crawk version
 [32mINFO[39m Crate root: [MODULES]
-[32mINFO[39m Analyzing module: nesting
+[32mINFO[39m Resolving module: 'nesting'
+[32mINFO[39m Module tree: 'nesting' → [MODULES]/src/nesting/mod.rs, recursive=true
+[32mINFO[39m Found submodule: 'nesting::level1' → [MODULES]/src/nesting/level1/mod.rs
+[32mINFO[39m Found submodule: 'nesting::level1::level2' → [MODULES]/src/nesting/level1/level2/mod.rs
+[32mINFO[39m Found submodule: 'nesting::level1::level2::level3' → [MODULES]/src/nesting/level1/level2/level3.rs
+[32mINFO[39m Resolving module: 'nesting'
+[32mINFO[39m Resolving module: 'nesting::level1'
+[32mINFO[39m Resolving module: 'nesting'
+[32mINFO[39m Resolving module: 'nesting::level1::level2'
+[32mINFO[39m Resolving module: 'nesting::level1'
+[32mINFO[39m Resolving module: 'nesting'
+[32mINFO[39m File root map: 4 files for 4 modules
 [32mINFO[39m Analyzing module: nesting (file: [MODULES]/src/nesting/mod.rs)
-[32mINFO[39m Analyzed nesting
-[32mINFO[39m Found reference: crate::inline_modules
+[32mINFO[39m Parsed 'nesting': 1 references from [MODULES]/src/nesting/mod.rs
 [32mINFO[39m Analyzing module: nesting::level1 (file: [MODULES]/src/nesting/level1/mod.rs)
-[32mINFO[39m Analyzed nesting::level1
-[32mINFO[39m Found reference: crate::nesting::depth
+[32mINFO[39m Parsed 'nesting::level1': 1 references from [MODULES]/src/nesting/level1/mod.rs
 [32mINFO[39m Analyzing module: nesting::level1::level2 (file: [MODULES]/src/nesting/level1/level2/mod.rs)
-[32mINFO[39m Analyzed nesting::level1::level2
-[32mINFO[39m Found reference: crate::nesting::depth
+[32mINFO[39m Parsed 'nesting::level1::level2': 1 references from [MODULES]/src/nesting/level1/level2/mod.rs
 [32mINFO[39m Analyzing module: nesting::level1::level2::level3 (file: [MODULES]/src/nesting/level1/level2/level3.rs)
-[32mINFO[39m Analyzed nesting::level1::level2::level3
-[32mINFO[39m Found reference: crate::nesting::level1::level2::depth
-[32mINFO[39m Found reference: crate::nesting::level1::depth
-[32mINFO[39m Found reference: crate::nesting::depth
+[32mINFO[39m Parsed 'nesting::level1::level2::level3': 3 references from [MODULES]/src/nesting/level1/level2/level3.rs
 [32mINFO[39m Module file: [MODULES]/src/nesting/mod.rs
 crate::inline_modules
 crate::nesting::depth

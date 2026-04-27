@@ -14,11 +14,16 @@ exit_code: 0
 ----- stdout -----
 [32mINFO[39m Running crawk version
 [32mINFO[39m Crate root: [MODULES]
-[32mINFO[39m Analyzing module: file_module
+[32mINFO[39m Resolving module: 'file_module'
+[34mDEBUG[39m 'file_module' found as [MODULES]/src/file_module.rs
+[32mINFO[39m Module tree: 'file_module' → [MODULES]/src/file_module.rs, recursive=false
+[34mDEBUG[39m Cache miss: [MODULES]/src/lib.rs
+[34mDEBUG[39m File root: 'file_module' → 'file_module' (file: [MODULES]/src/file_module.rs)
+[32mINFO[39m File root map: 1 files for 1 modules
 [32mINFO[39m Analyzing module: file_module (file: [MODULES]/src/file_module.rs)
-[32mINFO[39m Analyzed file_module
-[34mDEBUG[39m Analyzed TypeReference { segments: Segments(["nesting"]), prefix: Crate, suffix: None }
-[32mINFO[39m Found reference: crate::nesting
+[34mDEBUG[39m Cache miss: [MODULES]/src/file_module.rs
+[32mINFO[39m Parsed 'file_module': 1 references from [MODULES]/src/file_module.rs
+[34mDEBUG[39m Found reference: crate::nesting
 [34mDEBUG[39m Processing module: file_module
 [34mDEBUG[39m Found crate reference: crate::nesting
 [34mDEBUG[39m Processing module: file_module complete, found 0 dependencies

@@ -16,6 +16,8 @@ use syn::File;
 use syn::visit::Visit;
 use thiserror::Error;
 
+use tracing::info;
+
 use crate::reference::TypeReference;
 use visitor::ModuleVisitor;
 
@@ -126,6 +128,16 @@ impl CrateAnalyzer {
         }
 
         let result: Vec<TypeReference> = visitor.references.all().cloned().collect();
+        info!(
+            "Parsed '{module}': {} references from {}{}",
+            result.len(),
+            path.display(),
+            if inline_scope.is_empty() {
+                String::new()
+            } else {
+                format!(" (inline {inline_scope:?})")
+            }
+        );
 
         if !self.files.contains_key(&module) {
             self.file_order.push(module.clone());

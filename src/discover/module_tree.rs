@@ -27,7 +27,7 @@ use syn::Item;
 
 use crate::constants::{LIB_FILE_NAME, MAIN_FILE_NAME, MODULE_FILE_NAME};
 use crate::utils::has_cfg_test;
-use tracing::debug;
+use tracing::{debug, info};
 
 use super::{CrateInfo, CrateInfoError, ModuleInfo, ModuleVisibility, Result};
 
@@ -95,6 +95,7 @@ impl CrateInfo {
     /// - The module cannot be found
     /// - The crate root cannot be determined
     pub(super) fn resolve_module(&self, module_path: &str) -> Result<PathBuf> {
+        info!("Resolving module: '{module_path}'");
         let package = self.root_package().ok_or(CrateInfoError::PackageNotFound)?;
 
         self.resolve_module_path_with_crate(package, module_path)
@@ -153,7 +154,7 @@ impl CrateInfo {
 
         if is_lib_root {
             // Skip the crate name/alias and resolve the rest
-            return if parts.len() > 1 {
+            let result = if parts.len() > 1 {
                 let remaining_path = parts[1..].join("::");
                 Self::resolve_module_path(package, &remaining_path)
             } else {
@@ -161,17 +162,21 @@ impl CrateInfo {
                 Self::find_crate_root(package)
                     .ok_or_else(|| CrateInfoError::NoCrateRoot(package.name.to_string()))
             };
+            info!("Resolved '{module_path}' via library root");
+            return result;
         }
 
         // Check if the first part matches any binary target's source file stem
         if Self::find_binary_by_file_stem(package, parts[0]).is_some() {
-            return if parts.len() > 1 {
+            let result = if parts.len() > 1 {
                 let remaining = parts[1..].join("::");
                 Self::resolve_module_path_from_binary(package, parts[0], &remaining)
             } else {
                 Self::find_binary_by_file_stem(package, parts[0])
                     .ok_or_else(|| CrateInfoError::NoCrateRoot(package.name.to_string()))
             };
+            info!("Resolved '{module_path}' via binary target '{}'", parts[0]);
+            return result;
         }
 
         // Otherwise, resolve as-is
@@ -329,22 +334,29 @@ impl CrateInfo {
             // Check for `part.rs` (Rust 2018+ style)
             let file_path = current_dir.join(format!("{part}.rs"));
             if file_path.exists() {
+                debug!("'{part}' found as {}", file_path.display());
                 if is_last {
                     return Ok(Some(file_path));
                 }
                 // For non-last parts, remember this file and try to navigate into companion directory
                 if part_dir.is_dir() {
+                    debug!("'{part}' has companion dir, descending");
                     current_file = Some(file_path);
                     current_dir = part_dir;
                     continue;
                 }
                 // No companion directory, but we have a file - check for inline module
+                debug!(
+                    "'{part}' no companion dir, checking inline in {}",
+                    file_path.display()
+                );
                 return Self::check_inline_module(&file_path, &parts[idx + 1..]);
             }
 
             // Check for `part/mod.rs` (older style)
             let mod_path = part_dir.join(MODULE_FILE_NAME);
             if mod_path.exists() {
+                debug!("'{part}' found as {}", mod_path.display());
                 if is_last {
                     return Ok(Some(mod_path));
                 }
@@ -356,9 +368,14 @@ impl CrateInfo {
 
             // Module not found as a file - check if it's an inline module in the parent file
             if let Some(parent_file) = &current_file {
+                debug!(
+                    "'{part}' not on disk, checking inline in {}",
+                    parent_file.display()
+                );
                 return Self::check_inline_module(parent_file, &parts[idx..]);
             }
 
+            debug!("'{part}' not found, no parent file to check inline");
             return Ok(None);
         }
 
@@ -505,6 +522,7 @@ impl CrateInfo {
 
                 // Skip test modules if not including them
                 if is_test_module && !include_tests {
+                    debug!("Skipping test module: '{mod_name}'");
                     continue;
                 }
 
@@ -519,6 +537,7 @@ impl CrateInfo {
                 let submodule_visibility = ModuleVisibility::from(&item_mod.vis);
                 if let Some((_, items)) = &item_mod.content {
                     // Inline module - add it with current file path and recursively process its items
+                    info!("Found submodule: '{submodule_path}' (inline)");
                     result.push(ModuleInfo::new(
                         submodule_path.clone(),
                         file_path.to_path_buf(),
@@ -537,6 +556,10 @@ impl CrateInfo {
                     if let Some(sub_mod_file) =
                         Self::resolve_module_parts(&base_dir, &[&mod_name], None)?
                     {
+                        info!(
+                            "Found submodule: '{submodule_path}' \u{2192} {}",
+                            sub_mod_file.display()
+                        );
                         // External modules are file-based, so inline_scope is empty
                         result.extend(Self::collect_submodules_recursive(
                             &sub_mod_file,
@@ -546,6 +569,8 @@ impl CrateInfo {
                             include_tests,
                             cache,
                         )?);
+                    } else {
+                        debug!("Skipping unresolved external module: '{submodule_path}'");
                     }
                 }
             }
@@ -630,6 +655,10 @@ impl CrateInfo {
                             include_tests,
                             cache,
                         )?);
+                    } else {
+                        debug!(
+                            "Skipping unresolved module '{mod_name}' inside inline '{current_module_path}'"
+                        );
                     }
                 }
             }
