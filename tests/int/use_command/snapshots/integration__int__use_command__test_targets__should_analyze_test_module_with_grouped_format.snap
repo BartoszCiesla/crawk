@@ -1,0 +1,32 @@
+---
+source: tests/int/use_command/test_targets.rs
+info:
+  program: crawk
+  args:
+    - use
+    - "int::list_command"
+    - "-t"
+    - "-r"
+    - "--format"
+    - grouped
+---
+success: true
+exit_code: 0
+----- stdout -----
+int::list_command
+int::list_command::basic
+ - crate::common::{crawk, crawk_modules}
+int::list_command::error_cases
+ - crate::common::{backtrace_filters, crawk_modules}
+int::list_command::filter
+ - crate::common::crawk_modules
+int::list_command::flags
+ - crate::common::crawk_modules
+int::list_command::multi_target
+ - crate::common::{crawk, crawk_modules}
+int::list_command::overview
+ - crate::common::crawk
+int::list_command::test_targets
+ - crate::common::{backtrace_filters, crawk, crawk_modules}
+
+----- stderr -----

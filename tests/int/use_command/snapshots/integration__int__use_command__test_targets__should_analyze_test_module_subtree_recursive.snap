@@ -1,0 +1,20 @@
+---
+source: tests/int/use_command/test_targets.rs
+info:
+  program: crawk
+  args:
+    - use
+    - "int::list_command"
+    - "-t"
+    - "-r"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::common::crawk
+crate::common::crawk_modules
+crate::common::{backtrace_filters, crawk, crawk_modules}
+crate::common::{backtrace_filters, crawk_modules}
+crate::common::{crawk, crawk_modules}
+
+----- stderr -----

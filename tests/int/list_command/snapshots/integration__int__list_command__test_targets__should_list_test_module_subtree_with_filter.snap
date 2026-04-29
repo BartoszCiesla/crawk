@@ -35,6 +35,7 @@ int::use_command::inline
 int::use_command::nesting
 int::use_command::overview
 int::use_command::own_modules
+int::use_command::test_targets
 int::use_command::visibility
 int::use_command::visibility::inner_glob
 int::use_command::visibility::restricted

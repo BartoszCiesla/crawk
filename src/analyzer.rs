@@ -315,13 +315,19 @@ impl Analyzer {
         let module_path = module_path.into();
 
         let default_target = self.default_lib_target();
-        let modules = self.crate_info.get_module_tree(
+        let modules = match self.crate_info.get_module_tree(
             &module_path,
             options.recursive,
             options.include_tests,
             &default_target,
             &mut self.parse_cache,
-        )?;
+        ) {
+            Ok(mods) => mods,
+            Err(ref e) if options.include_tests && e.is_module_not_found() => {
+                self.list_from_test_target(&module_path)?
+            }
+            Err(e) => return Err(e.into()),
+        };
 
         let source_file = modules
             .first()

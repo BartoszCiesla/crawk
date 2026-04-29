@@ -11,4 +11,5 @@ mod inline;
 mod nesting;
 mod overview;
 mod own_modules;
+mod test_targets;
 mod visibility;

@@ -1,0 +1,14 @@
+---
+source: tests/int/use_command/test_targets.rs
+info:
+  program: crawk
+  args:
+    - use
+    - common
+    - "-t"
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+----- stderr -----
