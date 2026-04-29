@@ -29,6 +29,8 @@ crate::discover::CrateInfoError
 crate::discover::ModuleInfo
 crate::discover::ModuleVisibility
 crate::discover::Result
+crate::discover::TargetInfo
+crate::discover::TargetKind
 crate::error::AnalysisError
 crate::error::Result
 crate::model::AnalysisOptions

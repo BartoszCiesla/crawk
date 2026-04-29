@@ -35,13 +35,32 @@ fn main() -> anyhow::Result<()> {
 fn handle_list_command(crate_root: &Path, args: &ListArgs) -> anyhow::Result<()> {
     let mut analyzer = Analyzer::new(crate_root)?;
 
-    let module_path = args.module_path.as_deref().unwrap_or("lib");
-    info!("Listing modules from: {module_path}");
-
-    let mut modules = analyzer.list_modules(module_path, args.include_tests)?;
+    let (mut modules, is_all_targets) = if let Some(ref module_path) = args.module_path {
+        // Single-target context: list subtree from the given module
+        info!("Listing modules from: {module_path}");
+        let mods = analyzer.list_modules(module_path, args.include_tests)?;
+        (mods, false)
+    } else {
+        // Multi-target context: list all targets
+        info!("Listing all targets");
+        let mods = analyzer.list_all_modules(args.include_tests)?;
+        (mods, true)
+    };
 
     // Filter out the crate root (empty path)
     modules.retain(|m| !m.path().is_empty());
+
+    // Show target prefix only when multiple distinct targets have modules
+    let multi_target = if is_all_targets {
+        let distinct_targets = modules
+            .iter()
+            .map(crawk::ModuleInfo::target)
+            .collect::<std::collections::HashSet<_>>()
+            .len();
+        distinct_targets > 1
+    } else {
+        false
+    };
 
     // Apply depth filter
     if let Some(depth) = args.depth {
@@ -56,19 +75,18 @@ fn handle_list_command(crate_root: &Path, args: &ListArgs) -> anyhow::Result<()>
     if modules.is_empty() {
         info!("No modules found.");
     } else {
+        let display_opts = format::list::ListDisplayOptions {
+            show_source: args.source,
+            show_visibility: args.show_visibility,
+            multi_target,
+        };
         let output = match args.format {
-            ListOutputFormat::Plain => format::list::render_list_plain(
-                &modules,
-                args.source,
-                args.show_visibility,
-                crate_root,
-            ),
-            ListOutputFormat::Table => format::list::render_list_table(
-                &modules,
-                args.source,
-                args.show_visibility,
-                crate_root,
-            ),
+            ListOutputFormat::Plain => {
+                format::list::render_list_plain(&modules, &display_opts, crate_root)
+            }
+            ListOutputFormat::Table => {
+                format::list::render_list_table(&modules, &display_opts, crate_root)
+            }
         };
         print!("{output}");
     }

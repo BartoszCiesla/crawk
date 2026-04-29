@@ -1,0 +1,97 @@
+---
+source: tests/int/list_command/multi_target.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/fixtures/modules
+    - list
+    - "-t"
+    - "-V"
+---
+success: true
+exit_code: 0
+----- stdout -----
+[lib]              advanced_globs                          pub
+[lib]              advanced_globs::aliased_module          pub
+[lib]              advanced_globs::enum_variants           pub
+[lib]              advanced_globs::internal                
+[lib]              advanced_globs::layer1                  pub
+[lib]              advanced_globs::layer1::layer2          pub
+[lib]              advanced_globs::layer1::layer2::layer3  pub
+[lib]              advanced_globs::macro_module            pub
+[lib]              advanced_globs::original                pub
+[lib]              advanced_globs::prelude                 pub
+[lib]              advanced_globs::shadowing               pub
+[lib]              advanced_globs::trait_providers         pub
+[lib]              advanced_globs::unix_specific           pub
+[lib]              advanced_globs::windows_specific        pub
+[lib]              baz                                     pub
+[lib]              custom_path                             pub
+[lib]              dir_module                              pub
+[lib]              dir_module::child_dir                   pub
+[lib]              dir_module::child_file                  pub
+[lib]              empty_module                            pub
+[lib]              file_module                             pub
+[lib]              foo                                     pub
+[lib]              foo::bar                                pub
+[lib]              foo::other                              pub
+[lib]              glob_patterns                           pub
+[lib]              glob_patterns::constants                pub
+[lib]              glob_patterns::mixed_exports            pub
+[lib]              glob_patterns::outer                    pub
+[lib]              glob_patterns::outer::inner             pub
+[lib]              glob_patterns::self_ref                 pub
+[lib]              glob_patterns::set_a                    pub
+[lib]              glob_patterns::set_b                    pub
+[lib]              glob_patterns::traits                   pub
+[lib]              glob_patterns::types                    pub
+[lib]              glob_patterns::utilities                pub
+[lib]              glob_showcase                           pub
+[lib]              glob_showcase::api                      pub
+[lib]              glob_showcase::config                   pub
+[lib]              glob_showcase::config::all              pub
+[lib]              glob_showcase::config::client           pub
+[lib]              glob_showcase::config::logging          pub
+[lib]              glob_showcase::config::server           pub
+[lib]              glob_showcase::database                 pub
+[lib]              glob_showcase::database::connection     pub
+[lib]              glob_showcase::database::query          pub
+[lib]              glob_showcase::database::transaction    pub
+[lib]              glob_showcase::errors                   pub
+[lib]              glob_showcase::models                   pub
+[lib]              glob_showcase::prelude                  pub
+[lib]              glob_showcase::traits                   pub
+[lib]              glob_showcase::utils                    pub
+[lib]              glob_showcase::utils::collection        pub
+[lib]              glob_showcase::utils::math              pub
+[lib]              glob_showcase::utils::string            pub
+[lib]              inline_modules                          pub
+[lib]              inline_modules::inner                   pub
+[lib]              inline_modules::nested                  pub
+[lib]              inline_modules::nested::deep            pub
+[lib]              inline_modules::private_inline          
+[lib]              item_visibility                         pub
+[lib]              mixed                                   pub
+[lib]              mixed::file_child                       pub
+[lib]              mixed::inline_child                     pub
+[lib]              nesting                                 pub
+[lib]              nesting::level1                         pub
+[lib]              nesting::level1::level2                 pub
+[lib]              nesting::level1::level2::level3         pub
+[lib]              no_pub_items                            pub
+[lib]              reexports                               pub
+[lib]              reexports::internal                     
+[lib]              reexports::types                        
+[lib]              tests                                   
+[lib]              uses_empty_glob                         pub
+[lib]              visibility                              pub
+[lib]              visibility::inner                       pub(crate)
+[lib]              visibility::private_mod                 
+[lib]              visibility::pub_crate_mod               pub(crate)
+[lib]              visibility::pub_mod                     pub
+[lib]              visibility::pub_super_mod               pub(super)
+[lib]              visibility::restricted_mod              pub(in crate::visibility)
+[test:integration] helpers                                 
+
+----- stderr -----

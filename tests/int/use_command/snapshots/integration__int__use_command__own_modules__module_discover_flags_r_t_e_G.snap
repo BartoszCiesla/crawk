@@ -22,6 +22,7 @@ crate::discover::CrateInfoError
 crate::discover::ModuleInfo
 crate::discover::ModuleVisibility
 crate::discover::Result
+crate::discover::TargetInfo
 crate::utils::has_cfg_test
 
 ----- stderr -----

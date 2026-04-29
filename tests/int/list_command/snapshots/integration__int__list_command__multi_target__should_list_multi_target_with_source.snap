@@ -1,0 +1,97 @@
+---
+source: tests/int/list_command/multi_target.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/fixtures/modules
+    - list
+    - "-t"
+    - "-s"
+---
+success: true
+exit_code: 0
+----- stdout -----
+[lib]              advanced_globs                          src/advanced_globs.rs
+[lib]              advanced_globs::aliased_module          src/advanced_globs.rs
+[lib]              advanced_globs::enum_variants           src/advanced_globs.rs
+[lib]              advanced_globs::internal                src/advanced_globs.rs
+[lib]              advanced_globs::layer1                  src/advanced_globs.rs
+[lib]              advanced_globs::layer1::layer2          src/advanced_globs.rs
+[lib]              advanced_globs::layer1::layer2::layer3  src/advanced_globs.rs
+[lib]              advanced_globs::macro_module            src/advanced_globs.rs
+[lib]              advanced_globs::original                src/advanced_globs.rs
+[lib]              advanced_globs::prelude                 src/advanced_globs.rs
+[lib]              advanced_globs::shadowing               src/advanced_globs.rs
+[lib]              advanced_globs::trait_providers         src/advanced_globs.rs
+[lib]              advanced_globs::unix_specific           src/advanced_globs.rs
+[lib]              advanced_globs::windows_specific        src/advanced_globs.rs
+[lib]              baz                                     src/baz.rs
+[lib]              custom_path                             src/custom_path.rs
+[lib]              dir_module                              src/dir_module/mod.rs
+[lib]              dir_module::child_dir                   src/dir_module/child_dir/mod.rs
+[lib]              dir_module::child_file                  src/dir_module/child_file.rs
+[lib]              empty_module                            src/empty_module.rs
+[lib]              file_module                             src/file_module.rs
+[lib]              foo                                     src/foo/mod.rs
+[lib]              foo::bar                                src/foo/bar.rs
+[lib]              foo::other                              src/foo/other.rs
+[lib]              glob_patterns                           src/glob_patterns.rs
+[lib]              glob_patterns::constants                src/glob_patterns.rs
+[lib]              glob_patterns::mixed_exports            src/glob_patterns.rs
+[lib]              glob_patterns::outer                    src/glob_patterns.rs
+[lib]              glob_patterns::outer::inner             src/glob_patterns.rs
+[lib]              glob_patterns::self_ref                 src/glob_patterns.rs
+[lib]              glob_patterns::set_a                    src/glob_patterns.rs
+[lib]              glob_patterns::set_b                    src/glob_patterns.rs
+[lib]              glob_patterns::traits                   src/glob_patterns.rs
+[lib]              glob_patterns::types                    src/glob_patterns.rs
+[lib]              glob_patterns::utilities                src/glob_patterns.rs
+[lib]              glob_showcase                           src/glob_showcase.rs
+[lib]              glob_showcase::api                      src/glob_showcase.rs
+[lib]              glob_showcase::config                   src/glob_showcase.rs
+[lib]              glob_showcase::config::all              src/glob_showcase.rs
+[lib]              glob_showcase::config::client           src/glob_showcase.rs
+[lib]              glob_showcase::config::logging          src/glob_showcase.rs
+[lib]              glob_showcase::config::server           src/glob_showcase.rs
+[lib]              glob_showcase::database                 src/glob_showcase.rs
+[lib]              glob_showcase::database::connection     src/glob_showcase.rs
+[lib]              glob_showcase::database::query          src/glob_showcase.rs
+[lib]              glob_showcase::database::transaction    src/glob_showcase.rs
+[lib]              glob_showcase::errors                   src/glob_showcase.rs
+[lib]              glob_showcase::models                   src/glob_showcase.rs
+[lib]              glob_showcase::prelude                  src/glob_showcase.rs
+[lib]              glob_showcase::traits                   src/glob_showcase.rs
+[lib]              glob_showcase::utils                    src/glob_showcase.rs
+[lib]              glob_showcase::utils::collection        src/glob_showcase.rs
+[lib]              glob_showcase::utils::math              src/glob_showcase.rs
+[lib]              glob_showcase::utils::string            src/glob_showcase.rs
+[lib]              inline_modules                          src/inline_modules.rs
+[lib]              inline_modules::inner                   src/inline_modules.rs
+[lib]              inline_modules::nested                  src/inline_modules.rs
+[lib]              inline_modules::nested::deep            src/inline_modules.rs
+[lib]              inline_modules::private_inline          src/inline_modules.rs
+[lib]              item_visibility                         src/item_visibility.rs
+[lib]              mixed                                   src/mixed/mod.rs
+[lib]              mixed::file_child                       src/mixed/file_child.rs
+[lib]              mixed::inline_child                     src/mixed/mod.rs
+[lib]              nesting                                 src/nesting/mod.rs
+[lib]              nesting::level1                         src/nesting/level1/mod.rs
+[lib]              nesting::level1::level2                 src/nesting/level1/level2/mod.rs
+[lib]              nesting::level1::level2::level3         src/nesting/level1/level2/level3.rs
+[lib]              no_pub_items                            src/no_pub_items.rs
+[lib]              reexports                               src/reexports/mod.rs
+[lib]              reexports::internal                     src/reexports/internal.rs
+[lib]              reexports::types                        src/reexports/types.rs
+[lib]              tests                                   src/lib.rs
+[lib]              uses_empty_glob                         src/uses_empty_glob.rs
+[lib]              visibility                              src/visibility/mod.rs
+[lib]              visibility::inner                       src/visibility/inner.rs
+[lib]              visibility::private_mod                 src/visibility/private_mod.rs
+[lib]              visibility::pub_crate_mod               src/visibility/pub_crate_mod.rs
+[lib]              visibility::pub_mod                     src/visibility/pub_mod.rs
+[lib]              visibility::pub_super_mod               src/visibility/pub_super_mod.rs
+[lib]              visibility::restricted_mod              src/visibility/mod.rs
+[test:integration] helpers                                 tests/helpers.rs
+
+----- stderr -----

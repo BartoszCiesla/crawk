@@ -19,6 +19,8 @@ lib
  - crate::analyzer::Analyzer
  - crate::discover::ModuleInfo
  - crate::discover::ModuleVisibility
+ - crate::discover::TargetInfo
+ - crate::discover::TargetKind
  - crate::error::AnalysisError
  - crate::model::AnalysisOptions
  - crate::model::AnalysisResult
@@ -30,6 +32,8 @@ analyzer
  - crate::cache::ParseCache
  - crate::discover::CrateInfo
  - crate::discover::ModuleInfo
+ - crate::discover::TargetInfo
+ - crate::discover::TargetKind
  - crate::error::AnalysisError
  - crate::error::Result
  - crate::model::AnalysisOptions
@@ -59,6 +63,7 @@ discover::module_tree
  - crate::discover::ModuleInfo
  - crate::discover::ModuleVisibility
  - crate::discover::Result
+ - crate::discover::TargetInfo
  - crate::utils::has_cfg_test
 discover::module_tree::tests
 error

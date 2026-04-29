@@ -29,7 +29,7 @@ use crate::constants::{LIB_FILE_NAME, MAIN_FILE_NAME, MODULE_FILE_NAME};
 use crate::utils::has_cfg_test;
 use tracing::{debug, info};
 
-use super::{CrateInfo, CrateInfoError, ModuleInfo, ModuleVisibility, Result};
+use super::{CrateInfo, CrateInfoError, ModuleInfo, ModuleVisibility, Result, TargetInfo};
 
 impl From<&syn::Visibility> for ModuleVisibility {
     fn from(vis: &syn::Visibility) -> Self {
@@ -436,6 +436,7 @@ impl CrateInfo {
         current_module_path: &str,
         current_visibility: ModuleVisibility,
         include_tests: bool,
+        target: &TargetInfo,
         cache: &mut ParseCache,
     ) -> Result<Vec<ModuleInfo>> {
         let mut result = Vec::new();
@@ -445,6 +446,7 @@ impl CrateInfo {
             current_module_path.to_owned(),
             file_path.to_path_buf(),
             current_visibility,
+            target.clone(),
         ));
 
         if include_tests {
@@ -465,6 +467,7 @@ impl CrateInfo {
                         submodule_path,
                         file_path.to_path_buf(),
                         ModuleVisibility::from(&item_mod.vis),
+                        target.clone(),
                     ));
                 }
             }
@@ -486,6 +489,87 @@ impl CrateInfo {
         current_visibility: ModuleVisibility,
         inline_scope: &[String],
         include_tests: bool,
+        target: &TargetInfo,
+        cache: &mut ParseCache,
+    ) -> Result<Vec<ModuleInfo>> {
+        let base_dir = Self::get_module_base_dir(file_path);
+        Self::collect_submodules_with_base_dir(
+            file_path,
+            &base_dir,
+            current_module_path,
+            current_visibility,
+            inline_scope,
+            include_tests,
+            target,
+            cache,
+        )
+    }
+
+    /// Gets the base directory for resolving submodules from a file.
+    ///
+    /// For `module.rs` files, submodules are in a `module/` directory.
+    /// For `mod.rs` files, submodules are in the same directory.
+    fn get_module_base_dir(file_path: &Path) -> PathBuf {
+        let file_name = file_path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+        let parent = file_path.parent().unwrap_or_else(|| Path::new(""));
+
+        if file_name == MODULE_FILE_NAME
+            || file_name == LIB_FILE_NAME
+            || file_name == MAIN_FILE_NAME
+        {
+            // Submodules are in the same directory
+            parent.to_path_buf()
+        } else {
+            // For `module.rs`, submodules are in `module/` directory
+            let stem = file_path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
+            parent.join(stem)
+        }
+    }
+
+    /// Collects the module tree for a crate root file (e.g., `tests/integration.rs`).
+    ///
+    /// Unlike [`collect_submodules_recursive`](Self::collect_submodules_recursive),
+    /// this uses the file's parent directory as base for resolving `mod` declarations.
+    /// This is correct for crate roots where `mod helpers;` in `tests/integration.rs`
+    /// resolves to `tests/helpers.rs`, not `tests/integration/helpers.rs`.
+    pub(super) fn collect_submodules_recursive_crate_root(
+        file_path: &Path,
+        include_tests: bool,
+        target: &TargetInfo,
+        cache: &mut ParseCache,
+    ) -> Result<Vec<ModuleInfo>> {
+        let base_dir = file_path
+            .parent()
+            .unwrap_or_else(|| Path::new(""))
+            .to_path_buf();
+        Self::collect_submodules_with_base_dir(
+            file_path,
+            &base_dir,
+            "",
+            ModuleVisibility::Public,
+            &[],
+            include_tests,
+            target,
+            cache,
+        )
+    }
+
+    /// Shared implementation for recursive submodule collection.
+    ///
+    /// Both [`collect_submodules_recursive`](Self::collect_submodules_recursive) and
+    /// [`collect_submodules_recursive_crate_root`](Self::collect_submodules_recursive_crate_root)
+    /// delegate here. The only difference is how `base_dir` is computed:
+    /// - Regular modules use [`get_module_base_dir`](Self::get_module_base_dir)
+    /// - Crate roots use the file's parent directory
+    #[allow(clippy::too_many_arguments)]
+    fn collect_submodules_with_base_dir(
+        file_path: &Path,
+        base_dir: &Path,
+        current_module_path: &str,
+        current_visibility: ModuleVisibility,
+        inline_scope: &[String],
+        include_tests: bool,
+        target: &TargetInfo,
         cache: &mut ParseCache,
     ) -> Result<Vec<ModuleInfo>> {
         let mut result = Vec::new();
@@ -495,13 +579,11 @@ impl CrateInfo {
             current_module_path.to_owned(),
             file_path.to_path_buf(),
             current_visibility,
+            target.clone(),
         ));
 
         // Read and parse the file
         let syntax = Self::parse_cached(file_path, cache)?;
-
-        // Get the directory containing this file for resolving submodules
-        let base_dir = Self::get_module_base_dir(file_path);
 
         // Determine which items to iterate over based on inline scope
         let items_to_process = if inline_scope.is_empty() {
@@ -542,19 +624,21 @@ impl CrateInfo {
                         submodule_path.clone(),
                         file_path.to_path_buf(),
                         submodule_visibility,
+                        target.clone(),
                     ));
                     result.extend(Self::collect_inline_submodules(
                         items,
                         &submodule_path,
                         file_path,
-                        &base_dir,
+                        base_dir,
                         include_tests,
+                        target,
                         cache,
                     )?);
                 } else {
                     // External module - find and parse its file
                     if let Some(sub_mod_file) =
-                        Self::resolve_module_parts(&base_dir, &[&mod_name], None)?
+                        Self::resolve_module_parts(base_dir, &[&mod_name], None)?
                     {
                         info!(
                             "Found submodule: '{submodule_path}' \u{2192} {}",
@@ -567,6 +651,7 @@ impl CrateInfo {
                             submodule_visibility,
                             &[], // Empty inline scope for file-based modules
                             include_tests,
+                            target,
                             cache,
                         )?);
                     } else {
@@ -579,27 +664,6 @@ impl CrateInfo {
         Ok(result)
     }
 
-    /// Gets the base directory for resolving submodules from a file.
-    ///
-    /// For `module.rs` files, submodules are in a `module/` directory.
-    /// For `mod.rs` files, submodules are in the same directory.
-    fn get_module_base_dir(file_path: &Path) -> PathBuf {
-        let file_name = file_path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-        let parent = file_path.parent().unwrap_or_else(|| Path::new(""));
-
-        if file_name == MODULE_FILE_NAME
-            || file_name == LIB_FILE_NAME
-            || file_name == MAIN_FILE_NAME
-        {
-            // Submodules are in the same directory
-            parent.to_path_buf()
-        } else {
-            // For `module.rs`, submodules are in `module/` directory
-            let stem = file_path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
-            parent.join(stem)
-        }
-    }
-
     /// Collects submodules from inline module items.
     fn collect_inline_submodules(
         items: &[Item],
@@ -607,6 +671,7 @@ impl CrateInfo {
         containing_file: &Path,
         base_dir: &Path,
         include_tests: bool,
+        target: &TargetInfo,
         cache: &mut ParseCache,
     ) -> Result<Vec<ModuleInfo>> {
         let mut result = Vec::new();
@@ -632,6 +697,7 @@ impl CrateInfo {
                         submodule_path.clone(),
                         containing_file.to_path_buf(),
                         submodule_visibility,
+                        target.clone(),
                     ));
                     result.extend(Self::collect_inline_submodules(
                         nested_items,
@@ -639,6 +705,7 @@ impl CrateInfo {
                         containing_file,
                         base_dir,
                         include_tests,
+                        target,
                         cache,
                     )?);
                 } else {
@@ -653,6 +720,7 @@ impl CrateInfo {
                             submodule_visibility,
                             &[], // Empty inline scope for file-based modules
                             include_tests,
+                            target,
                             cache,
                         )?);
                     } else {

@@ -48,6 +48,69 @@ impl fmt::Display for ModuleVisibility {
     }
 }
 
+/// The kind of compilation target a module belongs to.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum TargetKind {
+    /// Library crate (`lib.rs`).
+    Lib,
+    /// Binary crate (`main.rs` or other `[[bin]]` targets).
+    Bin,
+    /// Integration test target (`tests/*.rs`).
+    Test,
+}
+
+impl fmt::Display for TargetKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Lib => f.write_str("lib"),
+            Self::Bin => f.write_str("bin"),
+            Self::Test => f.write_str("test"),
+        }
+    }
+}
+
+/// Metadata identifying which compilation target a module belongs to.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TargetInfo {
+    /// The kind of target (lib, bin, test).
+    kind: TargetKind,
+    /// The target name from `Cargo.toml` (e.g., `"crawk"`, `"integration"`).
+    name: String,
+}
+
+impl TargetInfo {
+    /// Creates a new `TargetInfo`.
+    #[must_use]
+    pub fn new(kind: TargetKind, name: impl Into<String>) -> Self {
+        Self {
+            kind,
+            name: name.into(),
+        }
+    }
+
+    /// Returns the target kind.
+    #[must_use]
+    pub const fn kind(&self) -> &TargetKind {
+        &self.kind
+    }
+
+    /// Returns the target name.
+    #[must_use]
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+}
+
+impl fmt::Display for TargetInfo {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.kind {
+            TargetKind::Lib => f.write_str("lib"),
+            TargetKind::Bin => write!(f, "bin:{}", self.name),
+            TargetKind::Test => write!(f, "test:{}", self.name),
+        }
+    }
+}
+
 /// Errors that can occur during crate info operations.
 #[derive(Debug, Error)]
 pub enum CrateInfoError {
@@ -127,6 +190,9 @@ pub struct ModuleInfo {
 
     /// The visibility of this module as declared in its parent
     visibility: ModuleVisibility,
+
+    /// The compilation target this module belongs to
+    target: TargetInfo,
 }
 
 impl ModuleInfo {
@@ -137,16 +203,19 @@ impl ModuleInfo {
     /// * `module_path` - The fully qualified module path (e.g., "analysis::collect")
     /// * `source_file` - The file system path where this module is defined
     /// * `visibility` - The declared visibility of the module
+    /// * `target` - The compilation target this module belongs to
     #[must_use]
     pub const fn new(
         module_path: String,
         source_file: PathBuf,
         visibility: ModuleVisibility,
+        target: TargetInfo,
     ) -> Self {
         Self {
             module_path,
             source_file,
             visibility,
+            target,
         }
     }
 
@@ -169,6 +238,12 @@ impl ModuleInfo {
     #[must_use]
     pub const fn visibility(&self) -> &ModuleVisibility {
         &self.visibility
+    }
+
+    /// Returns the compilation target this module belongs to.
+    #[must_use]
+    pub const fn target(&self) -> &TargetInfo {
+        &self.target
     }
 }
 
@@ -219,6 +294,44 @@ impl CrateInfo {
         &self.root_package_name
     }
 
+    /// Returns all compilation targets in the crate.
+    ///
+    /// Always includes library and binary targets. When `include_tests` is
+    /// `true`, also includes integration test targets.
+    pub(crate) fn all_targets(&self, include_tests: bool) -> Vec<(TargetInfo, PathBuf)> {
+        let Some(package) = self.root_package() else {
+            return vec![];
+        };
+
+        let mut result = Vec::new();
+        for target in &package.targets {
+            let src_path = target.src_path.as_std_path().to_path_buf();
+            if target.is_lib() {
+                result.push((
+                    TargetInfo::new(TargetKind::Lib, target.name.as_str()),
+                    src_path,
+                ));
+            } else if target.is_bin() {
+                result.push((
+                    TargetInfo::new(TargetKind::Bin, target.name.as_str()),
+                    src_path,
+                ));
+            } else if include_tests && target.kind.contains(&cargo_metadata::TargetKind::Test) {
+                result.push((
+                    TargetInfo::new(TargetKind::Test, target.name.as_str()),
+                    src_path,
+                ));
+            }
+        }
+        // Sort: Lib first, then Bin, then Test
+        result.sort_by(|a, b| {
+            a.0.kind()
+                .cmp(b.0.kind())
+                .then_with(|| a.0.name().cmp(b.0.name()))
+        });
+        result
+    }
+
     /// Returns the root package from cargo metadata.
     fn root_package(&self) -> Option<&cargo_metadata::Package> {
         self.metadata
@@ -258,6 +371,7 @@ impl CrateInfo {
         module_path: &str,
         recursive: bool,
         include_tests: bool,
+        target: &TargetInfo,
         cache: &mut ParseCache,
     ) -> Result<Vec<ModuleInfo>> {
         let file_path = self.resolve_module(module_path)?;
@@ -283,6 +397,7 @@ impl CrateInfo {
                 root_visibility,
                 &inline_scope,
                 include_tests,
+                target,
                 cache,
             )
         } else {
@@ -291,6 +406,7 @@ impl CrateInfo {
                 &normalized_path,
                 root_visibility,
                 include_tests,
+                target,
                 cache,
             )
         }
@@ -305,6 +421,23 @@ impl CrateInfo {
     /// Returns an error if the module cannot be found or the crate root is invalid.
     pub(crate) fn resolve_module_path_to_file(&self, module_path: &str) -> Result<PathBuf> {
         self.resolve_module(module_path)
+    }
+
+    /// Collects the module tree rooted at a source file, without module path resolution.
+    ///
+    /// Use this for targets (like integration tests) whose root file is not
+    /// discoverable through the normal `resolve_module` mechanism.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the source file cannot be read or parsed.
+    pub(crate) fn get_module_tree_for_file(
+        src_path: &Path,
+        target: &TargetInfo,
+        include_cfg_tests: bool,
+        cache: &mut ParseCache,
+    ) -> Result<Vec<ModuleInfo>> {
+        Self::collect_submodules_recursive_crate_root(src_path, include_cfg_tests, target, cache)
     }
 
     /// Normalizes a module path by removing the crate name prefix if present.

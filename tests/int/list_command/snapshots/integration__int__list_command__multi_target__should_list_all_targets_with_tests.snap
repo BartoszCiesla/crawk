@@ -1,5 +1,5 @@
 ---
-source: tests/int/list_command/flags.rs
+source: tests/int/list_command/multi_target.rs
 info:
   program: crawk
   args:

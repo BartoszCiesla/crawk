@@ -8,19 +8,27 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-analyzer
-cache
-constants
-discover
-discover::module_tree
-error
-model
-parser
-parser::visitor
-reference
-resolve
-utils
-version
-version::build_info
+[lib]       analyzer
+[lib]       cache
+[lib]       constants
+[lib]       discover
+[lib]       discover::module_tree
+[lib]       error
+[lib]       model
+[lib]       parser
+[lib]       parser::visitor
+[lib]       reference
+[lib]       resolve
+[lib]       utils
+[lib]       version
+[lib]       version::build_info
+[bin:crawk] cli
+[bin:crawk] cli::overview
+[bin:crawk] cli::validation
+[bin:crawk] format
+[bin:crawk] format::flat
+[bin:crawk] format::grouped
+[bin:crawk] format::list
+[bin:crawk] logger
 
 ----- stderr -----

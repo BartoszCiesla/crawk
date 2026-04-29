@@ -1,5 +1,5 @@
 use crate::cache::ParseCache;
-use crate::discover::{CrateInfo, ModuleInfo};
+use crate::discover::{CrateInfo, ModuleInfo, TargetInfo, TargetKind};
 use crate::error::{AnalysisError, Result};
 use crate::model::{AnalysisOptions, AnalysisResult};
 use crate::parser::CrateAnalyzer;
@@ -161,16 +161,71 @@ impl Analyzer {
         module_path: &str,
         include_tests: bool,
     ) -> Result<Vec<ModuleInfo>> {
+        let default_target = self.default_lib_target();
         let mut modules = self.crate_info.get_module_tree(
             module_path,
             true,
             include_tests,
+            &default_target,
             &mut self.parse_cache,
         )?;
         modules.sort_by(|a, b| a.path().cmp(b.path()));
         modules.dedup_by(|a, b| a.path() == b.path());
         info!("Listed {} modules (after dedup)", modules.len());
         Ok(modules)
+    }
+
+    /// List modules from all compilation targets in the crate.
+    ///
+    /// Returns modules from library and binary targets. When `include_tests`
+    /// is `true`, also includes integration test targets and `#[cfg(test)]`
+    /// modules.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if any target's source file cannot be read or parsed.
+    pub fn list_all_modules(&mut self, include_tests: bool) -> Result<Vec<ModuleInfo>> {
+        let targets = self.crate_info.all_targets(include_tests);
+        let mut all_modules = Vec::new();
+
+        for (target_info, src_path) in &targets {
+            let modules = match target_info.kind() {
+                TargetKind::Lib | TargetKind::Bin => {
+                    let module_path = Self::target_module_path(target_info, src_path);
+                    self.crate_info.get_module_tree(
+                        &module_path,
+                        true,
+                        include_tests,
+                        target_info,
+                        &mut self.parse_cache,
+                    )?
+                }
+                TargetKind::Test => CrateInfo::get_module_tree_for_file(
+                    src_path,
+                    target_info,
+                    include_tests,
+                    &mut self.parse_cache,
+                )?,
+            };
+            all_modules.extend(modules);
+        }
+
+        // Sort: target kind (Lib < Bin < Test), then target name, then module path
+        all_modules.sort_by(|a, b| {
+            a.target()
+                .kind()
+                .cmp(b.target().kind())
+                .then_with(|| a.target().name().cmp(b.target().name()))
+                .then_with(|| a.path().cmp(b.path()))
+        });
+        all_modules.dedup_by(|a, b| a.target() == b.target() && a.path() == b.path());
+
+        info!(
+            "Listed {} modules across {} targets",
+            all_modules.len(),
+            targets.len()
+        );
+        Ok(all_modules)
     }
 
     /// Analyze dependencies for a specific module.
@@ -212,10 +267,12 @@ impl Analyzer {
     ) -> Result<AnalysisResult> {
         let module_path = module_path.into();
 
+        let default_target = self.default_lib_target();
         let modules = self.crate_info.get_module_tree(
             &module_path,
             options.recursive,
             options.include_tests,
+            &default_target,
             &mut self.parse_cache,
         )?;
 
@@ -229,6 +286,27 @@ impl Analyzer {
         let dependencies = self.collect_references(options);
 
         Ok(AnalysisResult::new(module_path, dependencies, source_file))
+    }
+
+    /// Returns a default `TargetInfo` for the library target.
+    fn default_lib_target(&self) -> TargetInfo {
+        TargetInfo::new(TargetKind::Lib, self.crate_info.root_package_name())
+    }
+
+    /// Computes the module path string to pass to `get_module_tree` for a target.
+    ///
+    /// Library targets use `"lib"`, binary targets use the file stem of their
+    /// source path (e.g., `"main"` for `src/main.rs`).
+    fn target_module_path(target: &TargetInfo, src_path: &Path) -> String {
+        match target.kind() {
+            TargetKind::Lib => "lib".to_owned(),
+            TargetKind::Bin => src_path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("main")
+                .to_owned(),
+            TargetKind::Test => unreachable!("test targets use get_module_tree_for_file"),
+        }
     }
 
     /// Parse each discovered module and accumulate its references into the parser.
