@@ -1,0 +1,14 @@
+---
+source: tests/int/list_command/test_targets.rs
+info:
+  program: crawk
+  args:
+    - list
+    - int
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: Module 'int' not found

@@ -1,0 +1,16 @@
+---
+source: tests/int/list_command/test_targets.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/fixtures/modules
+    - list
+    - helpers
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: Module 'helpers' not found

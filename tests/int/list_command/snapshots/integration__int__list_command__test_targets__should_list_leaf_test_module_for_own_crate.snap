@@ -1,0 +1,15 @@
+---
+source: tests/int/list_command/test_targets.rs
+info:
+  program: crawk
+  args:
+    - list
+    - "int::version"
+    - "-t"
+---
+success: true
+exit_code: 0
+----- stdout -----
+int::version
+
+----- stderr -----

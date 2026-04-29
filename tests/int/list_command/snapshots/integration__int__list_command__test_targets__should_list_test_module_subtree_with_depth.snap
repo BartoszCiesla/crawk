@@ -1,0 +1,23 @@
+---
+source: tests/int/list_command/test_targets.rs
+info:
+  program: crawk
+  args:
+    - list
+    - int
+    - "-t"
+    - "-d"
+    - "2"
+---
+success: true
+exit_code: 0
+----- stdout -----
+int
+int::command
+int::error_cases
+int::list_command
+int::use_command
+int::verbosity
+int::version
+
+----- stderr -----

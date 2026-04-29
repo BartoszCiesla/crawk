@@ -171,6 +171,14 @@ pub enum CrateInfoError {
     PathTraversal,
 }
 
+impl CrateInfoError {
+    /// Returns `true` if this error is a `ModuleNotFound` variant.
+    #[must_use]
+    pub const fn is_module_not_found(&self) -> bool {
+        matches!(self, Self::ModuleNotFound { .. })
+    }
+}
+
 /// Result type alias for crate info operations.
 pub(crate) type Result<T> = std::result::Result<T, CrateInfoError>;
 

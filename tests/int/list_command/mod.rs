@@ -4,3 +4,4 @@ mod filter;
 mod flags;
 mod multi_target;
 mod overview;
+mod test_targets;

@@ -1,0 +1,42 @@
+---
+source: tests/int/list_command/test_targets.rs
+info:
+  program: crawk
+  args:
+    - list
+    - int
+    - "-t"
+    - "-F"
+    - command
+---
+success: true
+exit_code: 0
+----- stdout -----
+int::command
+int::list_command
+int::list_command::basic
+int::list_command::error_cases
+int::list_command::filter
+int::list_command::flags
+int::list_command::multi_target
+int::list_command::overview
+int::list_command::test_targets
+int::use_command
+int::use_command::basic_output
+int::use_command::binaries
+int::use_command::custom_path
+int::use_command::depth
+int::use_command::edge_cases
+int::use_command::empty_and_glob
+int::use_command::error_cases
+int::use_command::flags
+int::use_command::include_tests
+int::use_command::inline
+int::use_command::nesting
+int::use_command::overview
+int::use_command::own_modules
+int::use_command::visibility
+int::use_command::visibility::inner_glob
+int::use_command::visibility::restricted
+
+----- stderr -----

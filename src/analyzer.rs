@@ -162,17 +162,64 @@ impl Analyzer {
         include_tests: bool,
     ) -> Result<Vec<ModuleInfo>> {
         let default_target = self.default_lib_target();
-        let mut modules = self.crate_info.get_module_tree(
+        let mut modules = match self.crate_info.get_module_tree(
             module_path,
             true,
             include_tests,
             &default_target,
             &mut self.parse_cache,
-        )?;
+        ) {
+            Ok(mods) => mods,
+            Err(ref e) if include_tests && e.is_module_not_found() => {
+                self.list_from_test_target(module_path)?
+            }
+            Err(e) => return Err(e.into()),
+        };
         modules.sort_by(|a, b| a.path().cmp(b.path()));
         modules.dedup_by(|a, b| a.path() == b.path());
         info!("Listed {} modules (after dedup)", modules.len());
         Ok(modules)
+    }
+
+    /// Searches integration test targets for the given module path.
+    ///
+    /// Discovers all test targets, collects their full module trees, and
+    /// returns the subtree rooted at `module_path` if found.
+    fn list_from_test_target(&mut self, module_path: &str) -> Result<Vec<ModuleInfo>> {
+        let targets = self.crate_info.all_targets(true);
+        let prefix_with_sep = format!("{module_path}::");
+
+        for (target_info, src_path) in &targets {
+            if *target_info.kind() != TargetKind::Test {
+                continue;
+            }
+
+            let modules = CrateInfo::get_module_tree_for_file(
+                src_path,
+                target_info,
+                true,
+                &mut self.parse_cache,
+            )?;
+
+            let matched: Vec<ModuleInfo> = modules
+                .into_iter()
+                .filter(|m| m.path() == module_path || m.path().starts_with(&prefix_with_sep))
+                .collect();
+
+            if !matched.is_empty() {
+                info!(
+                    "Found {} modules for '{}' in test target '{}'",
+                    matched.len(),
+                    module_path,
+                    target_info.name()
+                );
+                return Ok(matched);
+            }
+        }
+
+        Err(AnalysisError::ModuleNotFound {
+            module_path: module_path.to_owned(),
+        })
     }
 
     /// List modules from all compilation targets in the crate.

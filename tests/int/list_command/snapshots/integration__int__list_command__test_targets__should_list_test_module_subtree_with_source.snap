@@ -1,0 +1,18 @@
+---
+source: tests/int/list_command/test_targets.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /home/barcie/coding/crawk/fixtures/modules
+    - list
+    - helpers
+    - "-t"
+    - "-s"
+---
+success: true
+exit_code: 0
+----- stdout -----
+helpers  tests/helpers.rs
+
+----- stderr -----
