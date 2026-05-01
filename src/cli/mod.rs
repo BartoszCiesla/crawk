@@ -110,6 +110,8 @@ pub(crate) enum CrawkCommands {
     ///
     /// Valid root targets: "lib" (library), "main" or binary name (e.g. "crawk").
     /// Any submodule path within those targets is also accepted.
+    /// Note: references from binary targets use the package name as prefix
+    /// (e.g. "crawk::") rather than "crate::".
     ///
     /// Empty output (exit 0) means no internal crate dependencies were found.
     ///
