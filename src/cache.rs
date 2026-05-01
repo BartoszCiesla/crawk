@@ -81,6 +81,23 @@ mod tests {
     use std::path::Path;
 
     #[test]
+    fn new_cache_is_empty() {
+        let cache = ParseCache::new();
+        assert!(cache.is_empty());
+        assert_eq!(cache.len(), 0);
+    }
+
+    #[test]
+    fn len_and_is_empty_reflect_inserts() {
+        let mut cache = ParseCache::new();
+        let path = PathBuf::from("/fake/a.rs");
+        let file = Rc::new(syn::parse_str::<syn::File>("").expect("parses"));
+        cache.insert(path, file);
+        assert_eq!(cache.len(), 1);
+        assert!(!cache.is_empty());
+    }
+
+    #[test]
     fn get_or_parse_calls_closure_exactly_once_for_same_path() {
         let mut cache = ParseCache::new();
         let call_count = Cell::new(0u32);
