@@ -121,6 +121,24 @@ fn should_write_to_log_file() {
 }
 
 #[test]
+fn should_fail_when_log_file_path_is_invalid() {
+    let output = crawk_modules()
+        .arg("-l")
+        .arg("/no_such_directory/crawk_test.log")
+        .arg("use")
+        .arg("file_module")
+        .output()
+        .expect("process should run");
+
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("Failed to create log file"),
+        "should report log file creation failure, got: {stderr}"
+    );
+}
+
+#[test]
 fn should_write_debug_to_log_file_with_vv() {
     let log_file = LogFile::new("crawk_test_debug_log.txt");
 
