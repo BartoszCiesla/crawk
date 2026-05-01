@@ -126,12 +126,12 @@ pub(crate) enum CrawkCommands {
     /// Discovers and displays the module structure of a Rust crate.
     /// Always lists recursively; use --depth to limit visible levels.
     ///
-    /// Without MODULE_PATH: lists modules from all targets. In crates with
-    /// multiple targets (lib + binaries) each line is prefixed with a target
-    /// tag: [lib], [bin:name], [test:name].
+    /// Without MODULE_PATH: lists modules from all targets. When modules from
+    /// multiple distinct targets are found, each line is prefixed with a target
+    /// tag: [lib], [bin:name], [test:name]. Use --targets to always show the tag.
     ///
-    /// With MODULE_PATH: scopes to that module's subtree (root included);
-    /// target tags are suppressed even in multi-target crates.
+    /// With MODULE_PATH: scopes to that module's subtree (root included).
+    /// Target tags are suppressed unless --targets is given.
     ///
     /// Empty output (exit 0) means no modules matched the filters.
     ///
@@ -255,11 +255,6 @@ pub(crate) struct ListArgs {
     #[arg(short = 't', long = "include-tests", default_value_t = false)]
     pub include_tests: bool,
 
-    /// Show source file paths alongside module names
-    #[clap(verbatim_doc_comment)]
-    #[arg(short = 's', long = "source", default_value_t = false)]
-    pub source: bool,
-
     /// Show only modules at depth ≤ N (inclusive filter, not truncation).
     /// --depth 1: top-level only  (e.g. "parser")
     /// --depth 2: top-level + one nesting level (e.g. "parser", "parser::visitor")
@@ -278,10 +273,8 @@ pub(crate) struct ListArgs {
     #[arg(short = 'F', long = "filter")]
     pub filter: Option<String>,
 
-    /// Show module visibility (pub, pub(crate), pub(super), …)
-    #[clap(verbatim_doc_comment)]
-    #[arg(short = 'V', long = "visibility", default_value_t = false)]
-    pub show_visibility: bool,
+    #[clap(flatten)]
+    pub display: ListDisplayArgs,
 
     /// Output format
     ///
@@ -290,4 +283,28 @@ pub(crate) struct ListArgs {
     #[clap(verbatim_doc_comment)]
     #[arg(short = 'f', long = "format", default_value_t = ListOutputFormat::Plain)]
     pub format: ListOutputFormat,
+}
+
+#[derive(Parser, Debug, Clone, Default)]
+pub(crate) struct ListDisplayArgs {
+    /// Show source file paths alongside module names
+    #[clap(verbatim_doc_comment)]
+    #[arg(short = 's', long = "source", default_value_t = false)]
+    pub show_source: bool,
+
+    /// Show module visibility (pub, pub(crate), pub(super), …)
+    #[clap(verbatim_doc_comment)]
+    #[arg(short = 'V', long = "visibility", default_value_t = false)]
+    pub show_visibility: bool,
+
+    /// Always show the target tag column ([lib], [bin:name], [test:name]).
+    ///
+    /// By default the tag is shown only when modules from multiple distinct
+    /// targets are present. Use this flag to force the tag in any context —
+    /// including when a MODULE_PATH is given or when only one target has modules.
+    ///
+    /// Useful for scripting when a consistent output format is required.
+    #[clap(verbatim_doc_comment)]
+    #[arg(short = 'T', long = "targets", default_value_t = false)]
+    pub show_targets: bool,
 }

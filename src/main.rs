@@ -50,16 +50,16 @@ fn handle_list_command(crate_root: &Path, args: &ListArgs) -> anyhow::Result<()>
     // Filter out the crate root (empty path)
     modules.retain(|m| !m.path().is_empty());
 
-    // Show target prefix only when multiple distinct targets have modules
-    let multi_target = if is_all_targets {
-        let distinct_targets = modules
-            .iter()
-            .map(crawk::ModuleInfo::target)
-            .collect::<std::collections::HashSet<_>>()
-            .len();
-        distinct_targets > 1
-    } else {
-        false
+    // Show target prefix when forced, or when multiple distinct targets have modules
+    let multi_target = args.display.show_targets || {
+        is_all_targets && {
+            let distinct_targets = modules
+                .iter()
+                .map(crawk::ModuleInfo::target)
+                .collect::<std::collections::HashSet<_>>()
+                .len();
+            distinct_targets > 1
+        }
     };
 
     // Apply depth filter
@@ -76,8 +76,8 @@ fn handle_list_command(crate_root: &Path, args: &ListArgs) -> anyhow::Result<()>
         info!("No modules found.");
     } else {
         let display_opts = format::list::ListDisplayOptions {
-            show_source: args.source,
-            show_visibility: args.show_visibility,
+            show_source: args.display.show_source,
+            show_visibility: args.display.show_visibility,
             multi_target,
         };
         let output = match args.format {

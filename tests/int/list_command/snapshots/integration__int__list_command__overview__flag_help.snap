@@ -14,12 +14,12 @@ List all modules in the crate
 Discovers and displays the module structure of a Rust crate.
 Always lists recursively; use --depth to limit visible levels.
 
-Without MODULE_PATH: lists modules from all targets. In crates with
-multiple targets (lib + binaries) each line is prefixed with a target
-tag: [lib], [bin:name], [test:name].
+Without MODULE_PATH: lists modules from all targets. When modules from
+multiple distinct targets are found, each line is prefixed with a target
+tag: [lib], [bin:name], [test:name]. Use --targets to always show the tag.
 
-With MODULE_PATH: scopes to that module's subtree (root included);
-target tags are suppressed even in multi-target crates.
+With MODULE_PATH: scopes to that module's subtree (root included).
+Target tags are suppressed unless --targets is given.
 
 Empty output (exit 0) means no modules matched the filters.
 
@@ -37,9 +37,6 @@ Options:
   -t, --include-tests
           Include modules defined in `#[cfg(test)]` blocks (excluded by default)
 
-  -s, --source
-          Show source file paths alongside module names
-
   -d, --depth <DEPTH>
           Show only modules at depth ≤ N (inclusive filter, not truncation).
           --depth 1: top-level only  (e.g. "parser")
@@ -54,8 +51,20 @@ Options:
           e.g., --filter parser matches "parser", "parser::visitor"
                 --filter Parser  → no results (module names are lowercase)
 
+  -s, --source
+          Show source file paths alongside module names
+
   -V, --visibility
           Show module visibility (pub, pub(crate), pub(super), …)
+
+  -T, --targets
+          Always show the target tag column ([lib], [bin:name], [test:name]).
+          
+          By default the tag is shown only when modules from multiple distinct
+          targets are present. Use this flag to force the tag in any context —
+          including when a MODULE_PATH is given or when only one target has modules.
+          
+          Useful for scripting when a consistent output format is required.
 
   -f, --format <FORMAT>
           Output format
