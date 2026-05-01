@@ -77,10 +77,8 @@ pub(crate) fn has_cfg_test(attrs: &[Attribute]) -> bool {
                         continue;
                     }
                 }
-                TokenTree::Group(group) => {
-                    if stream_contains_test(group.stream()) {
-                        return true;
-                    }
+                TokenTree::Group(group) if stream_contains_test(group.stream()) => {
+                    return true;
                 }
                 _ => {}
             }
