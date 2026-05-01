@@ -9,7 +9,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-Analyze a module and list its internal crate `use` statements
+Analyze a module and report all internal crate references
 
 Usage: crawk use [OPTIONS] <MODULE_PATH>
 
@@ -20,7 +20,9 @@ Options:
   -r, --recursive        Recursively analyze all submodules (disabled by default)
   -t, --include-tests    Include modules defined in `#[cfg(test)]` blocks (excluded by default)
   -e, --expand           Expand grouped imports into individual paths
-  -d, --depth <DEPTH>    Limit displayed module path depth from the crate root
+  -d, --depth <DEPTH>    Truncate displayed dependency paths to at most N segments.
+                         Paths with ≤N segments are shown unchanged. After truncation,
+                         duplicates are removed and the result is sorted.
   -f, --format <FORMAT>  Output format [default: plain] [possible values: plain, grouped]
   -G, --resolve-globs    Resolve glob imports (`use crate::foo::*`) to explicit items
   -h, --help             Print help (see more with '--help')

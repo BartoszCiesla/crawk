@@ -9,10 +9,23 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-Analyze a module and list its internal crate `use` statements
+Analyze a module and report all internal crate references
 
-Inspects the given module's source and reports all `use` paths that
-reference other modules within the same crate.
+Inspects the given module's source and reports all internal crate
+references — not only `use` statements, but also qualified paths in
+type annotations, trait bounds, struct literals, and macro invocations.
+
+MODULE_PATH: use `::` separated segments without `crate::` prefix.
+  e.g. "utils", "parser::visitor"
+
+Valid root targets: "lib" (library), "main" or binary name (e.g. "crawk").
+Any submodule path within those targets is also accepted.
+
+Empty output (exit 0) means no internal crate dependencies were found.
+
+Note: global options (-p, -v, -l) must appear before the subcommand:
+  crawk -p /path/to/crate use parser   ← correct
+  crawk use parser -p /path/to/crate   ← error
 
 Usage: crawk use [OPTIONS] <MODULE_PATH>
 
@@ -33,9 +46,16 @@ Options:
           e.g., a::{x, y} becomes a::x, a::y
 
   -d, --depth <DEPTH>
-          Limit displayed module path depth from the crate root
+          Truncate displayed dependency paths to at most N segments.
+          Paths with ≤N segments are shown unchanged. After truncation,
+          duplicates are removed and the result is sorted.
           
-          e.g., --depth 1 shows x, --depth 2 shows x::y
+          Caveat: grouped imports (e.g. crate::foo::{A, B}) count as 1
+          segment (just "foo"); they are not truncated even at --depth 1.
+          Use --expand first if you want individual items truncated.
+          
+          e.g., --depth 1: crate::foo::Bar → crate::foo
+                --depth 2: crate::foo::Bar → crate::foo::Bar (unchanged)
 
   -f, --format <FORMAT>
           Output format
@@ -56,6 +76,11 @@ Options:
           they resolve to based on the target module's public API.
           
           e.g., foo::* becomes foo::Bar, foo::Baz
+          
+          Note: globs inside groups (e.g. crate::foo::{Bar, *}) are only
+          resolved when --expand is also active. Use -e -G together to fully
+          flatten all grouped and glob imports.
+          Unresolvable globs (private or missing targets) are kept as `*`.
 
   -h, --help
           Print help (see a summary with '-h')

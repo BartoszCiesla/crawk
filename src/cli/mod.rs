@@ -99,19 +99,42 @@ impl CrawkArgs {
 
 #[derive(Subcommand, Debug, Clone)]
 pub(crate) enum CrawkCommands {
-    /// Analyze a module and list its internal crate `use` statements
+    /// Analyze a module and report all internal crate references
     ///
-    /// Inspects the given module's source and reports all `use` paths that
-    /// reference other modules within the same crate.
-    #[clap(verbatim_doc_comment, visible_alias = "u", alias = "deps")]
+    /// Inspects the given module's source and reports all internal crate
+    /// references — not only `use` statements, but also qualified paths in
+    /// type annotations, trait bounds, struct literals, and macro invocations.
+    ///
+    /// MODULE_PATH: use `::` separated segments without `crate::` prefix.
+    ///   e.g. "utils", "parser::visitor"
+    ///
+    /// Valid root targets: "lib" (library), "main" or binary name (e.g. "crawk").
+    /// Any submodule path within those targets is also accepted.
+    ///
+    /// Empty output (exit 0) means no internal crate dependencies were found.
+    ///
+    /// Note: global options (-p, -v, -l) must appear before the subcommand:
+    ///   crawk -p /path/to/crate use parser   ← correct
+    ///   crawk use parser -p /path/to/crate   ← error
+    #[clap(verbatim_doc_comment, visible_alias = "u")]
     Use(UseArgs),
 
     /// List all modules in the crate
     ///
     /// Discovers and displays the module structure of a Rust crate.
-    /// By default lists all modules recursively from the crate root.
-    /// Optionally scope to a subtree by providing a module path.
-    #[clap(verbatim_doc_comment, visible_alias = "ls", alias = "l")]
+    /// Always lists recursively; use --depth to limit visible levels.
+    ///
+    /// Without MODULE_PATH: lists modules from all targets. In crates with
+    /// multiple targets (lib + binaries) each line is prefixed with a target
+    /// tag: [lib], [bin:name], [test:name].
+    ///
+    /// With MODULE_PATH: scopes to that module's subtree (root included);
+    /// target tags are suppressed even in multi-target crates.
+    ///
+    /// Empty output (exit 0) means no modules matched the filters.
+    ///
+    /// Note: global options (-p, -v, -l) must appear before the subcommand.
+    #[clap(verbatim_doc_comment, visible_aliases = ["ls", "l"])]
     List(ListArgs),
 }
 
@@ -159,9 +182,16 @@ pub(crate) struct UseArgs {
     #[arg(short = 'e', long = "expand", default_value_t = false)]
     pub expand: bool,
 
-    /// Limit displayed module path depth from the crate root
+    /// Truncate displayed dependency paths to at most N segments.
+    /// Paths with ≤N segments are shown unchanged. After truncation,
+    /// duplicates are removed and the result is sorted.
     ///
-    /// e.g., --depth 1 shows x, --depth 2 shows x::y
+    /// Caveat: grouped imports (e.g. crate::foo::{A, B}) count as 1
+    /// segment (just "foo"); they are not truncated even at --depth 1.
+    /// Use --expand first if you want individual items truncated.
+    ///
+    /// e.g., --depth 1: crate::foo::Bar → crate::foo
+    ///       --depth 2: crate::foo::Bar → crate::foo::Bar (unchanged)
     #[clap(verbatim_doc_comment)]
     #[arg(short = 'd', long = "depth", value_parser = validate_depth)]
     pub depth: Option<usize>,
@@ -180,6 +210,11 @@ pub(crate) struct UseArgs {
     /// they resolve to based on the target module's public API.
     ///
     /// e.g., foo::* becomes foo::Bar, foo::Baz
+    ///
+    /// Note: globs inside groups (e.g. crate::foo::{Bar, *}) are only
+    /// resolved when --expand is also active. Use -e -G together to fully
+    /// flatten all grouped and glob imports.
+    /// Unresolvable globs (private or missing targets) are kept as `*`.
     #[clap(verbatim_doc_comment)]
     #[arg(short = 'G', long = "resolve-globs", default_value_t = false)]
     pub resolve_globs: bool,
@@ -190,7 +225,7 @@ pub(crate) enum ListOutputFormat {
     /// One module per line (default)
     #[default]
     Plain,
-    /// Unicode table
+    /// ASCII table with aligned columns
     Table,
 }
 
@@ -223,16 +258,20 @@ pub(crate) struct ListArgs {
     #[arg(short = 's', long = "source", default_value_t = false)]
     pub source: bool,
 
-    /// Limit displayed module depth
+    /// Show only modules at depth ≤ N (inclusive filter, not truncation).
+    /// --depth 1: top-level only  (e.g. "parser")
+    /// --depth 2: top-level + one nesting level (e.g. "parser", "parser::visitor")
     ///
-    /// e.g., --depth 1 shows only top-level modules
+    /// Note: unlike `use --depth`, this removes deeper modules entirely
+    /// rather than truncating their paths.
     #[clap(verbatim_doc_comment)]
     #[arg(short = 'd', long = "depth", value_parser = validate_depth)]
     pub depth: Option<usize>,
 
-    /// Filter modules by substring match on module path
+    /// Filter modules by case-sensitive substring match on module path.
     ///
     /// e.g., --filter parser matches "parser", "parser::visitor"
+    ///       --filter Parser  → no results (module names are lowercase)
     #[clap(verbatim_doc_comment)]
     #[arg(short = 'F', long = "filter")]
     pub filter: Option<String>,
@@ -245,7 +284,7 @@ pub(crate) struct ListArgs {
     /// Output format
     ///
     /// plain — one module per line (default)
-    /// table — unicode table
+    /// table — ASCII table with aligned columns
     #[clap(verbatim_doc_comment)]
     #[arg(short = 'f', long = "format", default_value_t = ListOutputFormat::Plain)]
     pub format: ListOutputFormat,

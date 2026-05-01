@@ -12,8 +12,18 @@ exit_code: 0
 List all modules in the crate
 
 Discovers and displays the module structure of a Rust crate.
-By default lists all modules recursively from the crate root.
-Optionally scope to a subtree by providing a module path.
+Always lists recursively; use --depth to limit visible levels.
+
+Without MODULE_PATH: lists modules from all targets. In crates with
+multiple targets (lib + binaries) each line is prefixed with a target
+tag: [lib], [bin:name], [test:name].
+
+With MODULE_PATH: scopes to that module's subtree (root included);
+target tags are suppressed even in multi-target crates.
+
+Empty output (exit 0) means no modules matched the filters.
+
+Note: global options (-p, -v, -l) must appear before the subcommand.
 
 Usage: crawk list [OPTIONS] [MODULE_PATH]
 
@@ -31,14 +41,18 @@ Options:
           Show source file paths alongside module names
 
   -d, --depth <DEPTH>
-          Limit displayed module depth
+          Show only modules at depth ≤ N (inclusive filter, not truncation).
+          --depth 1: top-level only  (e.g. "parser")
+          --depth 2: top-level + one nesting level (e.g. "parser", "parser::visitor")
           
-          e.g., --depth 1 shows only top-level modules
+          Note: unlike `use --depth`, this removes deeper modules entirely
+          rather than truncating their paths.
 
   -F, --filter <FILTER>
-          Filter modules by substring match on module path
+          Filter modules by case-sensitive substring match on module path.
           
           e.g., --filter parser matches "parser", "parser::visitor"
+                --filter Parser  → no results (module names are lowercase)
 
   -V, --visibility
           Show module visibility (pub, pub(crate), pub(super), …)
@@ -47,11 +61,11 @@ Options:
           Output format
           
           plain — one module per line (default)
-          table — unicode table
+          table — ASCII table with aligned columns
 
           Possible values:
           - plain: One module per line (default)
-          - table: Unicode table
+          - table: ASCII table with aligned columns
           
           [default: plain]
 
