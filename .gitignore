@@ -35,11 +35,15 @@
 # Project log file
 /crawk.log
 
+# Local configuration files
+/.envrc
+
 # Folder for notes and other temporary files
 /notes
 
 # AI assistant files
 /CLAUDE.md
+/AGENTS.md
 /.remember
 /.github/prompts
 /.github/copilot-instructions.md
