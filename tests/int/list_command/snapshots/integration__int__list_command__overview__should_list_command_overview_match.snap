@@ -22,7 +22,6 @@ exit_code: 0
 [lib]       resolve
 [lib]       utils
 [lib]       version
-[lib]       version::build_info
 [bin:crawk] cli
 [bin:crawk] cli::overview
 [bin:crawk] cli::validation

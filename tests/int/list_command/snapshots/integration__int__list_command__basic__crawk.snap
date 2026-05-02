@@ -23,6 +23,5 @@ reference
 resolve
 utils
 version
-version::build_info
 
 ----- stderr -----

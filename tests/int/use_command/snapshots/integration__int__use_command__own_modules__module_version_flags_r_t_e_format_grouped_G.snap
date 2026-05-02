@@ -16,6 +16,5 @@ success: true
 exit_code: 0
 ----- stdout -----
 version
-version::build_info
 
 ----- stderr -----
