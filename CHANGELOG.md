@@ -2,6 +2,62 @@
 
 ## [Unreleased]
 
+## [0.3.0](https://github.com/BartoszCiesla/crawk/compare/v0.2.0...v0.3.0)
+
+### ⛰️ Features
+
+
+- *(cli)* Add --targets flag to force target column display - ([d690a03](https://github.com/BartoszCiesla/crawk/commit/d690a0333e07a107a2ab71f0d1f51e7ee0cbd2c6))
+- *(cli)* Add command aliases for improved ergonomics - ([18bb0cf](https://github.com/BartoszCiesla/crawk/commit/18bb0cf6dcfbc77918c6a16be15e83cb66df2883))
+- *(cli)* Add list subcommand to display crate modules - ([364a16f](https://github.com/BartoszCiesla/crawk/commit/364a16f29be84665d8678504d24e09ffcd363af2))
+- *(list)* Display root modules with canonical names - ([22c4533](https://github.com/BartoszCiesla/crawk/commit/22c4533032672f9bf82be5fa7e2169e0357769fe))
+- *(list)* Add integration test module subtree listing support - ([f34b56f](https://github.com/BartoszCiesla/crawk/commit/f34b56fe9ebb145c71c9964ca525dc3ffababaff))
+- *(list)* Add multi-target module listing support - ([a07257b](https://github.com/BartoszCiesla/crawk/commit/a07257bd9fc12d3f2d6441fb5cec343bf014ec46))
+- *(list)* Add visibility display with -V/--visibility flag - ([52182d6](https://github.com/BartoszCiesla/crawk/commit/52182d6428660401b3038536d86a10ec3f159587))
+- *(logging)* Add info/debug logs for execution flow tracing - ([281699f](https://github.com/BartoszCiesla/crawk/commit/281699f92beb84632f08c41b22f0b034af8dcbe1))
+- *(use)* Add integration test module analysis support - ([4a9dc18](https://github.com/BartoszCiesla/crawk/commit/4a9dc185c6e22c8a74b2bd6f0d468a4d2b0fd002))
+
+### 🚜 Refactor
+
+
+- *(build)* Remove static-build-config feature - ([1d4b380](https://github.com/BartoszCiesla/crawk/commit/1d4b3800f82fb92c096e66d207adb2111a58d866))
+- *(discover)* Use explicit as_std_path conversion for Utf8PathBuf - ([59ef95e](https://github.com/BartoszCiesla/crawk/commit/59ef95eb12a262ce2ea9aa409734e7855728905b))
+- *(error)* Hide AnalyzerError from public API - ([8e2cc35](https://github.com/BartoszCiesla/crawk/commit/8e2cc35f1e0d0da4220e0f77667c444497ec23d1))
+- *(utils)* Simplify TokenTree::Group match arm with guard pattern - ([f78e692](https://github.com/BartoszCiesla/crawk/commit/f78e6927552da11b0b0c76b7b79d510c647df022))
+- Deduplicate inline-module descent logic - ([819ed04](https://github.com/BartoszCiesla/crawk/commit/819ed044cec4a2bbaec500e98145c3e6ae53d3e9))
+
+### 📚 Documentation
+
+
+- *(cli)* Document list subcommand in README - ([1cf7e11](https://github.com/BartoszCiesla/crawk/commit/1cf7e113cd8cf539d958619c671eae9688dfe298))
+- *(cli)* Document binary target prefix behavior in use command - ([5317fb0](https://github.com/BartoszCiesla/crawk/commit/5317fb0d6ebec3c847eef89bf1615fda4f29a305))
+- *(cli)* Improve help messages for use and list commands - ([09386ed](https://github.com/BartoszCiesla/crawk/commit/09386ed083e8a31e7fde08b48e08bbc0f3339034))
+
+### 🧪 Testing
+
+
+- *(cache)* Add tests for len and is_empty methods - ([ff3b842](https://github.com/BartoszCiesla/crawk/commit/ff3b842cc46e0026662f9f3f83a1951562276c00))
+- *(cache)* Verify get_or_parse calls closure exactly once - ([83fd57c](https://github.com/BartoszCiesla/crawk/commit/83fd57c5b57424f0143997a7a0c0b07ef393c19f))
+- *(resolve)* Add glob fallback test for unresolvable modules - ([0000718](https://github.com/BartoszCiesla/crawk/commit/00007183089a2fd5ff8cec45e5daeeffcbb2ed9c))
+- *(use_command)* Add path traversal defense integration tests - ([3a9ad42](https://github.com/BartoszCiesla/crawk/commit/3a9ad4272c01de905244a9bac76beca4b021957e))
+- *(use_command)* Update snapshot paths to fixtures directory - ([bf88e4e](https://github.com/BartoszCiesla/crawk/commit/bf88e4ee4fc1fbaa07f0b0fa669058947d713b2d))
+- *(utils)* Add file size limit test for read_source_file - ([1dc9e1d](https://github.com/BartoszCiesla/crawk/commit/1dc9e1dff471fff9fe8286b5ff54815c93d8516f))
+- *(verbosity)* Filter version string from snapshots - ([fbc38d9](https://github.com/BartoszCiesla/crawk/commit/fbc38d9f3722348a97ac226b278296272f247981))
+- Add backtrace filtering to exit-code-1 snapshot tests - ([2946849](https://github.com/BartoszCiesla/crawk/commit/2946849638ba8e3d9ce3da5cb7a501479599ec98))
+
+### ⚙️ Miscellaneous Tasks
+
+
+- *(config)* Exclude local config and AI files from git - ([b430ae3](https://github.com/BartoszCiesla/crawk/commit/b430ae3a1311f8f1f5f11a24a79d7564ac7dfa0b))
+- *(metadata)* Add crates.io metadata fields - ([a17b483](https://github.com/BartoszCiesla/crawk/commit/a17b483e61a630071c0cc0e1ab72a64e421a8480))
+- Add .envrc with RUST_BACKTRACE=full for local development - ([26d36cf](https://github.com/BartoszCiesla/crawk/commit/26d36cf1da24343843645b5aa303a99fe7dc3cd8))
+- Support notes as symlink in gitignore - ([97773b2](https://github.com/BartoszCiesla/crawk/commit/97773b2520d35ff3692a1ff825c0cae5e9057f17))
+- Add zizmor pre-commit hook for workflow linting - ([4b774a3](https://github.com/BartoszCiesla/crawk/commit/4b774a39e7dee0b1c40cfb11fefd50a957fd60fc))
+- Fix template injection in build-checks job - ([91867bf](https://github.com/BartoszCiesla/crawk/commit/91867bf9a6784deef80a673739ad70b4d03179bb))
+- Disable backtrace in multi-target test runs - ([9630f2a](https://github.com/BartoszCiesla/crawk/commit/9630f2ae2ff47cd4ce0aa4dca7b78384e6e2c17a))
+- Add multi-target build checks and pre-push validation - ([0cb32a5](https://github.com/BartoszCiesla/crawk/commit/0cb32a5b00db6d168c701a19481f7b2973951e2b))
+
+
 ## [0.2.0](https://github.com/BartoszCiesla/crawk/compare/v0.1.0...v0.2.0)
 
 ### ⛰️ Features
