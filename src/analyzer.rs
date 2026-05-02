@@ -162,7 +162,7 @@ impl Analyzer {
         include_tests: bool,
     ) -> Result<Vec<ModuleInfo>> {
         let default_target = self.default_lib_target();
-        let mut modules = match self.crate_info.get_module_tree(
+        let modules = match self.crate_info.get_module_tree(
             module_path,
             true,
             include_tests,
@@ -175,6 +175,17 @@ impl Analyzer {
             }
             Err(e) => return Err(e.into()),
         };
+        // Rename root entry (empty path) to the requested module path
+        let mut modules: Vec<ModuleInfo> = modules
+            .into_iter()
+            .map(|m| {
+                if m.path().is_empty() {
+                    m.with_path(module_path.to_owned())
+                } else {
+                    m
+                }
+            })
+            .collect();
         modules.sort_by(|a, b| a.path().cmp(b.path()));
         modules.dedup_by(|a, b| a.path() == b.path());
         info!("Listed {} modules (after dedup)", modules.len());
@@ -236,17 +247,15 @@ impl Analyzer {
         let mut all_modules = Vec::new();
 
         for (target_info, src_path) in &targets {
+            let canonical_name = Self::target_module_path(target_info, src_path);
             let modules = match target_info.kind() {
-                TargetKind::Lib | TargetKind::Bin => {
-                    let module_path = Self::target_module_path(target_info, src_path);
-                    self.crate_info.get_module_tree(
-                        &module_path,
-                        true,
-                        include_tests,
-                        target_info,
-                        &mut self.parse_cache,
-                    )?
-                }
+                TargetKind::Lib | TargetKind::Bin => self.crate_info.get_module_tree(
+                    &canonical_name,
+                    true,
+                    include_tests,
+                    target_info,
+                    &mut self.parse_cache,
+                )?,
                 TargetKind::Test => CrateInfo::get_module_tree_for_file(
                     src_path,
                     target_info,
@@ -254,6 +263,14 @@ impl Analyzer {
                     &mut self.parse_cache,
                 )?,
             };
+            // Rename root entry from "" to canonical name (e.g. "lib", "main")
+            let modules = modules.into_iter().map(|m| {
+                if m.path().is_empty() {
+                    m.with_path(canonical_name.clone())
+                } else {
+                    m
+                }
+            });
             all_modules.extend(modules);
         }
 
@@ -358,7 +375,11 @@ impl Analyzer {
                 .and_then(|s| s.to_str())
                 .unwrap_or("main")
                 .to_owned(),
-            TargetKind::Test => unreachable!("test targets use get_module_tree_for_file"),
+            TargetKind::Test => src_path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("test")
+                .to_owned(),
         }
     }
 

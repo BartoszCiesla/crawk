@@ -4,7 +4,7 @@ info:
   program: crawk
   args:
     - "-p"
-    - /home/barcie/coding/crawk/fixtures/modules
+    - fixtures/modules
     - list
     - "-d"
     - "1"
@@ -12,22 +12,25 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-advanced_globs
-baz
-custom_path
-dir_module
-empty_module
-file_module
-foo
-glob_patterns
-glob_showcase
-inline_modules
-item_visibility
-mixed
-nesting
-no_pub_items
-reexports
-uses_empty_glob
-visibility
+[lib]             advanced_globs
+[lib]             baz
+[lib]             custom_path
+[lib]             dir_module
+[lib]             empty_module
+[lib]             file_module
+[lib]             foo
+[lib]             glob_patterns
+[lib]             glob_showcase
+[lib]             inline_modules
+[lib]             item_visibility
+[lib]             lib
+[lib]             mixed
+[lib]             nesting
+[lib]             no_pub_items
+[lib]             reexports
+[lib]             uses_empty_glob
+[lib]             visibility
+[bin:modules]     main
+[bin:modules-cli] app
 
 ----- stderr -----

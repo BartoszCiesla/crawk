@@ -79,3 +79,29 @@ fn should_list_with_table_format_and_visibility() {
 fn should_list_subtree_with_visibility() {
     assert_cmd_snapshot!(crawk_modules().arg("list").arg("visibility").arg("-V"));
 }
+
+#[test]
+fn should_list_root_with_source() {
+    assert_cmd_snapshot!(crawk_modules().arg("list").arg("lib").arg("-s"));
+}
+
+#[test]
+fn should_list_root_with_depth() {
+    assert_cmd_snapshot!(crawk_modules().arg("list").arg("lib").arg("-d").arg("1"));
+}
+
+#[test]
+fn should_list_root_in_table_format() {
+    assert_cmd_snapshot!(
+        crawk_modules()
+            .arg("list")
+            .arg("lib")
+            .arg("--format")
+            .arg("table")
+    );
+}
+
+#[test]
+fn should_list_root_with_visibility() {
+    assert_cmd_snapshot!(crawk_modules().arg("list").arg("lib").arg("-V"));
+}

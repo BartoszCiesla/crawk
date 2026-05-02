@@ -14,6 +14,7 @@ exit_code: 0
 [lib]       discover
 [lib]       discover::module_tree
 [lib]       error
+[lib]       lib
 [lib]       model
 [lib]       parser
 [lib]       parser::visitor
@@ -30,5 +31,6 @@ exit_code: 0
 [bin:crawk] format::grouped
 [bin:crawk] format::list
 [bin:crawk] logger
+[bin:crawk] main
 
 ----- stderr -----

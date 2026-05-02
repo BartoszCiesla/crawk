@@ -4,7 +4,7 @@ info:
   program: crawk
   args:
     - "-p"
-    - /home/barcie/coding/crawk/fixtures/modules
+    - fixtures/modules
     - list
     - "-t"
     - "-d"
@@ -24,6 +24,7 @@ exit_code: 0
 [lib]              glob_showcase
 [lib]              inline_modules
 [lib]              item_visibility
+[lib]              lib
 [lib]              mixed
 [lib]              nesting
 [lib]              no_pub_items
@@ -31,6 +32,10 @@ exit_code: 0
 [lib]              tests
 [lib]              uses_empty_glob
 [lib]              visibility
+[bin:modules]      main
+[bin:modules-cli]  app
+[test:helpers]     helpers
 [test:integration] helpers
+[test:integration] integration
 
 ----- stderr -----

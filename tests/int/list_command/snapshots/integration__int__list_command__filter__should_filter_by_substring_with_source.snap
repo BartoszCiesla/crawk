@@ -4,7 +4,7 @@ info:
   program: crawk
   args:
     - "-p"
-    - /home/barcie/coding/crawk/fixtures/modules
+    - fixtures/modules
     - list
     - "-F"
     - nesting
@@ -13,9 +13,9 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-nesting                          src/nesting/mod.rs
-nesting::level1                  src/nesting/level1/mod.rs
-nesting::level1::level2          src/nesting/level1/level2/mod.rs
-nesting::level1::level2::level3  src/nesting/level1/level2/level3.rs
+[lib] nesting                          src/nesting/mod.rs
+[lib] nesting::level1                  src/nesting/level1/mod.rs
+[lib] nesting::level1::level2          src/nesting/level1/level2/mod.rs
+[lib] nesting::level1::level2::level3  src/nesting/level1/level2/level3.rs
 
 ----- stderr -----

@@ -4,7 +4,7 @@ info:
   program: crawk
   args:
     - "-p"
-    - /home/barcie/coding/crawk/fixtures/modules
+    - fixtures/modules
     - list
     - "-t"
     - "-s"
@@ -72,6 +72,7 @@ exit_code: 0
 [lib]              inline_modules::nested::deep            src/inline_modules.rs
 [lib]              inline_modules::private_inline          src/inline_modules.rs
 [lib]              item_visibility                         src/item_visibility.rs
+[lib]              lib                                     src/lib.rs
 [lib]              mixed                                   src/mixed/mod.rs
 [lib]              mixed::file_child                       src/mixed/file_child.rs
 [lib]              mixed::inline_child                     src/mixed/mod.rs
@@ -92,6 +93,10 @@ exit_code: 0
 [lib]              visibility::pub_mod                     src/visibility/pub_mod.rs
 [lib]              visibility::pub_super_mod               src/visibility/pub_super_mod.rs
 [lib]              visibility::restricted_mod              src/visibility/mod.rs
+[bin:modules]      main                                    src/main.rs
+[bin:modules-cli]  app                                     src/app.rs
+[test:helpers]     helpers                                 tests/helpers.rs
 [test:integration] helpers                                 tests/helpers.rs
+[test:integration] integration                             tests/integration.rs
 
 ----- stderr -----

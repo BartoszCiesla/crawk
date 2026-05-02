@@ -4,7 +4,7 @@ info:
   program: crawk
   args:
     - "-p"
-    - /home/barcie/coding/crawk/fixtures/modules
+    - fixtures/modules
     - list
     - "-t"
     - "-F"
@@ -13,6 +13,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+[test:helpers]     helpers
 [test:integration] helpers
 
 ----- stderr -----

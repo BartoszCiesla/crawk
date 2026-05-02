@@ -21,6 +21,9 @@ fn main() -> anyhow::Result<()> {
 
     info!("Running {} v{}", version::NAME, version::VERSION);
     info!("Crate root: {}", crate_root.display());
+    // Create the canonical, absolute form of a path with all intermediate
+    // components normalized and symbolic links resolved.
+    let crate_root = crate_root.canonicalize()?;
 
     // Dispatch to the appropriate subcommand
     match command.command {
@@ -46,9 +49,6 @@ fn handle_list_command(crate_root: &Path, args: &ListArgs) -> anyhow::Result<()>
         let mods = analyzer.list_all_modules(args.include_tests)?;
         (mods, true)
     };
-
-    // Filter out the crate root (empty path)
-    modules.retain(|m| !m.path().is_empty());
 
     // Show target prefix when forced, or when multiple distinct targets have modules
     let multi_target = args.display.show_targets || {

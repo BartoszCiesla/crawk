@@ -253,6 +253,15 @@ impl ModuleInfo {
     pub const fn target(&self) -> &TargetInfo {
         &self.target
     }
+
+    /// Returns a new `ModuleInfo` with the given module path, preserving all other fields.
+    #[must_use]
+    pub fn with_path(self, new_path: String) -> Self {
+        Self {
+            module_path: new_path,
+            ..self
+        }
+    }
 }
 
 /// A struct that wraps cargo metadata and provides module path resolution.

@@ -4,90 +4,93 @@ info:
   program: crawk
   args:
     - "-p"
-    - /home/barcie/coding/crawk/fixtures/modules
+    - fixtures/modules
     - list
 ---
 success: true
 exit_code: 0
 ----- stdout -----
-advanced_globs
-advanced_globs::aliased_module
-advanced_globs::enum_variants
-advanced_globs::internal
-advanced_globs::layer1
-advanced_globs::layer1::layer2
-advanced_globs::layer1::layer2::layer3
-advanced_globs::macro_module
-advanced_globs::original
-advanced_globs::prelude
-advanced_globs::shadowing
-advanced_globs::trait_providers
-advanced_globs::unix_specific
-advanced_globs::windows_specific
-baz
-custom_path
-dir_module
-dir_module::child_dir
-dir_module::child_file
-empty_module
-file_module
-foo
-foo::bar
-foo::other
-glob_patterns
-glob_patterns::constants
-glob_patterns::mixed_exports
-glob_patterns::outer
-glob_patterns::outer::inner
-glob_patterns::self_ref
-glob_patterns::set_a
-glob_patterns::set_b
-glob_patterns::traits
-glob_patterns::types
-glob_patterns::utilities
-glob_showcase
-glob_showcase::api
-glob_showcase::config
-glob_showcase::config::all
-glob_showcase::config::client
-glob_showcase::config::logging
-glob_showcase::config::server
-glob_showcase::database
-glob_showcase::database::connection
-glob_showcase::database::query
-glob_showcase::database::transaction
-glob_showcase::errors
-glob_showcase::models
-glob_showcase::prelude
-glob_showcase::traits
-glob_showcase::utils
-glob_showcase::utils::collection
-glob_showcase::utils::math
-glob_showcase::utils::string
-inline_modules
-inline_modules::inner
-inline_modules::nested
-inline_modules::nested::deep
-inline_modules::private_inline
-item_visibility
-mixed
-mixed::file_child
-mixed::inline_child
-nesting
-nesting::level1
-nesting::level1::level2
-nesting::level1::level2::level3
-no_pub_items
-reexports
-reexports::internal
-reexports::types
-uses_empty_glob
-visibility
-visibility::inner
-visibility::private_mod
-visibility::pub_crate_mod
-visibility::pub_mod
-visibility::pub_super_mod
-visibility::restricted_mod
+[lib]             advanced_globs
+[lib]             advanced_globs::aliased_module
+[lib]             advanced_globs::enum_variants
+[lib]             advanced_globs::internal
+[lib]             advanced_globs::layer1
+[lib]             advanced_globs::layer1::layer2
+[lib]             advanced_globs::layer1::layer2::layer3
+[lib]             advanced_globs::macro_module
+[lib]             advanced_globs::original
+[lib]             advanced_globs::prelude
+[lib]             advanced_globs::shadowing
+[lib]             advanced_globs::trait_providers
+[lib]             advanced_globs::unix_specific
+[lib]             advanced_globs::windows_specific
+[lib]             baz
+[lib]             custom_path
+[lib]             dir_module
+[lib]             dir_module::child_dir
+[lib]             dir_module::child_file
+[lib]             empty_module
+[lib]             file_module
+[lib]             foo
+[lib]             foo::bar
+[lib]             foo::other
+[lib]             glob_patterns
+[lib]             glob_patterns::constants
+[lib]             glob_patterns::mixed_exports
+[lib]             glob_patterns::outer
+[lib]             glob_patterns::outer::inner
+[lib]             glob_patterns::self_ref
+[lib]             glob_patterns::set_a
+[lib]             glob_patterns::set_b
+[lib]             glob_patterns::traits
+[lib]             glob_patterns::types
+[lib]             glob_patterns::utilities
+[lib]             glob_showcase
+[lib]             glob_showcase::api
+[lib]             glob_showcase::config
+[lib]             glob_showcase::config::all
+[lib]             glob_showcase::config::client
+[lib]             glob_showcase::config::logging
+[lib]             glob_showcase::config::server
+[lib]             glob_showcase::database
+[lib]             glob_showcase::database::connection
+[lib]             glob_showcase::database::query
+[lib]             glob_showcase::database::transaction
+[lib]             glob_showcase::errors
+[lib]             glob_showcase::models
+[lib]             glob_showcase::prelude
+[lib]             glob_showcase::traits
+[lib]             glob_showcase::utils
+[lib]             glob_showcase::utils::collection
+[lib]             glob_showcase::utils::math
+[lib]             glob_showcase::utils::string
+[lib]             inline_modules
+[lib]             inline_modules::inner
+[lib]             inline_modules::nested
+[lib]             inline_modules::nested::deep
+[lib]             inline_modules::private_inline
+[lib]             item_visibility
+[lib]             lib
+[lib]             mixed
+[lib]             mixed::file_child
+[lib]             mixed::inline_child
+[lib]             nesting
+[lib]             nesting::level1
+[lib]             nesting::level1::level2
+[lib]             nesting::level1::level2::level3
+[lib]             no_pub_items
+[lib]             reexports
+[lib]             reexports::internal
+[lib]             reexports::types
+[lib]             uses_empty_glob
+[lib]             visibility
+[lib]             visibility::inner
+[lib]             visibility::private_mod
+[lib]             visibility::pub_crate_mod
+[lib]             visibility::pub_mod
+[lib]             visibility::pub_super_mod
+[lib]             visibility::restricted_mod
+[bin:modules]     main
+[bin:modules-cli] app
 
 ----- stderr -----

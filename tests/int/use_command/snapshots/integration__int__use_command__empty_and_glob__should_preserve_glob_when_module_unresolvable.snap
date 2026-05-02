@@ -4,7 +4,7 @@ info:
   program: crawk
   args:
     - "-p"
-    - /home/barcie/coding/crawk/fixtures/glob_fallback
+    - fixtures/glob_fallback
     - use
     - importer
     - "--resolve-globs"

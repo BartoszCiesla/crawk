@@ -1,0 +1,28 @@
+---
+source: tests/int/list_command/basic.rs
+info:
+  program: crawk
+  args:
+    - list
+    - lib
+---
+success: true
+exit_code: 0
+----- stdout -----
+analyzer
+cache
+constants
+discover
+discover::module_tree
+error
+lib
+model
+parser
+parser::visitor
+reference
+resolve
+utils
+version
+version::build_info
+
+----- stderr -----

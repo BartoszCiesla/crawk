@@ -4,7 +4,7 @@ info:
   program: crawk
   args:
     - "-p"
-    - /home/barcie/coding/crawk/fixtures/modules
+    - fixtures/modules
     - list
     - "-F"
     - glob
@@ -14,9 +14,9 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-advanced_globs
-glob_patterns
-glob_showcase
-uses_empty_glob
+[lib] advanced_globs
+[lib] glob_patterns
+[lib] glob_showcase
+[lib] uses_empty_glob
 
 ----- stderr -----
