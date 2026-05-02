@@ -8,6 +8,8 @@
 Dependency crawler for Rust. It crawls so you don't have to untangle
 
 ## Features
+
+- **Module listing**: See which modules are defined in a crate.
 - **Module usage**: See which modules are used by a given module in a crate.
 
 ## Installation
@@ -22,6 +24,27 @@ cargo install crawk
 
 ### CLI
 
+#### Module listing - `list` subcommand
+
+```sh
+# List all modules in the current crate:
+crawk list
+
+# List only a module subtree (root included):
+crawk list parser
+
+# Show only modules up to a given nesting depth:
+crawk list parser --depth 2
+
+# Filter listed modules and render them as a table:
+crawk list --filter parser --format table
+
+# Analyze a crate located at a custom path and show source files:
+crawk -p /path/to/my-crate list -t -s
+```
+
+#### Module usage - `use` subcommand
+
 ```sh
 # Analyze which internal modules a given module depends on
 crawk use utils
@@ -33,9 +56,9 @@ crawk use foo::bar -r
 crawk use parser -e -G
 
 # Limit dependency path depth and group output by source module:
-crawk use server --depth 2 --grouped
+crawk use server --depth 2 --format grouped
 
-#Analyze a crate located at a custom path, including test modules:
+# Analyze a crate located at a custom path, including test modules:
 crawk -p /path/to/my-crate use db -r -t
 ```
 
@@ -46,6 +69,9 @@ Please refer to `crawk` command CLI help for a comprehensive list of options:
 ```sh
 # General help for crawk (including global options and subcommands)
 crawk --help
+
+# Help for the 'list' subcommand (including options specific to listing modules)
+crawk list --help
 
 # Help for the 'use' subcommand (including options specific to module usage analysis)
 crawk use --help
