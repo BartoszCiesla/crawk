@@ -14,14 +14,12 @@ pub(crate) fn crawk() -> Command {
 
 pub(crate) fn crawk_modules() -> Command {
     let mut cmd = crawk();
-    cmd.arg("-p")
-        .arg(concat!(env!("CARGO_MANIFEST_DIR"), "/fixtures/modules"));
+    cmd.arg("-p").arg("fixtures/modules");
     cmd
 }
 
 pub(crate) fn crawk_workspace() -> Command {
     let mut cmd = crawk();
-    cmd.arg("-p")
-        .arg(concat!(env!("CARGO_MANIFEST_DIR"), "/fixtures/workspace"));
+    cmd.arg("-p").arg("fixtures/workspace");
     cmd
 }

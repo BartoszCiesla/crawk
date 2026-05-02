@@ -38,10 +38,7 @@ fn should_preserve_glob_when_module_unresolvable() {
     assert_cmd_snapshot!(
         crawk()
             .arg("-p")
-            .arg(concat!(
-                env!("CARGO_MANIFEST_DIR"),
-                "/fixtures/glob_fallback"
-            ))
+            .arg("fixtures/glob_fallback")
             .arg("use")
             .arg("importer")
             .arg("--resolve-globs")

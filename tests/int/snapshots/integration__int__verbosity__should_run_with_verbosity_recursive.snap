@@ -4,7 +4,7 @@ info:
   program: crawk
   args:
     - "-p"
-    - /home/barcie/coding/crawk/fixtures/modules
+    - fixtures/modules
     - "-v"
     - use
     - nesting
@@ -15,7 +15,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 [32mINFO[39m Running crawk version
-[32mINFO[39m Crate root: [MODULES]
+[32mINFO[39m Crate root: fixtures/modules
 [32mINFO[39m Resolving module: 'nesting'
 [32mINFO[39m Module tree: 'nesting' → [MODULES]/src/nesting/mod.rs, recursive=true
 [32mINFO[39m Found submodule: 'nesting::level1' → [MODULES]/src/nesting/level1/mod.rs

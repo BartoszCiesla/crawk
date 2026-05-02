@@ -29,7 +29,7 @@ fn should_fail_with_file_as_path() {
     }, {
         assert_cmd_snapshot!(crawk()
             .arg("-p")
-            .arg(concat!(env!("CARGO_MANIFEST_DIR"), "/Cargo.toml"))
+            .arg("Cargo.toml")
             .arg("use")
             .arg("lib"));
     });

@@ -16,7 +16,7 @@ fn should_fail_with_parse_error_including_module_context() {
     }, {
         assert_cmd_snapshot!(crawk()
             .arg("-p")
-            .arg(concat!(env!("CARGO_MANIFEST_DIR"), "/fixtures/broken_syntax"))
+            .arg("fixtures/broken_syntax")
             .arg("use")
             .arg("broken"));
     });

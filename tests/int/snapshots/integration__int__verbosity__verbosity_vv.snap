@@ -4,7 +4,7 @@ info:
   program: crawk
   args:
     - "-p"
-    - /home/barcie/coding/crawk/fixtures/modules
+    - fixtures/modules
     - "-vv"
     - use
     - file_module
@@ -13,7 +13,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 [32mINFO[39m Running crawk version
-[32mINFO[39m Crate root: [MODULES]
+[32mINFO[39m Crate root: fixtures/modules
 [32mINFO[39m Resolving module: 'file_module'
 [34mDEBUG[39m 'file_module' found as [MODULES]/src/file_module.rs
 [32mINFO[39m Module tree: 'file_module' → [MODULES]/src/file_module.rs, recursive=false
