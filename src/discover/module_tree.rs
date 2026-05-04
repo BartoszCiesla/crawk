@@ -279,7 +279,7 @@ impl CrateInfo {
 
     /// Verifies that `path` is contained within `root`.
     ///
-    /// Uses [`std::fs::canonicalize`] to resolve symlinks before comparison,
+    /// Uses [`fs::canonicalize`] to resolve symlinks before comparison,
     /// acting as a safety net against traversal that bypasses segment validation.
     ///
     /// # Errors
@@ -922,7 +922,7 @@ impl CrateInfo {
 mod tests {
     use super::*;
 
-    fn items_from(code: &str) -> Vec<syn::Item> {
+    fn items_from(code: &str) -> Vec<Item> {
         syn::parse_file(code).unwrap().items
     }
 

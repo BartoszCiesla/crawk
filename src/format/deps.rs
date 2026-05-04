@@ -171,7 +171,7 @@ mod tests {
         names.iter().map(ToString::to_string).collect()
     }
 
-    fn segs(names: &[&str]) -> Vec<String> {
+    fn segments(names: &[&str]) -> Vec<String> {
         names.iter().map(ToString::to_string).collect()
     }
 
@@ -217,7 +217,7 @@ mod tests {
     fn finds_direct_module_match() {
         let known = module_set(&["discover", "discover::module_tree", "reference"]);
         assert_eq!(
-            find_module_target(&segs(&["discover", "CrateInfo"]), &known),
+            find_module_target(&segments(&["discover", "CrateInfo"]), &known),
             Some("discover")
         );
     }
@@ -226,7 +226,7 @@ mod tests {
     fn finds_nested_module_match() {
         let known = module_set(&["discover", "discover::module_tree"]);
         assert_eq!(
-            find_module_target(&segs(&["discover", "module_tree", "Node"]), &known),
+            find_module_target(&segments(&["discover", "module_tree", "Node"]), &known),
             Some("discover::module_tree")
         );
     }
@@ -236,7 +236,7 @@ mod tests {
         // Both "discover" and "discover::module_tree" are valid — pick deepest.
         let known = module_set(&["discover", "discover::module_tree"]);
         assert_eq!(
-            find_module_target(&segs(&["discover", "module_tree"]), &known),
+            find_module_target(&segments(&["discover", "module_tree"]), &known),
             Some("discover::module_tree")
         );
     }
@@ -244,7 +244,7 @@ mod tests {
     #[test]
     fn returns_none_when_no_prefix_matches() {
         let known = module_set(&["cache", "parser"]);
-        assert_eq!(find_module_target(&segs(&["Analyzer"]), &known), None);
+        assert_eq!(find_module_target(&segments(&["Analyzer"]), &known), None);
     }
 
     #[test]

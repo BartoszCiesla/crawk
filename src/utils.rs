@@ -212,7 +212,7 @@ mod tests {
     #[test]
     fn descend_inline_module_no_body_returns_none() {
         // `mod foo;` — declaration without inline body
-        let items: Vec<syn::Item> = vec![syn::parse_quote! { mod foo; }];
+        let items: Vec<Item> = vec![syn::parse_quote! { mod foo; }];
         assert!(descend_inline_module(&items, &["foo"]).is_none());
     }
 

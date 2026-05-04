@@ -89,7 +89,7 @@ pub struct Analyzer {
     crate_info: CrateInfo,
     /// Module analyzer
     parser: CrateAnalyzer,
-    /// Parse cache: avoids re-reading and re-parsing the same `.rs` file more than once.
+    /// Parse cache: avoids re-reading and reparsing the same `.rs` file more than once.
     parse_cache: ParseCache,
 }
 

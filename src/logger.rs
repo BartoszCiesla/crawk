@@ -46,7 +46,7 @@ where
 /// Initialises the global `tracing` subscriber based on CLI flags.
 ///
 /// If a log file is specified via [`CrawkArgs`], logs are written there at the file
-/// verbosity level without ANSI colours. Otherwise logs go to stderr using
+/// verbosity level without ANSI colours. Otherwise, logs go to stderr using
 /// [`MinimalFormat`] with the console verbosity level.
 ///
 /// # Errors

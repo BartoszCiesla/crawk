@@ -352,7 +352,7 @@ pub(crate) struct ListDisplayArgs {
 
     /// Always show the target tag column ([lib], [bin:name], [test:name]).
     ///
-    /// By default the tag is shown only when modules from multiple distinct
+    /// By default, the tag is shown only when modules from multiple distinct
     /// targets are present. Use this flag to force the tag in any context —
     /// including when a MODULE_PATH is given or when only one target has modules.
     ///

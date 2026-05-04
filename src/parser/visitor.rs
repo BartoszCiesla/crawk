@@ -357,6 +357,39 @@ impl ModuleVisitor {
 }
 
 impl<'ast> Visit<'ast> for ModuleVisitor {
+    /// Visit expression paths - captures paths in expressions like `crate::foo::bar()`
+    fn visit_expr_path(&mut self, node: &'ast syn::ExprPath) {
+        if !self.in_test_module {
+            if let Some(r) = self.build_reference(&node.path) {
+                self.references.value_refs.push(r);
+            }
+        }
+        syn::visit::visit_expr_path(self, node);
+    }
+
+    /// Visit struct expressions - captures struct literal construction
+    fn visit_expr_struct(&mut self, node: &'ast syn::ExprStruct) {
+        if !self.in_test_module {
+            if let Some(r) = self.build_reference(&node.path) {
+                self.references.value_refs.push(r);
+            }
+        }
+        syn::visit::visit_expr_struct(self, node);
+    }
+
+    /// Visit impl items - captures impl blocks
+    fn visit_item_impl(&mut self, node: &'ast syn::ItemImpl) {
+        if !self.in_test_module {
+            // Check the trait being implemented (if any)
+            if let Some((_, trait_path, _)) = &node.trait_ {
+                if let Some(r) = self.build_reference(trait_path) {
+                    self.references.type_refs.push(r);
+                }
+            }
+        }
+        syn::visit::visit_item_impl(self, node);
+    }
+
     fn visit_item_mod(&mut self, i: &'ast ItemMod) {
         let was_in_test = self.in_test_module;
 
@@ -406,29 +439,14 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
         }
     }
 
-    /// Visit expression paths - captures paths in expressions like `crate::foo::bar()`
-    fn visit_expr_path(&mut self, node: &'ast syn::ExprPath) {
+    /// Visit macro invocations - captures macro paths
+    fn visit_macro(&mut self, node: &'ast syn::Macro) {
         if !self.in_test_module {
             if let Some(r) = self.build_reference(&node.path) {
-                self.references.value_refs.push(r);
+                self.references.macro_calls.push(r);
             }
         }
-        syn::visit::visit_expr_path(self, node);
-    }
-
-    /// Visit type paths - captures type annotations like `let x: crate::Foo`
-    fn visit_type_path(&mut self, node: &'ast syn::TypePath) {
-        if !self.in_test_module {
-            if let Some(r) = self.build_reference(&node.path) {
-                self.references.type_refs.push(r);
-            }
-
-            // Also check the qself if present (e.g., <crate::Foo as Trait>::Item)
-            if let Some(qself) = &node.qself {
-                syn::visit::visit_type(self, &qself.ty);
-            }
-        }
-        syn::visit::visit_type_path(self, node);
+        syn::visit::visit_macro(self, node);
     }
 
     /// Visit pattern structs - captures struct patterns in match arms
@@ -451,16 +469,6 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
         syn::visit::visit_pat_tuple_struct(self, node);
     }
 
-    /// Visit struct expressions - captures struct literal construction
-    fn visit_expr_struct(&mut self, node: &'ast syn::ExprStruct) {
-        if !self.in_test_module {
-            if let Some(r) = self.build_reference(&node.path) {
-                self.references.value_refs.push(r);
-            }
-        }
-        syn::visit::visit_expr_struct(self, node);
-    }
-
     /// Visit trait bounds - captures trait bounds in generics
     fn visit_trait_bound(&mut self, node: &'ast syn::TraitBound) {
         if !self.in_test_module {
@@ -471,27 +479,19 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
         syn::visit::visit_trait_bound(self, node);
     }
 
-    /// Visit impl items - captures impl blocks
-    fn visit_item_impl(&mut self, node: &'ast syn::ItemImpl) {
-        if !self.in_test_module {
-            // Check the trait being implemented (if any)
-            if let Some((_, trait_path, _)) = &node.trait_ {
-                if let Some(r) = self.build_reference(trait_path) {
-                    self.references.type_refs.push(r);
-                }
-            }
-        }
-        syn::visit::visit_item_impl(self, node);
-    }
-
-    /// Visit macro invocations - captures macro paths
-    fn visit_macro(&mut self, node: &'ast syn::Macro) {
+    /// Visit type paths - captures type annotations like `let x: crate::Foo`
+    fn visit_type_path(&mut self, node: &'ast syn::TypePath) {
         if !self.in_test_module {
             if let Some(r) = self.build_reference(&node.path) {
-                self.references.macro_calls.push(r);
+                self.references.type_refs.push(r);
+            }
+
+            // Also check the qself if present (e.g., <crate::Foo as Trait>::Item)
+            if let Some(qself) = &node.qself {
+                syn::visit::visit_type(self, &qself.ty);
             }
         }
-        syn::visit::visit_macro(self, node);
+        syn::visit::visit_type_path(self, node);
     }
 }
 

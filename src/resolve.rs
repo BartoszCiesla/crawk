@@ -183,12 +183,12 @@ fn is_visible_from(vis: &syn::Visibility, target_module: &str, caller_module: &s
 ///
 /// The result is used as the `ancestor` argument to [`is_in_subtree`].
 fn normalize_in_path(path: &syn::Path, target_module: &str) -> String {
-    let mut segs = path.segments.iter().map(|s| s.ident.to_string());
-    match segs.next().as_deref() {
-        Some("crate") => segs.collect::<Vec<_>>().join("::"),
+    let mut segments = path.segments.iter().map(|s| s.ident.to_string());
+    match segments.next().as_deref() {
+        Some("crate") => segments.collect::<Vec<_>>().join("::"),
         Some("super") => {
             let parent = parent_module(target_module);
-            let rest: Vec<_> = segs.collect();
+            let rest: Vec<_> = segments.collect();
             if rest.is_empty() {
                 parent.to_owned()
             } else if parent.is_empty() {
@@ -198,7 +198,7 @@ fn normalize_in_path(path: &syn::Path, target_module: &str) -> String {
             }
         }
         Some("self") => {
-            let rest: Vec<_> = segs.collect();
+            let rest: Vec<_> = segments.collect();
             if rest.is_empty() {
                 target_module.to_owned()
             } else if target_module.is_empty() {
@@ -209,7 +209,7 @@ fn normalize_in_path(path: &syn::Path, target_module: &str) -> String {
         }
         Some(first) => {
             // Bare path — treat as crate-root-relative.
-            let rest: Vec<_> = segs.collect();
+            let rest: Vec<_> = segments.collect();
             if rest.is_empty() {
                 first.to_owned()
             } else {
@@ -710,7 +710,7 @@ pub fn public_fn() {{}}
         assert!(items.contains(&"restricted".to_owned()));
         assert!(items.contains(&"public_fn".to_owned()));
 
-        // Caller is a sub-module of the restricted scope — also visible.
+        // Caller is a submodule of the restricted scope — also visible.
         let items = extract_with(f.path(), &[], "visibility", "visibility::inner").unwrap();
         assert!(items.contains(&"restricted".to_owned()));
     }

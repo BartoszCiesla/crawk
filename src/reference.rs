@@ -308,7 +308,7 @@ impl TypeReference {
     /// Truncates the path to the given depth (number of segments).
     ///
     /// If the path has more segments than `depth`, the segments are truncated
-    /// and the suffix is dropped. Otherwise the reference is returned unchanged.
+    /// and the suffix is dropped. Otherwise, the reference is returned unchanged.
     ///
     /// # Examples
     ///

@@ -1,6 +1,6 @@
 //! Parse cache for reusing parsed `syn::File` ASTs across a single analysis run.
 //!
-//! [`ParseCache`] avoids re-reading and re-parsing the same `.rs` file more than
+//! [`ParseCache`] avoids re-reading and reparsing the same `.rs` file more than
 //! once. `Rc` is used instead of `Arc` because `syn::File` is not `Send + Sync`
 //! and the analyzer is single-threaded.
 
