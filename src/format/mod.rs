@@ -1,6 +1,7 @@
 use crawk::TypeReference;
 use std::collections::BTreeSet;
 
+pub(crate) mod deps;
 pub(crate) mod flat;
 pub(crate) mod grouped;
 pub(crate) mod list;

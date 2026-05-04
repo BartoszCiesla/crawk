@@ -1,0 +1,55 @@
+---
+source: tests/int/deps_command/basic.rs
+info:
+  program: crawk
+  args:
+    - deps
+---
+success: true
+exit_code: 0
+----- stdout -----
+analyzer -> cache
+analyzer -> discover
+analyzer -> error
+analyzer -> model
+analyzer -> parser
+analyzer -> reference
+analyzer -> resolve
+cli -> version
+cli::overview -> version
+discover -> cache
+discover::module_tree -> cache
+discover::module_tree -> constants
+discover::module_tree -> discover
+discover::module_tree -> utils
+error -> discover
+format -> lib
+format::deps -> lib
+format::flat -> format
+format::flat -> lib
+format::grouped -> format
+format::grouped -> lib
+format::list -> lib
+lib -> analyzer
+lib -> discover
+lib -> error
+lib -> model
+lib -> reference
+logger -> cli
+main -> lib
+main -> version
+model -> reference
+parser -> cache
+parser -> reference
+parser -> utils
+parser::visitor -> constants
+parser::visitor -> reference
+parser::visitor -> utils
+reference -> constants
+resolve -> cache
+resolve -> discover
+resolve -> reference
+resolve -> utils
+utils -> constants
+
+----- stderr -----

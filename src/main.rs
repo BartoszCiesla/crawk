@@ -3,7 +3,9 @@ mod format;
 mod logger;
 
 use clap::Parser;
-use cli::{CrawkArgs, CrawkCommands, ListArgs, ListOutputFormat, UseArgs, UseOutputFormat};
+use cli::{
+    CrawkArgs, CrawkCommands, DepsArgs, ListArgs, ListOutputFormat, UseArgs, UseOutputFormat,
+};
 use crawk::{AnalysisOptions, Analyzer, version};
 use logger::configure_tracing;
 use std::path::Path;
@@ -29,9 +31,140 @@ fn main() -> anyhow::Result<()> {
     match command.command {
         CrawkCommands::Use(ref args) => handle_use_command(&crate_root, args)?,
         CrawkCommands::List(ref args) => handle_list_command(&crate_root, args)?,
+        CrawkCommands::Deps(ref args) => handle_deps_command(&crate_root, args)?,
     }
 
     Ok(())
+}
+
+/// Handle the 'deps' subcommand
+fn handle_deps_command(crate_root: &Path, args: &DepsArgs) -> anyhow::Result<()> {
+    let mut analyzer = Analyzer::new(crate_root)?;
+
+    // Always recursive and with groups expanded so every reference is a plain
+    // path whose segments directly address the target module and item.
+    let options = AnalysisOptions {
+        recursive: true,
+        include_tests: args.include_tests,
+        expand_groups: true,
+        resolve_globs: false,
+    };
+
+    // Discover all compilation targets. list_all_modules already respects
+    // include_tests, so integration test targets are only present when -t is set.
+    let all_modules = analyzer.list_all_modules(args.include_tests)?;
+
+    let roots = collect_target_roots(&all_modules);
+    info!("Building dependency graph across {} target(s)", roots.len());
+
+    // Build a lookup set of every known module path across all targets.
+    // build_edges uses this to resolve TypeReference segments to their owning
+    // module (stripping trailing item names like types, functions, constants).
+    let known_modules: std::collections::HashSet<String> =
+        all_modules.iter().map(|m| m.path().to_owned()).collect();
+
+    // Package name is used to recognise cross-target references from binaries
+    // or integration tests to the lib target (e.g. `crawk::Analyzer`).
+    let package_name: Option<String> = all_modules
+        .iter()
+        .find(|m| m.target().kind() == &crawk::TargetKind::Lib)
+        .map(|m| m.target().name().to_owned());
+
+    let mut all_edges = std::collections::BTreeSet::new();
+    for root in &roots {
+        info!("Analysing target root '{root}'");
+        match analyzer.analyze_module(root.as_str(), &options) {
+            Ok(result) => {
+                all_edges.extend(format::deps::build_edges(
+                    &result,
+                    args.depth,
+                    &known_modules,
+                    package_name.as_deref(),
+                ));
+            }
+            Err(e) => info!("Skipping target '{root}': {e}"),
+        }
+    }
+
+    if all_edges.is_empty() {
+        info!("No inter-module dependencies found.");
+    } else {
+        print!("{}", format::deps::render_plain(&all_edges));
+    }
+
+    Ok(())
+}
+
+/// Determine the root module path for each unique compilation target.
+///
+/// For lib targets the root is always `"lib"`. For binary and test targets the
+/// root is identified from the module's source file path (e.g. `src/main.rs`
+/// → `"main"`, `src/bin/foo.rs` → `"foo"`). If the heuristic cannot identify
+/// the entry point, the lexicographically smallest top-level module is used as
+/// a fallback.
+fn collect_target_roots(modules: &[crawk::ModuleInfo]) -> Vec<String> {
+    use std::collections::HashMap;
+
+    // Group modules by (kind, name).
+    let mut groups: HashMap<(crawk::TargetKind, String), Vec<&crawk::ModuleInfo>> = HashMap::new();
+    for m in modules {
+        let key = (m.target().kind().clone(), m.target().name().to_owned());
+        groups.entry(key).or_default().push(m);
+    }
+
+    // Process in stable order: lib first, then bins, then tests (alphabetically).
+    let mut keys: Vec<_> = groups.keys().cloned().collect();
+    keys.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)));
+
+    let mut roots = Vec::new();
+    for (kind, name) in &keys {
+        let group = &groups[&(kind.clone(), name.clone())];
+        let root = match kind {
+            crawk::TargetKind::Lib => "lib".to_owned(),
+            crawk::TargetKind::Bin | crawk::TargetKind::Test => {
+                find_bin_or_test_root(group).unwrap_or_else(|| name.clone())
+            }
+        };
+        roots.push(root);
+    }
+    roots
+}
+
+/// Identify the root module path for a binary or integration-test target.
+///
+/// `list_all_modules` renames the root module (originally the empty path `""`)
+/// to the canonical name — the file stem of the entry-point source file (e.g.
+/// `src/main.rs` → `"main"`). This function recovers that path by looking for
+/// a top-level module whose source file matches known cargo entry-point patterns:
+///
+/// - `src/main.rs` (default binary)
+/// - Any file inside `src/bin/` (named binaries)
+/// - Any file inside `tests/` (integration test targets)
+///
+/// Falls back to the lexicographically smallest top-level module when no
+/// pattern matches (covers `[[bin]] path = "src/custom.rs"` in Cargo.toml).
+fn find_bin_or_test_root(modules: &[&crawk::ModuleInfo]) -> Option<String> {
+    // Only consider modules without `::` (top-level candidates).
+    let top_level: Vec<_> = modules
+        .iter()
+        .filter(|m| !m.path().contains("::"))
+        .collect();
+
+    // Prefer the module whose source file is a recognised cargo entry point.
+    let preferred = top_level.iter().find(|m| {
+        let src = m.source();
+        src.file_name().is_some_and(|n| n == "main.rs")
+            || src.components().any(|c| {
+                matches!(
+                    c,
+                    std::path::Component::Normal(n) if n == "bin" || n == "tests"
+                )
+            })
+    });
+
+    preferred
+        .or_else(|| top_level.iter().min_by_key(|m| m.path()))
+        .map(|m| m.path().to_owned())
 }
 
 /// Handle the 'list' subcommand

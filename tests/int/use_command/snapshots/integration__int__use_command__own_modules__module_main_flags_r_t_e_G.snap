@@ -16,6 +16,10 @@ exit_code: 0
 crate::cli::CrawkArgs
 crate::cli::validation::validate_depth
 crate::cli::validation::validate_module_path
+crate::format::deps
+crate::format::deps::Edge
+crate::format::deps::build_edges
+crate::format::deps::render_plain
 crate::format::flat
 crate::format::grouped
 crate::format::list
@@ -24,6 +28,7 @@ crawk::AnalysisOptions
 crawk::AnalysisResult
 crawk::Analyzer
 crawk::ModuleInfo
+crawk::PathPrefix
 crawk::TypeReference
 crawk::version
 

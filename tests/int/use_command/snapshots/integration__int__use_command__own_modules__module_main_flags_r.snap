@@ -17,5 +17,6 @@ crawk::ModuleInfo
 crawk::TypeReference
 crawk::version
 crawk::{AnalysisOptions, Analyzer, version}
+crawk::{AnalysisResult, PathPrefix}
 
 ----- stderr -----

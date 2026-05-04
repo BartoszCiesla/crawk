@@ -19,6 +19,7 @@ Usage: crawk [OPTIONS] <COMMAND>
 Commands:
   use   Analyze a module and report all internal crate references [aliases: u]
   list  List all modules in the crate [aliases: ls, l]
+  deps  Show inter-module dependency graph for the entire crate [aliases: d, dependencies]
   help  Print this message or the help of the given subcommand(s)
 
 Options:

@@ -29,6 +29,13 @@ cli::validation::tests
  - crate::cli::validation::validate_module_path
 format
  - crawk::TypeReference
+format::deps
+ - crawk::AnalysisResult
+ - crawk::PathPrefix
+format::deps::tests
+ - crate::format::deps::Edge
+ - crate::format::deps::build_edges
+ - crate::format::deps::render_plain
 format::flat
  - crate::format::truncate_and_dedup
  - crawk::AnalysisResult
@@ -38,6 +45,7 @@ format::grouped
 format::list
  - crawk::ModuleInfo
 format::tests
+ - crate::format::deps
  - crate::format::flat
  - crate::format::grouped
  - crate::format::list

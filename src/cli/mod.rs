@@ -138,6 +138,37 @@ pub(crate) enum CrawkCommands {
     /// Note: global options (-p, -v, -l) must appear before the subcommand.
     #[clap(verbatim_doc_comment, visible_aliases = ["ls", "l"])]
     List(ListArgs),
+
+    /// Show inter-module dependency graph for the entire crate
+    ///
+    /// Analyzes every module in every compilation target (lib, binaries, and
+    /// optionally integration tests) and reports which modules import from
+    /// which other modules. Each line is one directed dependency edge:
+    ///
+    ///   source -> target
+    ///
+    /// Both `source` and `target` are `::` separated module paths. The graph
+    /// covers intra-target dependencies: references that cross target boundaries
+    /// (e.g. a binary importing from the lib via the package name) are tracked
+    /// as `crate::` qualified paths and therefore included automatically.
+    ///
+    /// The graph is built from every internal `crate::` reference found — not
+    /// just `use` statements, but also qualified paths in type annotations,
+    /// trait bounds, struct literals, and macro invocations.
+    ///
+    /// Output is sorted alphabetically by source then target. Duplicate edges
+    /// (produced by depth truncation or multiple references to the same module)
+    /// and self-loops are removed automatically.
+    ///
+    /// Empty output (exit 0) means no inter-module dependencies were found.
+    ///
+    /// Use --depth 1 for a bird's-eye view of top-level module relationships.
+    /// Pipe to Graphviz via a wrapper script to visualize the graph:
+    ///   crawk deps | awk 'BEGIN{print "digraph {"} {print "  \""$1"\" -> \""$3"\""} END{print "}"}' | dot -Tsvg -o deps.svg
+    ///
+    /// Note: global options (-p, -v, -l) must appear before the subcommand.
+    #[clap(verbatim_doc_comment, visible_aliases = ["d", "dependencies"])]
+    Deps(DepsArgs),
 }
 
 #[derive(ValueEnum, Debug, Clone, Default, PartialEq, Eq)]
@@ -283,6 +314,28 @@ pub(crate) struct ListArgs {
     #[clap(verbatim_doc_comment)]
     #[arg(short = 'f', long = "format", default_value_t = ListOutputFormat::Plain)]
     pub format: ListOutputFormat,
+}
+
+#[derive(Parser, Debug, Clone)]
+/// Arguments for the `deps` subcommand — controls depth and test inclusion.
+pub(crate) struct DepsArgs {
+    /// Include modules defined in `#[cfg(test)]` blocks (excluded by default)
+    #[clap(verbatim_doc_comment)]
+    #[arg(short = 't', long = "include-tests", default_value_t = false)]
+    pub include_tests: bool,
+
+    /// Truncate module paths to at most N segments.
+    ///
+    /// Applied to **both** source and target of every edge. Edges that become
+    /// identical after truncation (including self-loops such as
+    /// "parser -> parser") are silently removed.
+    ///
+    /// --depth 1  top-level modules only (e.g. "parser", "format")
+    /// --depth 2  top-level + one nesting level (e.g. "format::flat")
+    /// (omit)     full granularity — paths taken as-is from source
+    #[clap(verbatim_doc_comment)]
+    #[arg(short = 'd', long = "depth", value_parser = validate_depth)]
+    pub depth: Option<usize>,
 }
 
 #[derive(Parser, Debug, Clone, Default)]

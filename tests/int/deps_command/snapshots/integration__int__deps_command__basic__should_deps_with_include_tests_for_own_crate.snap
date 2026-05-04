@@ -1,0 +1,73 @@
+---
+source: tests/int/deps_command/basic.rs
+info:
+  program: crawk
+  args:
+    - deps
+    - "-t"
+---
+success: true
+exit_code: 0
+----- stdout -----
+analyzer -> cache
+analyzer -> discover
+analyzer -> error
+analyzer -> model
+analyzer -> parser
+analyzer -> reference
+analyzer -> resolve
+analyzer::tests -> analyzer
+analyzer::tests -> reference
+cache::tests -> cache
+cli -> version
+cli::overview -> version
+cli::validation::tests -> cli::validation
+common -> lib
+common -> version
+discover -> cache
+discover::module_tree -> cache
+discover::module_tree -> constants
+discover::module_tree -> discover
+discover::module_tree -> utils
+discover::module_tree::tests -> discover::module_tree
+error -> discover
+format -> lib
+format::deps -> lib
+format::deps::tests -> format::deps
+format::flat -> format
+format::flat -> lib
+format::grouped -> format
+format::grouped -> lib
+format::list -> lib
+format::tests -> format
+lib -> analyzer
+lib -> discover
+lib -> error
+lib -> model
+lib -> reference
+logger -> cli
+main -> lib
+main -> version
+model -> reference
+model::tests -> model
+parser -> cache
+parser -> reference
+parser -> utils
+parser::tests -> parser
+parser::tests -> reference
+parser::tests -> utils
+parser::visitor -> constants
+parser::visitor -> reference
+parser::visitor -> utils
+parser::visitor::tests -> parser::visitor
+reference -> constants
+reference::tests -> reference
+resolve -> cache
+resolve -> discover
+resolve -> reference
+resolve -> utils
+resolve::tests -> resolve
+utils -> constants
+utils::tests -> utils
+
+----- stderr -----

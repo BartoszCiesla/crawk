@@ -1,0 +1,15 @@
+---
+source: tests/int/deps_command/error_cases.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /nonexistent/path
+    - deps
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: Provided path '/nonexistent/path' does not exist

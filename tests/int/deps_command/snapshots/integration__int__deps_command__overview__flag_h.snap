@@ -1,0 +1,21 @@
+---
+source: tests/int/deps_command/overview.rs
+info:
+  program: crawk
+  args:
+    - deps
+    - "-h"
+---
+success: true
+exit_code: 0
+----- stdout -----
+Show inter-module dependency graph for the entire crate
+
+Usage: crawk deps [OPTIONS]
+
+Options:
+  -t, --include-tests  Include modules defined in `#[cfg(test)]` blocks (excluded by default)
+  -d, --depth <DEPTH>  Truncate module paths to at most N segments.
+  -h, --help           Print help (see more with '--help')
+
+----- stderr -----

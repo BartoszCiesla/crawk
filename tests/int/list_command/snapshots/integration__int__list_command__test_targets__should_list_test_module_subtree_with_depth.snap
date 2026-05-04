@@ -14,6 +14,7 @@ exit_code: 0
 ----- stdout -----
 int
 int::command
+int::deps_command
 int::error_cases
 int::list_command
 int::use_command

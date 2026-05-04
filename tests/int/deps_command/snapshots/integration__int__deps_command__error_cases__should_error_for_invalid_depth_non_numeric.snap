@@ -1,0 +1,17 @@
+---
+source: tests/int/deps_command/error_cases.rs
+info:
+  program: crawk
+  args:
+    - deps
+    - "-d"
+    - abc
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+error: invalid value 'abc' for '--depth <DEPTH>': 'abc' is not a valid number
+
+For more information, try '--help'.
