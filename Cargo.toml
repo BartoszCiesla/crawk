@@ -9,16 +9,15 @@ homepage = "https://github.com/BartoszCiesla/crawk"
 description = "Dependency crawler for Rust. It crawls so you don't have to untangle"
 license = "Apache-2.0"
 readme = "README.md"
-exclude = [
-    "fixtures/",
-    "tests/",
-    ".github/",
-    ".envrc",
-    "justfile",
-]
+exclude = ["fixtures/", "tests/", ".github/", ".envrc", "justfile"]
 keywords = ["rust", "modules", "dependencies", "ast", "analysis"]
 categories = ["command-line-utilities", "development-tools"]
 build = "src/build.rs"
+
+[package.metadata.binstall]
+pkg-url = "{repo}/releases/download/v{version}/{name}-{target}-v{version}{archive-suffix}"
+bin-dir = "{bin}{binary-ext}"
+pkg-fmt = "tgz"
 
 [dependencies]
 anyhow = "1.0.102"
@@ -35,7 +34,7 @@ tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 
 [build-dependencies]
 anyhow = "1.0.102"
-vergen-git2 = { version = "9.1.0", features = ["build", "cargo", "rustc", "si"]}
+vergen-git2 = { version = "9.1.0", features = ["build", "cargo", "rustc", "si"] }
 
 [dev-dependencies]
 insta = { version = "1.47.2", features = ["filters"] }
