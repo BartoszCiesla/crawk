@@ -76,7 +76,7 @@ fn handle_deps_command(crate_root: &Path, args: &DepsArgs) -> anyhow::Result<()>
         info!("Analysing target root '{root}'");
         match analyzer.analyze_module(root.as_str(), &options) {
             Ok(result) => {
-                all_edges.extend(format::deps::build_edges(
+                all_edges.extend(format::deps_cmd::build_edges(
                     &result,
                     args.depth,
                     &known_modules,
@@ -91,8 +91,8 @@ fn handle_deps_command(crate_root: &Path, args: &DepsArgs) -> anyhow::Result<()>
         info!("No inter-module dependencies found.");
     } else {
         let output = match args.format {
-            DepsOutputFormat::Plain => format::deps::render_plain(&all_edges),
-            DepsOutputFormat::Grouped => format::deps::render_grouped(&all_edges),
+            DepsOutputFormat::Plain => format::deps_cmd::render_plain(&all_edges),
+            DepsOutputFormat::Grouped => format::deps_cmd::render_grouped(&all_edges),
         };
         print!("{output}");
     }
@@ -213,17 +213,17 @@ fn handle_list_command(crate_root: &Path, args: &ListArgs) -> anyhow::Result<()>
     if modules.is_empty() {
         info!("No modules found.");
     } else {
-        let display_opts = format::list::ListDisplayOptions {
+        let display_opts = format::list_cmd::ListDisplayOptions {
             show_source: args.display.show_source,
             show_visibility: args.display.show_visibility,
             multi_target,
         };
         let output = match args.format {
             ListOutputFormat::Plain => {
-                format::list::render_list_plain(&modules, &display_opts, crate_root)
+                format::list_cmd::render_list_plain(&modules, &display_opts, crate_root)
             }
             ListOutputFormat::Table => {
-                format::list::render_list_table(&modules, &display_opts, crate_root)
+                format::list_cmd::render_list_table(&modules, &display_opts, crate_root)
             }
         };
         print!("{output}");
@@ -255,8 +255,8 @@ fn handle_use_command(crate_root: &Path, args: &UseArgs) -> anyhow::Result<()> {
         info!("No internal crate use statements found.");
     } else {
         let output = match args.format {
-            UseOutputFormat::Plain => format::flat::render_flat(&result, args.depth),
-            UseOutputFormat::Grouped => format::grouped::render_grouped(&result, args.depth),
+            UseOutputFormat::Plain => format::use_cmd::render_flat(&result, args.depth),
+            UseOutputFormat::Grouped => format::use_cmd::render_grouped(&result, args.depth),
         };
         print!("{output}");
     }

@@ -23,13 +23,9 @@ discover::module_tree -> constants
 discover::module_tree -> discover
 discover::module_tree -> utils
 error -> discover
-format -> lib
-format::deps -> lib
-format::flat -> format
-format::flat -> lib
-format::grouped -> format
-format::grouped -> lib
-format::list -> lib
+format::deps_cmd -> lib
+format::list_cmd -> lib
+format::use_cmd -> lib
 lib -> analyzer
 lib -> discover
 lib -> error

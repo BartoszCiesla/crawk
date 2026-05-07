@@ -11,12 +11,10 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::cli::CrawkArgs
-crate::format::truncate_and_dedup
-crawk::AnalysisResult
 crawk::ModuleInfo
-crawk::TypeReference
 crawk::version
 crawk::{AnalysisOptions, Analyzer, version}
 crawk::{AnalysisResult, PathPrefix}
+crawk::{AnalysisResult, TypeReference}
 
 ----- stderr -----

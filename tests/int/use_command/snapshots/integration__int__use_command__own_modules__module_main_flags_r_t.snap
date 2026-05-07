@@ -13,14 +13,12 @@ exit_code: 0
 ----- stdout -----
 crate::cli::CrawkArgs
 crate::cli::validation::*
-crate::format::*
-crate::format::deps::*
-crate::format::truncate_and_dedup
-crawk::AnalysisResult
+crate::format::deps_cmd::*
+crate::format::use_cmd::*
 crawk::ModuleInfo
-crawk::TypeReference
 crawk::version
 crawk::{AnalysisOptions, Analyzer, version}
 crawk::{AnalysisResult, PathPrefix}
+crawk::{AnalysisResult, TypeReference}
 
 ----- stderr -----

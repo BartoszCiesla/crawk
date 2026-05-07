@@ -28,28 +28,22 @@ cli::validation::tests
  - crate::cli::validation::validate_depth
  - crate::cli::validation::validate_module_path
 format
- - crawk::TypeReference
-format::deps
+format::deps_cmd
  - crawk::AnalysisResult
  - crawk::PathPrefix
-format::deps::tests
- - crate::format::deps::Edge
- - crate::format::deps::build_edges
- - crate::format::deps::render_grouped
- - crate::format::deps::render_plain
-format::flat
- - crate::format::truncate_and_dedup
- - crawk::AnalysisResult
-format::grouped
- - crate::format::truncate_and_dedup
- - crawk::AnalysisResult
-format::list
+format::deps_cmd::tests
+ - crate::format::deps_cmd::Edge
+ - crate::format::deps_cmd::build_edges
+ - crate::format::deps_cmd::render_grouped
+ - crate::format::deps_cmd::render_plain
+format::list_cmd
  - crawk::ModuleInfo
-format::tests
- - crate::format::deps
- - crate::format::flat
- - crate::format::grouped
- - crate::format::list
+format::use_cmd
+ - crawk::AnalysisResult
+ - crawk::TypeReference
+format::use_cmd::tests
+ - crate::format::use_cmd::render_flat
+ - crate::format::use_cmd::render_grouped
 logger
  - crate::cli::CrawkArgs
 

@@ -37,21 +37,13 @@ discover::module_tree (4)
 error (1)
   -> discover
 
-format (1)
+format::deps_cmd (1)
   -> lib
 
-format::deps (1)
+format::list_cmd (1)
   -> lib
 
-format::flat (2)
-  -> format
-  -> lib
-
-format::grouped (2)
-  -> format
-  -> lib
-
-format::list (1)
+format::use_cmd (1)
   -> lib
 
 lib (5)

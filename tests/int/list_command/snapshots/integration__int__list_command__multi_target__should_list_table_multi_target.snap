@@ -49,13 +49,11 @@ exit_code: 0
 |-----------+-----------------------|
 | bin:crawk | format                |
 |-----------+-----------------------|
-| bin:crawk | format::deps          |
+| bin:crawk | format::deps_cmd      |
 |-----------+-----------------------|
-| bin:crawk | format::flat          |
+| bin:crawk | format::list_cmd      |
 |-----------+-----------------------|
-| bin:crawk | format::grouped       |
-|-----------+-----------------------|
-| bin:crawk | format::list          |
+| bin:crawk | format::use_cmd       |
 |-----------+-----------------------|
 | bin:crawk | logger                |
 |-----------+-----------------------|

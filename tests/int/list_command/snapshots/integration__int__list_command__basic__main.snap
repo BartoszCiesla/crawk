@@ -13,10 +13,9 @@ cli
 cli::overview
 cli::validation
 format
-format::deps
-format::flat
-format::grouped
-format::list
+format::deps_cmd
+format::list_cmd
+format::use_cmd
 logger
 main
 
