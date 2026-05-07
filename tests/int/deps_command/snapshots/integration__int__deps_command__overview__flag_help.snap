@@ -55,6 +55,18 @@ Options:
           --depth 2  top-level + one nesting level (e.g. "format::flat")
           (omit)     full granularity — paths taken as-is from source
 
+  -f, --format <FORMAT>
+          Output format
+          
+          plain   — flat sorted list of edges (default)
+          grouped — grouped by source module with fan-out counts
+
+          Possible values:
+          - plain:   Flat sorted list of edges (default)
+          - grouped: Grouped by source module with fan-out counts
+          
+          [default: plain]
+
   -h, --help
           Print help (see a summary with '-h')
 

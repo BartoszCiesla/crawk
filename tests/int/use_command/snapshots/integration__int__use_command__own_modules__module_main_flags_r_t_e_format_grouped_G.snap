@@ -35,6 +35,7 @@ format::deps
 format::deps::tests
  - crate::format::deps::Edge
  - crate::format::deps::build_edges
+ - crate::format::deps::render_grouped
  - crate::format::deps::render_plain
 format::flat
  - crate::format::truncate_and_dedup

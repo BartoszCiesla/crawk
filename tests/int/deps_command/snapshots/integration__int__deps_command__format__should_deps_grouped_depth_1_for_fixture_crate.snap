@@ -1,0 +1,97 @@
+---
+source: tests/int/deps_command/format.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/modules
+    - deps
+    - "-f"
+    - grouped
+    - "-d"
+    - "1"
+---
+success: true
+exit_code: 0
+----- stdout -----
+advanced_globs (3)
+  -> dir_module
+  -> file_module
+  -> visibility
+
+app (11)
+  -> advanced_globs
+  -> dir_module
+  -> file_module
+  -> glob_patterns
+  -> glob_showcase
+  -> inline_modules
+  -> item_visibility
+  -> mixed
+  -> nesting
+  -> reexports
+  -> visibility
+
+baz (1)
+  -> foo
+
+custom_path (1)
+  -> item_visibility
+
+dir_module (2)
+  -> file_module
+  -> inline_modules
+
+file_module (1)
+  -> nesting
+
+glob_patterns (2)
+  -> dir_module
+  -> file_module
+
+glob_showcase (3)
+  -> file_module
+  -> inline_modules
+  -> nesting
+
+inline_modules (2)
+  -> dir_module
+  -> file_module
+
+item_visibility (1)
+  -> reexports
+
+main (11)
+  -> advanced_globs
+  -> dir_module
+  -> file_module
+  -> glob_patterns
+  -> glob_showcase
+  -> inline_modules
+  -> item_visibility
+  -> mixed
+  -> nesting
+  -> reexports
+  -> visibility
+
+mixed (1)
+  -> custom_path
+
+nesting (1)
+  -> inline_modules
+
+reexports (4)
+  -> file_module
+  -> item_visibility
+  -> nesting
+  -> visibility
+
+uses_empty_glob (1)
+  -> no_pub_items
+
+visibility (3)
+  -> dir_module
+  -> file_module
+  -> nesting
+
+----- stderr -----

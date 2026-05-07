@@ -1,0 +1,167 @@
+---
+source: tests/int/deps_command/format.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/modules
+    - deps
+    - "-f"
+    - grouped
+---
+success: true
+exit_code: 0
+----- stdout -----
+advanced_globs (4)
+  -> advanced_globs::internal
+  -> dir_module::child_file
+  -> file_module
+  -> visibility
+
+advanced_globs::prelude (1)
+  -> advanced_globs
+
+app (15)
+  -> advanced_globs
+  -> dir_module
+  -> file_module
+  -> glob_patterns
+  -> glob_patterns::constants
+  -> glob_patterns::traits
+  -> glob_patterns::types
+  -> glob_patterns::utilities
+  -> glob_showcase
+  -> inline_modules
+  -> item_visibility
+  -> mixed
+  -> nesting
+  -> reexports
+  -> visibility
+
+baz (1)
+  -> foo::bar
+
+custom_path (1)
+  -> item_visibility
+
+dir_module (1)
+  -> inline_modules::nested::deep
+
+dir_module::child_dir (1)
+  -> file_module
+
+dir_module::child_file (1)
+  -> dir_module
+
+file_module (1)
+  -> nesting
+
+foo::other (1)
+  -> foo::bar
+
+glob_patterns (3)
+  -> dir_module
+  -> file_module
+  -> glob_patterns::self_ref
+
+glob_showcase (3)
+  -> file_module
+  -> inline_modules
+  -> nesting::level1::level2
+
+glob_showcase::config::all (3)
+  -> glob_showcase::config::client
+  -> glob_showcase::config::logging
+  -> glob_showcase::config::server
+
+glob_showcase::prelude (7)
+  -> glob_showcase
+  -> glob_showcase::api
+  -> glob_showcase::database
+  -> glob_showcase::errors
+  -> glob_showcase::models
+  -> glob_showcase::traits
+  -> glob_showcase::utils::math
+
+inline_modules (1)
+  -> file_module
+
+inline_modules::inner (1)
+  -> file_module
+
+inline_modules::nested::deep (1)
+  -> dir_module
+
+item_visibility (1)
+  -> reexports
+
+main (15)
+  -> advanced_globs
+  -> dir_module
+  -> file_module
+  -> glob_patterns
+  -> glob_patterns::constants
+  -> glob_patterns::traits
+  -> glob_patterns::types
+  -> glob_patterns::utilities
+  -> glob_showcase
+  -> inline_modules
+  -> item_visibility
+  -> mixed
+  -> nesting
+  -> reexports
+  -> visibility
+
+mixed::file_child (2)
+  -> custom_path
+  -> mixed
+
+mixed::inline_child (1)
+  -> mixed::file_child
+
+nesting (1)
+  -> inline_modules
+
+nesting::level1 (1)
+  -> nesting
+
+nesting::level1::level2 (1)
+  -> nesting
+
+nesting::level1::level2::level3 (3)
+  -> nesting
+  -> nesting::level1
+  -> nesting::level1::level2
+
+reexports (2)
+  -> file_module
+  -> nesting
+
+reexports::internal (1)
+  -> item_visibility
+
+reexports::types (1)
+  -> visibility
+
+uses_empty_glob (1)
+  -> no_pub_items
+
+visibility::inner (1)
+  -> visibility
+
+visibility::private_mod (1)
+  -> nesting::level1::level2::level3
+
+visibility::pub_crate_mod (1)
+  -> visibility::pub_mod
+
+visibility::pub_mod (1)
+  -> file_module
+
+visibility::pub_super_mod (1)
+  -> dir_module
+
+visibility::restricted_mod (1)
+  -> nesting
+
+----- stderr -----

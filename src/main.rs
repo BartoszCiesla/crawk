@@ -4,7 +4,8 @@ mod logger;
 
 use clap::Parser;
 use cli::{
-    CrawkArgs, CrawkCommands, DepsArgs, ListArgs, ListOutputFormat, UseArgs, UseOutputFormat,
+    CrawkArgs, CrawkCommands, DepsArgs, DepsOutputFormat, ListArgs, ListOutputFormat, UseArgs,
+    UseOutputFormat,
 };
 use crawk::{AnalysisOptions, Analyzer, version};
 use logger::configure_tracing;
@@ -89,7 +90,11 @@ fn handle_deps_command(crate_root: &Path, args: &DepsArgs) -> anyhow::Result<()>
     if all_edges.is_empty() {
         info!("No inter-module dependencies found.");
     } else {
-        print!("{}", format::deps::render_plain(&all_edges));
+        let output = match args.format {
+            DepsOutputFormat::Plain => format::deps::render_plain(&all_edges),
+            DepsOutputFormat::Grouped => format::deps::render_grouped(&all_edges),
+        };
+        print!("{output}");
     }
 
     Ok(())

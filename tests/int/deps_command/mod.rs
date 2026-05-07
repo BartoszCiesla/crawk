@@ -1,4 +1,5 @@
 mod basic;
 mod depth;
 mod error_cases;
+mod format;
 mod overview;

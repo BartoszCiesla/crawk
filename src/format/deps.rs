@@ -1,4 +1,4 @@
-use std::collections::{BTreeSet, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 use crawk::{AnalysisResult, PathPrefix};
 
@@ -163,6 +163,47 @@ pub(crate) fn render_plain(edges: &BTreeSet<Edge>) -> String {
     out
 }
 
+/// Render dependency edges grouped by source module.
+///
+/// Each source module appears as a header `name (N)` where N is the fan-out
+/// count, followed by its targets indented with `  -> `. Groups are separated
+/// by blank lines and sorted alphabetically. Returns an empty string when
+/// there are no edges.
+pub(crate) fn render_grouped(edges: &BTreeSet<Edge>) -> String {
+    if edges.is_empty() {
+        return String::new();
+    }
+
+    // Collect targets per source. BTreeSet iteration is already sorted by
+    // (source, target), so insertion order gives sorted targets within each group.
+    let mut groups: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
+    for (source, target) in edges {
+        groups
+            .entry(source.as_str())
+            .or_default()
+            .push(target.as_str());
+    }
+
+    let mut out = String::new();
+    let mut first = true;
+    for (source, targets) in &groups {
+        if !first {
+            out.push('\n');
+        }
+        first = false;
+        out.push_str(source);
+        out.push_str(" (");
+        out.push_str(&targets.len().to_string());
+        out.push_str(")\n");
+        for target in targets {
+            out.push_str("  -> ");
+            out.push_str(target);
+            out.push('\n');
+        }
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -251,6 +292,46 @@ mod tests {
     fn returns_none_for_empty_segments() {
         let known = module_set(&["parser"]);
         assert_eq!(find_module_target(&[], &known), None);
+    }
+
+    // ---- render_grouped -----------------------------------------------------
+
+    #[test]
+    fn render_grouped_empty() {
+        assert_eq!(render_grouped(&BTreeSet::new()), "");
+    }
+
+    #[test]
+    fn render_grouped_single_source() {
+        let e = edges(&[("parser", "constants"), ("parser", "reference")]);
+        assert_eq!(
+            render_grouped(&e),
+            "parser (2)\n  -> constants\n  -> reference\n"
+        );
+    }
+
+    #[test]
+    fn render_grouped_multiple_sources_separated_by_blank_line() {
+        let e = edges(&[("analyzer", "cache"), ("parser", "reference")]);
+        assert_eq!(
+            render_grouped(&e),
+            "analyzer (1)\n  -> cache\n\nparser (1)\n  -> reference\n"
+        );
+    }
+
+    #[test]
+    fn render_grouped_targets_sorted_alphabetically() {
+        let e = edges(&[("cli", "model"), ("cli", "analyzer"), ("cli", "format")]);
+        assert_eq!(
+            render_grouped(&e),
+            "cli (3)\n  -> analyzer\n  -> format\n  -> model\n"
+        );
+    }
+
+    #[test]
+    fn render_grouped_ends_with_newline() {
+        let e = edges(&[("a", "b")]);
+        assert!(render_grouped(&e).ends_with('\n'));
     }
 
     // ---- render_plain -------------------------------------------------------

@@ -316,8 +316,26 @@ pub(crate) struct ListArgs {
     pub format: ListOutputFormat,
 }
 
+#[derive(ValueEnum, Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) enum DepsOutputFormat {
+    /// Flat sorted list of edges (default)
+    #[default]
+    Plain,
+    /// Grouped by source module with fan-out counts
+    Grouped,
+}
+
+impl Display for DepsOutputFormat {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        match self {
+            Self::Plain => f.write_str("plain"),
+            Self::Grouped => f.write_str("grouped"),
+        }
+    }
+}
+
 #[derive(Parser, Debug, Clone)]
-/// Arguments for the `deps` subcommand — controls depth and test inclusion.
+/// Arguments for the `deps` subcommand — controls depth, format, and test inclusion.
 pub(crate) struct DepsArgs {
     /// Include modules defined in `#[cfg(test)]` blocks (excluded by default)
     #[clap(verbatim_doc_comment)]
@@ -336,6 +354,14 @@ pub(crate) struct DepsArgs {
     #[clap(verbatim_doc_comment)]
     #[arg(short = 'd', long = "depth", value_parser = validate_depth)]
     pub depth: Option<usize>,
+
+    /// Output format
+    ///
+    /// plain   — flat sorted list of edges (default)
+    /// grouped — grouped by source module with fan-out counts
+    #[clap(verbatim_doc_comment)]
+    #[arg(short = 'f', long = "format", default_value_t = DepsOutputFormat::Plain)]
+    pub format: DepsOutputFormat,
 }
 
 #[derive(Parser, Debug, Clone, Default)]

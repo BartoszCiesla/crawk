@@ -1,0 +1,96 @@
+---
+source: tests/int/deps_command/format.rs
+info:
+  program: crawk
+  args:
+    - deps
+    - "-f"
+    - grouped
+---
+success: true
+exit_code: 0
+----- stdout -----
+analyzer (7)
+  -> cache
+  -> discover
+  -> error
+  -> model
+  -> parser
+  -> reference
+  -> resolve
+
+cli (1)
+  -> version
+
+cli::overview (1)
+  -> version
+
+discover (1)
+  -> cache
+
+discover::module_tree (4)
+  -> cache
+  -> constants
+  -> discover
+  -> utils
+
+error (1)
+  -> discover
+
+format (1)
+  -> lib
+
+format::deps (1)
+  -> lib
+
+format::flat (2)
+  -> format
+  -> lib
+
+format::grouped (2)
+  -> format
+  -> lib
+
+format::list (1)
+  -> lib
+
+lib (5)
+  -> analyzer
+  -> discover
+  -> error
+  -> model
+  -> reference
+
+logger (1)
+  -> cli
+
+main (2)
+  -> lib
+  -> version
+
+model (1)
+  -> reference
+
+parser (3)
+  -> cache
+  -> reference
+  -> utils
+
+parser::visitor (3)
+  -> constants
+  -> reference
+  -> utils
+
+reference (1)
+  -> constants
+
+resolve (4)
+  -> cache
+  -> discover
+  -> reference
+  -> utils
+
+utils (1)
+  -> constants
+
+----- stderr -----
