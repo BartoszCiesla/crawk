@@ -34,6 +34,7 @@ format::deps_cmd
 format::deps_cmd::tests
  - crate::format::deps_cmd::Edge
  - crate::format::deps_cmd::build_edges
+ - crate::format::deps_cmd::render_dot
  - crate::format::deps_cmd::render_grouped
  - crate::format::deps_cmd::render_plain
 format::list_cmd

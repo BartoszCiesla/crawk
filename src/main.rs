@@ -87,13 +87,14 @@ fn handle_deps_command(crate_root: &Path, args: &DepsArgs) -> anyhow::Result<()>
         }
     }
 
-    if all_edges.is_empty() {
+    let output = match args.format {
+        DepsOutputFormat::Plain => format::deps_cmd::render_plain(&all_edges),
+        DepsOutputFormat::Grouped => format::deps_cmd::render_grouped(&all_edges),
+        DepsOutputFormat::Dot => format::deps_cmd::render_dot(&all_edges),
+    };
+    if output.is_empty() {
         info!("No inter-module dependencies found.");
     } else {
-        let output = match args.format {
-            DepsOutputFormat::Plain => format::deps_cmd::render_plain(&all_edges),
-            DepsOutputFormat::Grouped => format::deps_cmd::render_grouped(&all_edges),
-        };
         print!("{output}");
     }
 

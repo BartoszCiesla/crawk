@@ -163,8 +163,9 @@ pub(crate) enum CrawkCommands {
     /// Empty output (exit 0) means no inter-module dependencies were found.
     ///
     /// Use --depth 1 for a bird's-eye view of top-level module relationships.
-    /// Pipe to Graphviz via a wrapper script to visualize the graph:
-    ///   crawk deps | awk 'BEGIN{print "digraph {"} {print "  \""$1"\" -> \""$3"\""} END{print "}"}' | dot -Tsvg -o deps.svg
+    /// Use --format dot to pipe directly into Graphviz:
+    ///   crawk deps -f dot | dot -Tsvg -o deps.svg
+    ///   crawk deps -d 1 -f dot | xdot -
     ///
     /// Note: global options (-p, -v, -l) must appear before the subcommand.
     #[clap(verbatim_doc_comment, visible_aliases = ["d", "dependencies"])]
@@ -323,6 +324,8 @@ pub(crate) enum DepsOutputFormat {
     Plain,
     /// Grouped by source module with fan-out counts
     Grouped,
+    /// Graphviz DOT format
+    Dot,
 }
 
 impl Display for DepsOutputFormat {
@@ -330,6 +333,7 @@ impl Display for DepsOutputFormat {
         match self {
             Self::Plain => f.write_str("plain"),
             Self::Grouped => f.write_str("grouped"),
+            Self::Dot => f.write_str("dot"),
         }
     }
 }
@@ -359,6 +363,7 @@ pub(crate) struct DepsArgs {
     ///
     /// plain   — flat sorted list of edges (default)
     /// grouped — grouped by source module with fan-out counts
+    /// dot     — Graphviz DOT (pipe to `dot -Tsvg -o deps.svg` or `xdot -`)
     #[clap(verbatim_doc_comment)]
     #[arg(short = 'f', long = "format", default_value_t = DepsOutputFormat::Plain)]
     pub format: DepsOutputFormat,

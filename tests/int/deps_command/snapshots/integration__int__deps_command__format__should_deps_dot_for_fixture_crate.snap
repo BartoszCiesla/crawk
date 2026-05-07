@@ -1,0 +1,159 @@
+---
+source: tests/int/deps_command/format.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/modules
+    - deps
+    - "-f"
+    - dot
+---
+success: true
+exit_code: 0
+----- stdout -----
+digraph dependencies {
+    rankdir=LR;
+    node [shape=box, style=rounded, fontname="monospace", fontsize=10];
+    edge [color="#444444"];
+
+    "advanced_globs";
+    "advanced_globs::internal";
+    "advanced_globs::prelude";
+    "app";
+    "baz";
+    "custom_path";
+    "dir_module";
+    "dir_module::child_dir";
+    "dir_module::child_file";
+    "file_module";
+    "foo::bar";
+    "foo::other";
+    "glob_patterns";
+    "glob_patterns::constants";
+    "glob_patterns::self_ref";
+    "glob_patterns::traits";
+    "glob_patterns::types";
+    "glob_patterns::utilities";
+    "glob_showcase";
+    "glob_showcase::api";
+    "glob_showcase::config::all";
+    "glob_showcase::config::client";
+    "glob_showcase::config::logging";
+    "glob_showcase::config::server";
+    "glob_showcase::database";
+    "glob_showcase::errors";
+    "glob_showcase::models";
+    "glob_showcase::prelude";
+    "glob_showcase::traits";
+    "glob_showcase::utils::math";
+    "inline_modules";
+    "inline_modules::inner";
+    "inline_modules::nested::deep";
+    "item_visibility";
+    "main";
+    "mixed";
+    "mixed::file_child";
+    "mixed::inline_child";
+    "nesting";
+    "nesting::level1";
+    "nesting::level1::level2";
+    "nesting::level1::level2::level3";
+    "no_pub_items";
+    "reexports";
+    "reexports::internal";
+    "reexports::types";
+    "uses_empty_glob";
+    "visibility";
+    "visibility::inner";
+    "visibility::private_mod";
+    "visibility::pub_crate_mod";
+    "visibility::pub_mod";
+    "visibility::pub_super_mod";
+    "visibility::restricted_mod";
+
+    "advanced_globs" -> "advanced_globs::internal";
+    "advanced_globs" -> "dir_module::child_file";
+    "advanced_globs" -> "file_module";
+    "advanced_globs" -> "visibility";
+    "advanced_globs::prelude" -> "advanced_globs";
+    "app" -> "advanced_globs";
+    "app" -> "dir_module";
+    "app" -> "file_module";
+    "app" -> "glob_patterns";
+    "app" -> "glob_patterns::constants";
+    "app" -> "glob_patterns::traits";
+    "app" -> "glob_patterns::types";
+    "app" -> "glob_patterns::utilities";
+    "app" -> "glob_showcase";
+    "app" -> "inline_modules";
+    "app" -> "item_visibility";
+    "app" -> "mixed";
+    "app" -> "nesting";
+    "app" -> "reexports";
+    "app" -> "visibility";
+    "baz" -> "foo::bar";
+    "custom_path" -> "item_visibility";
+    "dir_module" -> "inline_modules::nested::deep";
+    "dir_module::child_dir" -> "file_module";
+    "dir_module::child_file" -> "dir_module";
+    "file_module" -> "nesting";
+    "foo::other" -> "foo::bar";
+    "glob_patterns" -> "dir_module";
+    "glob_patterns" -> "file_module";
+    "glob_patterns" -> "glob_patterns::self_ref";
+    "glob_showcase" -> "file_module";
+    "glob_showcase" -> "inline_modules";
+    "glob_showcase" -> "nesting::level1::level2";
+    "glob_showcase::config::all" -> "glob_showcase::config::client";
+    "glob_showcase::config::all" -> "glob_showcase::config::logging";
+    "glob_showcase::config::all" -> "glob_showcase::config::server";
+    "glob_showcase::prelude" -> "glob_showcase";
+    "glob_showcase::prelude" -> "glob_showcase::api";
+    "glob_showcase::prelude" -> "glob_showcase::database";
+    "glob_showcase::prelude" -> "glob_showcase::errors";
+    "glob_showcase::prelude" -> "glob_showcase::models";
+    "glob_showcase::prelude" -> "glob_showcase::traits";
+    "glob_showcase::prelude" -> "glob_showcase::utils::math";
+    "inline_modules" -> "file_module";
+    "inline_modules::inner" -> "file_module";
+    "inline_modules::nested::deep" -> "dir_module";
+    "item_visibility" -> "reexports";
+    "main" -> "advanced_globs";
+    "main" -> "dir_module";
+    "main" -> "file_module";
+    "main" -> "glob_patterns";
+    "main" -> "glob_patterns::constants";
+    "main" -> "glob_patterns::traits";
+    "main" -> "glob_patterns::types";
+    "main" -> "glob_patterns::utilities";
+    "main" -> "glob_showcase";
+    "main" -> "inline_modules";
+    "main" -> "item_visibility";
+    "main" -> "mixed";
+    "main" -> "nesting";
+    "main" -> "reexports";
+    "main" -> "visibility";
+    "mixed::file_child" -> "custom_path";
+    "mixed::file_child" -> "mixed";
+    "mixed::inline_child" -> "mixed::file_child";
+    "nesting" -> "inline_modules";
+    "nesting::level1" -> "nesting";
+    "nesting::level1::level2" -> "nesting";
+    "nesting::level1::level2::level3" -> "nesting";
+    "nesting::level1::level2::level3" -> "nesting::level1";
+    "nesting::level1::level2::level3" -> "nesting::level1::level2";
+    "reexports" -> "file_module";
+    "reexports" -> "nesting";
+    "reexports::internal" -> "item_visibility";
+    "reexports::types" -> "visibility";
+    "uses_empty_glob" -> "no_pub_items";
+    "visibility::inner" -> "visibility";
+    "visibility::private_mod" -> "nesting::level1::level2::level3";
+    "visibility::pub_crate_mod" -> "visibility::pub_mod";
+    "visibility::pub_mod" -> "file_module";
+    "visibility::pub_super_mod" -> "dir_module";
+    "visibility::restricted_mod" -> "nesting";
+}
+
+----- stderr -----

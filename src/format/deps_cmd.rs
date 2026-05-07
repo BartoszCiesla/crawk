@@ -204,6 +204,51 @@ pub(crate) fn render_grouped(edges: &BTreeSet<Edge>) -> String {
     out
 }
 
+/// Render dependency edges as a Graphviz DOT digraph.
+///
+/// Always produces a valid DOT document — even when there are no edges the
+/// graph header and attributes are emitted so the output can be piped
+/// directly into `dot` or `xdot` without extra checks.
+///
+/// Module names containing `::` are quoted as DOT string literals so that
+/// Graphviz parses them correctly. Nodes are listed explicitly before edges
+/// to give renderers a stable ordering.
+pub(crate) fn render_dot(edges: &BTreeSet<Edge>) -> String {
+    let mut out = String::new();
+    out.push_str("digraph dependencies {\n");
+    out.push_str("    rankdir=LR;\n");
+    out.push_str("    node [shape=box, style=rounded, fontname=\"monospace\", fontsize=10];\n");
+    out.push_str("    edge [color=\"#444444\"];\n");
+
+    if !edges.is_empty() {
+        // Collect unique nodes; BTreeSet gives deterministic sort order.
+        let mut nodes: BTreeSet<&str> = BTreeSet::new();
+        for (source, target) in edges {
+            nodes.insert(source.as_str());
+            nodes.insert(target.as_str());
+        }
+
+        out.push('\n');
+        for node in &nodes {
+            out.push_str("    \"");
+            out.push_str(node);
+            out.push_str("\";\n");
+        }
+
+        out.push('\n');
+        for (source, target) in edges {
+            out.push_str("    \"");
+            out.push_str(source);
+            out.push_str("\" -> \"");
+            out.push_str(target);
+            out.push_str("\";\n");
+        }
+    }
+
+    out.push_str("}\n");
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -332,6 +377,50 @@ mod tests {
     fn render_grouped_ends_with_newline() {
         let e = edges(&[("a", "b")]);
         assert!(render_grouped(&e).ends_with('\n'));
+    }
+
+    // ---- render_dot ---------------------------------------------------------
+
+    #[test]
+    fn render_dot_empty_edges_produces_valid_dot() {
+        let out = render_dot(&BTreeSet::new());
+        assert!(out.starts_with("digraph dependencies {"));
+        assert!(out.ends_with("}\n"));
+        // No node/edge lines in empty graph
+        assert!(!out.contains("\" -> \""));
+    }
+
+    #[test]
+    fn render_dot_single_edge() {
+        let e = edges(&[("parser", "reference")]);
+        let out = render_dot(&e);
+        assert!(out.contains("\"parser\";"));
+        assert!(out.contains("\"reference\";"));
+        assert!(out.contains("\"parser\" -> \"reference\";"));
+    }
+
+    #[test]
+    fn render_dot_nodes_listed_before_edges() {
+        let e = edges(&[("cli", "model")]);
+        let out = render_dot(&e);
+        let node_pos = out.find("\"cli\";").unwrap();
+        let edge_pos = out.find("\"cli\" -> \"model\";").unwrap();
+        assert!(node_pos < edge_pos);
+    }
+
+    #[test]
+    fn render_dot_colons_quoted_correctly() {
+        let e = edges(&[("parser::visitor", "discover::module_tree")]);
+        let out = render_dot(&e);
+        assert!(out.contains("\"parser::visitor\";"));
+        assert!(out.contains("\"discover::module_tree\";"));
+        assert!(out.contains("\"parser::visitor\" -> \"discover::module_tree\";"));
+    }
+
+    #[test]
+    fn render_dot_ends_with_newline() {
+        let e = edges(&[("a", "b")]);
+        assert!(render_dot(&e).ends_with('\n'));
     }
 
     // ---- render_plain -------------------------------------------------------

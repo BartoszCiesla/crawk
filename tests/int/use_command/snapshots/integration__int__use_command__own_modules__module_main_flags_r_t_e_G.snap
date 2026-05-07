@@ -18,6 +18,7 @@ crate::cli::validation::validate_depth
 crate::cli::validation::validate_module_path
 crate::format::deps_cmd::Edge
 crate::format::deps_cmd::build_edges
+crate::format::deps_cmd::render_dot
 crate::format::deps_cmd::render_grouped
 crate::format::deps_cmd::render_plain
 crate::format::use_cmd::render_flat
