@@ -17,6 +17,7 @@ exit_code: 0
 ----- stdout -----
 inline_modules
  - crate::file_module::greet
+ - crate::inline_modules::private_inline::_secret
 inline_modules::inner
  - crate::file_module
 inline_modules::nested

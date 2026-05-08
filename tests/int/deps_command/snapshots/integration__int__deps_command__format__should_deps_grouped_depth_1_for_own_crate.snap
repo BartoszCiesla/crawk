@@ -45,8 +45,9 @@ lib (5)
 logger (1)
   -> cli
 
-main (4)
+main (5)
   -> cli
+  -> format
   -> lib
   -> logger
   -> version

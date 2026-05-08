@@ -41,6 +41,7 @@ crate::dir_module::greet
 crate::file_module
 crate::file_module::*
 crate::file_module::greet
+crate::foo::bar
 crate::foo::bar::*
 crate::glob_patterns::constants::*
 crate::glob_patterns::mixed_exports
@@ -69,6 +70,7 @@ crate::glob_showcase::utils
 crate::inline_modules
 crate::inline_modules::*
 crate::inline_modules::nested
+crate::inline_modules::private_inline
 crate::item_visibility::PUB_CONST
 crate::item_visibility::PUB_STATIC
 crate::mixed::file_child
@@ -82,6 +84,11 @@ crate::reexports::internal
 crate::reexports::types::*
 crate::visibility
 crate::visibility::*
+crate::visibility::inner
+crate::visibility::private_mod
+crate::visibility::pub_crate_mod
 crate::visibility::pub_mod
+crate::visibility::pub_super_mod
+crate::visibility::restricted_mod
 
 ----- stderr -----

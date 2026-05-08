@@ -381,7 +381,7 @@ impl Analyzer {
         };
 
         let file_root = self.build_file_root_map(&modules);
-        self.parse_all_modules(modules, &file_root)?;
+        self.parse_all_modules(modules, &file_root, &children_map)?;
         let dependencies = self.collect_references(options, &children_map);
 
         Ok(AnalysisResult::new(module_path, dependencies, source_file))
@@ -417,6 +417,7 @@ impl Analyzer {
         &mut self,
         modules: Vec<ModuleInfo>,
         file_root: &HashMap<PathBuf, String>,
+        children_map: &HashMap<String, HashSet<String>>,
     ) -> Result<()> {
         for module in modules {
             let root_path = &file_root[module.source()];
@@ -435,10 +436,13 @@ impl Analyzer {
                 module.source().display()
             );
 
+            let children = children_map.get(module.path()).cloned().unwrap_or_default();
+
             match self.parser.parse_file(
                 module.path(),
                 module.source(),
                 &inline_scope,
+                children,
                 &mut self.parse_cache,
             ) {
                 Err(e) => {

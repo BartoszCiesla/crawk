@@ -46,6 +46,7 @@ crate::file_module
 crate::file_module::*
 crate::file_module::greet
 crate::foo::bar::*
+crate::foo::bar::public_fn
 crate::glob_patterns::*
 crate::glob_patterns::constants::*
 crate::glob_patterns::mixed_exports::func_one
@@ -102,6 +103,7 @@ crate::glob_showcase::utils::string::uppercase
 crate::inline_modules
 crate::inline_modules::*
 crate::inline_modules::nested::deep::value
+crate::inline_modules::private_inline::_secret
 crate::item_visibility::PUB_CONST
 crate::item_visibility::PUB_STATIC
 crate::item_visibility::PubCrateEnum
@@ -130,6 +132,13 @@ crate::reexports::internal::internal_helper_2
 crate::reexports::types::*
 crate::visibility
 crate::visibility::*
+crate::visibility::inner::uses_restricted
+crate::visibility::private_mod::deepest_greet
+crate::visibility::pub_crate_mod::parent_greet
 crate::visibility::pub_mod::greet
+crate::visibility::pub_super_mod::dir_module_greet
+crate::visibility::restricted_mod::RestrictedConfig
+crate::visibility::restricted_mod::VERSION
+crate::visibility::restricted_mod::nesting_depth
 
 ----- stderr -----

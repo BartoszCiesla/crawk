@@ -35,6 +35,9 @@ lib -> model
 lib -> reference
 logger -> cli
 main -> cli
+main -> format::deps_cmd
+main -> format::list_cmd
+main -> format::use_cmd
 main -> lib
 main -> logger
 main -> version

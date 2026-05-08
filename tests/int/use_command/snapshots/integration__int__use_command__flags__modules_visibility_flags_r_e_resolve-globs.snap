@@ -21,11 +21,18 @@ crate::nesting::level1::level2::level3
 crate::visibility::InternalState
 crate::visibility::demonstrate_access
 crate::visibility::inner
+crate::visibility::inner::uses_restricted
 crate::visibility::internal_helper
+crate::visibility::private_mod::deepest_greet
 crate::visibility::pub_crate_mod
+crate::visibility::pub_crate_mod::parent_greet
 crate::visibility::pub_mod
 crate::visibility::pub_mod::greet
 crate::visibility::pub_super_mod
+crate::visibility::pub_super_mod::dir_module_greet
 crate::visibility::restricted_mod
+crate::visibility::restricted_mod::RestrictedConfig
+crate::visibility::restricted_mod::VERSION
+crate::visibility::restricted_mod::nesting_depth
 
 ----- stderr -----

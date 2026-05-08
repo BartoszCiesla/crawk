@@ -16,5 +16,6 @@ exit_code: 0
 crate::dir_module::greet
 crate::file_module
 crate::file_module::greet
+crate::inline_modules::private_inline::_secret
 
 ----- stderr -----

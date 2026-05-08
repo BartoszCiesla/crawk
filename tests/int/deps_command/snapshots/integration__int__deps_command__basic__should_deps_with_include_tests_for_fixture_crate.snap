@@ -48,6 +48,7 @@ dir_module -> inline_modules::nested::deep
 dir_module::child_dir -> file_module
 dir_module::child_file -> dir_module
 file_module -> nesting
+foo -> foo::bar
 foo::other -> foo::bar
 glob_patterns -> dir_module
 glob_patterns -> file_module
@@ -105,6 +106,7 @@ helpers -> nesting
 helpers -> reexports
 helpers -> visibility
 inline_modules -> file_module
+inline_modules -> inline_modules::private_inline
 inline_modules::inner -> file_module
 inline_modules::nested::deep -> dir_module
 item_visibility -> reexports
@@ -146,6 +148,11 @@ tests -> glob_showcase::prelude
 tests -> item_visibility
 tests -> reexports
 uses_empty_glob -> no_pub_items
+visibility -> visibility::inner
+visibility -> visibility::private_mod
+visibility -> visibility::pub_crate_mod
+visibility -> visibility::pub_super_mod
+visibility -> visibility::restricted_mod
 visibility::inner -> visibility
 visibility::private_mod -> nesting::level1::level2::level3
 visibility::pub_crate_mod -> visibility::pub_mod

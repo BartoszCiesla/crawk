@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use syn::visit::Visit;
 use syn::{ItemMod, ItemUse, UseTree};
 
@@ -85,6 +87,11 @@ pub(super) struct ModuleVisitor {
     /// Used to convert `self::` and `super::` references to absolute `crate::` paths.
     module_path: Vec<String>,
 
+    /// Known direct child module names for this module.
+    /// Used to recognise bare internal paths (e.g. `format::deps_cmd::build_edges()`)
+    /// in expressions, types, patterns, and macro invocations.
+    children: HashSet<String>,
+
     /// Collected type references found in this module, grouped by syntactic role.
     /// All relative paths are resolved to absolute paths before being added.
     pub(super) references: CollectedReferences,
@@ -100,7 +107,11 @@ impl ModuleVisitor {
     /// Pass an empty string to visit all modules without filtering.
     /// The module path for relative-reference resolution is derived from `module_name`
     /// by splitting on `::`.
-    pub(super) fn new(module_name: impl Into<String>) -> Self {
+    ///
+    /// `children` contains the names of direct child modules declared via `mod` in
+    /// this module. Bare paths whose first segment matches a child are recognised
+    /// as internal references (e.g. `format::deps_cmd::build_edges()`).
+    pub(super) fn new(module_name: impl Into<String>, children: HashSet<String>) -> Self {
         let module_name = module_name.into();
         let module_path: Vec<String> = if module_name.is_empty() {
             vec![]
@@ -111,26 +122,28 @@ impl ModuleVisitor {
         Self {
             module_name,
             module_path,
+            children,
             references: CollectedReferences::new(),
             in_test_module: false,
         }
     }
 
     /// Checks if a syn::Path is an internal crate reference.
-    /// Returns true if the path starts with crate::, self::, or super::.
-    fn is_internal_path(path: &syn::Path) -> bool {
+    /// Returns true if the path starts with `crate::`, `self::`, `super::`,
+    /// or a known child module name.
+    fn is_internal_path(&self, path: &syn::Path) -> bool {
         path.segments.first().is_some_and(|first_segment| {
             let ident = first_segment.ident.to_string();
             matches!(
                 ident.as_str(),
                 PATH_QUALIFIER_CRATE | PATH_QUALIFIER_SELF | PATH_QUALIFIER_SUPER
-            )
+            ) || self.children.contains(&ident)
         })
     }
 
     /// Builds a TypeReference from a syn::Path if it's an internal crate reference.
     fn build_reference(&self, path: &syn::Path) -> Option<TypeReference> {
-        if !Self::is_internal_path(path) {
+        if !self.is_internal_path(path) {
             return None;
         }
 

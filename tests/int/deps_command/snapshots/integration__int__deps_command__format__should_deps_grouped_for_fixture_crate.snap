@@ -71,6 +71,9 @@ dir_module::child_file (1)
 file_module (1)
   -> nesting
 
+foo (1)
+  -> foo::bar
+
 foo::other (1)
   -> foo::bar
 
@@ -128,8 +131,9 @@ glob_showcase::utils (3)
   -> glob_showcase::utils::math
   -> glob_showcase::utils::string
 
-inline_modules (1)
+inline_modules (2)
   -> file_module
+  -> inline_modules::private_inline
 
 inline_modules::inner (1)
   -> file_module
@@ -192,6 +196,13 @@ reexports::types (1)
 
 uses_empty_glob (1)
   -> no_pub_items
+
+visibility (5)
+  -> visibility::inner
+  -> visibility::private_mod
+  -> visibility::pub_crate_mod
+  -> visibility::pub_super_mod
+  -> visibility::restricted_mod
 
 visibility::inner (1)
   -> visibility

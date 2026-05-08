@@ -76,6 +76,7 @@ model::tests
  - crate::model::AnalysisResult
 parser
  - crate::cache::ParseCache
+ - crate::parser::visitor
  - crate::parser::visitor::ModuleVisitor
  - crate::reference::PathPrefix
  - crate::reference::TypeReference

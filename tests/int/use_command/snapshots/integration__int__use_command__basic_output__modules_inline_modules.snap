@@ -12,5 +12,6 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::file_module::greet
+crate::inline_modules::private_inline::_secret
 
 ----- stderr -----

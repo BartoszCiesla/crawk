@@ -58,8 +58,11 @@ lib (5)
 logger (1)
   -> cli
 
-main (4)
+main (7)
   -> cli
+  -> format::deps_cmd
+  -> format::list_cmd
+  -> format::use_cmd
   -> lib
   -> logger
   -> version

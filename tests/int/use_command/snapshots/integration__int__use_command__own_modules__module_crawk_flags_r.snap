@@ -25,6 +25,7 @@ crate::error::AnalysisError
 crate::error::{AnalysisError, Result}
 crate::model::{AnalysisOptions, AnalysisResult}
 crate::parser::CrateAnalyzer
+crate::parser::visitor
 crate::parser::visitor::ModuleVisitor
 crate::reference::TypeReference
 crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference}

@@ -11,6 +11,15 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::cli::{CrawkArgs, CrawkCommands, DepsArgs, DepsOutputFormat, ListArgs, ListOutputFormat, UseArgs, UseOutputFormat}
+crate::format::deps_cmd::build_edges
+crate::format::deps_cmd::render_dot
+crate::format::deps_cmd::render_grouped
+crate::format::deps_cmd::render_plain
+crate::format::list_cmd::ListDisplayOptions
+crate::format::list_cmd::render_list_plain
+crate::format::list_cmd::render_list_table
+crate::format::use_cmd::render_flat
+crate::format::use_cmd::render_grouped
 crate::logger::configure_tracing
 crawk::{AnalysisOptions, Analyzer, version}
 
