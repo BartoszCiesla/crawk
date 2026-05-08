@@ -171,22 +171,33 @@ impl CrateAnalyzer {
         })
     }
 
-    /// Check if a `PathPrefix::None` reference targets a direct child module.
+    /// Check if a `PathPrefix::None` reference targets an internal module.
     ///
-    /// In Rust (≥2018), bare `use child::Item` is valid when `mod child;` is
-    /// declared in the current module. This matches that pattern by checking
-    /// whether the first path segment is a known child of the source module.
+    /// Two resolution rules are checked:
+    /// - **Edition 2018+**: bare `use child::Item` resolves to a direct child
+    ///   declared via `mod child;` in the current module.
+    /// - **Edition 2015**: bare `use sibling::Item` resolves from the crate
+    ///   root, so any top-level module is reachable from anywhere.
+    ///
+    /// Both are covered by checking `children_map[module]` (direct children)
+    /// and `children_map[""]` (crate-root children / top-level modules).
     fn is_bare_child(
         r: &TypeReference,
         module: &str,
         children_map: &HashMap<String, HashSet<String>>,
     ) -> bool {
-        r.prefix() == PathPrefix::None
-            && children_map.get(module).is_some_and(|children| {
-                r.segments()
-                    .first()
-                    .is_some_and(|s| children.contains(s.as_str()))
-            })
+        if r.prefix() != PathPrefix::None {
+            return false;
+        }
+        let first = r.segments().first();
+        first.is_some_and(|s| {
+            children_map
+                .get(module)
+                .is_some_and(|ch| ch.contains(s.as_str()))
+                || children_map
+                    .get("")
+                    .is_some_and(|ch| ch.contains(s.as_str()))
+        })
     }
 }
 

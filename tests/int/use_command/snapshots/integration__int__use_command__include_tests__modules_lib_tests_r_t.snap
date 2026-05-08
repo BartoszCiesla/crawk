@@ -14,6 +14,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::::*
+crate::advanced_globs::*
 crate::advanced_globs::Consumer
 crate::advanced_globs::MultiImpl
 crate::advanced_globs::Provider
@@ -30,6 +31,7 @@ crate::advanced_globs::layer1_function
 crate::advanced_globs::layer2_function
 crate::advanced_globs::macro_module::*
 crate::advanced_globs::original::*
+crate::advanced_globs::prelude::*
 crate::advanced_globs::shadowing::shadowed_func
 crate::advanced_globs::trait_providers::*
 crate::advanced_globs::unix_specific::*
@@ -43,6 +45,7 @@ crate::file_module
 crate::file_module::*
 crate::file_module::greet
 crate::foo::bar::*
+crate::glob_patterns::*
 crate::glob_patterns::constants::*
 crate::glob_patterns::mixed_exports::func_one as pub_func_one
 crate::glob_patterns::mixed_exports::special_function as renamed_special
@@ -55,6 +58,7 @@ crate::glob_patterns::set_b::*
 crate::glob_patterns::traits::*
 crate::glob_patterns::types::*
 crate::glob_patterns::utilities::*
+crate::glob_showcase::*
 crate::glob_showcase::ErrorKind
 crate::glob_showcase::Status
 crate::glob_showcase::api::*
@@ -72,6 +76,7 @@ crate::glob_showcase::errors::*
 crate::glob_showcase::errors::{NotFoundError, ValidationError}
 crate::glob_showcase::models::*
 crate::glob_showcase::models::{User, Post, Comment}
+crate::glob_showcase::prelude::*
 crate::glob_showcase::traits::*
 crate::glob_showcase::traits::{Identifiable, Nameable, Validatable}
 crate::glob_showcase::utils::collection::*
@@ -86,6 +91,7 @@ crate::inline_modules::*
 crate::inline_modules::nested::deep::value
 crate::item_visibility::PUB_CONST
 crate::item_visibility::PUB_STATIC
+crate::item_visibility::{PubCrateEnum, PubCrateTrait}
 crate::mixed::file_child::greet
 crate::mixed::greet
 crate::nesting
@@ -95,6 +101,7 @@ crate::nesting::level1::level2::*
 crate::nesting::level1::level2::depth
 crate::nesting::level1::level2::level3
 crate::no_pub_items::*
+crate::reexports::*
 crate::reexports::Foo
 crate::reexports::internal::Foo
 crate::reexports::internal::Foo as Bar

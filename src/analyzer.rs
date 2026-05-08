@@ -479,6 +479,7 @@ impl Analyzer {
                 module.split("::").map(String::from).collect()
             };
             let module_children = children_map.get(module.as_str());
+            let root_children = children_map.get("");
 
             let mut refs = HashSet::new();
             for reference in module_references {
@@ -501,7 +502,12 @@ impl Analyzer {
 
                 // Pass 2: normalise bare child paths, then resolve globs if requested
                 for r in after_expand {
-                    let r = Self::normalise_bare_child(r, &module_segments, module_children);
+                    let r = Self::normalise_bare_child(
+                        r,
+                        &module_segments,
+                        module_children,
+                        root_children,
+                    );
 
                     if options.resolve_globs && r.has_glob() {
                         debug!("Resolving glob: {}", r.to_path_string());
@@ -528,21 +534,29 @@ impl Analyzer {
 
     /// Normalise a bare child path to an absolute `crate::` path.
     ///
-    /// `use child::Item` in module `a::b` becomes `crate::a::b::child::Item`.
-    /// Refs that are not bare child paths are returned unchanged.
+    /// Two resolution rules (matching `is_bare_child` in the filter):
+    /// - **Direct child** (2018+): `use child::Item` in `a::b` → `crate::a::b::child::Item`
+    /// - **Root-level** (2015): `use sibling::Item` in `a::b` → `crate::sibling::Item`
+    ///
+    /// Direct child takes priority when both match (a module has a child
+    /// with the same name as a top-level module).
     fn normalise_bare_child(
         r: TypeReference,
         module_segments: &[String],
         module_children: Option<&HashSet<String>>,
+        root_children: Option<&HashSet<String>>,
     ) -> TypeReference {
-        let dominated_by_child = r.prefix() == PathPrefix::None
-            && module_children.is_some_and(|children| {
-                r.segments()
-                    .first()
-                    .is_some_and(|s| children.contains(s.as_str()))
-            });
+        if r.prefix() != PathPrefix::None {
+            return r;
+        }
 
-        if dominated_by_child {
+        let Some(first) = r.segments().first() else {
+            return r;
+        };
+
+        // Direct child match (2018+ rule) — prepend parent module path.
+        let is_direct_child = module_children.is_some_and(|ch| ch.contains(first.as_str()));
+        if is_direct_child {
             let mut new_segments = module_segments.to_vec();
             new_segments.extend(r.segments().iter().cloned());
             debug!(
@@ -550,10 +564,22 @@ impl Analyzer {
                 r.to_path_string(),
                 new_segments.join("::")
             );
-            r.with_segments_and_prefix(new_segments, PathPrefix::Crate)
-        } else {
-            r
+            return r.with_segments_and_prefix(new_segments, PathPrefix::Crate);
         }
+
+        // Root-level match (2015 rule) — segments stay as-is, just add crate:: prefix.
+        let is_root_sibling = root_children.is_some_and(|ch| ch.contains(first.as_str()));
+        if is_root_sibling {
+            let segments = r.segments().to_vec();
+            debug!(
+                "Normalised root-level bare path: {} → crate::{}",
+                r.to_path_string(),
+                segments.join("::")
+            );
+            return r.with_segments_and_prefix(segments, PathPrefix::Crate);
+        }
+
+        r
     }
 
     /// Build a mapping from module path to its direct child module names.

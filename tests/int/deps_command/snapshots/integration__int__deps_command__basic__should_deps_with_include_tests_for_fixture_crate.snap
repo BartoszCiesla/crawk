@@ -138,6 +138,13 @@ reexports -> reexports::internal
 reexports -> reexports::types
 reexports::internal -> item_visibility
 reexports::types -> visibility
+tests -> advanced_globs
+tests -> advanced_globs::prelude
+tests -> glob_patterns
+tests -> glob_showcase
+tests -> glob_showcase::prelude
+tests -> item_visibility
+tests -> reexports
 uses_empty_glob -> no_pub_items
 visibility::inner -> visibility
 visibility::private_mod -> nesting::level1::level2::level3

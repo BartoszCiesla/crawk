@@ -14,5 +14,13 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::::*
+crate::advanced_globs::*
+crate::advanced_globs::prelude::*
+crate::glob_patterns::*
+crate::glob_showcase::*
+crate::glob_showcase::prelude::*
+crate::item_visibility::PubCrateEnum
+crate::item_visibility::PubCrateTrait
+crate::reexports::*
 
 ----- stderr -----
