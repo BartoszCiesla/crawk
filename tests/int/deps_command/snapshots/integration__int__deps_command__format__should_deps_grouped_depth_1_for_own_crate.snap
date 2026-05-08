@@ -45,8 +45,10 @@ lib (5)
 logger (1)
   -> cli
 
-main (2)
+main (4)
+  -> cli
   -> lib
+  -> logger
   -> version
 
 model (1)

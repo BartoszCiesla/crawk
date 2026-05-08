@@ -19,7 +19,9 @@ analyzer (7)
   -> reference
   -> resolve
 
-cli (1)
+cli (3)
+  -> cli::overview
+  -> cli::validation
   -> version
 
 cli::overview (1)
@@ -56,15 +58,18 @@ lib (5)
 logger (1)
   -> cli
 
-main (2)
+main (4)
+  -> cli
   -> lib
+  -> logger
   -> version
 
 model (1)
   -> reference
 
-parser (3)
+parser (4)
   -> cache
+  -> parser::visitor
   -> reference
   -> utils
 

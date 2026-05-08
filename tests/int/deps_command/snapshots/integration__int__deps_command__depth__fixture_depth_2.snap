@@ -12,7 +12,16 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+advanced_globs -> advanced_globs::aliased_module
+advanced_globs -> advanced_globs::enum_variants
 advanced_globs -> advanced_globs::internal
+advanced_globs -> advanced_globs::layer1
+advanced_globs -> advanced_globs::macro_module
+advanced_globs -> advanced_globs::original
+advanced_globs -> advanced_globs::shadowing
+advanced_globs -> advanced_globs::trait_providers
+advanced_globs -> advanced_globs::unix_specific
+advanced_globs -> advanced_globs::windows_specific
 advanced_globs -> dir_module::child_file
 advanced_globs -> file_module
 advanced_globs -> visibility
@@ -41,8 +50,23 @@ file_module -> nesting
 foo::other -> foo::bar
 glob_patterns -> dir_module
 glob_patterns -> file_module
+glob_patterns -> glob_patterns::constants
+glob_patterns -> glob_patterns::mixed_exports
+glob_patterns -> glob_patterns::outer
 glob_patterns -> glob_patterns::self_ref
+glob_patterns -> glob_patterns::set_a
+glob_patterns -> glob_patterns::set_b
+glob_patterns -> glob_patterns::traits
+glob_patterns -> glob_patterns::types
+glob_patterns -> glob_patterns::utilities
 glob_showcase -> file_module
+glob_showcase -> glob_showcase::api
+glob_showcase -> glob_showcase::config
+glob_showcase -> glob_showcase::database
+glob_showcase -> glob_showcase::errors
+glob_showcase -> glob_showcase::models
+glob_showcase -> glob_showcase::traits
+glob_showcase -> glob_showcase::utils
 glob_showcase -> inline_modules
 glob_showcase -> nesting::level1
 glob_showcase::prelude -> glob_showcase
@@ -78,6 +102,8 @@ nesting -> inline_modules
 nesting::level1 -> nesting
 reexports -> file_module
 reexports -> nesting
+reexports -> reexports::internal
+reexports -> reexports::types
 reexports::internal -> item_visibility
 reexports::types -> visibility
 uses_empty_glob -> no_pub_items

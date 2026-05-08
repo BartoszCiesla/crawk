@@ -29,7 +29,9 @@ lib -> error
 lib -> model
 lib -> reference
 logger -> cli
+main -> cli
 main -> lib
+main -> logger
 main -> version
 model -> reference
 parser -> cache

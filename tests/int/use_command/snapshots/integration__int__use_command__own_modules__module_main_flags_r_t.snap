@@ -12,9 +12,13 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::cli::CrawkArgs
+crate::cli::overview::generate_after_help
 crate::cli::validation::*
+crate::cli::validation::{validate_depth, validate_module_path}
+crate::cli::{CrawkArgs, CrawkCommands, DepsArgs, DepsOutputFormat, ListArgs, ListOutputFormat, UseArgs, UseOutputFormat}
 crate::format::deps_cmd::*
 crate::format::use_cmd::*
+crate::logger::configure_tracing
 crawk::ModuleInfo
 crawk::version
 crawk::{AnalysisOptions, Analyzer, version}

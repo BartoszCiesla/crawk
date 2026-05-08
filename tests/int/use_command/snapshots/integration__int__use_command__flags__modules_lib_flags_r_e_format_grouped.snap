@@ -17,7 +17,17 @@ exit_code: 0
 ----- stdout -----
 lib
 advanced_globs
+ - crate::advanced_globs::aliased_module::OriginalStruct
+ - crate::advanced_globs::aliased_module::original_name
+ - crate::advanced_globs::enum_variants::*
  - crate::advanced_globs::internal::*
+ - crate::advanced_globs::layer1::*
+ - crate::advanced_globs::macro_module::*
+ - crate::advanced_globs::original::*
+ - crate::advanced_globs::shadowing::shadowed_func
+ - crate::advanced_globs::trait_providers::*
+ - crate::advanced_globs::unix_specific::*
+ - crate::advanced_globs::windows_specific::*
  - crate::dir_module::child_file
  - crate::file_module
  - crate::visibility
@@ -25,7 +35,9 @@ advanced_globs::aliased_module
 advanced_globs::enum_variants
 advanced_globs::internal
 advanced_globs::layer1
+ - crate::advanced_globs::layer1::layer2::*
 advanced_globs::layer1::layer2
+ - crate::advanced_globs::layer1::layer2::layer3::*
 advanced_globs::layer1::layer2::layer3
 advanced_globs::macro_module
 advanced_globs::original
@@ -62,10 +74,22 @@ foo::other
 glob_patterns
  - crate::dir_module
  - crate::file_module
+ - crate::glob_patterns::constants::*
+ - crate::glob_patterns::mixed_exports::func_one
+ - crate::glob_patterns::mixed_exports::func_three
+ - crate::glob_patterns::mixed_exports::func_two
+ - crate::glob_patterns::mixed_exports::special_function
+ - crate::glob_patterns::outer::*
  - crate::glob_patterns::self_ref::*
+ - crate::glob_patterns::set_a::*
+ - crate::glob_patterns::set_b::*
+ - crate::glob_patterns::traits::*
+ - crate::glob_patterns::types::*
+ - crate::glob_patterns::utilities::*
 glob_patterns::constants
 glob_patterns::mixed_exports
 glob_patterns::outer
+ - crate::glob_patterns::outer::inner::*
 glob_patterns::outer::inner
 glob_patterns::self_ref
 glob_patterns::set_a
@@ -75,6 +99,15 @@ glob_patterns::types
 glob_patterns::utilities
 glob_showcase
  - crate::file_module::*
+ - crate::glob_showcase::api::*
+ - crate::glob_showcase::config::all::*
+ - crate::glob_showcase::database::*
+ - crate::glob_showcase::errors::*
+ - crate::glob_showcase::models::*
+ - crate::glob_showcase::traits::*
+ - crate::glob_showcase::utils::collection::*
+ - crate::glob_showcase::utils::math::*
+ - crate::glob_showcase::utils::string::*
  - crate::inline_modules::*
  - crate::nesting::level1::level2::*
 glob_showcase::api
@@ -87,6 +120,9 @@ glob_showcase::config::client
 glob_showcase::config::logging
 glob_showcase::config::server
 glob_showcase::database
+ - crate::glob_showcase::database::connection::*
+ - crate::glob_showcase::database::query::*
+ - crate::glob_showcase::database::transaction::*
 glob_showcase::database::connection
 glob_showcase::database::query
 glob_showcase::database::transaction
@@ -113,6 +149,15 @@ glob_showcase::prelude
  - crate::glob_showcase::utils::math::subtract
 glob_showcase::traits
 glob_showcase::utils
+ - crate::glob_showcase::utils::collection::*
+ - crate::glob_showcase::utils::math::*
+ - crate::glob_showcase::utils::math::add
+ - crate::glob_showcase::utils::math::divide
+ - crate::glob_showcase::utils::math::multiply
+ - crate::glob_showcase::utils::math::subtract
+ - crate::glob_showcase::utils::string::*
+ - crate::glob_showcase::utils::string::lowercase
+ - crate::glob_showcase::utils::string::uppercase
 glob_showcase::utils::collection
 glob_showcase::utils::math
 glob_showcase::utils::string
@@ -146,6 +191,17 @@ no_pub_items
 reexports
  - crate::file_module
  - crate::nesting
+ - crate::reexports::internal::Baz
+ - crate::reexports::internal::Foo
+ - crate::reexports::internal::INTERNAL_CONST_A
+ - crate::reexports::internal::INTERNAL_CONST_B
+ - crate::reexports::internal::InternalEnum
+ - crate::reexports::internal::InternalTrait
+ - crate::reexports::internal::Qux
+ - crate::reexports::internal::Secret
+ - crate::reexports::internal::internal_helper_1
+ - crate::reexports::internal::internal_helper_2
+ - crate::reexports::types::*
 reexports::internal
  - crate::item_visibility::PUB_STATIC
 reexports::types

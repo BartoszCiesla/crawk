@@ -16,6 +16,17 @@ exit_code: 0
 crate::file_module
 crate::item_visibility::PUB_STATIC
 crate::nesting
+crate::reexports::internal::Baz
+crate::reexports::internal::Foo
+crate::reexports::internal::INTERNAL_CONST_A
+crate::reexports::internal::INTERNAL_CONST_B
+crate::reexports::internal::InternalEnum
+crate::reexports::internal::InternalTrait
+crate::reexports::internal::Qux
+crate::reexports::internal::Secret
+crate::reexports::internal::internal_helper_1
+crate::reexports::internal::internal_helper_2
+crate::reexports::types::*
 crate::visibility
 
 ----- stderr -----

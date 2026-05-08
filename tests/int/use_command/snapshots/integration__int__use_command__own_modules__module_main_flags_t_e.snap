@@ -11,6 +11,15 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+crate::cli::CrawkArgs
+crate::cli::CrawkCommands
+crate::cli::DepsArgs
+crate::cli::DepsOutputFormat
+crate::cli::ListArgs
+crate::cli::ListOutputFormat
+crate::cli::UseArgs
+crate::cli::UseOutputFormat
+crate::logger::configure_tracing
 crawk::AnalysisOptions
 crawk::Analyzer
 crawk::version

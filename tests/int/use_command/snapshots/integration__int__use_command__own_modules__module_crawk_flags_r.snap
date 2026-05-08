@@ -25,10 +25,10 @@ crate::error::AnalysisError
 crate::error::{AnalysisError, Result}
 crate::model::{AnalysisOptions, AnalysisResult}
 crate::parser::CrateAnalyzer
+crate::parser::visitor::ModuleVisitor
 crate::reference::TypeReference
 crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference}
 crate::reference::{GroupItem, PathPrefix, TypeReference}
-crate::reference::{GroupItem, PathSuffix, TypeReference}
 crate::reference::{PathPrefix, TypeReference}
 crate::resolve::resolve_glob
 crate::utils::has_cfg_test

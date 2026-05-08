@@ -11,7 +11,6 @@ info:
 success: false
 exit_code: 1
 ----- stdout -----
-[31mERROR[39m Error while analyzing module 'broken': Failed to parse file '[MANIFEST_DIR]/fixtures/broken_syntax/src/broken.rs': expected `!`
 
 ----- stderr -----
-Error: Error analyzing module 'broken' (file '[MANIFEST_DIR]/fixtures/broken_syntax/src/broken.rs'): Failed to parse file '[MANIFEST_DIR]/fixtures/broken_syntax/src/broken.rs': expected `!`
+Error: Module not found: broken

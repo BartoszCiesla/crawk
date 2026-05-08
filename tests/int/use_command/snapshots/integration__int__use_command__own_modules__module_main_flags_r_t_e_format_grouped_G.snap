@@ -16,10 +16,22 @@ success: true
 exit_code: 0
 ----- stdout -----
 main
+ - crate::cli::CrawkArgs
+ - crate::cli::CrawkCommands
+ - crate::cli::DepsArgs
+ - crate::cli::DepsOutputFormat
+ - crate::cli::ListArgs
+ - crate::cli::ListOutputFormat
+ - crate::cli::UseArgs
+ - crate::cli::UseOutputFormat
+ - crate::logger::configure_tracing
  - crawk::AnalysisOptions
  - crawk::Analyzer
  - crawk::version
 cli
+ - crate::cli::overview::generate_after_help
+ - crate::cli::validation::validate_depth
+ - crate::cli::validation::validate_module_path
  - crawk::version
 cli::overview
  - crawk::version

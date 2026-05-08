@@ -13,7 +13,16 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+crate::advanced_globs::aliased_module
+crate::advanced_globs::enum_variants::*
 crate::advanced_globs::internal::*
+crate::advanced_globs::layer1::*
+crate::advanced_globs::macro_module::*
+crate::advanced_globs::original::*
+crate::advanced_globs::shadowing
+crate::advanced_globs::trait_providers::*
+crate::advanced_globs::unix_specific::*
+crate::advanced_globs::windows_specific::*
 crate::dir_module::child_file
 crate::file_module
 crate::visibility

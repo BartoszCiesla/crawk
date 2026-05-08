@@ -16,10 +16,22 @@ crate::advanced_globs::Consumer
 crate::advanced_globs::MultiImpl
 crate::advanced_globs::Provider
 crate::advanced_globs::Transformer
+crate::advanced_globs::aliased_module::OriginalStruct as AliasedStruct
+crate::advanced_globs::aliased_module::original_name as renamed_func
 crate::advanced_globs::deep_function
+crate::advanced_globs::enum_variants::*
 crate::advanced_globs::internal::*
+crate::advanced_globs::layer1::*
+crate::advanced_globs::layer1::layer2::*
+crate::advanced_globs::layer1::layer2::layer3::*
 crate::advanced_globs::layer1_function
 crate::advanced_globs::layer2_function
+crate::advanced_globs::macro_module::*
+crate::advanced_globs::original::*
+crate::advanced_globs::shadowing::shadowed_func
+crate::advanced_globs::trait_providers::*
+crate::advanced_globs::unix_specific::*
+crate::advanced_globs::windows_specific::*
 crate::aliased
 crate::custom_path::greet
 crate::dir_module
@@ -29,18 +41,44 @@ crate::file_module
 crate::file_module::*
 crate::file_module::greet
 crate::foo::bar::*
+crate::glob_patterns::constants::*
+crate::glob_patterns::mixed_exports::func_one as pub_func_one
+crate::glob_patterns::mixed_exports::special_function as renamed_special
+crate::glob_patterns::mixed_exports::{func_one, func_two, func_three, special_function}
+crate::glob_patterns::outer::*
+crate::glob_patterns::outer::inner::*
 crate::glob_patterns::self_ref::*
+crate::glob_patterns::set_a::*
+crate::glob_patterns::set_b::*
+crate::glob_patterns::traits::*
+crate::glob_patterns::types::*
+crate::glob_patterns::utilities::*
 crate::glob_showcase::ErrorKind
 crate::glob_showcase::Status
+crate::glob_showcase::api::*
 crate::glob_showcase::api::{get_data, set_data, delete_data}
+crate::glob_showcase::config::all::*
 crate::glob_showcase::config::client::*
 crate::glob_showcase::config::logging::*
 crate::glob_showcase::config::server::*
+crate::glob_showcase::database::*
+crate::glob_showcase::database::connection::*
+crate::glob_showcase::database::query::*
+crate::glob_showcase::database::transaction::*
 crate::glob_showcase::database::{connect, disconnect, execute}
+crate::glob_showcase::errors::*
 crate::glob_showcase::errors::{NotFoundError, ValidationError}
+crate::glob_showcase::models::*
 crate::glob_showcase::models::{User, Post, Comment}
+crate::glob_showcase::traits::*
 crate::glob_showcase::traits::{Identifiable, Nameable, Validatable}
+crate::glob_showcase::utils::collection::*
+crate::glob_showcase::utils::math::*
+crate::glob_showcase::utils::math::{add, subtract, multiply, divide}
 crate::glob_showcase::utils::math::{add, subtract}
+crate::glob_showcase::utils::string::*
+crate::glob_showcase::utils::string::lowercase as str_lower
+crate::glob_showcase::utils::string::uppercase as str_upper
 crate::inline_modules
 crate::inline_modules::*
 crate::inline_modules::nested::deep::value
@@ -56,6 +94,11 @@ crate::nesting::level1::level2::depth
 crate::nesting::level1::level2::level3
 crate::no_pub_items::*
 crate::reexports::Foo
+crate::reexports::internal::Foo
+crate::reexports::internal::Foo as Bar
+crate::reexports::internal::Secret
+crate::reexports::internal::{Baz, Qux, InternalEnum, InternalTrait, INTERNAL_CONST_A, INTERNAL_CONST_B, internal_helper_1, internal_helper_2}
+crate::reexports::types::*
 crate::visibility
 crate::visibility::*
 crate::visibility::pub_mod::greet

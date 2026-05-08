@@ -16,6 +16,8 @@ exit_code: 0
 [32mINFO[39m Crate root: fixtures/modules
 [32mINFO[39m Resolving module: 'file_module'
 [32mINFO[39m Module tree: 'file_module' → [MODULES]/src/file_module.rs, recursive=false
+[32mINFO[39m Resolving module: 'file_module'
+[32mINFO[39m Module tree: 'file_module' → [MODULES]/src/file_module.rs, recursive=true
 [32mINFO[39m File root map: 1 files for 1 modules
 [32mINFO[39m Analyzing module: file_module (file: [MODULES]/src/file_module.rs)
 [32mINFO[39m Parsed 'file_module': 1 references from [MODULES]/src/file_module.rs

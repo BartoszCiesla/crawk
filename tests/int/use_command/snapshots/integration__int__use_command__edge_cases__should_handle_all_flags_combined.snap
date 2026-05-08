@@ -42,6 +42,7 @@ analyzer
  - crate::model::AnalysisResult
  - crate::parser::CrateAnalyzer
  - crate::reference::GroupItem
+ - crate::reference::PathPrefix
  - crate::reference::PathSuffix
  - crate::reference::TypeReference
  - crate::resolve::resolve_glob
@@ -77,6 +78,8 @@ model::tests
  - crate::model::AnalysisResult
 parser
  - crate::cache::ParseCache
+ - crate::parser::visitor
+ - crate::reference::PathPrefix
  - crate::reference::TypeReference
  - crate::utils::ReadFileError
  - crate::utils::descend_inline_module

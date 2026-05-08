@@ -18,6 +18,7 @@ exit_code: 0
 crate::file_module
 crate::item_visibility
 crate::nesting
+crate::reexports
 crate::visibility
 
 ----- stderr -----

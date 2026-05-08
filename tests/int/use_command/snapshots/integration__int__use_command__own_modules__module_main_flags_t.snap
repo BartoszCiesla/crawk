@@ -10,6 +10,8 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+crate::cli::{CrawkArgs, CrawkCommands, DepsArgs, DepsOutputFormat, ListArgs, ListOutputFormat, UseArgs, UseOutputFormat}
+crate::logger::configure_tracing
 crawk::{AnalysisOptions, Analyzer, version}
 
 ----- stderr -----

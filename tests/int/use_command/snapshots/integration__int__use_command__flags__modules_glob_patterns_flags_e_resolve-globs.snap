@@ -15,7 +15,37 @@ exit_code: 0
 ----- stdout -----
 crate::dir_module
 crate::file_module
+crate::glob_patterns::constants::API_VERSION
+crate::glob_patterns::constants::DEFAULT_TIMEOUT
+crate::glob_patterns::constants::MAX_SIZE
+crate::glob_patterns::constants::MIN_SIZE
+crate::glob_patterns::mixed_exports::func_one
+crate::glob_patterns::mixed_exports::func_three
+crate::glob_patterns::mixed_exports::func_two
+crate::glob_patterns::mixed_exports::special_function
+crate::glob_patterns::outer::inner
+crate::glob_patterns::outer::outer_func
 crate::glob_patterns::self_ref::self_func_1
 crate::glob_patterns::self_ref::self_func_2
+crate::glob_patterns::set_a::common_name
+crate::glob_patterns::set_a::unique_to_a
+crate::glob_patterns::set_b::CommonType
+crate::glob_patterns::set_b::unique_to_b
+crate::glob_patterns::traits::Greetable
+crate::glob_patterns::traits::Processable
+crate::glob_patterns::traits::Serializable
+crate::glob_patterns::types::Alpha
+crate::glob_patterns::types::Beta
+crate::glob_patterns::types::Delta
+crate::glob_patterns::types::Gamma
+crate::glob_patterns::types::OptionI32
+crate::glob_patterns::types::Result
+crate::glob_patterns::utilities::UTIL_CONST_1
+crate::glob_patterns::utilities::UTIL_CONST_2
+crate::glob_patterns::utilities::UtilityEnum
+crate::glob_patterns::utilities::UtilityStruct
+crate::glob_patterns::utilities::helper_a
+crate::glob_patterns::utilities::helper_b
+crate::glob_patterns::utilities::helper_c
 
 ----- stderr -----

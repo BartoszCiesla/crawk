@@ -12,11 +12,26 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-advanced_globs (4)
+advanced_globs (13)
+  -> advanced_globs::aliased_module
+  -> advanced_globs::enum_variants
   -> advanced_globs::internal
+  -> advanced_globs::layer1
+  -> advanced_globs::macro_module
+  -> advanced_globs::original
+  -> advanced_globs::shadowing
+  -> advanced_globs::trait_providers
+  -> advanced_globs::unix_specific
+  -> advanced_globs::windows_specific
   -> dir_module::child_file
   -> file_module
   -> visibility
+
+advanced_globs::layer1 (1)
+  -> advanced_globs::layer1::layer2
+
+advanced_globs::layer1::layer2 (1)
+  -> advanced_globs::layer1::layer2::layer3
 
 advanced_globs::prelude (1)
   -> advanced_globs
@@ -59,13 +74,33 @@ file_module (1)
 foo::other (1)
   -> foo::bar
 
-glob_patterns (3)
+glob_patterns (11)
   -> dir_module
   -> file_module
+  -> glob_patterns::constants
+  -> glob_patterns::mixed_exports
+  -> glob_patterns::outer
   -> glob_patterns::self_ref
+  -> glob_patterns::set_a
+  -> glob_patterns::set_b
+  -> glob_patterns::traits
+  -> glob_patterns::types
+  -> glob_patterns::utilities
 
-glob_showcase (3)
+glob_patterns::outer (1)
+  -> glob_patterns::outer::inner
+
+glob_showcase (12)
   -> file_module
+  -> glob_showcase::api
+  -> glob_showcase::config::all
+  -> glob_showcase::database
+  -> glob_showcase::errors
+  -> glob_showcase::models
+  -> glob_showcase::traits
+  -> glob_showcase::utils::collection
+  -> glob_showcase::utils::math
+  -> glob_showcase::utils::string
   -> inline_modules
   -> nesting::level1::level2
 
@@ -73,6 +108,11 @@ glob_showcase::config::all (3)
   -> glob_showcase::config::client
   -> glob_showcase::config::logging
   -> glob_showcase::config::server
+
+glob_showcase::database (3)
+  -> glob_showcase::database::connection
+  -> glob_showcase::database::query
+  -> glob_showcase::database::transaction
 
 glob_showcase::prelude (7)
   -> glob_showcase
@@ -82,6 +122,11 @@ glob_showcase::prelude (7)
   -> glob_showcase::models
   -> glob_showcase::traits
   -> glob_showcase::utils::math
+
+glob_showcase::utils (3)
+  -> glob_showcase::utils::collection
+  -> glob_showcase::utils::math
+  -> glob_showcase::utils::string
 
 inline_modules (1)
   -> file_module
@@ -133,9 +178,11 @@ nesting::level1::level2::level3 (3)
   -> nesting::level1
   -> nesting::level1::level2
 
-reexports (2)
+reexports (4)
   -> file_module
   -> nesting
+  -> reexports::internal
+  -> reexports::types
 
 reexports::internal (1)
   -> item_visibility

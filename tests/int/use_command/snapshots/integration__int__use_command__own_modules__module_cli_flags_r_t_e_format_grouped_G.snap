@@ -16,6 +16,9 @@ success: true
 exit_code: 0
 ----- stdout -----
 cli
+ - crate::cli::overview::generate_after_help
+ - crate::cli::validation::validate_depth
+ - crate::cli::validation::validate_module_path
  - crawk::version
 cli::overview
  - crawk::version

@@ -19,6 +19,8 @@ analyzer -> resolve
 analyzer::tests -> analyzer
 analyzer::tests -> reference
 cache::tests -> cache
+cli -> cli::overview
+cli -> cli::validation
 cli -> version
 cli::overview -> version
 cli::validation::tests -> cli::validation
@@ -42,11 +44,14 @@ lib -> error
 lib -> model
 lib -> reference
 logger -> cli
+main -> cli
 main -> lib
+main -> logger
 main -> version
 model -> reference
 model::tests -> model
 parser -> cache
+parser -> parser::visitor
 parser -> reference
 parser -> utils
 parser::tests -> parser

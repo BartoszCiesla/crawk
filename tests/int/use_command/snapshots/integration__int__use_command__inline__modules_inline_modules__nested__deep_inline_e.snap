@@ -9,8 +9,9 @@ info:
     - "inline_modules::nested::deep"
     - "-e"
 ---
-success: true
-exit_code: 0
+success: false
+exit_code: 1
 ----- stdout -----
 
 ----- stderr -----
+Error: Module not found: inline_modules::nested::deep

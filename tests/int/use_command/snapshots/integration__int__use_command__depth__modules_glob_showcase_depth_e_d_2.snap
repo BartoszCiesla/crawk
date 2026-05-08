@@ -15,6 +15,13 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::file_module::*
+crate::glob_showcase::api::*
+crate::glob_showcase::config
+crate::glob_showcase::database::*
+crate::glob_showcase::errors::*
+crate::glob_showcase::models::*
+crate::glob_showcase::traits::*
+crate::glob_showcase::utils
 crate::inline_modules::*
 crate::nesting::level1
 

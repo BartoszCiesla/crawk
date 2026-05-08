@@ -5,7 +5,7 @@
 
 mod visitor;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
@@ -18,7 +18,7 @@ use thiserror::Error;
 
 use tracing::info;
 
-use crate::reference::TypeReference;
+use crate::reference::{PathPrefix, TypeReference};
 use visitor::ModuleVisitor;
 
 /// Errors that can occur while reading or parsing a Rust source file.
@@ -148,18 +148,45 @@ impl CrateAnalyzer {
     }
 
     /// Returns all collected crate internal references by module, in parse order.
-    pub(crate) fn all_crate_references(
-        &self,
-    ) -> impl Iterator<Item = (&String, Vec<&TypeReference>)> {
-        self.file_order.iter().filter_map(|module| {
+    ///
+    /// `children_map` maps each module path to the set of its direct child module
+    /// names. This allows bare `use child::Item` paths (valid in Rust ≥2018 for
+    /// direct children declared via `mod`) to be recognised as internal references.
+    pub(crate) fn all_crate_references<'a>(
+        &'a self,
+        children_map: &'a HashMap<String, HashSet<String>>,
+    ) -> impl Iterator<Item = (&'a String, Vec<&'a TypeReference>)> {
+        self.file_order.iter().filter_map(move |module| {
             self.files.get(module).map(|refs| {
                 let crate_refs: Vec<&TypeReference> = refs
                     .iter()
-                    .filter(|r| r.is_relative() || r.is_from_crate(&self.crate_name))
+                    .filter(|r| {
+                        r.is_relative()
+                            || r.is_from_crate(&self.crate_name)
+                            || Self::is_bare_child(r, module, children_map)
+                    })
                     .collect();
                 (module, crate_refs)
             })
         })
+    }
+
+    /// Check if a `PathPrefix::None` reference targets a direct child module.
+    ///
+    /// In Rust (≥2018), bare `use child::Item` is valid when `mod child;` is
+    /// declared in the current module. This matches that pattern by checking
+    /// whether the first path segment is a known child of the source module.
+    fn is_bare_child(
+        r: &TypeReference,
+        module: &str,
+        children_map: &HashMap<String, HashSet<String>>,
+    ) -> bool {
+        r.prefix() == PathPrefix::None
+            && children_map.get(module).is_some_and(|children| {
+                r.segments()
+                    .first()
+                    .is_some_and(|s| children.contains(s.as_str()))
+            })
     }
 }
 

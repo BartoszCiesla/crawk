@@ -3,7 +3,7 @@ use crate::discover::{CrateInfo, ModuleInfo, TargetInfo, TargetKind};
 use crate::error::{AnalysisError, Result};
 use crate::model::{AnalysisOptions, AnalysisResult};
 use crate::parser::CrateAnalyzer;
-use crate::reference::{GroupItem, PathSuffix, TypeReference};
+use crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference};
 use crate::resolve::resolve_glob;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Formatter, Result as FmtResult};
@@ -351,9 +351,38 @@ impl Analyzer {
             .map(|m| m.source().to_path_buf())
             .unwrap_or_default();
 
+        // Build children_map from a recursive view of the module tree so that
+        // bare child paths (e.g. `use child::Item`) can be recognised even when
+        // the analysis itself is non-recursive.  The parse cache avoids redundant
+        // I/O — files discovered here will be cache hits during parse_all_modules.
+        let children_map = if options.recursive {
+            Self::build_children_map(&modules)
+        } else {
+            // Use the target from the already-discovered modules so the recursive
+            // discovery hits the same target (lib, bin, or test).
+            let target = modules
+                .first()
+                .map_or_else(|| default_target.clone(), |m| m.target().clone());
+            let all_modules = self
+                .crate_info
+                .get_module_tree(
+                    &module_path,
+                    true,
+                    options.include_tests,
+                    &target,
+                    &mut self.parse_cache,
+                )
+                .or_else(|_| {
+                    // Fallback: for test targets the module tree is built from
+                    // the source file directly, not via path resolution.
+                    self.list_from_test_target(&module_path)
+                })?;
+            Self::build_children_map(&all_modules)
+        };
+
         let file_root = self.build_file_root_map(&modules);
         self.parse_all_modules(modules, &file_root)?;
-        let dependencies = self.collect_references(options);
+        let dependencies = self.collect_references(options, &children_map);
 
         Ok(AnalysisResult::new(module_path, dependencies, source_file))
     }
@@ -431,13 +460,26 @@ impl Analyzer {
     }
 
     /// Transform parsed references: expand groups and resolve globs per the given options.
+    ///
+    /// Bare child paths (`use child::Item` without `crate::` prefix) are normalised
+    /// to `crate::<parent>::child::Item` so downstream code handles them uniformly.
     fn collect_references(
         &mut self,
         options: &AnalysisOptions,
+        children_map: &HashMap<String, HashSet<String>>,
     ) -> HashMap<String, HashSet<TypeReference>> {
         let mut dependencies = HashMap::new();
-        for (module, module_references) in self.parser.all_crate_references() {
+        for (module, module_references) in self.parser.all_crate_references(children_map) {
             debug!("Processing module: {}", module);
+
+            // Pre-compute parent segments for bare-path normalisation.
+            let module_segments: Vec<String> = if module.is_empty() {
+                vec![]
+            } else {
+                module.split("::").map(String::from).collect()
+            };
+            let module_children = children_map.get(module.as_str());
+
             let mut refs = HashSet::new();
             for reference in module_references {
                 debug!("Found crate reference: {}", reference.to_path_string());
@@ -457,8 +499,10 @@ impl Analyzer {
                     vec![reference.clone()]
                 };
 
-                // Pass 2: resolve globs if requested
+                // Pass 2: normalise bare child paths, then resolve globs if requested
                 for r in after_expand {
+                    let r = Self::normalise_bare_child(r, &module_segments, module_children);
+
                     if options.resolve_globs && r.has_glob() {
                         debug!("Resolving glob: {}", r.to_path_string());
                         let resolved =
@@ -480,6 +524,57 @@ impl Analyzer {
             dependencies.insert(module.clone(), refs);
         }
         dependencies
+    }
+
+    /// Normalise a bare child path to an absolute `crate::` path.
+    ///
+    /// `use child::Item` in module `a::b` becomes `crate::a::b::child::Item`.
+    /// Refs that are not bare child paths are returned unchanged.
+    fn normalise_bare_child(
+        r: TypeReference,
+        module_segments: &[String],
+        module_children: Option<&HashSet<String>>,
+    ) -> TypeReference {
+        let dominated_by_child = r.prefix() == PathPrefix::None
+            && module_children.is_some_and(|children| {
+                r.segments()
+                    .first()
+                    .is_some_and(|s| children.contains(s.as_str()))
+            });
+
+        if dominated_by_child {
+            let mut new_segments = module_segments.to_vec();
+            new_segments.extend(r.segments().iter().cloned());
+            debug!(
+                "Normalised bare child: {} → crate::{}",
+                r.to_path_string(),
+                new_segments.join("::")
+            );
+            r.with_segments_and_prefix(new_segments, PathPrefix::Crate)
+        } else {
+            r
+        }
+    }
+
+    /// Build a mapping from module path to its direct child module names.
+    ///
+    /// For each module in the tree, extracts the parent path and the child name.
+    /// For example, `"cli::overview"` produces parent `"cli"`, child `"overview"`;
+    /// top-level module `"cli"` produces parent `""`, child `"cli"`.
+    fn build_children_map(modules: &[ModuleInfo]) -> HashMap<String, HashSet<String>> {
+        let mut map: HashMap<String, HashSet<String>> = HashMap::new();
+        for m in modules {
+            let path = m.path();
+            if path.is_empty() {
+                continue;
+            }
+            let (parent, child) = match path.rsplit_once("::") {
+                Some((p, c)) => (p.to_owned(), c.to_owned()),
+                None => (String::new(), path.to_owned()),
+            };
+            map.entry(parent).or_default().insert(child);
+        }
+        map
     }
 
     /// Build a mapping from source file to the shortest (file-level) module path.

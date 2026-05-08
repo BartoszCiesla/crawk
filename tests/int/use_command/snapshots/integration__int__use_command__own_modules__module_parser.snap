@@ -10,7 +10,8 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::cache::ParseCache
-crate::reference::TypeReference
+crate::parser::visitor::ModuleVisitor
+crate::reference::{PathPrefix, TypeReference}
 crate::utils::{ReadFileError, descend_inline_module, read_source_file}
 
 ----- stderr -----

@@ -14,5 +14,21 @@ exit_code: 0
 ----- stdout -----
 crate::file_module
 crate::nesting
+crate::reexports::internal::Foo
+crate::reexports::internal::Foo as Bar
+crate::reexports::internal::Secret
+crate::reexports::internal::{Baz, Qux, InternalEnum, InternalTrait, INTERNAL_CONST_A, INTERNAL_CONST_B, internal_helper_1, internal_helper_2}
+crate::reexports::types::TYPE_CONST_1
+crate::reexports::types::TYPE_CONST_2
+crate::reexports::types::TypeA
+crate::reexports::types::TypeB
+crate::reexports::types::TypeC
+crate::reexports::types::TypeContainer
+crate::reexports::types::TypeD
+crate::reexports::types::TypeE
+crate::reexports::types::TypeTrait
+crate::reexports::types::type_helper_a
+crate::reexports::types::type_helper_b
+crate::reexports::types::visibility_greet
 
 ----- stderr -----

@@ -14,6 +14,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::cache
+crate::parser
 crate::parser::*
 crate::reference
 crate::utils

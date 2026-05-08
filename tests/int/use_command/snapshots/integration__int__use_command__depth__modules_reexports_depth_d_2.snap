@@ -15,5 +15,8 @@ exit_code: 0
 ----- stdout -----
 crate::file_module
 crate::nesting
+crate::reexports::internal
+crate::reexports::internal::{Baz, Qux, InternalEnum, InternalTrait, INTERNAL_CONST_A, INTERNAL_CONST_B, internal_helper_1, internal_helper_2}
+crate::reexports::types::*
 
 ----- stderr -----

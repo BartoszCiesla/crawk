@@ -13,6 +13,7 @@ exit_code: 0
 ----- stdout -----
 crate::cache::ParseCache
 crate::parser::*
+crate::parser::visitor::ModuleVisitor
 crate::reference::PathPrefix
 crate::reference::TypeReference
 crate::utils::MAX_FILE_BYTES

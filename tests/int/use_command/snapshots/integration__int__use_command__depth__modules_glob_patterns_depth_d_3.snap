@@ -15,6 +15,16 @@ exit_code: 0
 ----- stdout -----
 crate::dir_module
 crate::file_module
+crate::glob_patterns::constants::*
+crate::glob_patterns::mixed_exports::func_one as pub_func_one
+crate::glob_patterns::mixed_exports::special_function as renamed_special
+crate::glob_patterns::mixed_exports::{func_one, func_two, func_three, special_function}
+crate::glob_patterns::outer::*
 crate::glob_patterns::self_ref::*
+crate::glob_patterns::set_a::*
+crate::glob_patterns::set_b::*
+crate::glob_patterns::traits::*
+crate::glob_patterns::types::*
+crate::glob_patterns::utilities::*
 
 ----- stderr -----

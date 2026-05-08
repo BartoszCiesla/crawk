@@ -15,5 +15,6 @@ exit_code: 0
 ----- stdout -----
 crate::file_module
 crate::nesting
+crate::reexports
 
 ----- stderr -----

@@ -12,6 +12,8 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::cache::ParseCache
+crate::parser::visitor::ModuleVisitor
+crate::reference::PathPrefix
 crate::reference::TypeReference
 crate::utils::ReadFileError
 crate::utils::descend_inline_module
