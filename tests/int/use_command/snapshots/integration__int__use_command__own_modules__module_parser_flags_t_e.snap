@@ -11,11 +11,14 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+crate::analyzer::expand_groups
 crate::cache::ParseCache
 crate::parser::*
 crate::parser::visitor
 crate::parser::visitor::ModuleVisitor
+crate::reference::GroupItem
 crate::reference::PathPrefix
+crate::reference::PathSuffix::Group
 crate::reference::TypeReference
 crate::utils::MAX_FILE_BYTES
 crate::utils::ReadFileError

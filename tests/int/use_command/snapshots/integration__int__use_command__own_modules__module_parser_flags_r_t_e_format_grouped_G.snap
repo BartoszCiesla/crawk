@@ -25,10 +25,13 @@ parser
  - crate::utils::descend_inline_module
  - crate::utils::read_source_file
 parser::tests
+ - crate::analyzer::expand_groups
  - crate::parser::AnalyzerError
  - crate::parser::CrateAnalyzer
  - crate::parser::Result
+ - crate::reference::GroupItem
  - crate::reference::PathPrefix
+ - crate::reference::PathSuffix::Group
  - crate::utils::MAX_FILE_BYTES
  - crate::utils::ReadFileError
 parser::visitor

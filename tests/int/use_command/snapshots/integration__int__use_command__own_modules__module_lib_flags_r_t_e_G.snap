@@ -45,6 +45,7 @@ crate::parser::visitor::resolve_reference
 crate::reference::GroupItem
 crate::reference::PathPrefix
 crate::reference::PathSuffix
+crate::reference::PathSuffix::Group
 crate::reference::Segments
 crate::reference::TypeReference
 crate::resolve::extract_public_items

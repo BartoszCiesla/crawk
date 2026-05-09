@@ -11,13 +11,16 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+crate::analyzer::expand_groups
 crate::cache::ParseCache
 crate::constants::{PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER}
 crate::parser::*
 crate::parser::visitor
 crate::parser::visitor::*
 crate::parser::visitor::ModuleVisitor
+crate::reference::GroupItem
 crate::reference::PathPrefix
+crate::reference::PathSuffix::Group
 crate::reference::{GroupItem, PathPrefix, TypeReference}
 crate::reference::{PathPrefix, TypeReference}
 crate::utils::has_cfg_test

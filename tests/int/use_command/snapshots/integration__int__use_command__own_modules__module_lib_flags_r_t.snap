@@ -13,6 +13,7 @@ exit_code: 0
 ----- stdout -----
 crate::analyzer::*
 crate::analyzer::Analyzer
+crate::analyzer::expand_groups
 crate::cache::*
 crate::cache::ParseCache
 crate::constants::PATH_QUALIFIER_SELF
@@ -35,8 +36,10 @@ crate::parser::visitor
 crate::parser::visitor::*
 crate::parser::visitor::ModuleVisitor
 crate::reference::*
+crate::reference::GroupItem
 crate::reference::PathPrefix
 crate::reference::PathSuffix
+crate::reference::PathSuffix::Group
 crate::reference::TypeReference
 crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference}
 crate::reference::{GroupItem, PathPrefix, TypeReference}

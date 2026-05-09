@@ -315,6 +315,54 @@ mod tests {
     }
 
     #[test]
+    fn test_use_group_path_items_produce_nested_with_items() {
+        // Regression: `client::ClientAction` inside a group must produce
+        // Nested { prefix: ["client"], items: [Simple("ClientAction")] }
+        // so that expand_groups can expand it correctly.
+        use crate::analyzer::expand_groups;
+        use crate::reference::GroupItem;
+
+        let refs = parse_use(
+            "use crate::args::{client::ClientAction, system::{PingArgs, StatsArgs}, topic::TopicAction};",
+        );
+        assert_eq!(refs.len(), 1);
+        assert!(refs[0].has_group());
+
+        let expanded = expand_groups(&refs[0]);
+        let paths: Vec<String> = expanded.iter().map(TypeReference::to_path_string).collect();
+
+        assert!(
+            paths.contains(&"crate::args::client::ClientAction".to_owned()),
+            "client::ClientAction missing from expanded: {paths:?}"
+        );
+        assert!(
+            paths.contains(&"crate::args::topic::TopicAction".to_owned()),
+            "topic::TopicAction missing from expanded: {paths:?}"
+        );
+        assert!(
+            paths.contains(&"crate::args::system::PingArgs".to_owned()),
+            "system::PingArgs missing from expanded: {paths:?}"
+        );
+        assert!(
+            paths.contains(&"crate::args::system::StatsArgs".to_owned()),
+            "system::StatsArgs missing from expanded: {paths:?}"
+        );
+        assert_eq!(expanded.len(), 4);
+
+        // Verify the group items are Nested with non-empty items
+        if let crate::reference::PathSuffix::Group(items) = refs[0].suffix() {
+            for item in items {
+                if let GroupItem::Nested { prefix, items } = item {
+                    assert!(
+                        !items.is_empty(),
+                        "Nested group item {prefix:?} has empty items"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
     fn test_crate_analyzer() {
         let analyzer = CrateAnalyzer::new("test_crate");
         assert_eq!(analyzer.crate_name(), "test_crate");

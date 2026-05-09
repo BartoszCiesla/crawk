@@ -57,6 +57,7 @@ parser -> cache
 parser -> parser::visitor
 parser -> reference
 parser -> utils
+parser::tests -> analyzer
 parser::tests -> parser
 parser::tests -> reference
 parser::tests -> utils

@@ -333,13 +333,10 @@ impl ModuleVisitor {
                         prefix,
                         items: self.convert_group(&g.items),
                     },
-                    UseTree::Name(n) => {
-                        prefix.push(n.ident.to_string());
-                        GroupItem::Nested {
-                            prefix,
-                            items: Vec::new(),
-                        }
-                    }
+                    UseTree::Name(n) => GroupItem::Nested {
+                        prefix,
+                        items: vec![GroupItem::Simple(n.ident.to_string())],
+                    },
                     UseTree::Rename(r) => {
                         prefix.push(r.ident.to_string());
                         GroupItem::Nested {

@@ -10,11 +10,14 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+crate::analyzer::expand_groups
 crate::cache::ParseCache
 crate::parser::*
 crate::parser::visitor
 crate::parser::visitor::ModuleVisitor
+crate::reference::GroupItem
 crate::reference::PathPrefix
+crate::reference::PathSuffix::Group
 crate::reference::{PathPrefix, TypeReference}
 crate::utils::{MAX_FILE_BYTES, ReadFileError}
 crate::utils::{ReadFileError, descend_inline_module, read_source_file}

@@ -14,6 +14,7 @@ exit_code: 0
 ----- stdout -----
 crate::analyzer::*
 crate::analyzer::Analyzer
+crate::analyzer::expand_groups
 crate::cache::*
 crate::cache::ParseCache
 crate::constants::ATTR_CFG
@@ -46,6 +47,7 @@ crate::reference::*
 crate::reference::GroupItem
 crate::reference::PathPrefix
 crate::reference::PathSuffix
+crate::reference::PathSuffix::Group
 crate::reference::TypeReference
 crate::resolve::*
 crate::resolve::resolve_glob
