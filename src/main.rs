@@ -71,17 +71,23 @@ fn handle_deps_command(crate_root: &Path, args: &DepsArgs) -> anyhow::Result<()>
         .find(|m| m.target().kind() == &crawk::TargetKind::Lib)
         .map(|m| m.target().name().to_owned());
 
-    let mut all_edges = std::collections::BTreeSet::new();
+    let mut all_edges = std::collections::BTreeMap::new();
     for root in &roots {
         info!("Analysing target root '{root}'");
         match analyzer.analyze_module(root.as_str(), &options) {
             Ok(result) => {
-                all_edges.extend(format::deps_cmd::build_edges(
+                for (edge, apis) in format::deps_cmd::build_edges(
                     &result,
                     args.depth,
                     &known_modules,
                     package_name.as_deref(),
-                ));
+                    args.show_apis,
+                ) {
+                    all_edges
+                        .entry(edge)
+                        .or_insert_with(std::collections::BTreeSet::new)
+                        .extend(apis);
+                }
             }
             Err(e) => info!("Skipping target '{root}': {e}"),
         }

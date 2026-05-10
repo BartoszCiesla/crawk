@@ -53,6 +53,7 @@ format::deps_cmd
  - crawk::AnalysisResult
  - crawk::PathPrefix
 format::deps_cmd::tests
+ - crate::format::deps_cmd::AnnotatedEdges
  - crate::format::deps_cmd::Edge
  - crate::format::deps_cmd::build_edges
  - crate::format::deps_cmd::render_dot

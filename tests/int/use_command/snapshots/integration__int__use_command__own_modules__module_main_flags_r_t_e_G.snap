@@ -24,6 +24,7 @@ crate::cli::UseOutputFormat
 crate::cli::overview::generate_after_help
 crate::cli::validation::validate_depth
 crate::cli::validation::validate_module_path
+crate::format::deps_cmd::AnnotatedEdges
 crate::format::deps_cmd::Edge
 crate::format::deps_cmd::build_edges
 crate::format::deps_cmd::render_dot

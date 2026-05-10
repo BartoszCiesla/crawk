@@ -59,3 +59,45 @@ fn should_deps_grouped_depth_1_for_fixture_crate() {
             .arg("1")
     );
 }
+
+// ============================================================================
+// --show-apis
+// ============================================================================
+
+#[test]
+fn should_deps_show_apis_plain_for_fixture_crate() {
+    assert_cmd_snapshot!(crawk_modules().arg("deps").arg("--show-apis"));
+}
+
+#[test]
+fn should_deps_show_apis_grouped_for_fixture_crate() {
+    assert_cmd_snapshot!(
+        crawk_modules()
+            .arg("deps")
+            .arg("--show-apis")
+            .arg("-f")
+            .arg("grouped")
+    );
+}
+
+#[test]
+fn should_deps_show_apis_dot_for_fixture_crate() {
+    assert_cmd_snapshot!(
+        crawk_modules()
+            .arg("deps")
+            .arg("--show-apis")
+            .arg("-f")
+            .arg("dot")
+    );
+}
+
+#[test]
+fn should_deps_show_apis_depth_1_for_fixture_crate() {
+    assert_cmd_snapshot!(
+        crawk_modules()
+            .arg("deps")
+            .arg("--show-apis")
+            .arg("-d")
+            .arg("1")
+    );
+}

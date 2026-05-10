@@ -17,6 +17,7 @@ Options:
   -t, --include-tests    Include modules defined in `#[cfg(test)]` blocks (excluded by default)
   -d, --depth <DEPTH>    Truncate module paths to at most N segments.
   -f, --format <FORMAT>  Output format [default: plain] [possible values: plain, grouped, dot]
+  -a, --show-apis        Show API names (symbols) that create each dependency edge
   -h, --help             Print help (see more with '--help')
 
 ----- stderr -----

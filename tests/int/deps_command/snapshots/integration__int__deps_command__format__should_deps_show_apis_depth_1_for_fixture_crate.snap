@@ -1,0 +1,65 @@
+---
+source: tests/int/deps_command/format.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/modules
+    - deps
+    - "--show-apis"
+    - "-d"
+    - "1"
+---
+success: true
+exit_code: 0
+----- stdout -----
+advanced_globs -> dir_module
+advanced_globs -> file_module
+advanced_globs -> visibility
+app -> advanced_globs
+app -> dir_module
+app -> file_module
+app -> glob_patterns [demonstrate_glob_utilities, demonstrate_nested_glob, renamed_special]
+app -> glob_showcase
+app -> inline_modules
+app -> item_visibility [PUB_CONST, PUB_STATIC, PubEnum, PubStruct, PubTrait]
+app -> mixed
+app -> nesting
+app -> reexports
+app -> visibility
+baz -> foo
+custom_path -> item_visibility [PUB_CONST]
+dir_module -> file_module [greet]
+dir_module -> inline_modules [value]
+file_module -> nesting
+glob_patterns -> dir_module
+glob_patterns -> file_module
+glob_showcase -> file_module
+glob_showcase -> inline_modules
+glob_showcase -> nesting
+inline_modules -> dir_module [greet]
+inline_modules -> file_module [greet]
+item_visibility -> reexports [Foo]
+main -> advanced_globs
+main -> dir_module
+main -> file_module
+main -> glob_patterns [demonstrate_glob_utilities, demonstrate_nested_glob, renamed_special]
+main -> glob_showcase
+main -> inline_modules
+main -> item_visibility [PUB_CONST, PUB_STATIC, PubEnum, PubStruct, PubTrait]
+main -> mixed
+main -> nesting
+main -> reexports
+main -> visibility
+mixed -> custom_path [greet]
+nesting -> inline_modules
+reexports -> file_module
+reexports -> item_visibility [PUB_STATIC]
+reexports -> nesting
+reexports -> visibility
+uses_empty_glob -> no_pub_items
+visibility -> dir_module [greet]
+visibility -> file_module
+visibility -> nesting
+
+----- stderr -----

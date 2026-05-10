@@ -5,6 +5,13 @@ use crawk::{AnalysisResult, PathPrefix};
 /// A directed module dependency edge: `(source_module, target_module)`.
 pub(crate) type Edge = (String, String);
 
+/// Dependency edges with optional API name annotations per edge.
+///
+/// Keys are `(source, target)` pairs; values are the set of symbol names
+/// (types, functions, traits, macros, …) that the source references from the
+/// target. The value set is empty when API collection is disabled.
+pub(crate) type AnnotatedEdges = BTreeMap<Edge, BTreeSet<String>>;
+
 /// Truncate a `::` separated module path to at most `depth` segments.
 ///
 /// Returns the path unchanged when `depth` is `None` or when the path already
@@ -42,7 +49,7 @@ fn find_module_target<'a>(
     None
 }
 
-/// Build a sorted, deduplicated set of module-to-module dependency edges.
+/// Build a sorted, deduplicated map of module-to-module dependency edges.
 ///
 /// Each edge `(A, B)` means module `A` references an item whose owning module
 /// is `B`. Two kinds of references are tracked:
@@ -67,7 +74,13 @@ fn find_module_target<'a>(
 /// - `depth = None` — full module path, no truncation
 ///
 /// After truncation, self-loops (source == target after truncation) and
-/// duplicate edges are removed automatically via [`BTreeSet`].
+/// duplicate edges are removed automatically via [`BTreeMap`].
+///
+/// # API names
+///
+/// When `show_apis` is `true`, each edge carries the set of symbol names
+/// (types, functions, traits, …) that the source references from the target.
+/// When `false`, API sets are left empty.
 ///
 /// # Parameters
 ///
@@ -78,13 +91,15 @@ fn find_module_target<'a>(
 ///   type references to their owning module
 /// - `package_name` — crate package name (e.g. `"crawk"`); when set, refs
 ///   prefixed with this name are treated as cross-target lib dependencies
+/// - `show_apis` — collect API symbol names per edge
 pub(crate) fn build_edges(
     result: &AnalysisResult,
     depth: Option<usize>,
     known_modules: &HashSet<String>,
     package_name: Option<&str>,
-) -> BTreeSet<Edge> {
-    let mut edges = BTreeSet::new();
+    show_apis: bool,
+) -> AnnotatedEdges {
+    let mut edges: AnnotatedEdges = BTreeMap::new();
 
     for (source_key, refs) in result.dependencies() {
         // An empty key represents the root module (e.g. "lib" when analysing from lib).
@@ -105,9 +120,12 @@ pub(crate) fn build_edges(
                 continue;
             }
 
-            let module_path: Option<&str> = match reference.prefix() {
+            // Resolve the reference to (module_path, api_segments) where
+            // api_segments are the trailing segments after the module path.
+            let resolved: Option<(&str, &[String])> = match reference.prefix() {
                 // Intra-target: crate:: references resolved directly.
-                PathPrefix::Crate => find_module_target(segments, known_modules),
+                PathPrefix::Crate => find_module_target(segments, known_modules)
+                    .map(|m| (m, &segments[m.split("::").count()..])),
 
                 // Cross-target: <package>::Foo references from binaries/tests to lib.
                 PathPrefix::None => {
@@ -116,16 +134,17 @@ pub(crate) fn build_edges(
                     if !is_pkg_ref {
                         continue;
                     }
-                    // Strip the package-name prefix and resolve the remainder.
-                    // Fall back to "lib" when no specific module matches (e.g.
-                    // items re-exported directly from the crate root).
-                    Some(find_module_target(&segments[1..], known_modules).unwrap_or("lib"))
+                    let rest = &segments[1..];
+                    Some(
+                        find_module_target(rest, known_modules)
+                            .map_or(("lib", rest), |m| (m, &rest[m.split("::").count()..])),
+                    )
                 }
 
                 _ => continue,
             };
 
-            let Some(module_path) = module_path else {
+            let Some((module_path, api_segments)) = resolved else {
                 continue;
             };
             let target = truncate_module_path(module_path, depth);
@@ -138,26 +157,41 @@ pub(crate) fn build_edges(
                 continue;
             }
 
-            edges.insert((source.clone(), target));
+            let apis = edges.entry((source.clone(), target)).or_default();
+            if show_apis && !api_segments.is_empty() {
+                apis.insert(api_segments.join("::"));
+            }
         }
     }
 
     edges
 }
 
+/// Format an API annotation suffix for a single edge.
+///
+/// Returns ` [Symbol1, Symbol2]` when APIs are present, empty string otherwise.
+fn format_api_suffix(apis: &BTreeSet<String>) -> String {
+    if apis.is_empty() {
+        return String::new();
+    }
+    let items: Vec<&str> = apis.iter().map(String::as_str).collect();
+    format!(" [{}]", items.join(", "))
+}
+
 /// Render dependency edges as a plain sorted list.
 ///
-/// Each line has the format `source -> target`. Returns an empty string when
-/// there are no edges.
-pub(crate) fn render_plain(edges: &BTreeSet<Edge>) -> String {
+/// Each line has the format `source -> target` (or `source -> target [API1, API2]`
+/// when API annotations are present). Returns an empty string when there are no edges.
+pub(crate) fn render_plain(edges: &AnnotatedEdges) -> String {
     if edges.is_empty() {
         return String::new();
     }
     let mut out = String::new();
-    for (source, target) in edges {
+    for ((source, target), apis) in edges {
         out.push_str(source);
         out.push_str(" -> ");
         out.push_str(target);
+        out.push_str(&format_api_suffix(apis));
         out.push('\n');
     }
     out
@@ -169,19 +203,19 @@ pub(crate) fn render_plain(edges: &BTreeSet<Edge>) -> String {
 /// count, followed by its targets indented with `  -> `. Groups are separated
 /// by blank lines and sorted alphabetically. Returns an empty string when
 /// there are no edges.
-pub(crate) fn render_grouped(edges: &BTreeSet<Edge>) -> String {
+pub(crate) fn render_grouped(edges: &AnnotatedEdges) -> String {
     if edges.is_empty() {
         return String::new();
     }
 
-    // Collect targets per source. BTreeSet iteration is already sorted by
+    // Collect targets per source. BTreeMap iteration is already sorted by
     // (source, target), so insertion order gives sorted targets within each group.
-    let mut groups: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
-    for (source, target) in edges {
+    let mut groups: BTreeMap<&str, Vec<(&str, &BTreeSet<String>)>> = BTreeMap::new();
+    for ((source, target), apis) in edges {
         groups
             .entry(source.as_str())
             .or_default()
-            .push(target.as_str());
+            .push((target.as_str(), apis));
     }
 
     let mut out = String::new();
@@ -195,9 +229,10 @@ pub(crate) fn render_grouped(edges: &BTreeSet<Edge>) -> String {
         out.push_str(" (");
         out.push_str(&targets.len().to_string());
         out.push_str(")\n");
-        for target in targets {
+        for (target, apis) in targets {
             out.push_str("  -> ");
             out.push_str(target);
+            out.push_str(&format_api_suffix(apis));
             out.push('\n');
         }
     }
@@ -213,7 +248,10 @@ pub(crate) fn render_grouped(edges: &BTreeSet<Edge>) -> String {
 /// Module names containing `::` are quoted as DOT string literals so that
 /// Graphviz parses them correctly. Nodes are listed explicitly before edges
 /// to give renderers a stable ordering.
-pub(crate) fn render_dot(edges: &BTreeSet<Edge>) -> String {
+///
+/// When API annotations are present, edges carry a `label` attribute showing
+/// the symbol names.
+pub(crate) fn render_dot(edges: &AnnotatedEdges) -> String {
     let mut out = String::new();
     out.push_str("digraph dependencies {\n");
     out.push_str("    rankdir=LR;\n");
@@ -223,7 +261,7 @@ pub(crate) fn render_dot(edges: &BTreeSet<Edge>) -> String {
     if !edges.is_empty() {
         // Collect unique nodes; BTreeSet gives deterministic sort order.
         let mut nodes: BTreeSet<&str> = BTreeSet::new();
-        for (source, target) in edges {
+        for (source, target) in edges.keys() {
             nodes.insert(source.as_str());
             nodes.insert(target.as_str());
         }
@@ -236,12 +274,19 @@ pub(crate) fn render_dot(edges: &BTreeSet<Edge>) -> String {
         }
 
         out.push('\n');
-        for (source, target) in edges {
+        for ((source, target), apis) in edges {
             out.push_str("    \"");
             out.push_str(source);
             out.push_str("\" -> \"");
             out.push_str(target);
-            out.push_str("\";\n");
+            if apis.is_empty() {
+                out.push_str("\";\n");
+            } else {
+                let items: Vec<&str> = apis.iter().map(String::as_str).collect();
+                out.push_str("\" [label=\"");
+                out.push_str(&items.join(", "));
+                out.push_str("\"];\n");
+            }
         }
     }
 
@@ -261,11 +306,22 @@ mod tests {
         names.iter().map(ToString::to_string).collect()
     }
 
-    // Helper: build a BTreeSet<Edge> directly for render_plain tests.
-    fn edges(pairs: &[(&str, &str)]) -> BTreeSet<Edge> {
+    /// Build an AnnotatedEdges map without API annotations.
+    fn edges(pairs: &[(&str, &str)]) -> AnnotatedEdges {
         pairs
             .iter()
-            .map(|(s, t)| (s.to_string(), t.to_string()))
+            .map(|(s, t)| ((s.to_string(), t.to_string()), BTreeSet::new()))
+            .collect()
+    }
+
+    /// Build an AnnotatedEdges map with API annotations.
+    fn edges_with_apis(pairs: &[(&str, &str, &[&str])]) -> AnnotatedEdges {
+        pairs
+            .iter()
+            .map(|(s, t, apis)| {
+                let api_set: BTreeSet<String> = apis.iter().map(ToString::to_string).collect();
+                ((s.to_string(), t.to_string()), api_set)
+            })
             .collect()
     }
 
@@ -343,7 +399,7 @@ mod tests {
 
     #[test]
     fn render_grouped_empty() {
-        assert_eq!(render_grouped(&BTreeSet::new()), "");
+        assert_eq!(render_grouped(&BTreeMap::new()), "");
     }
 
     #[test]
@@ -379,11 +435,23 @@ mod tests {
         assert!(render_grouped(&e).ends_with('\n'));
     }
 
+    #[test]
+    fn render_grouped_with_apis() {
+        let e = edges_with_apis(&[
+            ("analyzer", "cache", &["ParseCache"]),
+            ("analyzer", "reference", &["PathPrefix", "TypeReference"]),
+        ]);
+        assert_eq!(
+            render_grouped(&e),
+            "analyzer (2)\n  -> cache [ParseCache]\n  -> reference [PathPrefix, TypeReference]\n"
+        );
+    }
+
     // ---- render_dot ---------------------------------------------------------
 
     #[test]
     fn render_dot_empty_edges_produces_valid_dot() {
-        let out = render_dot(&BTreeSet::new());
+        let out = render_dot(&BTreeMap::new());
         assert!(out.starts_with("digraph dependencies {"));
         assert!(out.ends_with("}\n"));
         // No node/edge lines in empty graph
@@ -423,11 +491,26 @@ mod tests {
         assert!(render_dot(&e).ends_with('\n'));
     }
 
+    #[test]
+    fn render_dot_with_apis() {
+        let e = edges_with_apis(&[("parser", "reference", &["PathPrefix", "TypeReference"])]);
+        let out = render_dot(&e);
+        assert!(out.contains("\"parser\" -> \"reference\" [label=\"PathPrefix, TypeReference\"];"));
+    }
+
+    #[test]
+    fn render_dot_without_apis_no_label() {
+        let e = edges(&[("parser", "reference")]);
+        let out = render_dot(&e);
+        assert!(!out.contains("label="));
+        assert!(out.contains("\"parser\" -> \"reference\";"));
+    }
+
     // ---- render_plain -------------------------------------------------------
 
     #[test]
     fn render_plain_empty() {
-        assert_eq!(render_plain(&BTreeSet::new()), "");
+        assert_eq!(render_plain(&BTreeMap::new()), "");
     }
 
     #[test]
@@ -446,5 +529,17 @@ mod tests {
     fn render_plain_ends_with_newline() {
         let e = edges(&[("a", "b")]);
         assert!(render_plain(&e).ends_with('\n'));
+    }
+
+    #[test]
+    fn render_plain_with_apis() {
+        let e = edges_with_apis(&[
+            ("analyzer", "cache", &["ParseCache"]),
+            ("analyzer", "reference", &["PathPrefix", "TypeReference"]),
+        ]);
+        assert_eq!(
+            render_plain(&e),
+            "analyzer -> cache [ParseCache]\nanalyzer -> reference [PathPrefix, TypeReference]\n"
+        );
     }
 }

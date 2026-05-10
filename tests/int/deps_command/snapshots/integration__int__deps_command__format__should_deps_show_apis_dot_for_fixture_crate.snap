@@ -1,0 +1,228 @@
+---
+source: tests/int/deps_command/format.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/modules
+    - deps
+    - "--show-apis"
+    - "-f"
+    - dot
+---
+success: true
+exit_code: 0
+----- stdout -----
+digraph dependencies {
+    rankdir=LR;
+    node [shape=box, style=rounded, fontname="monospace", fontsize=10];
+    edge [color="#444444"];
+
+    "advanced_globs";
+    "advanced_globs::aliased_module";
+    "advanced_globs::enum_variants";
+    "advanced_globs::internal";
+    "advanced_globs::layer1";
+    "advanced_globs::layer1::layer2";
+    "advanced_globs::layer1::layer2::layer3";
+    "advanced_globs::macro_module";
+    "advanced_globs::original";
+    "advanced_globs::prelude";
+    "advanced_globs::shadowing";
+    "advanced_globs::trait_providers";
+    "advanced_globs::unix_specific";
+    "advanced_globs::windows_specific";
+    "app";
+    "baz";
+    "custom_path";
+    "dir_module";
+    "dir_module::child_dir";
+    "dir_module::child_file";
+    "file_module";
+    "foo";
+    "foo::bar";
+    "foo::other";
+    "glob_patterns";
+    "glob_patterns::constants";
+    "glob_patterns::mixed_exports";
+    "glob_patterns::outer";
+    "glob_patterns::outer::inner";
+    "glob_patterns::self_ref";
+    "glob_patterns::set_a";
+    "glob_patterns::set_b";
+    "glob_patterns::traits";
+    "glob_patterns::types";
+    "glob_patterns::utilities";
+    "glob_showcase";
+    "glob_showcase::api";
+    "glob_showcase::config::all";
+    "glob_showcase::config::client";
+    "glob_showcase::config::logging";
+    "glob_showcase::config::server";
+    "glob_showcase::database";
+    "glob_showcase::database::connection";
+    "glob_showcase::database::query";
+    "glob_showcase::database::transaction";
+    "glob_showcase::errors";
+    "glob_showcase::models";
+    "glob_showcase::prelude";
+    "glob_showcase::traits";
+    "glob_showcase::utils";
+    "glob_showcase::utils::collection";
+    "glob_showcase::utils::math";
+    "glob_showcase::utils::string";
+    "inline_modules";
+    "inline_modules::inner";
+    "inline_modules::nested::deep";
+    "inline_modules::private_inline";
+    "item_visibility";
+    "main";
+    "mixed";
+    "mixed::file_child";
+    "mixed::inline_child";
+    "nesting";
+    "nesting::level1";
+    "nesting::level1::level2";
+    "nesting::level1::level2::level3";
+    "no_pub_items";
+    "reexports";
+    "reexports::internal";
+    "reexports::types";
+    "uses_empty_glob";
+    "visibility";
+    "visibility::inner";
+    "visibility::private_mod";
+    "visibility::pub_crate_mod";
+    "visibility::pub_mod";
+    "visibility::pub_super_mod";
+    "visibility::restricted_mod";
+
+    "advanced_globs" -> "advanced_globs::aliased_module" [label="OriginalStruct, original_name"];
+    "advanced_globs" -> "advanced_globs::enum_variants";
+    "advanced_globs" -> "advanced_globs::internal";
+    "advanced_globs" -> "advanced_globs::layer1";
+    "advanced_globs" -> "advanced_globs::macro_module";
+    "advanced_globs" -> "advanced_globs::original";
+    "advanced_globs" -> "advanced_globs::shadowing" [label="shadowed_func"];
+    "advanced_globs" -> "advanced_globs::trait_providers";
+    "advanced_globs" -> "advanced_globs::unix_specific";
+    "advanced_globs" -> "advanced_globs::windows_specific";
+    "advanced_globs" -> "dir_module::child_file";
+    "advanced_globs" -> "file_module";
+    "advanced_globs" -> "visibility";
+    "advanced_globs::layer1" -> "advanced_globs::layer1::layer2";
+    "advanced_globs::layer1::layer2" -> "advanced_globs::layer1::layer2::layer3";
+    "advanced_globs::prelude" -> "advanced_globs" [label="Consumer, MultiImpl, Provider, Transformer, deep_function, layer1_function, layer2_function"];
+    "app" -> "advanced_globs";
+    "app" -> "dir_module";
+    "app" -> "file_module";
+    "app" -> "glob_patterns" [label="demonstrate_glob_utilities, demonstrate_nested_glob, renamed_special"];
+    "app" -> "glob_patterns::constants";
+    "app" -> "glob_patterns::traits";
+    "app" -> "glob_patterns::types";
+    "app" -> "glob_patterns::utilities";
+    "app" -> "glob_showcase";
+    "app" -> "inline_modules";
+    "app" -> "item_visibility" [label="PUB_CONST, PUB_STATIC, PubEnum, PubStruct, PubTrait"];
+    "app" -> "mixed";
+    "app" -> "nesting";
+    "app" -> "reexports";
+    "app" -> "visibility";
+    "baz" -> "foo::bar";
+    "custom_path" -> "item_visibility" [label="PUB_CONST"];
+    "dir_module" -> "inline_modules::nested::deep" [label="value"];
+    "dir_module::child_dir" -> "file_module" [label="greet"];
+    "dir_module::child_file" -> "dir_module" [label="greet"];
+    "file_module" -> "nesting";
+    "foo" -> "foo::bar" [label="public_fn"];
+    "foo::other" -> "foo::bar";
+    "glob_patterns" -> "dir_module";
+    "glob_patterns" -> "file_module";
+    "glob_patterns" -> "glob_patterns::constants";
+    "glob_patterns" -> "glob_patterns::mixed_exports" [label="func_one, func_three, func_two, special_function"];
+    "glob_patterns" -> "glob_patterns::outer";
+    "glob_patterns" -> "glob_patterns::self_ref";
+    "glob_patterns" -> "glob_patterns::set_a";
+    "glob_patterns" -> "glob_patterns::set_b";
+    "glob_patterns" -> "glob_patterns::traits";
+    "glob_patterns" -> "glob_patterns::types";
+    "glob_patterns" -> "glob_patterns::utilities";
+    "glob_patterns::outer" -> "glob_patterns::outer::inner";
+    "glob_showcase" -> "file_module";
+    "glob_showcase" -> "glob_showcase::api";
+    "glob_showcase" -> "glob_showcase::config::all";
+    "glob_showcase" -> "glob_showcase::database";
+    "glob_showcase" -> "glob_showcase::errors";
+    "glob_showcase" -> "glob_showcase::models";
+    "glob_showcase" -> "glob_showcase::traits";
+    "glob_showcase" -> "glob_showcase::utils::collection";
+    "glob_showcase" -> "glob_showcase::utils::math";
+    "glob_showcase" -> "glob_showcase::utils::string";
+    "glob_showcase" -> "inline_modules";
+    "glob_showcase" -> "nesting::level1::level2";
+    "glob_showcase::config::all" -> "glob_showcase::config::client";
+    "glob_showcase::config::all" -> "glob_showcase::config::logging";
+    "glob_showcase::config::all" -> "glob_showcase::config::server";
+    "glob_showcase::database" -> "glob_showcase::database::connection";
+    "glob_showcase::database" -> "glob_showcase::database::query";
+    "glob_showcase::database" -> "glob_showcase::database::transaction";
+    "glob_showcase::prelude" -> "glob_showcase" [label="ErrorKind, Status"];
+    "glob_showcase::prelude" -> "glob_showcase::api" [label="delete_data, get_data, set_data"];
+    "glob_showcase::prelude" -> "glob_showcase::database" [label="connect, disconnect, execute"];
+    "glob_showcase::prelude" -> "glob_showcase::errors" [label="NotFoundError, ValidationError"];
+    "glob_showcase::prelude" -> "glob_showcase::models" [label="Comment, Post, User"];
+    "glob_showcase::prelude" -> "glob_showcase::traits" [label="Identifiable, Nameable, Validatable"];
+    "glob_showcase::prelude" -> "glob_showcase::utils::math" [label="add, subtract"];
+    "glob_showcase::utils" -> "glob_showcase::utils::collection";
+    "glob_showcase::utils" -> "glob_showcase::utils::math" [label="add, divide, multiply, subtract"];
+    "glob_showcase::utils" -> "glob_showcase::utils::string" [label="lowercase, uppercase"];
+    "inline_modules" -> "file_module" [label="greet"];
+    "inline_modules" -> "inline_modules::private_inline" [label="_secret"];
+    "inline_modules::inner" -> "file_module";
+    "inline_modules::nested::deep" -> "dir_module" [label="greet"];
+    "item_visibility" -> "reexports" [label="Foo"];
+    "main" -> "advanced_globs";
+    "main" -> "dir_module";
+    "main" -> "file_module";
+    "main" -> "glob_patterns" [label="demonstrate_glob_utilities, demonstrate_nested_glob, renamed_special"];
+    "main" -> "glob_patterns::constants";
+    "main" -> "glob_patterns::traits";
+    "main" -> "glob_patterns::types";
+    "main" -> "glob_patterns::utilities";
+    "main" -> "glob_showcase";
+    "main" -> "inline_modules";
+    "main" -> "item_visibility" [label="PUB_CONST, PUB_STATIC, PubEnum, PubStruct, PubTrait"];
+    "main" -> "mixed";
+    "main" -> "nesting";
+    "main" -> "reexports";
+    "main" -> "visibility";
+    "mixed::file_child" -> "custom_path" [label="greet"];
+    "mixed::file_child" -> "mixed" [label="greet"];
+    "mixed::inline_child" -> "mixed::file_child" [label="greet"];
+    "nesting" -> "inline_modules";
+    "nesting::level1" -> "nesting" [label="depth"];
+    "nesting::level1::level2" -> "nesting" [label="depth"];
+    "nesting::level1::level2::level3" -> "nesting" [label="depth"];
+    "nesting::level1::level2::level3" -> "nesting::level1" [label="depth"];
+    "nesting::level1::level2::level3" -> "nesting::level1::level2" [label="depth"];
+    "reexports" -> "file_module";
+    "reexports" -> "nesting";
+    "reexports" -> "reexports::internal" [label="Baz, Foo, INTERNAL_CONST_A, INTERNAL_CONST_B, InternalEnum, InternalTrait, Qux, Secret, internal_helper_1, internal_helper_2"];
+    "reexports" -> "reexports::types";
+    "reexports::internal" -> "item_visibility" [label="PUB_STATIC"];
+    "reexports::types" -> "visibility";
+    "uses_empty_glob" -> "no_pub_items";
+    "visibility" -> "visibility::inner" [label="uses_restricted"];
+    "visibility" -> "visibility::private_mod" [label="deepest_greet"];
+    "visibility" -> "visibility::pub_crate_mod" [label="parent_greet"];
+    "visibility" -> "visibility::pub_super_mod" [label="dir_module_greet"];
+    "visibility" -> "visibility::restricted_mod" [label="RestrictedConfig, VERSION, nesting_depth"];
+    "visibility::inner" -> "visibility";
+    "visibility::private_mod" -> "nesting::level1::level2::level3";
+    "visibility::pub_crate_mod" -> "visibility::pub_mod" [label="greet"];
+    "visibility::pub_mod" -> "file_module";
+    "visibility::pub_super_mod" -> "dir_module" [label="greet"];
+    "visibility::restricted_mod" -> "nesting";
+}
+
+----- stderr -----

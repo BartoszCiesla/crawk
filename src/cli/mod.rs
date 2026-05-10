@@ -367,6 +367,17 @@ pub(crate) struct DepsArgs {
     #[clap(verbatim_doc_comment)]
     #[arg(short = 'f', long = "format", default_value_t = DepsOutputFormat::Plain)]
     pub format: DepsOutputFormat,
+
+    /// Show API names (symbols) that create each dependency edge
+    ///
+    /// Annotates every edge with the concrete items (types, functions,
+    /// traits, macros, …) that the source module references from the
+    /// target module.
+    ///
+    /// e.g.  analyzer -> reference [GroupItem, PathPrefix, TypeReference]
+    #[clap(verbatim_doc_comment)]
+    #[arg(short = 'a', long = "show-apis", default_value_t = false)]
+    pub show_apis: bool,
 }
 
 #[derive(Parser, Debug, Clone, Default)]

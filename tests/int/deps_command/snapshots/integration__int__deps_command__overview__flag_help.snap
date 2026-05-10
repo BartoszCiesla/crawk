@@ -70,6 +70,15 @@ Options:
           
           [default: plain]
 
+  -a, --show-apis
+          Show API names (symbols) that create each dependency edge
+          
+          Annotates every edge with the concrete items (types, functions,
+          traits, macros, …) that the source module references from the
+          target module.
+          
+          e.g.  analyzer -> reference [GroupItem, PathPrefix, TypeReference]
+
   -h, --help
           Print help (see a summary with '-h')
 

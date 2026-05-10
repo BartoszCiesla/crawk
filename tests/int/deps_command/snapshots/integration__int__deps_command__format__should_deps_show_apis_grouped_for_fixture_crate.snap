@@ -1,0 +1,226 @@
+---
+source: tests/int/deps_command/format.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/modules
+    - deps
+    - "--show-apis"
+    - "-f"
+    - grouped
+---
+success: true
+exit_code: 0
+----- stdout -----
+advanced_globs (13)
+  -> advanced_globs::aliased_module [OriginalStruct, original_name]
+  -> advanced_globs::enum_variants
+  -> advanced_globs::internal
+  -> advanced_globs::layer1
+  -> advanced_globs::macro_module
+  -> advanced_globs::original
+  -> advanced_globs::shadowing [shadowed_func]
+  -> advanced_globs::trait_providers
+  -> advanced_globs::unix_specific
+  -> advanced_globs::windows_specific
+  -> dir_module::child_file
+  -> file_module
+  -> visibility
+
+advanced_globs::layer1 (1)
+  -> advanced_globs::layer1::layer2
+
+advanced_globs::layer1::layer2 (1)
+  -> advanced_globs::layer1::layer2::layer3
+
+advanced_globs::prelude (1)
+  -> advanced_globs [Consumer, MultiImpl, Provider, Transformer, deep_function, layer1_function, layer2_function]
+
+app (15)
+  -> advanced_globs
+  -> dir_module
+  -> file_module
+  -> glob_patterns [demonstrate_glob_utilities, demonstrate_nested_glob, renamed_special]
+  -> glob_patterns::constants
+  -> glob_patterns::traits
+  -> glob_patterns::types
+  -> glob_patterns::utilities
+  -> glob_showcase
+  -> inline_modules
+  -> item_visibility [PUB_CONST, PUB_STATIC, PubEnum, PubStruct, PubTrait]
+  -> mixed
+  -> nesting
+  -> reexports
+  -> visibility
+
+baz (1)
+  -> foo::bar
+
+custom_path (1)
+  -> item_visibility [PUB_CONST]
+
+dir_module (1)
+  -> inline_modules::nested::deep [value]
+
+dir_module::child_dir (1)
+  -> file_module [greet]
+
+dir_module::child_file (1)
+  -> dir_module [greet]
+
+file_module (1)
+  -> nesting
+
+foo (1)
+  -> foo::bar [public_fn]
+
+foo::other (1)
+  -> foo::bar
+
+glob_patterns (11)
+  -> dir_module
+  -> file_module
+  -> glob_patterns::constants
+  -> glob_patterns::mixed_exports [func_one, func_three, func_two, special_function]
+  -> glob_patterns::outer
+  -> glob_patterns::self_ref
+  -> glob_patterns::set_a
+  -> glob_patterns::set_b
+  -> glob_patterns::traits
+  -> glob_patterns::types
+  -> glob_patterns::utilities
+
+glob_patterns::outer (1)
+  -> glob_patterns::outer::inner
+
+glob_showcase (12)
+  -> file_module
+  -> glob_showcase::api
+  -> glob_showcase::config::all
+  -> glob_showcase::database
+  -> glob_showcase::errors
+  -> glob_showcase::models
+  -> glob_showcase::traits
+  -> glob_showcase::utils::collection
+  -> glob_showcase::utils::math
+  -> glob_showcase::utils::string
+  -> inline_modules
+  -> nesting::level1::level2
+
+glob_showcase::config::all (3)
+  -> glob_showcase::config::client
+  -> glob_showcase::config::logging
+  -> glob_showcase::config::server
+
+glob_showcase::database (3)
+  -> glob_showcase::database::connection
+  -> glob_showcase::database::query
+  -> glob_showcase::database::transaction
+
+glob_showcase::prelude (7)
+  -> glob_showcase [ErrorKind, Status]
+  -> glob_showcase::api [delete_data, get_data, set_data]
+  -> glob_showcase::database [connect, disconnect, execute]
+  -> glob_showcase::errors [NotFoundError, ValidationError]
+  -> glob_showcase::models [Comment, Post, User]
+  -> glob_showcase::traits [Identifiable, Nameable, Validatable]
+  -> glob_showcase::utils::math [add, subtract]
+
+glob_showcase::utils (3)
+  -> glob_showcase::utils::collection
+  -> glob_showcase::utils::math [add, divide, multiply, subtract]
+  -> glob_showcase::utils::string [lowercase, uppercase]
+
+inline_modules (2)
+  -> file_module [greet]
+  -> inline_modules::private_inline [_secret]
+
+inline_modules::inner (1)
+  -> file_module
+
+inline_modules::nested::deep (1)
+  -> dir_module [greet]
+
+item_visibility (1)
+  -> reexports [Foo]
+
+main (15)
+  -> advanced_globs
+  -> dir_module
+  -> file_module
+  -> glob_patterns [demonstrate_glob_utilities, demonstrate_nested_glob, renamed_special]
+  -> glob_patterns::constants
+  -> glob_patterns::traits
+  -> glob_patterns::types
+  -> glob_patterns::utilities
+  -> glob_showcase
+  -> inline_modules
+  -> item_visibility [PUB_CONST, PUB_STATIC, PubEnum, PubStruct, PubTrait]
+  -> mixed
+  -> nesting
+  -> reexports
+  -> visibility
+
+mixed::file_child (2)
+  -> custom_path [greet]
+  -> mixed [greet]
+
+mixed::inline_child (1)
+  -> mixed::file_child [greet]
+
+nesting (1)
+  -> inline_modules
+
+nesting::level1 (1)
+  -> nesting [depth]
+
+nesting::level1::level2 (1)
+  -> nesting [depth]
+
+nesting::level1::level2::level3 (3)
+  -> nesting [depth]
+  -> nesting::level1 [depth]
+  -> nesting::level1::level2 [depth]
+
+reexports (4)
+  -> file_module
+  -> nesting
+  -> reexports::internal [Baz, Foo, INTERNAL_CONST_A, INTERNAL_CONST_B, InternalEnum, InternalTrait, Qux, Secret, internal_helper_1, internal_helper_2]
+  -> reexports::types
+
+reexports::internal (1)
+  -> item_visibility [PUB_STATIC]
+
+reexports::types (1)
+  -> visibility
+
+uses_empty_glob (1)
+  -> no_pub_items
+
+visibility (5)
+  -> visibility::inner [uses_restricted]
+  -> visibility::private_mod [deepest_greet]
+  -> visibility::pub_crate_mod [parent_greet]
+  -> visibility::pub_super_mod [dir_module_greet]
+  -> visibility::restricted_mod [RestrictedConfig, VERSION, nesting_depth]
+
+visibility::inner (1)
+  -> visibility
+
+visibility::private_mod (1)
+  -> nesting::level1::level2::level3
+
+visibility::pub_crate_mod (1)
+  -> visibility::pub_mod [greet]
+
+visibility::pub_mod (1)
+  -> file_module
+
+visibility::pub_super_mod (1)
+  -> dir_module [greet]
+
+visibility::restricted_mod (1)
+  -> nesting
+
+----- stderr -----
