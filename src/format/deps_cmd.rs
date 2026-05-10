@@ -285,7 +285,7 @@ pub(crate) fn render_dot(edges: &AnnotatedEdges) -> String {
                 let items: Vec<&str> = apis.iter().map(String::as_str).collect();
                 out.push_str("\" [label=\"");
                 out.push_str(&items.join(", "));
-                out.push_str("\"];\n");
+                out.push_str("\", fontcolor=\"#c96a00\"];\n");
             }
         }
     }
@@ -495,7 +495,7 @@ mod tests {
     fn render_dot_with_apis() {
         let e = edges_with_apis(&[("parser", "reference", &["PathPrefix", "TypeReference"])]);
         let out = render_dot(&e);
-        assert!(out.contains("\"parser\" -> \"reference\" [label=\"PathPrefix, TypeReference\"];"));
+        assert!(out.contains("\"parser\" -> \"reference\" [label=\"PathPrefix, TypeReference\", fontcolor=\"#c96a00\"];"));
     }
 
     #[test]
