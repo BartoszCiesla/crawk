@@ -20,6 +20,8 @@ crate::format::list_cmd::render_list_table
 crate::format::use_cmd::render_flat
 crate::format::use_cmd::render_grouped
 crate::logger::configure_tracing
+crawk::version::NAME
+crawk::version::VERSION
 crawk::{AnalysisOptions, Analyzer, version}
 
 ----- stderr -----

@@ -18,7 +18,11 @@ exit_code: 0
 main
  - modules::advanced_globs::*
  - modules::dir_module
+ - modules::dir_module::child_dir::greet
+ - modules::dir_module::child_file::greet
+ - modules::dir_module::greet
  - modules::file_module
+ - modules::file_module::greet
  - modules::glob_patterns::*
  - modules::glob_patterns::constants::*
  - modules::glob_patterns::demonstrate_glob_utilities
@@ -29,6 +33,8 @@ main
  - modules::glob_patterns::utilities::*
  - modules::glob_showcase::*
  - modules::inline_modules
+ - modules::inline_modules::inner::greet
+ - modules::inline_modules::nested::deep::value
  - modules::item_visibility::*
  - modules::item_visibility::PUB_CONST
  - modules::item_visibility::PUB_STATIC
@@ -36,8 +42,14 @@ main
  - modules::item_visibility::PubStruct
  - modules::item_visibility::PubTrait
  - modules::mixed
+ - modules::mixed::file_child::greet
+ - modules::mixed::greet
+ - modules::mixed::inline_child::greet
  - modules::nesting
+ - modules::nesting::level1::level2::level3::deepest
+ - modules::nesting::level1::level2::level3::depth
  - modules::reexports::*
  - modules::visibility
+ - modules::visibility::pub_mod::greet
 
 ----- stderr -----

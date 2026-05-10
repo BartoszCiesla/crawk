@@ -20,6 +20,8 @@ cli
  - crate::cli::validation::validate_depth
  - crate::cli::validation::validate_module_path
  - crawk::version
+ - crawk::version::LONG_VERSION_MESSAGE
+ - crawk::version::VERSION
 cli::overview
  - crawk::version
 cli::validation

@@ -13,5 +13,7 @@ exit_code: 0
 crate::cli::overview::generate_after_help
 crate::cli::validation::{validate_depth, validate_module_path}
 crawk::version
+crawk::version::LONG_VERSION_MESSAGE
+crawk::version::VERSION
 
 ----- stderr -----

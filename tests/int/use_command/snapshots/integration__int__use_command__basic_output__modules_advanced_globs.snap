@@ -23,7 +23,10 @@ crate::advanced_globs::trait_providers::*
 crate::advanced_globs::unix_specific::*
 crate::advanced_globs::windows_specific::*
 crate::dir_module::child_file
+crate::dir_module::child_file::greet
 crate::file_module
+crate::file_module::greet
 crate::visibility
+crate::visibility::pub_mod::greet
 
 ----- stderr -----

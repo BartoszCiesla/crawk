@@ -13,27 +13,27 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-advanced_globs -> dir_module
-advanced_globs -> file_module
-advanced_globs -> visibility
+advanced_globs -> dir_module [greet]
+advanced_globs -> file_module [greet]
+advanced_globs -> visibility [greet]
 app -> advanced_globs
-app -> dir_module
-app -> file_module
+app -> dir_module [greet]
+app -> file_module [greet]
 app -> glob_patterns [demonstrate_glob_utilities, demonstrate_nested_glob, renamed_special]
 app -> glob_showcase
-app -> inline_modules
+app -> inline_modules [greet, value]
 app -> item_visibility [PUB_CONST, PUB_STATIC, PubEnum, PubStruct, PubTrait]
-app -> mixed
-app -> nesting
+app -> mixed [greet]
+app -> nesting [deepest, depth]
 app -> reexports
-app -> visibility
+app -> visibility [greet]
 baz -> foo
 custom_path -> item_visibility [PUB_CONST]
 dir_module -> file_module [greet]
 dir_module -> inline_modules [value]
 file_module -> nesting
-glob_patterns -> dir_module
-glob_patterns -> file_module
+glob_patterns -> dir_module [greet]
+glob_patterns -> file_module [greet, nesting_depth]
 glob_showcase -> file_module
 glob_showcase -> inline_modules
 glob_showcase -> nesting
@@ -41,16 +41,16 @@ inline_modules -> dir_module [greet]
 inline_modules -> file_module [greet]
 item_visibility -> reexports [Foo]
 main -> advanced_globs
-main -> dir_module
-main -> file_module
+main -> dir_module [greet]
+main -> file_module [greet]
 main -> glob_patterns [demonstrate_glob_utilities, demonstrate_nested_glob, renamed_special]
 main -> glob_showcase
-main -> inline_modules
+main -> inline_modules [greet, value]
 main -> item_visibility [PUB_CONST, PUB_STATIC, PubEnum, PubStruct, PubTrait]
-main -> mixed
-main -> nesting
+main -> mixed [greet]
+main -> nesting [deepest, depth]
 main -> reexports
-main -> visibility
+main -> visibility [greet]
 mixed -> custom_path [greet]
 nesting -> inline_modules
 reexports -> file_module

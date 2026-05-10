@@ -37,11 +37,15 @@ main
  - crawk::AnalysisOptions
  - crawk::Analyzer
  - crawk::version
+ - crawk::version::NAME
+ - crawk::version::VERSION
 cli
  - crate::cli::overview::generate_after_help
  - crate::cli::validation::validate_depth
  - crate::cli::validation::validate_module_path
  - crawk::version
+ - crawk::version::LONG_VERSION_MESSAGE
+ - crawk::version::VERSION
 cli::overview
  - crawk::version
 cli::validation

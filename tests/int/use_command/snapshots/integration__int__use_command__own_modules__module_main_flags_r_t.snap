@@ -30,6 +30,9 @@ crate::format::use_cmd::render_grouped
 crate::logger::configure_tracing
 crawk::ModuleInfo
 crawk::version
+crawk::version::LONG_VERSION_MESSAGE
+crawk::version::NAME
+crawk::version::VERSION
 crawk::{AnalysisOptions, Analyzer, version}
 crawk::{AnalysisResult, PathPrefix}
 crawk::{AnalysisResult, TypeReference}

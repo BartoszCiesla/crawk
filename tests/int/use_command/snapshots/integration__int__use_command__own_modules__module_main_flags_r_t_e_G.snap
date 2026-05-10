@@ -43,5 +43,8 @@ crawk::ModuleInfo
 crawk::PathPrefix
 crawk::TypeReference
 crawk::version
+crawk::version::LONG_VERSION_MESSAGE
+crawk::version::NAME
+crawk::version::VERSION
 
 ----- stderr -----

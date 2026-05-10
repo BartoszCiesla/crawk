@@ -37,7 +37,12 @@ crate::parser::visitor::*
 crate::parser::visitor::ModuleVisitor
 crate::reference::*
 crate::reference::GroupItem
+crate::reference::GroupItem::Aliased
+crate::reference::GroupItem::Glob
+crate::reference::GroupItem::Simple
 crate::reference::PathPrefix
+crate::reference::PathPrefix::Crate
+crate::reference::PathPrefix::Super
 crate::reference::PathSuffix
 crate::reference::PathSuffix::Group
 crate::reference::TypeReference
@@ -47,6 +52,7 @@ crate::reference::{PathPrefix, TypeReference}
 crate::resolve::*
 crate::resolve::resolve_glob
 crate::utils::*
+crate::utils::ReadFileError::TooLarge
 crate::utils::has_cfg_test
 crate::utils::{MAX_FILE_BYTES, ReadFileError}
 crate::utils::{ReadFileError, descend_inline_module, read_source_file}

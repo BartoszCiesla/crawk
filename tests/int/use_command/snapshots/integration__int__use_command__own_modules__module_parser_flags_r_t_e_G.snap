@@ -26,11 +26,17 @@ crate::parser::visitor::CollectedReferences
 crate::parser::visitor::ModuleVisitor
 crate::parser::visitor::resolve_reference
 crate::reference::GroupItem
+crate::reference::GroupItem::Aliased
+crate::reference::GroupItem::Glob
+crate::reference::GroupItem::Simple
 crate::reference::PathPrefix
+crate::reference::PathPrefix::Crate
+crate::reference::PathPrefix::Super
 crate::reference::PathSuffix::Group
 crate::reference::TypeReference
 crate::utils::MAX_FILE_BYTES
 crate::utils::ReadFileError
+crate::utils::ReadFileError::TooLarge
 crate::utils::descend_inline_module
 crate::utils::has_cfg_test
 crate::utils::read_source_file

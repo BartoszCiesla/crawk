@@ -32,5 +32,7 @@ crate::logger::configure_tracing
 crawk::AnalysisOptions
 crawk::Analyzer
 crawk::version
+crawk::version::NAME
+crawk::version::VERSION
 
 ----- stderr -----

@@ -18,7 +18,10 @@ exit_code: 0
 ----- stdout -----
 glob_patterns
  - crate::dir_module
+ - crate::dir_module::child_file::greet
  - crate::file_module
+ - crate::file_module::greet
+ - crate::file_module::nesting_depth
  - crate::glob_patterns::constants::API_VERSION
  - crate::glob_patterns::constants::DEFAULT_TIMEOUT
  - crate::glob_patterns::constants::MAX_SIZE

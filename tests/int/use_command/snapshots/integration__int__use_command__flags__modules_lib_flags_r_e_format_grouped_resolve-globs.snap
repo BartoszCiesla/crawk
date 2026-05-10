@@ -39,8 +39,11 @@ advanced_globs
  - crate::advanced_globs::windows_specific::PLATFORM_ID
  - crate::advanced_globs::windows_specific::platform_func
  - crate::dir_module::child_file
+ - crate::dir_module::child_file::greet
  - crate::file_module
+ - crate::file_module::greet
  - crate::visibility
+ - crate::visibility::pub_mod::greet
 advanced_globs::aliased_module
 advanced_globs::enum_variants
 advanced_globs::internal
@@ -85,7 +88,10 @@ foo::other
  - crate::foo::bar::public_fn
 glob_patterns
  - crate::dir_module
+ - crate::dir_module::child_file::greet
  - crate::file_module
+ - crate::file_module::greet
+ - crate::file_module::nesting_depth
  - crate::glob_patterns::constants::API_VERSION
  - crate::glob_patterns::constants::DEFAULT_TIMEOUT
  - crate::glob_patterns::constants::MAX_SIZE
@@ -289,10 +295,15 @@ uses_empty_glob
 visibility
  - crate::visibility::inner::uses_restricted
  - crate::visibility::private_mod::deepest_greet
+ - crate::visibility::private_mod::greet
+ - crate::visibility::pub_crate_mod::greet
  - crate::visibility::pub_crate_mod::parent_greet
+ - crate::visibility::pub_mod::greet
  - crate::visibility::pub_super_mod::dir_module_greet
+ - crate::visibility::pub_super_mod::greet
  - crate::visibility::restricted_mod::RestrictedConfig
  - crate::visibility::restricted_mod::VERSION
+ - crate::visibility::restricted_mod::greet
  - crate::visibility::restricted_mod::nesting_depth
 visibility::inner
  - crate::visibility::InternalState

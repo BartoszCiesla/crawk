@@ -14,7 +14,10 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::dir_module
+crate::dir_module::child_file
 crate::file_module
+crate::file_module::greet
+crate::file_module::nesting_depth
 crate::glob_patterns::constants::*
 crate::glob_patterns::mixed_exports
 crate::glob_patterns::mixed_exports::{func_one, func_two, func_three, special_function}

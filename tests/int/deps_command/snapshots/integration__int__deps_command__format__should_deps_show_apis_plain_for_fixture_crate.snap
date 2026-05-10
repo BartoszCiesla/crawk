@@ -21,15 +21,18 @@ advanced_globs -> advanced_globs::shadowing [shadowed_func]
 advanced_globs -> advanced_globs::trait_providers
 advanced_globs -> advanced_globs::unix_specific
 advanced_globs -> advanced_globs::windows_specific
-advanced_globs -> dir_module::child_file
-advanced_globs -> file_module
+advanced_globs -> dir_module::child_file [greet]
+advanced_globs -> file_module [greet]
 advanced_globs -> visibility
+advanced_globs -> visibility::pub_mod [greet]
 advanced_globs::layer1 -> advanced_globs::layer1::layer2
 advanced_globs::layer1::layer2 -> advanced_globs::layer1::layer2::layer3
 advanced_globs::prelude -> advanced_globs [Consumer, MultiImpl, Provider, Transformer, deep_function, layer1_function, layer2_function]
 app -> advanced_globs
-app -> dir_module
-app -> file_module
+app -> dir_module [greet]
+app -> dir_module::child_dir [greet]
+app -> dir_module::child_file [greet]
+app -> file_module [greet]
 app -> glob_patterns [demonstrate_glob_utilities, demonstrate_nested_glob, renamed_special]
 app -> glob_patterns::constants
 app -> glob_patterns::traits
@@ -37,11 +40,17 @@ app -> glob_patterns::types
 app -> glob_patterns::utilities
 app -> glob_showcase
 app -> inline_modules
+app -> inline_modules::inner [greet]
+app -> inline_modules::nested::deep [value]
 app -> item_visibility [PUB_CONST, PUB_STATIC, PubEnum, PubStruct, PubTrait]
-app -> mixed
+app -> mixed [greet]
+app -> mixed::file_child [greet]
+app -> mixed::inline_child [greet]
 app -> nesting
+app -> nesting::level1::level2::level3 [deepest, depth]
 app -> reexports
 app -> visibility
+app -> visibility::pub_mod [greet]
 baz -> foo::bar
 custom_path -> item_visibility [PUB_CONST]
 dir_module -> inline_modules::nested::deep [value]
@@ -51,7 +60,8 @@ file_module -> nesting
 foo -> foo::bar [public_fn]
 foo::other -> foo::bar
 glob_patterns -> dir_module
-glob_patterns -> file_module
+glob_patterns -> dir_module::child_file [greet]
+glob_patterns -> file_module [greet, nesting_depth]
 glob_patterns -> glob_patterns::constants
 glob_patterns -> glob_patterns::mixed_exports [func_one, func_three, func_two, special_function]
 glob_patterns -> glob_patterns::outer
@@ -96,8 +106,10 @@ inline_modules::inner -> file_module
 inline_modules::nested::deep -> dir_module [greet]
 item_visibility -> reexports [Foo]
 main -> advanced_globs
-main -> dir_module
-main -> file_module
+main -> dir_module [greet]
+main -> dir_module::child_dir [greet]
+main -> dir_module::child_file [greet]
+main -> file_module [greet]
 main -> glob_patterns [demonstrate_glob_utilities, demonstrate_nested_glob, renamed_special]
 main -> glob_patterns::constants
 main -> glob_patterns::traits
@@ -105,11 +117,17 @@ main -> glob_patterns::types
 main -> glob_patterns::utilities
 main -> glob_showcase
 main -> inline_modules
+main -> inline_modules::inner [greet]
+main -> inline_modules::nested::deep [value]
 main -> item_visibility [PUB_CONST, PUB_STATIC, PubEnum, PubStruct, PubTrait]
-main -> mixed
+main -> mixed [greet]
+main -> mixed::file_child [greet]
+main -> mixed::inline_child [greet]
 main -> nesting
+main -> nesting::level1::level2::level3 [deepest, depth]
 main -> reexports
 main -> visibility
+main -> visibility::pub_mod [greet]
 mixed::file_child -> custom_path [greet]
 mixed::file_child -> mixed [greet]
 mixed::inline_child -> mixed::file_child [greet]
@@ -127,10 +145,11 @@ reexports::internal -> item_visibility [PUB_STATIC]
 reexports::types -> visibility
 uses_empty_glob -> no_pub_items
 visibility -> visibility::inner [uses_restricted]
-visibility -> visibility::private_mod [deepest_greet]
-visibility -> visibility::pub_crate_mod [parent_greet]
-visibility -> visibility::pub_super_mod [dir_module_greet]
-visibility -> visibility::restricted_mod [RestrictedConfig, VERSION, nesting_depth]
+visibility -> visibility::private_mod [deepest_greet, greet]
+visibility -> visibility::pub_crate_mod [greet, parent_greet]
+visibility -> visibility::pub_mod [greet]
+visibility -> visibility::pub_super_mod [dir_module_greet, greet]
+visibility -> visibility::restricted_mod [RestrictedConfig, VERSION, greet, nesting_depth]
 visibility::inner -> visibility
 visibility::private_mod -> nesting::level1::level2::level3
 visibility::pub_crate_mod -> visibility::pub_mod [greet]

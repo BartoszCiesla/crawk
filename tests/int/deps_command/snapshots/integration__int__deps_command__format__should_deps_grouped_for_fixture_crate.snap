@@ -12,7 +12,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-advanced_globs (13)
+advanced_globs (14)
   -> advanced_globs::aliased_module
   -> advanced_globs::enum_variants
   -> advanced_globs::internal
@@ -26,6 +26,7 @@ advanced_globs (13)
   -> dir_module::child_file
   -> file_module
   -> visibility
+  -> visibility::pub_mod
 
 advanced_globs::layer1 (1)
   -> advanced_globs::layer1::layer2
@@ -36,9 +37,11 @@ advanced_globs::layer1::layer2 (1)
 advanced_globs::prelude (1)
   -> advanced_globs
 
-app (15)
+app (23)
   -> advanced_globs
   -> dir_module
+  -> dir_module::child_dir
+  -> dir_module::child_file
   -> file_module
   -> glob_patterns
   -> glob_patterns::constants
@@ -47,11 +50,17 @@ app (15)
   -> glob_patterns::utilities
   -> glob_showcase
   -> inline_modules
+  -> inline_modules::inner
+  -> inline_modules::nested::deep
   -> item_visibility
   -> mixed
+  -> mixed::file_child
+  -> mixed::inline_child
   -> nesting
+  -> nesting::level1::level2::level3
   -> reexports
   -> visibility
+  -> visibility::pub_mod
 
 baz (1)
   -> foo::bar
@@ -77,8 +86,9 @@ foo (1)
 foo::other (1)
   -> foo::bar
 
-glob_patterns (11)
+glob_patterns (12)
   -> dir_module
+  -> dir_module::child_file
   -> file_module
   -> glob_patterns::constants
   -> glob_patterns::mixed_exports
@@ -144,9 +154,11 @@ inline_modules::nested::deep (1)
 item_visibility (1)
   -> reexports
 
-main (15)
+main (23)
   -> advanced_globs
   -> dir_module
+  -> dir_module::child_dir
+  -> dir_module::child_file
   -> file_module
   -> glob_patterns
   -> glob_patterns::constants
@@ -155,11 +167,17 @@ main (15)
   -> glob_patterns::utilities
   -> glob_showcase
   -> inline_modules
+  -> inline_modules::inner
+  -> inline_modules::nested::deep
   -> item_visibility
   -> mixed
+  -> mixed::file_child
+  -> mixed::inline_child
   -> nesting
+  -> nesting::level1::level2::level3
   -> reexports
   -> visibility
+  -> visibility::pub_mod
 
 mixed::file_child (2)
   -> custom_path
@@ -197,10 +215,11 @@ reexports::types (1)
 uses_empty_glob (1)
   -> no_pub_items
 
-visibility (5)
+visibility (6)
   -> visibility::inner
   -> visibility::private_mod
   -> visibility::pub_crate_mod
+  -> visibility::pub_mod
   -> visibility::pub_super_mod
   -> visibility::restricted_mod
 

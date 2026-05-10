@@ -19,10 +19,16 @@ crate::parser::visitor
 crate::parser::visitor::*
 crate::parser::visitor::ModuleVisitor
 crate::reference::GroupItem
+crate::reference::GroupItem::Aliased
+crate::reference::GroupItem::Glob
+crate::reference::GroupItem::Simple
 crate::reference::PathPrefix
+crate::reference::PathPrefix::Crate
+crate::reference::PathPrefix::Super
 crate::reference::PathSuffix::Group
 crate::reference::{GroupItem, PathPrefix, TypeReference}
 crate::reference::{PathPrefix, TypeReference}
+crate::utils::ReadFileError::TooLarge
 crate::utils::has_cfg_test
 crate::utils::{MAX_FILE_BYTES, ReadFileError}
 crate::utils::{ReadFileError, descend_inline_module, read_source_file}

@@ -44,7 +44,10 @@ crate::advanced_globs::unix_specific::platform_func
 crate::advanced_globs::windows_specific::PLATFORM_ID
 crate::advanced_globs::windows_specific::platform_func
 crate::dir_module::child_file
+crate::dir_module::child_file::greet
 crate::file_module
+crate::file_module::greet
 crate::visibility
+crate::visibility::pub_mod::greet
 
 ----- stderr -----
