@@ -10,7 +10,12 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::cli::{CrawkArgs, CrawkCommands, DepsArgs, DepsOutputFormat, ListArgs, ListOutputFormat, UseArgs, UseOutputFormat}
+crate::cli::{CrawkArgs, CrawkCommands, CyclesMode, DepsArgs, DepsOutputFormat, ListArgs, ListOutputFormat, UseArgs, UseOutputFormat}
+crate::format::cycles::detect_cycles
+crate::format::cycles::render_cycles_dot
+crate::format::cycles::render_cycles_dot_highlight
+crate::format::cycles::render_cycles_grouped
+crate::format::cycles::render_cycles_plain
 crate::format::deps_cmd::build_edges
 crate::format::deps_cmd::render_dot
 crate::format::deps_cmd::render_grouped

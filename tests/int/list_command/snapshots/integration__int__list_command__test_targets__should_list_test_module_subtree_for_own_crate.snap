@@ -14,6 +14,7 @@ int
 int::command
 int::deps_command
 int::deps_command::basic
+int::deps_command::cycles
 int::deps_command::depth
 int::deps_command::error_cases
 int::deps_command::format

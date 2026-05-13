@@ -13,6 +13,7 @@ cli
 cli::overview
 cli::validation
 format
+format::cycles
 format::deps_cmd
 format::list_cmd
 format::use_cmd

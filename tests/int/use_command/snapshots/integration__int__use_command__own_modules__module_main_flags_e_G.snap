@@ -13,12 +13,18 @@ exit_code: 0
 ----- stdout -----
 crate::cli::CrawkArgs
 crate::cli::CrawkCommands
+crate::cli::CyclesMode
 crate::cli::DepsArgs
 crate::cli::DepsOutputFormat
 crate::cli::ListArgs
 crate::cli::ListOutputFormat
 crate::cli::UseArgs
 crate::cli::UseOutputFormat
+crate::format::cycles::detect_cycles
+crate::format::cycles::render_cycles_dot
+crate::format::cycles::render_cycles_dot_highlight
+crate::format::cycles::render_cycles_grouped
+crate::format::cycles::render_cycles_plain
 crate::format::deps_cmd::build_edges
 crate::format::deps_cmd::render_dot
 crate::format::deps_cmd::render_grouped

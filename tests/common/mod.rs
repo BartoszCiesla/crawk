@@ -18,6 +18,12 @@ pub(crate) fn crawk_modules() -> Command {
     cmd
 }
 
+pub(crate) fn crawk_cycles() -> Command {
+    let mut cmd = crawk();
+    cmd.arg("-p").arg("fixtures/cycles");
+    cmd
+}
+
 pub(crate) fn crawk_workspace() -> Command {
     let mut cmd = crawk();
     cmd.arg("-p").arg("fixtures/workspace");

@@ -1,0 +1,36 @@
+---
+source: tests/int/deps_command/cycles.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/cycles
+    - deps
+    - "--cycles"
+    - "-f"
+    - dot
+---
+success: true
+exit_code: 0
+----- stdout -----
+digraph dependencies {
+    rankdir=LR;
+    node [shape=box, style=rounded, fontname="monospace", fontsize=10];
+    edge [color="#444444"];
+
+    subgraph cluster_cycle_1 {
+        label="cycle 1 (3 modules)";
+        style=dashed;
+        color="#e67700";
+        fontcolor="#e67700";
+        "alpha";
+        "beta";
+        "gamma";
+    }
+
+    "alpha" -> "beta" [color="#e67700", style=bold, penwidth=2.0];
+    "beta" -> "gamma" [color="#e67700", style=bold, penwidth=2.0];
+    "gamma" -> "alpha" [color="#e67700", style=bold, penwidth=2.0];
+}
+
+----- stderr -----

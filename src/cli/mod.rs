@@ -318,6 +318,17 @@ pub(crate) struct ListArgs {
 }
 
 #[derive(ValueEnum, Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) enum CyclesMode {
+    /// Show only modules and edges involved in cycles (default)
+    #[default]
+    Detect,
+    #[value(
+        help = "Full dependency graph with cycle edges highlighted.\n           DOT only; plain/grouped fall back to detect with a warning"
+    )]
+    Highlight,
+}
+
+#[derive(ValueEnum, Debug, Clone, Default, PartialEq, Eq)]
 pub(crate) enum DepsOutputFormat {
     /// Flat sorted list of edges (default)
     #[default]
@@ -367,6 +378,39 @@ pub(crate) struct DepsArgs {
     #[clap(verbatim_doc_comment)]
     #[arg(short = 'f', long = "format", default_value_t = DepsOutputFormat::Plain)]
     pub format: DepsOutputFormat,
+
+    /// Detect and display dependency cycles (strongly connected components)
+    ///
+    /// Reports groups of modules involved in circular dependencies using
+    /// Tarjan's SCC algorithm. Each reported cycle is a maximal set of
+    /// modules where every module can transitively reach every other —
+    /// overlapping loops are merged into one SCC, so a single cycle in
+    /// the output may represent multiple intertwined circular paths.
+    ///
+    /// Without a value or with `detect`: shows only the modules and
+    /// edges that participate in cycles.
+    ///
+    /// With `highlight`: renders the full dependency graph with cycle
+    /// edges visually marked. Only effective with --format dot (uses
+    /// orange bold edges and dashed cluster borders). Plain and grouped
+    /// formats ignore highlight and fall back to detect mode with a
+    /// warning.
+    ///
+    /// Useful combinations:
+    ///   --depth 1     cycle detection at top-level module granularity;
+    ///                 simplifies large SCCs into a coarser view
+    ///   --show-apis   annotates cycle edges with the symbols that
+    ///                 create the dependency, helping locate the cause
+    ///
+    /// Empty output means no cycles exist.
+    #[clap(verbatim_doc_comment)]
+    #[arg(
+        long = "cycles",
+        num_args = 0..=1,
+        default_missing_value = "detect",
+        value_enum,
+    )]
+    pub cycles: Option<CyclesMode>,
 
     /// Show API names (symbols) that create each dependency edge
     ///

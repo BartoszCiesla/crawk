@@ -15,6 +15,7 @@ exit_code: 0
 ----- stdout -----
 crate::cli::CrawkArgs
 crate::cli::CrawkCommands
+crate::cli::CyclesMode
 crate::cli::DepsArgs
 crate::cli::DepsOutputFormat
 crate::cli::ListArgs
@@ -24,6 +25,12 @@ crate::cli::UseOutputFormat
 crate::cli::overview::generate_after_help
 crate::cli::validation::validate_depth
 crate::cli::validation::validate_module_path
+crate::format::cycles::Cycle
+crate::format::cycles::detect_cycles
+crate::format::cycles::render_cycles_dot
+crate::format::cycles::render_cycles_dot_highlight
+crate::format::cycles::render_cycles_grouped
+crate::format::cycles::render_cycles_plain
 crate::format::deps_cmd::AnnotatedEdges
 crate::format::deps_cmd::Edge
 crate::format::deps_cmd::build_edges

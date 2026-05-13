@@ -70,6 +70,37 @@ Options:
           
           [default: plain]
 
+      --cycles [<CYCLES>]
+          Detect and display dependency cycles (strongly connected components)
+          
+          Reports groups of modules involved in circular dependencies using
+          Tarjan's SCC algorithm. Each reported cycle is a maximal set of
+          modules where every module can transitively reach every other —
+          overlapping loops are merged into one SCC, so a single cycle in
+          the output may represent multiple intertwined circular paths.
+          
+          Without a value or with `detect`: shows only the modules and
+          edges that participate in cycles.
+          
+          With `highlight`: renders the full dependency graph with cycle
+          edges visually marked. Only effective with --format dot (uses
+          orange bold edges and dashed cluster borders). Plain and grouped
+          formats ignore highlight and fall back to detect mode with a
+          warning.
+          
+          Useful combinations:
+            --depth 1     cycle detection at top-level module granularity;
+                          simplifies large SCCs into a coarser view
+            --show-apis   annotates cycle edges with the symbols that
+                          create the dependency, helping locate the cause
+          
+          Empty output means no cycles exist.
+
+          Possible values:
+          - detect:    Show only modules and edges involved in cycles (default)
+          - highlight: Full dependency graph with cycle edges highlighted.
+                       DOT only; plain/grouped fall back to detect with a warning
+
   -a, --show-apis
           Show API names (symbols) that create each dependency edge
           

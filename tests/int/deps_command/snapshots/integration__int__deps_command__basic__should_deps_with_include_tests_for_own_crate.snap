@@ -33,6 +33,8 @@ discover::module_tree -> discover
 discover::module_tree -> utils
 discover::module_tree::tests -> discover::module_tree
 error -> discover
+format::cycles -> format::deps_cmd
+format::cycles::tests -> format::cycles
 format::deps_cmd -> lib
 format::deps_cmd::tests -> format::deps_cmd
 format::list_cmd -> lib
@@ -45,6 +47,7 @@ lib -> model
 lib -> reference
 logger -> cli
 main -> cli
+main -> format::cycles
 main -> format::deps_cmd
 main -> format::list_cmd
 main -> format::use_cmd

@@ -39,6 +39,9 @@ discover::module_tree (4)
 error (1)
   -> discover
 
+format::cycles (1)
+  -> format::deps_cmd
+
 format::deps_cmd (1)
   -> lib
 
@@ -58,8 +61,9 @@ lib (5)
 logger (1)
   -> cli
 
-main (7)
+main (8)
   -> cli
+  -> format::cycles
   -> format::deps_cmd
   -> format::list_cmd
   -> format::use_cmd

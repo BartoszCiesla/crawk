@@ -221,6 +221,7 @@ dependencies = [
  "clap",
  "comfy-table",
  "const_format",
+ "cycles",
  "insta",
  "insta-cmd",
  "modules",
@@ -257,6 +258,10 @@ checksum = "acdd7c62a3665c7f6830a51635d9ac9b23ed385797f70a83bb8bafe9c572ab2b"
 dependencies = [
  "winapi",
 ]
+
+[[package]]
+name = "cycles"
+version = "0.1.0"
 
 [[package]]
 name = "darling"

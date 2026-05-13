@@ -1,0 +1,14 @@
+---
+source: tests/int/deps_command/cycles.rs
+info:
+  program: crawk
+  args:
+    - deps
+    - "--cycles"
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+----- stderr -----
+No dependency cycles found.

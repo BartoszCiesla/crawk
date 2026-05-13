@@ -18,6 +18,7 @@ crate::common::{backtrace_filters, crawk, crawk_modules}
 crate::common::{backtrace_filters, crawk, crawk_workspace}
 crate::common::{backtrace_filters, crawk_modules}
 crate::common::{backtrace_filters, crawk}
+crate::common::{crawk, crawk_cycles, crawk_modules}
 crate::common::{crawk, crawk_modules}
 
 ----- stderr -----

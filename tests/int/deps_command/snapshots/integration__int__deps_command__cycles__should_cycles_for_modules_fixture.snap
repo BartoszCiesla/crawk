@@ -1,0 +1,32 @@
+---
+source: tests/int/deps_command/cycles.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/modules
+    - deps
+    - "--cycles"
+---
+success: true
+exit_code: 0
+----- stdout -----
+cycle 1 (2 modules)
+  dir_module -> inline_modules::nested::deep
+  inline_modules::nested::deep -> dir_module
+
+cycle 2 (3 modules)
+  file_module -> nesting
+  inline_modules -> file_module
+  nesting -> inline_modules
+
+cycle 3 (3 modules)
+  item_visibility -> reexports
+  reexports -> reexports::internal
+  reexports::internal -> item_visibility
+
+cycle 4 (2 modules)
+  visibility -> visibility::inner
+  visibility::inner -> visibility
+
+----- stderr -----

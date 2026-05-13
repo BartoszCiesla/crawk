@@ -15,8 +15,15 @@ crate::cli::CrawkArgs
 crate::cli::overview::generate_after_help
 crate::cli::validation::*
 crate::cli::validation::{validate_depth, validate_module_path}
-crate::cli::{CrawkArgs, CrawkCommands, DepsArgs, DepsOutputFormat, ListArgs, ListOutputFormat, UseArgs, UseOutputFormat}
+crate::cli::{CrawkArgs, CrawkCommands, CyclesMode, DepsArgs, DepsOutputFormat, ListArgs, ListOutputFormat, UseArgs, UseOutputFormat}
+crate::format::cycles::*
+crate::format::cycles::detect_cycles
+crate::format::cycles::render_cycles_dot
+crate::format::cycles::render_cycles_dot_highlight
+crate::format::cycles::render_cycles_grouped
+crate::format::cycles::render_cycles_plain
 crate::format::deps_cmd::*
+crate::format::deps_cmd::AnnotatedEdges
 crate::format::deps_cmd::build_edges
 crate::format::deps_cmd::render_dot
 crate::format::deps_cmd::render_grouped

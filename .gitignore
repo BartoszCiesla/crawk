@@ -6,6 +6,7 @@
 /fixtures/workspace/target
 /fixtures/modules/target
 /fixtures/broken_syntax/target
+/fixtures/cycles/target
 # Alternative cache directory for IDE's and other tools
 /.ide/
 

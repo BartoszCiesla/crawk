@@ -1,0 +1,19 @@
+---
+source: tests/int/deps_command/cycles.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/cycles
+    - deps
+    - "--cycles"
+---
+success: true
+exit_code: 0
+----- stdout -----
+cycle 1 (3 modules)
+  alpha -> beta
+  beta -> gamma
+  gamma -> alpha
+
+----- stderr -----

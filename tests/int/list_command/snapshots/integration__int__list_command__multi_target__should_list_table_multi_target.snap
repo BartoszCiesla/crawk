@@ -49,6 +49,8 @@ exit_code: 0
 |-----------+-----------------------|
 | bin:crawk | format                |
 |-----------+-----------------------|
+| bin:crawk | format::cycles        |
+|-----------+-----------------------|
 | bin:crawk | format::deps_cmd      |
 |-----------+-----------------------|
 | bin:crawk | format::list_cmd      |
