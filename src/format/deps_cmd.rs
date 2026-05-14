@@ -16,7 +16,7 @@ pub(crate) type AnnotatedEdges = BTreeMap<Edge, BTreeSet<String>>;
 ///
 /// Returns the path unchanged when `depth` is `None` or when the path already
 /// has fewer segments than `depth`.
-fn truncate_module_path(path: &str, depth: Option<usize>) -> String {
+pub(crate) fn truncate_module_path(path: &str, depth: Option<usize>) -> String {
     depth.map_or_else(
         || path.to_owned(),
         |n| path.split("::").take(n).collect::<Vec<_>>().join("::"),

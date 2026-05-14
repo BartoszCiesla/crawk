@@ -1,0 +1,16 @@
+---
+source: tests/int/deps_command/orphans.rs
+info:
+  program: crawk
+  args:
+    - deps
+    - "--orphans"
+---
+success: true
+exit_code: 0
+----- stdout -----
+discover::module_tree
+format
+main
+
+----- stderr -----

@@ -1,0 +1,21 @@
+---
+source: tests/int/deps_command/orphans.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/cycles
+    - deps
+    - "--orphans"
+    - "--cycles"
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+error: the argument '--orphans' cannot be used with '--cycles [<CYCLES>]'
+
+Usage: crawk deps --orphans
+
+For more information, try '--help'.

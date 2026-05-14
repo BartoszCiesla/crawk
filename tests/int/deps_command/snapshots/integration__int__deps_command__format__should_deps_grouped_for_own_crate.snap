@@ -48,6 +48,9 @@ format::deps_cmd (1)
 format::list_cmd (1)
   -> lib
 
+format::orphans (1)
+  -> format::deps_cmd
+
 format::use_cmd (1)
   -> lib
 
@@ -61,11 +64,12 @@ lib (5)
 logger (1)
   -> cli
 
-main (8)
+main (9)
   -> cli
   -> format::cycles
   -> format::deps_cmd
   -> format::list_cmd
+  -> format::orphans
   -> format::use_cmd
   -> lib
   -> logger

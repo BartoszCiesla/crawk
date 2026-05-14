@@ -93,18 +93,23 @@ fn handle_deps_command(crate_root: &Path, args: &DepsArgs) -> anyhow::Result<()>
         }
     }
 
-    let output = args.cycles.as_ref().map_or_else(
-        || match args.format {
-            DepsOutputFormat::Plain => format::deps_cmd::render_plain(&all_edges),
-            DepsOutputFormat::Grouped => format::deps_cmd::render_grouped(&all_edges),
-            DepsOutputFormat::Dot => format::deps_cmd::render_dot(&all_edges),
-        },
-        |cycles_mode| {
-            let cycles = format::cycles::detect_cycles(&all_edges);
-            if cycles.is_empty() {
-                info!("No dependency cycles found.");
-                return String::new();
-            }
+    let output = if args.orphans {
+        let truncated_modules: std::collections::BTreeSet<String> = known_modules
+            .iter()
+            .map(|m| format::deps_cmd::truncate_module_path(m, args.depth))
+            .collect();
+        let orphans = format::orphans::find_orphans(&all_edges, &truncated_modules);
+        if orphans.is_empty() {
+            String::new()
+        } else {
+            info!("Found {} orphan module(s).", orphans.len());
+            format::orphans::render_orphans(&orphans)
+        }
+    } else if let Some(cycles_mode) = args.cycles.as_ref() {
+        let cycles = format::cycles::detect_cycles(&all_edges);
+        if cycles.is_empty() {
+            String::new()
+        } else {
             info!("Found {} dependency cycle(s).", cycles.len());
             if *cycles_mode == CyclesMode::Highlight && args.format != DepsOutputFormat::Dot {
                 eprintln!(
@@ -122,10 +127,18 @@ fn handle_deps_command(crate_root: &Path, args: &DepsArgs) -> anyhow::Result<()>
                     format::cycles::render_cycles_dot_highlight(&cycles, &all_edges)
                 }
             }
-        },
-    );
+        }
+    } else {
+        match args.format {
+            DepsOutputFormat::Plain => format::deps_cmd::render_plain(&all_edges),
+            DepsOutputFormat::Grouped => format::deps_cmd::render_grouped(&all_edges),
+            DepsOutputFormat::Dot => format::deps_cmd::render_dot(&all_edges),
+        }
+    };
     if output.is_empty() {
-        if args.cycles.is_some() {
+        if args.orphans {
+            eprintln!("No orphan modules found.");
+        } else if args.cycles.is_some() {
             eprintln!("No dependency cycles found.");
         } else {
             info!("No inter-module dependencies found.");

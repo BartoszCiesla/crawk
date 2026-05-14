@@ -422,6 +422,20 @@ pub(crate) struct DepsArgs {
     #[clap(verbatim_doc_comment)]
     #[arg(short = 'a', long = "show-apis", default_value_t = false)]
     pub show_apis: bool,
+
+    /// List modules with no incoming dependencies (orphans)
+    ///
+    /// Shows modules that no other module depends on — potential dead code
+    /// or disconnected modules. Entry points (lib, main) are included
+    /// since they naturally have no dependents.
+    ///
+    /// Respects --depth (orphans computed on truncated module paths).
+    /// The --format and --show-apis flags are ignored.
+    ///
+    /// Empty output means every module has at least one dependent.
+    #[clap(verbatim_doc_comment)]
+    #[arg(long = "orphans", default_value_t = false, conflicts_with = "cycles")]
+    pub orphans: bool,
 }
 
 #[derive(Parser, Debug, Clone, Default)]

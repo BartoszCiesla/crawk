@@ -18,6 +18,7 @@ int::deps_command::cycles
 int::deps_command::depth
 int::deps_command::error_cases
 int::deps_command::format
+int::deps_command::orphans
 int::deps_command::overview
 int::error_cases
 int::list_command

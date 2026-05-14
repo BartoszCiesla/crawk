@@ -1,0 +1,28 @@
+---
+source: tests/int/deps_command/orphans.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/modules
+    - deps
+    - "--orphans"
+---
+success: true
+exit_code: 0
+----- stdout -----
+advanced_globs::prelude
+app
+baz
+empty_module
+foo
+foo::other
+glob_showcase::config
+glob_showcase::prelude
+glob_showcase::utils
+inline_modules::nested
+lib
+main
+uses_empty_glob
+
+----- stderr -----

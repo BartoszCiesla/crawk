@@ -16,6 +16,7 @@ format
 format::cycles
 format::deps_cmd
 format::list_cmd
+format::orphans
 format::use_cmd
 logger
 main

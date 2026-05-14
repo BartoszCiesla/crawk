@@ -110,6 +110,18 @@ Options:
           
           e.g.  analyzer -> reference [GroupItem, PathPrefix, TypeReference]
 
+      --orphans
+          List modules with no incoming dependencies (orphans)
+          
+          Shows modules that no other module depends on — potential dead code
+          or disconnected modules. Entry points (lib, main) are included
+          since they naturally have no dependents.
+          
+          Respects --depth (orphans computed on truncated module paths).
+          The --format and --show-apis flags are ignored.
+          
+          Empty output means every module has at least one dependent.
+
   -h, --help
           Print help (see a summary with '-h')
 

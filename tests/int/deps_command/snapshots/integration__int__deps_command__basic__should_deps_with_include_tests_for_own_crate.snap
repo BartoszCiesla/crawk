@@ -38,6 +38,8 @@ format::cycles::tests -> format::cycles
 format::deps_cmd -> lib
 format::deps_cmd::tests -> format::deps_cmd
 format::list_cmd -> lib
+format::orphans -> format::deps_cmd
+format::orphans::tests -> format::orphans
 format::use_cmd -> lib
 format::use_cmd::tests -> format::use_cmd
 lib -> analyzer
@@ -50,6 +52,7 @@ main -> cli
 main -> format::cycles
 main -> format::deps_cmd
 main -> format::list_cmd
+main -> format::orphans
 main -> format::use_cmd
 main -> lib
 main -> logger

@@ -29,6 +29,7 @@ exit_code: 0
 [bin:crawk] format::cycles
 [bin:crawk] format::deps_cmd
 [bin:crawk] format::list_cmd
+[bin:crawk] format::orphans
 [bin:crawk] format::use_cmd
 [bin:crawk] logger
 [bin:crawk] main

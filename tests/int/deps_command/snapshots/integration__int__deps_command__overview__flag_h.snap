@@ -19,6 +19,7 @@ Options:
   -f, --format <FORMAT>    Output format [default: plain] [possible values: plain, grouped, dot]
       --cycles [<CYCLES>]  Detect and display dependency cycles (strongly connected components) [possible values: detect, highlight]
   -a, --show-apis          Show API names (symbols) that create each dependency edge
+      --orphans            List modules with no incoming dependencies (orphans)
   -h, --help               Print help (see more with '--help')
 
 ----- stderr -----

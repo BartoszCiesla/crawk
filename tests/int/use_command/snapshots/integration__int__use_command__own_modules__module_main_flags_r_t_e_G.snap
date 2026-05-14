@@ -37,9 +37,12 @@ crate::format::deps_cmd::build_edges
 crate::format::deps_cmd::render_dot
 crate::format::deps_cmd::render_grouped
 crate::format::deps_cmd::render_plain
+crate::format::deps_cmd::truncate_module_path
 crate::format::list_cmd::ListDisplayOptions
 crate::format::list_cmd::render_list_plain
 crate::format::list_cmd::render_list_table
+crate::format::orphans::find_orphans
+crate::format::orphans::render_orphans
 crate::format::use_cmd::render_flat
 crate::format::use_cmd::render_grouped
 crate::logger::configure_tracing
