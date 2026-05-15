@@ -11,6 +11,14 @@ pub struct Cycle {
     pub edges: AnnotatedEdges,
 }
 
+impl Cycle {
+    /// Create a new cycle from modules and their internal edges.
+    #[must_use]
+    pub const fn new(modules: BTreeSet<String>, edges: AnnotatedEdges) -> Self {
+        Self { modules, edges }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Tarjan's SCC — iterative
 // ---------------------------------------------------------------------------

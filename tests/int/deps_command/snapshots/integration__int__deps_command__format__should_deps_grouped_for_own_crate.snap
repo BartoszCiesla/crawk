@@ -41,16 +41,13 @@ error (1)
   -> discover
 
 format::cycles (1)
-  -> format::deps_cmd
+  -> lib
 
 format::deps_cmd (1)
   -> lib
 
 format::list_cmd (1)
   -> lib
-
-format::orphans (1)
-  -> format::deps_cmd
 
 format::use_cmd (1)
   -> lib

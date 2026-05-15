@@ -28,10 +28,9 @@ discover::module_tree -> constants
 discover::module_tree -> discover
 discover::module_tree -> utils
 error -> discover
-format::cycles -> format::deps_cmd
+format::cycles -> lib
 format::deps_cmd -> lib
 format::list_cmd -> lib
-format::orphans -> format::deps_cmd
 format::use_cmd -> lib
 graph -> graph::cycles
 graph -> graph::edges
