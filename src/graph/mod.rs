@@ -10,9 +10,12 @@ mod orphans;
 
 use std::collections::BTreeSet;
 
-pub use cycles::{Cycle, detect_cycles};
-pub use edges::{AnnotatedEdges, Edge, truncate_module_path};
-pub use orphans::find_orphans;
+pub use cycles::Cycle;
+pub use edges::{AnnotatedEdges, Edge};
+
+pub(crate) use cycles::detect_cycles;
+pub(crate) use edges::truncate_module_path;
+pub(crate) use orphans::find_orphans;
 
 pub(crate) use edges::build_edges;
 

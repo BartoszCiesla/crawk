@@ -15,7 +15,7 @@ use super::edges::AnnotatedEdges;
 ///
 /// Returns orphan module paths in sorted order.
 #[must_use]
-pub fn find_orphans(edges: &AnnotatedEdges, all_modules: &BTreeSet<String>) -> Vec<String> {
+pub(crate) fn find_orphans(edges: &AnnotatedEdges, all_modules: &BTreeSet<String>) -> Vec<String> {
     let mut has_incoming: BTreeSet<&str> = BTreeSet::new();
     for (_source, target) in edges.keys() {
         has_incoming.insert(target.as_str());

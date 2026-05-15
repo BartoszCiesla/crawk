@@ -144,7 +144,7 @@ fn strongconnect<'a>(
 /// of mutually-dependent modules. Only SCCs with 2+ modules are returned.
 /// Returns cycles sorted by their first module name (alphabetically).
 #[must_use]
-pub fn detect_cycles(edges: &AnnotatedEdges) -> Vec<Cycle> {
+pub(crate) fn detect_cycles(edges: &AnnotatedEdges) -> Vec<Cycle> {
     // Build adjacency list from edges
     let mut adj: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
     for (source, target) in edges.keys() {

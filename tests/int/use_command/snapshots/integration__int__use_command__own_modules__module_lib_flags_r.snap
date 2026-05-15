@@ -23,13 +23,15 @@ crate::discover::{CrateInfo, ModuleInfo, TargetInfo, TargetKind}
 crate::discover::{ModuleInfo, ModuleVisibility, TargetInfo, TargetKind}
 crate::error::AnalysisError
 crate::error::{AnalysisError, Result}
-crate::graph::cycles::{Cycle, detect_cycles}
+crate::graph::cycles::Cycle
+crate::graph::cycles::detect_cycles
 crate::graph::edges
 crate::graph::edges::AnnotatedEdges
 crate::graph::edges::build_edges
-crate::graph::edges::{AnnotatedEdges, Edge, truncate_module_path}
+crate::graph::edges::truncate_module_path
+crate::graph::edges::{AnnotatedEdges, Edge}
 crate::graph::orphans::find_orphans
-crate::graph::{AnnotatedEdges, Cycle, DependencyGraph, DependencyGraphOptions, Edge, detect_cycles, find_orphans, truncate_module_path}
+crate::graph::{AnnotatedEdges, Cycle, DependencyGraph, DependencyGraphOptions, Edge}
 crate::graph::{self, DependencyGraph, DependencyGraphOptions}
 crate::model::AnalysisResult
 crate::model::{AnalysisOptions, AnalysisResult}

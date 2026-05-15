@@ -45,17 +45,14 @@ crate::graph::Edge
 crate::graph::cycles::*
 crate::graph::cycles::Cycle
 crate::graph::cycles::detect_cycles
-crate::graph::detect_cycles
 crate::graph::edges
 crate::graph::edges::*
 crate::graph::edges::AnnotatedEdges
 crate::graph::edges::Edge
 crate::graph::edges::build_edges
 crate::graph::edges::truncate_module_path
-crate::graph::find_orphans
 crate::graph::orphans::*
 crate::graph::orphans::find_orphans
-crate::graph::truncate_module_path
 crate::model::*
 crate::model::AnalysisOptions
 crate::model::AnalysisResult

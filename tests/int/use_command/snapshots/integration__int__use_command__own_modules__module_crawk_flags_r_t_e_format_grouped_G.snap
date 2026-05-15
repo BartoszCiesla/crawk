@@ -27,9 +27,6 @@ crawk
  - crate::graph::DependencyGraph
  - crate::graph::DependencyGraphOptions
  - crate::graph::Edge
- - crate::graph::detect_cycles
- - crate::graph::find_orphans
- - crate::graph::truncate_module_path
  - crate::model::AnalysisOptions
  - crate::model::AnalysisResult
  - crate::reference::GroupItem
