@@ -54,10 +54,26 @@ format::orphans (1)
 format::use_cmd (1)
   -> lib
 
-lib (5)
+graph (3)
+  -> graph::cycles
+  -> graph::edges
+  -> graph::orphans
+
+graph::cycles (1)
+  -> graph::edges
+
+graph::edges (2)
+  -> model
+  -> reference
+
+graph::orphans (1)
+  -> graph::edges
+
+lib (6)
   -> analyzer
   -> discover
   -> error
+  -> graph
   -> model
   -> reference
 

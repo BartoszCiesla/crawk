@@ -22,6 +22,12 @@ lib
  - crate::discover::TargetInfo
  - crate::discover::TargetKind
  - crate::error::AnalysisError
+ - crate::graph::AnnotatedEdges
+ - crate::graph::Cycle
+ - crate::graph::Edge
+ - crate::graph::detect_cycles
+ - crate::graph::find_orphans
+ - crate::graph::truncate_module_path
  - crate::model::AnalysisOptions
  - crate::model::AnalysisResult
  - crate::reference::GroupItem
@@ -69,6 +75,31 @@ discover::module_tree
 discover::module_tree::tests
 error
  - crate::discover::CrateInfoError
+graph
+ - crate::graph::cycles::Cycle
+ - crate::graph::cycles::detect_cycles
+ - crate::graph::edges::AnnotatedEdges
+ - crate::graph::edges::Edge
+ - crate::graph::edges::build_edges
+ - crate::graph::edges::truncate_module_path
+ - crate::graph::orphans::find_orphans
+graph::cycles
+ - crate::graph::edges::AnnotatedEdges
+graph::cycles::tests
+ - crate::graph::cycles::Cycle
+ - crate::graph::cycles::detect_cycles
+graph::edges
+ - crate::model::AnalysisResult
+ - crate::reference::PathPrefix
+graph::edges::tests
+ - crate::graph::edges::AnnotatedEdges
+ - crate::graph::edges::Edge
+ - crate::graph::edges::build_edges
+ - crate::graph::edges::truncate_module_path
+graph::orphans
+ - crate::graph::edges::AnnotatedEdges
+graph::orphans::tests
+ - crate::graph::orphans::find_orphans
 model
  - crate::reference::TypeReference
 model::tests

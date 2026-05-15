@@ -14,6 +14,10 @@ exit_code: 0
 [lib]       discover
 [lib]       discover::module_tree
 [lib]       error
+[lib]       graph
+[lib]       graph::cycles
+[lib]       graph::edges
+[lib]       graph::orphans
 [lib]       lib
 [lib]       model
 [lib]       parser

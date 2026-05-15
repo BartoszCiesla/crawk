@@ -24,6 +24,12 @@ lib
  - crate::discover::TargetInfo
  - crate::discover::TargetKind
  - crate::error::AnalysisError
+ - crate::graph::AnnotatedEdges
+ - crate::graph::Cycle
+ - crate::graph::Edge
+ - crate::graph::detect_cycles
+ - crate::graph::find_orphans
+ - crate::graph::truncate_module_path
  - crate::model::AnalysisOptions
  - crate::model::AnalysisResult
  - crate::reference::GroupItem
@@ -71,6 +77,23 @@ discover::module_tree
 discover::module_tree::tests
 error
  - crate::discover::CrateInfoError
+graph
+ - crate::graph::cycles
+ - crate::graph::edges
+ - crate::graph::orphans
+graph::cycles
+ - crate::graph::edges
+graph::cycles::tests
+ - crate::graph::cycles
+graph::edges
+ - crate::model::AnalysisResult
+ - crate::reference::PathPrefix
+graph::edges::tests
+ - crate::graph::edges
+graph::orphans
+ - crate::graph::edges
+graph::orphans::tests
+ - crate::graph::orphans
 model
  - crate::reference::TypeReference
 model::tests

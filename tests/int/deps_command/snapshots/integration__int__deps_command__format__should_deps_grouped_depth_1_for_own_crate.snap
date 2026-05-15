@@ -35,10 +35,15 @@ error (1)
 format (1)
   -> lib
 
-lib (5)
+graph (2)
+  -> model
+  -> reference
+
+lib (6)
   -> analyzer
   -> discover
   -> error
+  -> graph
   -> model
   -> reference
 

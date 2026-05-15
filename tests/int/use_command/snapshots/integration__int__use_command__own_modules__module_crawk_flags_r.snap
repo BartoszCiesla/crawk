@@ -23,6 +23,13 @@ crate::discover::{CrateInfo, ModuleInfo, TargetInfo, TargetKind}
 crate::discover::{ModuleInfo, ModuleVisibility, TargetInfo, TargetKind}
 crate::error::AnalysisError
 crate::error::{AnalysisError, Result}
+crate::graph::cycles::{Cycle, detect_cycles}
+crate::graph::edges::AnnotatedEdges
+crate::graph::edges::build_edges
+crate::graph::edges::{AnnotatedEdges, Edge, truncate_module_path}
+crate::graph::orphans::find_orphans
+crate::graph::{AnnotatedEdges, Cycle, Edge, detect_cycles, find_orphans, truncate_module_path}
+crate::model::AnalysisResult
 crate::model::{AnalysisOptions, AnalysisResult}
 crate::parser::CrateAnalyzer
 crate::parser::visitor
@@ -30,6 +37,7 @@ crate::parser::visitor::ModuleVisitor
 crate::reference::GroupItem::Aliased
 crate::reference::GroupItem::Glob
 crate::reference::GroupItem::Simple
+crate::reference::PathPrefix
 crate::reference::TypeReference
 crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference}
 crate::reference::{GroupItem, PathPrefix, TypeReference}

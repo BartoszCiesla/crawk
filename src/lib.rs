@@ -75,6 +75,7 @@ mod cache;
 mod constants;
 mod discover;
 mod error;
+mod graph;
 mod model;
 mod parser;
 mod reference;
@@ -85,5 +86,8 @@ pub mod version;
 pub use crate::analyzer::Analyzer;
 pub use crate::discover::{ModuleInfo, ModuleVisibility, TargetInfo, TargetKind};
 pub use crate::error::AnalysisError;
+pub use crate::graph::{
+    AnnotatedEdges, Cycle, Edge, detect_cycles, find_orphans, truncate_module_path,
+};
 pub use crate::model::{AnalysisOptions, AnalysisResult};
 pub use crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference};

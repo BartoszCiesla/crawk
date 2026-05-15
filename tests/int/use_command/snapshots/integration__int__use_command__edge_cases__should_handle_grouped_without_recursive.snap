@@ -15,6 +15,7 @@ lib
  - crate::analyzer::Analyzer
  - crate::discover::{ModuleInfo, ModuleVisibility, TargetInfo, TargetKind}
  - crate::error::AnalysisError
+ - crate::graph::{AnnotatedEdges, Cycle, Edge, detect_cycles, find_orphans, truncate_module_path}
  - crate::model::{AnalysisOptions, AnalysisResult}
  - crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference}
 

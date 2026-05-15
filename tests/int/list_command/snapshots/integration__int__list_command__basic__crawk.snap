@@ -16,6 +16,10 @@ crawk
 discover
 discover::module_tree
 error
+graph
+graph::cycles
+graph::edges
+graph::orphans
 model
 parser
 parser::visitor

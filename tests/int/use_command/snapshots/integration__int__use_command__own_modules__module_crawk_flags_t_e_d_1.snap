@@ -16,6 +16,7 @@ exit_code: 0
 crate::analyzer
 crate::discover
 crate::error
+crate::graph
 crate::model
 crate::reference
 

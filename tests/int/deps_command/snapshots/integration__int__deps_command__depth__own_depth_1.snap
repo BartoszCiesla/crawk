@@ -23,9 +23,12 @@ discover -> constants
 discover -> utils
 error -> discover
 format -> lib
+graph -> model
+graph -> reference
 lib -> analyzer
 lib -> discover
 lib -> error
+lib -> graph
 lib -> model
 lib -> reference
 logger -> cli
