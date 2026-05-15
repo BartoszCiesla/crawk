@@ -3,7 +3,10 @@ use std::collections::{BTreeMap, BTreeSet, HashSet};
 use crate::model::AnalysisResult;
 use crate::reference::PathPrefix;
 
-/// A directed module dependency edge: `(source_module, target_module)`.
+/// A directed module dependency edge: `(source, target)`.
+///
+/// The edge `(A, B)` means module `A` references an item defined in module `B`
+/// — i.e. `A` depends on `B`.
 pub type Edge = (String, String);
 
 /// Dependency edges with optional API name annotations per edge.

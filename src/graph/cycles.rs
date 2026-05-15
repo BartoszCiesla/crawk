@@ -1,18 +1,24 @@
 use super::edges::AnnotatedEdges;
 use std::collections::{BTreeMap, BTreeSet};
 
-/// A strongly connected component with >=2 modules (a dependency cycle).
+/// A dependency cycle — a group of mutually-dependent modules.
+///
+/// Represents a strongly connected component (SCC) with two or more modules
+/// in the dependency graph. Obtained from [`DependencyGraph::cycles`](super::DependencyGraph::cycles).
+///
+/// This type is marked `#[non_exhaustive]`; new fields may be added in future
+/// versions without a breaking change.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct Cycle {
-    /// Module paths in this SCC, sorted alphabetically.
+    /// Module paths participating in this cycle, sorted alphabetically.
     pub modules: BTreeSet<String>,
-    /// Edges within this SCC, with optional API annotations preserved.
+    /// Edges between modules within this cycle, with optional API annotations.
     pub edges: AnnotatedEdges,
 }
 
 impl Cycle {
-    /// Create a new cycle from modules and their internal edges.
+    /// Create a cycle from a set of modules and their internal edges.
     #[must_use]
     pub const fn new(modules: BTreeSet<String>, edges: AnnotatedEdges) -> Self {
         Self { modules, edges }
@@ -138,11 +144,11 @@ fn strongconnect<'a>(
     }
 }
 
-/// Detect all dependency cycles in the module graph.
+/// Detect all dependency cycles in the given edge set.
 ///
 /// Uses Tarjan's strongly connected components algorithm to find groups
-/// of mutually-dependent modules. Only SCCs with 2+ modules are returned.
-/// Returns cycles sorted by their first module name (alphabetically).
+/// of mutually-dependent modules. Only SCCs with 2+ modules are returned,
+/// sorted by their first module name (alphabetically).
 #[must_use]
 pub(crate) fn detect_cycles(edges: &AnnotatedEdges) -> Vec<Cycle> {
     // Build adjacency list from edges

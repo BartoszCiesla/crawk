@@ -1,8 +1,10 @@
 //! Dependency graph analysis for Rust crate modules.
 //!
-//! This module provides types and functions for building and analyzing
-//! module-level dependency graphs: cycle detection (Tarjan's SCC),
-//! orphan detection, and edge construction from analysis results.
+//! Build a module-level dependency graph via [`crate::Analyzer::dependency_graph`],
+//! then query it for edges, cycles (Tarjan's SCC), and orphan modules.
+//!
+//! The main entry points are [`DependencyGraphOptions`] (configuration) and
+//! [`DependencyGraph`] (results).
 
 mod cycles;
 mod edges;
@@ -23,6 +25,10 @@ pub(crate) use edges::build_edges;
 ///
 /// Passed to [`crate::Analyzer::dependency_graph`] to configure which modules
 /// are included and how edges are built.
+///
+/// This struct is `#[non_exhaustive]` — construct it via [`Default::default`]
+/// and set individual fields. New options may be added in future versions
+/// without a breaking change.
 ///
 /// # Examples
 ///
@@ -50,6 +56,9 @@ pub struct DependencyGraphOptions {
 /// Encapsulates the edges and module set produced by
 /// [`Analyzer::dependency_graph`](crate::Analyzer::dependency_graph).
 /// Provides access to the raw edges and derived analyses (cycles, orphans).
+///
+/// This type cannot be constructed directly — obtain it from
+/// [`Analyzer::dependency_graph`](crate::Analyzer::dependency_graph).
 ///
 /// # Examples
 ///
@@ -86,14 +95,44 @@ impl DependencyGraph {
 
     /// All dependency edges in the graph.
     ///
-    /// Each key is a `(source, target)` pair; values are the set of API symbol
-    /// names referenced across that edge (empty when `show_apis` was `false`).
+    /// Each key is an [`Edge`] `(source, target)` pair where `source` depends
+    /// on `target`. Values are the set of API symbol names referenced across
+    /// that edge (empty when [`DependencyGraphOptions::show_apis`] was `false`).
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use crawk::{Analyzer, DependencyGraphOptions};
+    /// # use std::path::Path;
+    /// # fn main() -> Result<(), crawk::AnalysisError> {
+    /// # let mut a = Analyzer::new(Path::new("."))?;
+    /// # let g = a.dependency_graph(&DependencyGraphOptions::default())?;
+    /// for ((source, target), apis) in g.edges() {
+    ///     println!("{source} -> {target}");
+    /// }
+    /// # Ok(()) }
+    /// ```
     #[must_use]
     pub const fn edges(&self) -> &AnnotatedEdges {
         &self.edges
     }
 
-    /// All module paths in the graph (depth-truncated if a depth was specified).
+    /// All module paths in the graph, depth-truncated if a depth was specified
+    /// in [`DependencyGraphOptions::depth`].
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use crawk::{Analyzer, DependencyGraphOptions};
+    /// # use std::path::Path;
+    /// # fn main() -> Result<(), crawk::AnalysisError> {
+    /// # let mut a = Analyzer::new(Path::new("."))?;
+    /// # let g = a.dependency_graph(&DependencyGraphOptions::default())?;
+    /// for module in g.modules() {
+    ///     println!("{module}");
+    /// }
+    /// # Ok(()) }
+    /// ```
     #[must_use]
     pub const fn modules(&self) -> &BTreeSet<String> {
         &self.modules
@@ -101,8 +140,28 @@ impl DependencyGraph {
 
     /// Detect dependency cycles in the graph.
     ///
-    /// Returns strongly connected components with 2+ modules, sorted by
-    /// first module name.
+    /// Uses Tarjan's strongly connected components algorithm to find groups
+    /// of mutually-dependent modules. Only components with 2+ modules are
+    /// returned, sorted by their first module name (alphabetically).
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use crawk::{Analyzer, DependencyGraphOptions};
+    /// # use std::path::Path;
+    /// # fn main() -> Result<(), crawk::AnalysisError> {
+    /// # let mut a = Analyzer::new(Path::new("."))?;
+    /// # let g = a.dependency_graph(&DependencyGraphOptions::default())?;
+    /// let cycles = g.cycles();
+    /// if cycles.is_empty() {
+    ///     println!("No dependency cycles found.");
+    /// } else {
+    ///     for cycle in &cycles {
+    ///         println!("Cycle between: {:?}", cycle.modules);
+    ///     }
+    /// }
+    /// # Ok(()) }
+    /// ```
     #[must_use]
     pub fn cycles(&self) -> Vec<Cycle> {
         detect_cycles(&self.edges)
@@ -111,7 +170,21 @@ impl DependencyGraph {
     /// Find orphan modules — modules with no incoming edges.
     ///
     /// Orphans include target entry points (lib, main) which naturally have
-    /// no dependents.
+    /// no dependents. Returns module paths in sorted order.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use crawk::{Analyzer, DependencyGraphOptions};
+    /// # use std::path::Path;
+    /// # fn main() -> Result<(), crawk::AnalysisError> {
+    /// # let mut a = Analyzer::new(Path::new("."))?;
+    /// # let g = a.dependency_graph(&DependencyGraphOptions::default())?;
+    /// for orphan in &g.orphans() {
+    ///     println!("Orphan: {orphan}");
+    /// }
+    /// # Ok(()) }
+    /// ```
     #[must_use]
     pub fn orphans(&self) -> Vec<String> {
         find_orphans(&self.edges, &self.modules)
