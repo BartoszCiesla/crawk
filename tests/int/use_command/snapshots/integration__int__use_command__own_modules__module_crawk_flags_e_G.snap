@@ -19,6 +19,8 @@ crate::discover::TargetKind
 crate::error::AnalysisError
 crate::graph::AnnotatedEdges
 crate::graph::Cycle
+crate::graph::DependencyGraph
+crate::graph::DependencyGraphOptions
 crate::graph::Edge
 crate::graph::detect_cycles
 crate::graph::find_orphans

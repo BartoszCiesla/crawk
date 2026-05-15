@@ -12,6 +12,7 @@ exit_code: 0
 analyzer -> cache
 analyzer -> discover
 analyzer -> error
+analyzer -> graph
 analyzer -> model
 analyzer -> parser
 analyzer -> reference
@@ -52,6 +53,7 @@ graph::edges -> reference
 graph::edges::tests -> graph::edges
 graph::orphans -> graph::edges
 graph::orphans::tests -> graph::orphans
+graph::tests -> graph
 lib -> analyzer
 lib -> discover
 lib -> error

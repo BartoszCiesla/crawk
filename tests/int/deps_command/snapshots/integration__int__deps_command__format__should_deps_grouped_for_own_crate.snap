@@ -10,10 +10,11 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-analyzer (7)
+analyzer (8)
   -> cache
   -> discover
   -> error
+  -> graph
   -> model
   -> parser
   -> reference

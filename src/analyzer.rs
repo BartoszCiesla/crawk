@@ -1,11 +1,12 @@
 use crate::cache::ParseCache;
 use crate::discover::{CrateInfo, ModuleInfo, TargetInfo, TargetKind};
 use crate::error::{AnalysisError, Result};
+use crate::graph::{self, DependencyGraph, DependencyGraphOptions};
 use crate::model::{AnalysisOptions, AnalysisResult};
 use crate::parser::CrateAnalyzer;
 use crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference};
 use crate::resolve::resolve_glob;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt::{Debug, Formatter, Result as FmtResult};
 use std::path::{Path, PathBuf};
 use tracing::{debug, error, info, trace};
@@ -715,6 +716,143 @@ impl Analyzer {
                 .map(|s| s.split("::").map(String::from).collect())
                 .unwrap_or_default()
         }
+    }
+
+    /// Build a complete module-level dependency graph for the crate.
+    ///
+    /// Discovers all compilation targets, analyses each one, and constructs
+    /// a unified set of directed edges between modules. The graph can then
+    /// be queried for cycles, orphans, or iterated directly.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` — controls which modules are included (`include_tests`),
+    ///   path truncation (`depth`), and API annotation (`show_apis`).
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if module discovery or analysis fails. Individual
+    /// target failures are logged and skipped (matching CLI behaviour).
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use crawk::{Analyzer, DependencyGraphOptions};
+    /// use std::path::Path;
+    ///
+    /// let mut analyzer = Analyzer::new(Path::new("/path/to/crate"))?;
+    /// let mut opts = DependencyGraphOptions::default();
+    /// opts.depth = Some(1);
+    /// let graph = analyzer.dependency_graph(&opts)?;
+    ///
+    /// for ((source, target), apis) in graph.edges() {
+    ///     println!("{source} -> {target}");
+    /// }
+    /// # Ok::<(), crawk::AnalysisError>(())
+    /// ```
+    pub fn dependency_graph(
+        &mut self,
+        options: &DependencyGraphOptions,
+    ) -> Result<DependencyGraph> {
+        let analysis_options = AnalysisOptions {
+            recursive: true,
+            include_tests: options.include_tests,
+            expand_groups: true,
+            resolve_globs: false,
+        };
+
+        let all_modules = self.list_all_modules(options.include_tests)?;
+        let roots = Self::collect_target_roots(&all_modules);
+        info!("Building dependency graph across {} target(s)", roots.len());
+
+        let known_modules: HashSet<String> =
+            all_modules.iter().map(|m| m.path().to_owned()).collect();
+
+        let package_name: Option<String> = all_modules
+            .iter()
+            .find(|m| m.target().kind() == &TargetKind::Lib)
+            .map(|m| m.target().name().to_owned());
+
+        let mut all_edges: BTreeMap<graph::Edge, BTreeSet<String>> = BTreeMap::new();
+        for root in &roots {
+            info!("Analysing target root '{root}'");
+            match self.analyze_module(root.as_str(), &analysis_options) {
+                Ok(result) => {
+                    for (edge, apis) in graph::build_edges(
+                        &result,
+                        options.depth,
+                        &known_modules,
+                        package_name.as_deref(),
+                        options.show_apis,
+                    ) {
+                        all_edges.entry(edge).or_default().extend(apis);
+                    }
+                }
+                Err(e) => info!("Skipping target '{root}': {e}"),
+            }
+        }
+
+        let truncated_modules: BTreeSet<String> = known_modules
+            .iter()
+            .map(|m| graph::truncate_module_path(m, options.depth))
+            .collect();
+
+        Ok(DependencyGraph::new(all_edges, truncated_modules))
+    }
+
+    /// Determine the root module path for each unique compilation target.
+    ///
+    /// For lib targets the root is always `"lib"`. For binary and test targets
+    /// the root is identified from the module's source file path.
+    fn collect_target_roots(modules: &[ModuleInfo]) -> Vec<String> {
+        let mut groups: HashMap<(TargetKind, String), Vec<&ModuleInfo>> = HashMap::new();
+        for m in modules {
+            let key = (m.target().kind().clone(), m.target().name().to_owned());
+            groups.entry(key).or_default().push(m);
+        }
+
+        let mut keys: Vec<_> = groups.keys().cloned().collect();
+        keys.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)));
+
+        let mut roots = Vec::new();
+        for (kind, name) in &keys {
+            let group = &groups[&(kind.clone(), name.clone())];
+            let root = match kind {
+                TargetKind::Lib => "lib".to_owned(),
+                TargetKind::Bin | TargetKind::Test => {
+                    Self::find_bin_or_test_root(group).unwrap_or_else(|| name.clone())
+                }
+            };
+            roots.push(root);
+        }
+        roots
+    }
+
+    /// Identify the root module path for a binary or integration-test target.
+    ///
+    /// Looks for a top-level module whose source file matches known cargo
+    /// entry-point patterns (`src/main.rs`, `src/bin/`, `tests/`). Falls back
+    /// to the lexicographically smallest top-level module.
+    fn find_bin_or_test_root(modules: &[&ModuleInfo]) -> Option<String> {
+        let top_level: Vec<_> = modules
+            .iter()
+            .filter(|m| !m.path().contains("::"))
+            .collect();
+
+        let preferred = top_level.iter().find(|m| {
+            let src = m.source();
+            src.file_name().is_some_and(|n| n == "main.rs")
+                || src.components().any(|c| {
+                    matches!(
+                        c,
+                        std::path::Component::Normal(n) if n == "bin" || n == "tests"
+                    )
+                })
+        });
+
+        preferred
+            .or_else(|| top_level.iter().min_by_key(|m| m.path()))
+            .map(|m| m.path().to_owned())
     }
 }
 

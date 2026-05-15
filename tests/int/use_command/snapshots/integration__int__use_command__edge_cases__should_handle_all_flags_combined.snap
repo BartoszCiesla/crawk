@@ -26,6 +26,8 @@ lib
  - crate::error::AnalysisError
  - crate::graph::AnnotatedEdges
  - crate::graph::Cycle
+ - crate::graph::DependencyGraph
+ - crate::graph::DependencyGraphOptions
  - crate::graph::Edge
  - crate::graph::detect_cycles
  - crate::graph::find_orphans
@@ -44,6 +46,9 @@ analyzer
  - crate::discover::TargetKind
  - crate::error::AnalysisError
  - crate::error::Result
+ - crate::graph
+ - crate::graph::DependencyGraph
+ - crate::graph::DependencyGraphOptions
  - crate::model::AnalysisOptions
  - crate::model::AnalysisResult
  - crate::parser::CrateAnalyzer
@@ -94,6 +99,16 @@ graph::orphans
  - crate::graph::edges
 graph::orphans::tests
  - crate::graph::orphans
+graph::tests
+ - crate::graph::AnnotatedEdges
+ - crate::graph::Cycle
+ - crate::graph::DependencyGraph
+ - crate::graph::DependencyGraphOptions
+ - crate::graph::Edge
+ - crate::graph::build_edges
+ - crate::graph::detect_cycles
+ - crate::graph::find_orphans
+ - crate::graph::truncate_module_path
 model
  - crate::reference::TypeReference
 model::tests

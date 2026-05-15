@@ -38,7 +38,6 @@ pub fn truncate_module_path(path: &str, depth: Option<usize>) -> String {
 ///
 /// Returns `None` when no prefix matches (e.g. a crate-root re-export with no
 /// corresponding module path).
-#[allow(dead_code)] // Used by build_edges()
 fn find_module_target<'a>(
     segments: &[String],
     known_modules: &'a HashSet<String>,
@@ -95,7 +94,6 @@ fn find_module_target<'a>(
 /// - `package_name` — crate package name (e.g. `"crawk"`); when set, refs
 ///   prefixed with this name are treated as cross-target lib dependencies
 /// - `show_apis` — collect API symbol names per edge
-#[allow(dead_code)] // Used by Analyzer::dependency_graph() (added in next commit)
 pub(crate) fn build_edges(
     result: &AnalysisResult,
     depth: Option<usize>,

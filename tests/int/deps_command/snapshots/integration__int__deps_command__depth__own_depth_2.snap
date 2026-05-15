@@ -13,6 +13,7 @@ exit_code: 0
 analyzer -> cache
 analyzer -> discover
 analyzer -> error
+analyzer -> graph
 analyzer -> model
 analyzer -> parser
 analyzer -> reference

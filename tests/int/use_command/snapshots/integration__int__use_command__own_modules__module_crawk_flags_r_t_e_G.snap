@@ -33,12 +33,17 @@ crate::discover::TargetInfo
 crate::discover::TargetKind
 crate::error::AnalysisError
 crate::error::Result
+crate::graph
 crate::graph::AnnotatedEdges
 crate::graph::Cycle
+crate::graph::DependencyGraph
+crate::graph::DependencyGraphOptions
 crate::graph::Edge
+crate::graph::build_edges
 crate::graph::cycles::Cycle
 crate::graph::cycles::detect_cycles
 crate::graph::detect_cycles
+crate::graph::edges
 crate::graph::edges::AnnotatedEdges
 crate::graph::edges::Edge
 crate::graph::edges::build_edges
