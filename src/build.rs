@@ -23,5 +23,9 @@ pub fn main() -> Result<()> {
         println!("cargo:rustc-env=VERGEN_BUILD_DATE={date}");
     }
 
+    if let Ok(user) = std::env::var("CRAWK_BUILD_USER") {
+        println!("cargo:rustc-env=VERGEN_SYSINFO_USER={user}");
+    }
+
     Ok(())
 }

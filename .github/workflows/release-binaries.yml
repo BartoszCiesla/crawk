@@ -30,6 +30,10 @@ jobs:
           persist-credentials: false
       - name: Upload Rust binary to GitHub Release
         uses: taiki-e/upload-rust-binary-action@f0d45ae91ee7b8ee928de7a9d04d893a08bcbec6 # v1.30.2
+        env:
+          # Override VERGEN_SYSINFO_USER which upload-rust-binary-action replaces
+          # with VERGEN_IDEMPOTENT_OUTPUT via its internal VERGEN_IDEMPOTENT=1 flag.
+          CRAWK_BUILD_USER: ${{ github.actor }}
         with:
           bin: ${{ env.BIN_NAME }}
           target: ${{ matrix.target }}
