@@ -11,6 +11,7 @@ Dependency crawler for Rust. It crawls so you don't have to untangle
 
 - **Module listing**: See which modules are defined in a crate.
 - **Module usage**: See which modules are used by a given module in a crate.
+- **Dependency graph**: Visualize inter-module dependencies, detect cycles, find orphan modules.
 
 ## Installation
 
@@ -18,6 +19,8 @@ Dependency crawler for Rust. It crawls so you don't have to untangle
 
 ```sh
 cargo install crawk
+# or, faster with binstall:
+cargo binstall crawk
 ```
 
 ### Nix
@@ -75,6 +78,28 @@ crawk use server --depth 2 --format grouped
 crawk -p /path/to/my-crate use db -r -t
 ```
 
+#### Dependency graph - `deps` subcommand
+
+```sh
+# Show full inter-module dependency graph:
+crawk deps
+
+# Detect dependency cycles:
+crawk deps --cycles
+
+# Find modules with no incoming dependencies:
+crawk deps --orphans
+
+# Export as Graphviz dot format:
+crawk deps --format dot
+
+# Annotate edges with API symbol names:
+crawk deps --show-apis
+
+# Analyze a crate at a custom path:
+crawk -p /path/to/my-crate deps --cycles highlight
+```
+
 ## CLI Options
 
 Please refer to `crawk` command CLI help for a comprehensive list of options:
@@ -88,6 +113,9 @@ crawk list --help
 
 # Help for the 'use' subcommand (including options specific to module usage analysis)
 crawk use --help
+
+# Help for the 'deps' subcommand (including options specific to dependency graph)
+crawk deps --help
 ```
 
 Note: option `-h` gives short help, while `--help` provides detailed information about available options and their usage.
@@ -99,5 +127,5 @@ This project is licensed under the Apache License. See the [LICENSE](LICENSE) fi
 ## Why "crawk"?
 
 The name `crawk` playfully blends `crawl` and `awk`, capturing the tool's mission to crawl Rust code for module dependency analysis.
-It sounds action-oriented, evoking exploration of crate structures.  It sounds action-oriented, evoking exploration of crate structures.
+It sounds action-oriented, evoking exploration of crate structures.
 It was created to help me understand and manage the often complex web of module dependencies in my projects.
