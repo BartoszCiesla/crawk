@@ -1,6 +1,6 @@
 [package]
 name = "crawk"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2024"
 rust-version = "1.87.0"
 authors = ["Bartosz Cieśla <bartosz.ciesla@gmail.com>"]
