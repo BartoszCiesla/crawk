@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.4.2](https://github.com/BartoszCiesla/crawk/compare/v0.4.1...v0.4.2)
+
+### 🐛 Bug Fixes
+
+
+- *(build)* Use CRAWK_BUILD_USER instead of SysinfoBuilder - ([cacd0b9](https://github.com/BartoszCiesla/crawk/commit/cacd0b9c70dc5454abe50af20845b4413d239183))
+
+
 ## [0.4.1](https://github.com/BartoszCiesla/crawk/compare/v0.4.0...v0.4.1)
 
 ### 🐛 Bug Fixes
