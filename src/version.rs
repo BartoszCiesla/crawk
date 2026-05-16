@@ -30,7 +30,7 @@ pub static BUILD_TARGET: &str = env!("VERGEN_CARGO_TARGET_TRIPLE");
 pub static RUSTC_VERSION: &str = env!("VERGEN_RUSTC_SEMVER");
 
 /// Username of the person who built the binary.
-pub static BUILD_USER: &str = env!("VERGEN_SYSINFO_USER");
+pub static BUILD_USER: &str = env!("CRAWK_BUILD_USER");
 
 /// Git describe output (version tag + commits since + dirty flag).
 pub static GIT_DESCRIBE: &str = env!("VERGEN_GIT_DESCRIBE");

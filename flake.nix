@@ -46,6 +46,7 @@
         CRAWK_BUILD_TIMESTAMP =
           let d = self.lastModifiedDate; in
           "${builtins.substring 0 4 d}-${builtins.substring 4 2 d}-${builtins.substring 6 2 d}T${builtins.substring 8 2 d}:${builtins.substring 10 2 d}:${builtins.substring 12 2 d}Z";
+        CRAWK_BUILD_USER = "nix";
       };
 
       # Phase 1: build only dependencies (cached separately)
