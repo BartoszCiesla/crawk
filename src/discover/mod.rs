@@ -51,9 +51,9 @@ impl fmt::Display for ModuleVisibility {
 /// The kind of compilation target a module belongs to.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum TargetKind {
-    /// Library crate (`lib.rs`).
+    /// Library target (`lib.rs`).
     Lib,
-    /// Binary crate (`main.rs` or other `[[bin]]` targets).
+    /// Binary target (`main.rs` or other `[[bin]]` targets).
     Bin,
     /// Integration test target (`tests/*.rs`).
     Test,
