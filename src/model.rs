@@ -95,13 +95,13 @@ pub struct AnalysisResult {
 impl AnalysisResult {
     /// Creates a new analysis result.
     #[must_use]
-    pub(crate) const fn new(
-        module_path: String,
+    pub(crate) fn new(
+        module_path: impl Into<String>,
         dependencies: HashMap<String, HashSet<TypeReference>>,
         source_file: PathBuf,
     ) -> Self {
         Self {
-            module_path,
+            module_path: module_path.into(),
             dependencies,
             source_file,
         }

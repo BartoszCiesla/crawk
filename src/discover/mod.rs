@@ -213,14 +213,14 @@ impl ModuleInfo {
     /// * `visibility` - The declared visibility of the module
     /// * `target` - The compilation target this module belongs to
     #[must_use]
-    pub const fn new(
-        module_path: String,
+    pub fn new(
+        module_path: impl Into<String>,
         source_file: PathBuf,
         visibility: ModuleVisibility,
         target: TargetInfo,
     ) -> Self {
         Self {
-            module_path,
+            module_path: module_path.into(),
             source_file,
             visibility,
             target,
@@ -256,9 +256,9 @@ impl ModuleInfo {
 
     /// Returns a new `ModuleInfo` with the given module path, preserving all other fields.
     #[must_use]
-    pub fn with_path(self, new_path: String) -> Self {
+    pub fn with_path(self, new_path: impl Into<String>) -> Self {
         Self {
-            module_path: new_path,
+            module_path: new_path.into(),
             ..self
         }
     }
