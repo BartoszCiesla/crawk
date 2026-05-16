@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.4.1](https://github.com/BartoszCiesla/crawk/compare/v0.4.0...v0.4.1)
+
+### 🐛 Bug Fixes
+
+
+- *(build)* Override sysinfo user in release binaries - ([0133f5f](https://github.com/BartoszCiesla/crawk/commit/0133f5fbc4a8517b55533168d4a8e6a4d64ebb5a))
+
+
 ## [0.4.0](https://github.com/BartoszCiesla/crawk/compare/v0.3.0...v0.4.0)
 
 ### ⛰️ Features
