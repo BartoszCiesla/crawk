@@ -2,6 +2,55 @@
 
 ## [Unreleased]
 
+## [0.4.0](https://github.com/BartoszCiesla/crawk/compare/v0.3.0...v0.4.0)
+
+### ⛰️ Features
+
+
+- *(analyzer)* Recognize bare child module paths in use statements - ([bcb5e31](https://github.com/BartoszCiesla/crawk/commit/bcb5e319e110da683e065b1f086824f182df4611))
+- *(build)* Add Nix flake for reproducible builds - ([553398b](https://github.com/BartoszCiesla/crawk/commit/553398b3bdcb6fa0a839a75fac7dc3283df2ffdf))
+- *(cli)* Add --orphans flag to deps command - ([a03bbc0](https://github.com/BartoszCiesla/crawk/commit/a03bbc03430a97dddb328f6149d1b5a814e74deb))
+- *(cli)* Add --cycles flag to deps command - ([812054e](https://github.com/BartoszCiesla/crawk/commit/812054e38adf0621bcf4b1d329c849b933d33691))
+- *(cli)* Add --show-apis flag to deps command - ([a5e7c5c](https://github.com/BartoszCiesla/crawk/commit/a5e7c5c32a49dc607ed5850ba605c7f029f91a30))
+- *(cli)* Add --format dot output for deps command - ([69a3f6e](https://github.com/BartoszCiesla/crawk/commit/69a3f6e148503b86f0163a0b766f630a8afa9810))
+- *(cli)* Add --format grouped output for deps command - ([b922004](https://github.com/BartoszCiesla/crawk/commit/b9220045cb08bcdefbabaa2f53eec1e8d9454482))
+- *(cli)* Add deps command to visualize inter-module dependencies - ([78ef298](https://github.com/BartoszCiesla/crawk/commit/78ef29899bc2a4cbfff24de691567665ed96fbb3))
+- *(format)* Color API labels in DOT output - ([f76edb8](https://github.com/BartoszCiesla/crawk/commit/f76edb82a140972d0a4ef95ae7f0d96a7d7313f1))
+- *(graph)* Add DependencyGraph and Analyzer::dependency_graph() - ([3802180](https://github.com/BartoszCiesla/crawk/commit/3802180f16adeca87943c06db77cfece1ecd19c1))
+- *(graph)* Add graph module with types and analysis functions - ([1082994](https://github.com/BartoszCiesla/crawk/commit/108299496e65752b6c526065297b2a8908f51db2))
+- *(parser)* Scan macro arguments and attributes for path references - ([a12c4be](https://github.com/BartoszCiesla/crawk/commit/a12c4be268548f8eab574024556a5a40ae906a98))
+- *(parser)* Recognize bare child paths in expressions and types - ([9732875](https://github.com/BartoszCiesla/crawk/commit/97328753e984668acd6f5b4445ddac7aff6e13f8))
+
+### 🐛 Bug Fixes
+
+
+- *(analyzer)* Handle bare module paths from crate root (edition 2015) - ([6f37941](https://github.com/BartoszCiesla/crawk/commit/6f37941e21130bbaf8097d7780629cabd006dc26))
+- *(parser)* Expand nested paths in grouped imports correctly - ([4b72895](https://github.com/BartoszCiesla/crawk/commit/4b728959b23a8c73aa23917c3c468b04d4e9de65))
+
+### 🚜 Refactor
+
+
+- *(format)* Add #[must_use] to pure formatting functions - ([cfea1fc](https://github.com/BartoszCiesla/crawk/commit/cfea1fc7b233d5cb48019dfa83f89aefd165d197))
+- *(format)* Use lib graph types, simplify handle_deps_command - ([903ed4c](https://github.com/BartoszCiesla/crawk/commit/903ed4c3ebb3dbb02d772c118b5153e1d17ac20d))
+- *(format)* Consolidate output formatters by command - ([3181986](https://github.com/BartoszCiesla/crawk/commit/3181986df32fed8cb82130bae2cd3862e8803c71))
+- *(graph)* Narrow visibility of internal functions - ([61ebe3b](https://github.com/BartoszCiesla/crawk/commit/61ebe3b103800c2ea5c8c73bc2ce2316e460f91a))
+- *(model,discover)* Accept impl Into<String> in constructors - ([90e824b](https://github.com/BartoszCiesla/crawk/commit/90e824b156d4e4ead6fcaa47ee47afd8e9a8584a))
+- Improve code clarity and documentation - ([94f3e20](https://github.com/BartoszCiesla/crawk/commit/94f3e20c6379edcbf54fa035a011f759c7569120))
+
+### 📚 Documentation
+
+
+- *(discover)* Fix terminology in TargetKind doc comments - ([2d006d7](https://github.com/BartoszCiesla/crawk/commit/2d006d7ce37cf8d581d394489cc64559b8699983))
+- *(graph)* Improve public API documentation - ([d7a98d9](https://github.com/BartoszCiesla/crawk/commit/d7a98d96f05e1c1f6fb2378e8b66ff467af6a4b4))
+- *(lib)* Update MSRV from 1.85 to 1.87 - ([c0c6266](https://github.com/BartoszCiesla/crawk/commit/c0c6266d524c62b1084fa7d58eb47bd331fe76bf))
+- Document deps command and add binstall option - ([8a6eab1](https://github.com/BartoszCiesla/crawk/commit/8a6eab1335edd35f1d0bb5108e0433686dca8679))
+
+### ⚙️ Miscellaneous Tasks
+
+
+- *(release)* Build and publish Linux binaries - ([335f05b](https://github.com/BartoszCiesla/crawk/commit/335f05b8656d63433b49695f844fffd19af85084))
+
+
 ## [0.3.0](https://github.com/BartoszCiesla/crawk/compare/v0.2.0...v0.3.0)
 
 ### ⛰️ Features
