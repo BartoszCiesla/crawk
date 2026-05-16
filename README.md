@@ -14,10 +14,23 @@ Dependency crawler for Rust. It crawls so you don't have to untangle
 
 ## Installation
 
-### CLI
+### Cargo
 
 ```sh
 cargo install crawk
+```
+
+### Nix
+
+```sh
+# Run without installing
+nix run github:BartoszCiesla/crawk
+
+# Install into profile
+nix profile install github:BartoszCiesla/crawk
+
+# Development shell
+nix develop
 ```
 
 ## Quick Start
