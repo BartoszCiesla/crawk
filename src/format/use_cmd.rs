@@ -17,6 +17,7 @@ fn truncate_and_dedup<'a>(
 ///
 /// Each dependency occupies one line. Duplicates produced by depth truncation are
 /// removed. Returns an empty string when there are no dependencies.
+#[must_use]
 pub(crate) fn render_flat(result: &AnalysisResult, depth: Option<usize>) -> String {
     let mut output = truncate_and_dedup(result.dependencies().values().flatten(), depth).join("\n");
     if !output.is_empty() {
@@ -30,6 +31,7 @@ pub(crate) fn render_flat(result: &AnalysisResult, depth: Option<usize>) -> Stri
 /// Each module name appears as a header line, followed by its dependencies indented
 /// with ` - `. Within each group, duplicates produced by depth truncation are removed
 /// and entries are sorted alphabetically.
+#[must_use]
 pub(crate) fn render_grouped(result: &AnalysisResult, depth: Option<usize>) -> String {
     let dependencies = result.dependencies();
     let mut modules = dependencies.keys().cloned().collect::<Vec<_>>();

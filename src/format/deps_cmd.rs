@@ -17,6 +17,7 @@ fn format_api_suffix(apis: &BTreeSet<String>) -> String {
 ///
 /// Each line has the format `source -> target` (or `source -> target [API1, API2]`
 /// when API annotations are present). Returns an empty string when there are no edges.
+#[must_use]
 pub(crate) fn render_plain(edges: &AnnotatedEdges) -> String {
     if edges.is_empty() {
         return String::new();
@@ -38,6 +39,7 @@ pub(crate) fn render_plain(edges: &AnnotatedEdges) -> String {
 /// count, followed by its targets indented with `  -> `. Groups are separated
 /// by blank lines and sorted alphabetically. Returns an empty string when
 /// there are no edges.
+#[must_use]
 pub(crate) fn render_grouped(edges: &AnnotatedEdges) -> String {
     if edges.is_empty() {
         return String::new();
@@ -86,6 +88,7 @@ pub(crate) fn render_grouped(edges: &AnnotatedEdges) -> String {
 ///
 /// When API annotations are present, edges carry a `label` attribute showing
 /// the symbol names.
+#[must_use]
 pub(crate) fn render_dot(edges: &AnnotatedEdges) -> String {
     let mut out = String::new();
     out.push_str("digraph dependencies {\n");

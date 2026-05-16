@@ -19,6 +19,7 @@ pub(crate) struct ListDisplayOptions {
 ///
 /// Columns (left to right): target tag (if `multi_target`), module path,
 /// visibility (if `show_visibility`), file (if `show_source`).
+#[must_use]
 pub(crate) fn render_list_plain(
     modules: &[ModuleInfo],
     opts: &ListDisplayOptions,
@@ -88,6 +89,7 @@ pub(crate) fn render_list_plain(
 ///
 /// Columns (left to right): Target (if `multi_target`), Module,
 /// Visibility (if `show_visibility`), File (if `show_source`).
+#[must_use]
 pub(crate) fn render_list_table(
     modules: &[ModuleInfo],
     opts: &ListDisplayOptions,

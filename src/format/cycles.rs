@@ -20,6 +20,7 @@ fn format_api_suffix(apis: &BTreeSet<String>) -> String {
 ///   beta -> gamma
 ///   gamma -> alpha
 /// ```
+#[must_use]
 pub(crate) fn render_cycles_plain(cycles: &[Cycle]) -> String {
     if cycles.is_empty() {
         return String::new();
@@ -45,6 +46,7 @@ pub(crate) fn render_cycles_plain(cycles: &[Cycle]) -> String {
 ///   beta -> gamma
 ///   gamma -> alpha
 /// ```
+#[must_use]
 pub(crate) fn render_cycles_grouped(cycles: &[Cycle]) -> String {
     if cycles.is_empty() {
         return String::new();
@@ -70,6 +72,7 @@ pub(crate) fn render_cycles_grouped(cycles: &[Cycle]) -> String {
 }
 
 /// Render cycles as DOT — only cycle nodes and edges.
+#[must_use]
 pub(crate) fn render_cycles_dot(cycles: &[Cycle]) -> String {
     let mut out = String::new();
     out.push_str("digraph dependencies {\n");
@@ -122,6 +125,7 @@ pub(crate) fn render_cycles_dot(cycles: &[Cycle]) -> String {
 }
 
 /// Render full graph with cycle edges highlighted in red.
+#[must_use]
 pub(crate) fn render_cycles_dot_highlight(cycles: &[Cycle], all_edges: &AnnotatedEdges) -> String {
     // Collect all cycle edges for quick lookup
     let mut cycle_edge_set: BTreeSet<(&str, &str)> = BTreeSet::new();

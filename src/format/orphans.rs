@@ -1,4 +1,5 @@
 /// Render orphan modules as a plain sorted list, one per line.
+#[must_use]
 pub(crate) fn render_orphans(orphans: &[String]) -> String {
     if orphans.is_empty() {
         return String::new();
