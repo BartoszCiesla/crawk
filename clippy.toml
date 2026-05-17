@@ -1,4 +1,4 @@
 allow-unwrap-in-tests = true
 allow-expect-in-tests = true
-msrv = "1.87"
+msrv = "1.88"
 cognitive-complexity-threshold = 30

@@ -251,10 +251,10 @@ fn collect_public_items(items: &[Item], target_module: &str, caller_module: &str
             if is_visible_from(&use_item.vis, target_module, caller_module) {
                 extract_use_names(&use_item.tree, &mut public_items);
             }
-        } else if let Some((vis, ident)) = item_vis_and_ident(item) {
-            if is_visible_from(vis, target_module, caller_module) {
-                public_items.push(ident.to_string());
-            }
+        } else if let Some((vis, ident)) = item_vis_and_ident(item)
+            && is_visible_from(vis, target_module, caller_module)
+        {
+            public_items.push(ident.to_string());
         }
     }
 

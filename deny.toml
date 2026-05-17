@@ -1,0 +1,32 @@
+# configuration for https://github.com/EmbarkStudios/cargo-deny
+
+[licenses]
+version = 2
+confidence-threshold = 0.8
+allow = [
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "MIT",
+  "Unicode-3.0",
+  "Unlicense",
+  "Zlib",
+]
+
+# r-efi is MIT OR Apache-2.0 OR LGPL-2.1-or-later; pulled transitively via
+# Windows platform deps only, never compiled into the crawk binary on Linux/macOS.
+[[licenses.exceptions]]
+allow = ["LGPL-2.1-or-later"]
+name = "r-efi"
+version = "*"
+
+[advisories]
+version = 2
+
+[bans]
+multiple-versions = "allow"
+wildcards = "deny"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

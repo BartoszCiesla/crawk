@@ -856,13 +856,13 @@ impl Analyzer {
                     continue;
                 }
                 let segments = reference.segments();
-                if let Some(resolved) = graph::find_module_target(segments, &known_modules) {
-                    if resolved == target {
-                        filtered
-                            .entry(source_name.clone())
-                            .or_default()
-                            .insert(reference.clone());
-                    }
+                if let Some(resolved) = graph::find_module_target(segments, &known_modules)
+                    && resolved == target
+                {
+                    filtered
+                        .entry(source_name.clone())
+                        .or_default()
+                        .insert(reference.clone());
                 }
             }
         }

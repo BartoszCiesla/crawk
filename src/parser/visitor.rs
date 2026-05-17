@@ -308,10 +308,10 @@ impl ModuleVisitor {
             }),
         };
 
-        if let Some((pfx, path)) = entry {
-            if !path.is_empty() {
-                self.imported_modules.insert(imported_name, (pfx, path));
-            }
+        if let Some((pfx, path)) = entry
+            && !path.is_empty()
+        {
+            self.imported_modules.insert(imported_name, (pfx, path));
         }
     }
 
@@ -370,13 +370,12 @@ impl ModuleVisitor {
                         }
                     }
 
-                    if segments.len() >= 2 {
-                        if let Some(r) = self
+                    if segments.len() >= 2
+                        && let Some(r) = self
                             .build_reference_from_segments(&segments)
                             .or_else(|| self.resolve_via_import(&segments))
-                        {
-                            self.references.value_refs.push(r);
-                        }
+                    {
+                        self.references.value_refs.push(r);
                     }
                 }
                 TokenTree::Group(group) => {
@@ -592,30 +591,30 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
     /// where paths appear inside attribute token streams that `syn::Visit`
     /// normally treats as opaque.
     fn visit_attribute(&mut self, attr: &'ast syn::Attribute) {
-        if !self.in_test_module {
-            if let syn::Meta::List(meta_list) = &attr.meta {
-                self.extract_paths_from_tokens(&meta_list.tokens);
-            }
+        if !self.in_test_module
+            && let syn::Meta::List(meta_list) = &attr.meta
+        {
+            self.extract_paths_from_tokens(&meta_list.tokens);
         }
         syn::visit::visit_attribute(self, attr);
     }
 
     /// Visit expression paths - captures paths in expressions like `crate::foo::bar()`
     fn visit_expr_path(&mut self, node: &'ast syn::ExprPath) {
-        if !self.in_test_module {
-            if let Some(r) = self.build_reference(&node.path) {
-                self.references.value_refs.push(r);
-            }
+        if !self.in_test_module
+            && let Some(r) = self.build_reference(&node.path)
+        {
+            self.references.value_refs.push(r);
         }
         syn::visit::visit_expr_path(self, node);
     }
 
     /// Visit struct expressions - captures struct literal construction
     fn visit_expr_struct(&mut self, node: &'ast syn::ExprStruct) {
-        if !self.in_test_module {
-            if let Some(r) = self.build_reference(&node.path) {
-                self.references.value_refs.push(r);
-            }
+        if !self.in_test_module
+            && let Some(r) = self.build_reference(&node.path)
+        {
+            self.references.value_refs.push(r);
         }
         syn::visit::visit_expr_struct(self, node);
     }
@@ -624,10 +623,10 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
     fn visit_item_impl(&mut self, node: &'ast syn::ItemImpl) {
         if !self.in_test_module {
             // Check the trait being implemented (if any)
-            if let Some((_, trait_path, _)) = &node.trait_ {
-                if let Some(r) = self.build_reference(trait_path) {
-                    self.references.type_refs.push(r);
-                }
+            if let Some((_, trait_path, _)) = &node.trait_
+                && let Some(r) = self.build_reference(trait_path)
+            {
+                self.references.type_refs.push(r);
             }
         }
         syn::visit::visit_item_impl(self, node);
@@ -698,30 +697,30 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
 
     /// Visit pattern structs - captures struct patterns in match arms
     fn visit_pat_struct(&mut self, node: &'ast syn::PatStruct) {
-        if !self.in_test_module {
-            if let Some(r) = self.build_reference(&node.path) {
-                self.references.value_refs.push(r);
-            }
+        if !self.in_test_module
+            && let Some(r) = self.build_reference(&node.path)
+        {
+            self.references.value_refs.push(r);
         }
         syn::visit::visit_pat_struct(self, node);
     }
 
     /// Visit pattern tuple structs - captures tuple struct patterns
     fn visit_pat_tuple_struct(&mut self, node: &'ast syn::PatTupleStruct) {
-        if !self.in_test_module {
-            if let Some(r) = self.build_reference(&node.path) {
-                self.references.value_refs.push(r);
-            }
+        if !self.in_test_module
+            && let Some(r) = self.build_reference(&node.path)
+        {
+            self.references.value_refs.push(r);
         }
         syn::visit::visit_pat_tuple_struct(self, node);
     }
 
     /// Visit trait bounds - captures trait bounds in generics
     fn visit_trait_bound(&mut self, node: &'ast syn::TraitBound) {
-        if !self.in_test_module {
-            if let Some(r) = self.build_reference(&node.path) {
-                self.references.type_refs.push(r);
-            }
+        if !self.in_test_module
+            && let Some(r) = self.build_reference(&node.path)
+        {
+            self.references.type_refs.push(r);
         }
         syn::visit::visit_trait_bound(self, node);
     }

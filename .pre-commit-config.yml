@@ -105,3 +105,11 @@ repos:
         args: ["machete"]
         types_or: [cargo, cargo-lock]
         pass_filenames: false
+      - id: cargo-deny
+        name: cargo deny check
+        entry: cargo
+        language: system
+        args: ["deny", "check"]
+        files: '^(Cargo\.(toml|lock)|deny\.toml)$'
+        pass_filenames: false
+        stages: [pre-push]
