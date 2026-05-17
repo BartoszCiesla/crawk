@@ -586,6 +586,20 @@ impl ModuleVisitor {
 }
 
 impl<'ast> Visit<'ast> for ModuleVisitor {
+    /// Visit attributes - extracts internal paths from attribute arguments.
+    ///
+    /// Handles `#[command(version = version::VERSION)]` and similar patterns
+    /// where paths appear inside attribute token streams that `syn::Visit`
+    /// normally treats as opaque.
+    fn visit_attribute(&mut self, attr: &'ast syn::Attribute) {
+        if !self.in_test_module {
+            if let syn::Meta::List(meta_list) = &attr.meta {
+                self.extract_paths_from_tokens(&meta_list.tokens);
+            }
+        }
+        syn::visit::visit_attribute(self, attr);
+    }
+
     /// Visit expression paths - captures paths in expressions like `crate::foo::bar()`
     fn visit_expr_path(&mut self, node: &'ast syn::ExprPath) {
         if !self.in_test_module {
@@ -666,20 +680,6 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
         if !self.in_test_module {
             self.process_use_tree(&node.tree, Vec::new(), PathPrefix::None);
         }
-    }
-
-    /// Visit attributes - extracts internal paths from attribute arguments.
-    ///
-    /// Handles `#[command(version = version::VERSION)]` and similar patterns
-    /// where paths appear inside attribute token streams that `syn::Visit`
-    /// normally treats as opaque.
-    fn visit_attribute(&mut self, attr: &'ast syn::Attribute) {
-        if !self.in_test_module {
-            if let syn::Meta::List(meta_list) = &attr.meta {
-                self.extract_paths_from_tokens(&meta_list.tokens);
-            }
-        }
-        syn::visit::visit_attribute(self, attr);
     }
 
     /// Visit macro invocations - captures macro paths and argument paths.

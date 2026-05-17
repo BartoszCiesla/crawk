@@ -28,7 +28,9 @@ discover::module_tree -> constants
 discover::module_tree -> discover
 discover::module_tree -> utils
 error -> discover
+format::cycles -> format
 format::cycles -> lib
+format::deps_cmd -> format
 format::deps_cmd -> lib
 format::list_cmd -> lib
 format::use_cmd -> lib

@@ -2,16 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use crawk::AnnotatedEdges;
 
-/// Format an API annotation suffix for a single edge.
-///
-/// Returns ` [Symbol1, Symbol2]` when APIs are present, empty string otherwise.
-fn format_api_suffix(apis: &BTreeSet<String>) -> String {
-    if apis.is_empty() {
-        return String::new();
-    }
-    let items: Vec<&str> = apis.iter().map(String::as_str).collect();
-    format!(" [{}]", items.join(", "))
-}
+use super::format_api_suffix;
 
 /// Render dependency edges as a plain sorted list.
 ///

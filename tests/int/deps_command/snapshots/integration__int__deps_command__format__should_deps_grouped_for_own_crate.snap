@@ -40,10 +40,12 @@ discover::module_tree (4)
 error (1)
   -> discover
 
-format::cycles (1)
+format::cycles (2)
+  -> format
   -> lib
 
-format::deps_cmd (1)
+format::deps_cmd (2)
+  -> format
   -> lib
 
 format::list_cmd (1)

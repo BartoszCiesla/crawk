@@ -25,6 +25,7 @@ crate::format::deps_cmd::*
 crate::format::deps_cmd::render_dot
 crate::format::deps_cmd::render_grouped
 crate::format::deps_cmd::render_plain
+crate::format::format_api_suffix
 crate::format::list_cmd::ListDisplayOptions
 crate::format::list_cmd::render_list_plain
 crate::format::list_cmd::render_list_table

@@ -64,6 +64,7 @@ cli::validation::tests
  - crate::cli::validation::validate_module_path
 format
 format::cycles
+ - crate::format::format_api_suffix
  - crawk::AnnotatedEdges
  - crawk::Cycle
 format::cycles::tests
@@ -72,6 +73,7 @@ format::cycles::tests
  - crate::format::cycles::render_cycles_grouped
  - crate::format::cycles::render_cycles_plain
 format::deps_cmd
+ - crate::format::format_api_suffix
  - crawk::AnnotatedEdges
 format::deps_cmd::tests
  - crate::format::deps_cmd::render_dot

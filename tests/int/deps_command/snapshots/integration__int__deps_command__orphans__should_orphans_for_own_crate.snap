@@ -10,7 +10,6 @@ success: true
 exit_code: 0
 ----- stdout -----
 discover::module_tree
-format
 main
 
 ----- stderr -----

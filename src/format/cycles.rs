@@ -3,14 +3,7 @@ use std::fmt::Write;
 
 use crawk::{AnnotatedEdges, Cycle};
 
-/// Format an API annotation suffix for a single edge.
-fn format_api_suffix(apis: &BTreeSet<String>) -> String {
-    if apis.is_empty() {
-        return String::new();
-    }
-    let items: Vec<&str> = apis.iter().map(String::as_str).collect();
-    format!(" [{}]", items.join(", "))
-}
+use super::format_api_suffix;
 
 /// Render cycles as plain text.
 ///
@@ -71,15 +64,7 @@ pub(crate) fn render_cycles_grouped(cycles: &[Cycle]) -> String {
     out
 }
 
-/// Render cycles as DOT — only cycle nodes and edges.
-#[must_use]
-pub(crate) fn render_cycles_dot(cycles: &[Cycle]) -> String {
-    let mut out = String::new();
-    out.push_str("digraph dependencies {\n");
-    out.push_str("    rankdir=LR;\n");
-    out.push_str("    node [shape=box, style=rounded, fontname=\"monospace\", fontsize=10];\n");
-    out.push_str("    edge [color=\"#444444\"];\n");
-
+fn write_cycle_subgraphs(out: &mut String, cycles: &[Cycle]) {
     for (i, cycle) in cycles.iter().enumerate() {
         let _ = write!(out, "\n    subgraph cluster_cycle_{} {{\n", i + 1);
         let _ = writeln!(
@@ -96,6 +81,18 @@ pub(crate) fn render_cycles_dot(cycles: &[Cycle]) -> String {
         }
         out.push_str("    }\n");
     }
+}
+
+/// Render cycles as DOT — only cycle nodes and edges.
+#[must_use]
+pub(crate) fn render_cycles_dot(cycles: &[Cycle]) -> String {
+    let mut out = String::new();
+    out.push_str("digraph dependencies {\n");
+    out.push_str("    rankdir=LR;\n");
+    out.push_str("    node [shape=box, style=rounded, fontname=\"monospace\", fontsize=10];\n");
+    out.push_str("    edge [color=\"#444444\"];\n");
+
+    write_cycle_subgraphs(&mut out, cycles);
 
     // Edges
     let has_edges = cycles.iter().any(|c| !c.edges.is_empty());
@@ -150,22 +147,7 @@ pub(crate) fn render_cycles_dot_highlight(cycles: &[Cycle], all_edges: &Annotate
     out.push_str("    edge [color=\"#444444\"];\n");
 
     // Cycle clusters
-    for (i, cycle) in cycles.iter().enumerate() {
-        let _ = write!(out, "\n    subgraph cluster_cycle_{} {{\n", i + 1);
-        let _ = writeln!(
-            out,
-            "        label=\"cycle {} ({} modules)\";",
-            i + 1,
-            cycle.modules.len()
-        );
-        out.push_str("        style=dashed;\n");
-        out.push_str("        color=\"#e67700\";\n");
-        out.push_str("        fontcolor=\"#e67700\";\n");
-        for module in &cycle.modules {
-            let _ = writeln!(out, "        \"{module}\";");
-        }
-        out.push_str("    }\n");
-    }
+    write_cycle_subgraphs(&mut out, cycles);
 
     // Non-cycle nodes
     let mut all_nodes: BTreeSet<&str> = BTreeSet::new();
