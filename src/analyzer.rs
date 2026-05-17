@@ -800,6 +800,76 @@ impl Analyzer {
         Ok(DependencyGraph::new(all_edges, truncated_modules))
     }
 
+    /// Explain why `source` depends on `target` by listing the concrete references.
+    ///
+    /// Analyses the `source` module (and its submodules when
+    /// [`AnalysisOptions::recursive`] is `true`) and returns only those
+    /// [`TypeReference`]s that resolve to the `target` module.
+    ///
+    /// The result is a map from source submodule path to the set of matching
+    /// references. An empty map means `source` has no references to `target`.
+    ///
+    /// # Arguments
+    ///
+    /// * `source` - Module path of the dependent (e.g., `"analyzer"`)
+    /// * `target` - Module path being depended on (e.g., `"reference"`)
+    /// * `options` - Analysis options (recursive, include_tests are respected;
+    ///   `expand_groups` is forced to `true` internally for precise matching)
+    ///
+    /// # Errors
+    ///
+    /// Returns [`AnalysisError::ModuleNotFound`] if `source` does not exist.
+    /// A non-existent `target` returns an empty map (no error).
+    pub fn explain_dependency(
+        &mut self,
+        source: &str,
+        target: &str,
+        options: &AnalysisOptions,
+    ) -> Result<BTreeMap<String, HashSet<TypeReference>>> {
+        let all_modules = self.list_all_modules(options.include_tests)?;
+        let known_modules: HashSet<String> =
+            all_modules.iter().map(|m| m.path().to_owned()).collect();
+
+        if !known_modules.contains(target) {
+            info!("Target module '{target}' not found in crate, returning empty result");
+            return Ok(BTreeMap::new());
+        }
+
+        let analysis_options = AnalysisOptions {
+            recursive: options.recursive,
+            include_tests: options.include_tests,
+            expand_groups: true,
+            resolve_globs: false,
+        };
+        let result = self.analyze_module(source, &analysis_options)?;
+
+        let mut filtered: BTreeMap<String, HashSet<TypeReference>> = BTreeMap::new();
+        for (module_key, refs) in result.dependencies() {
+            let source_name = if module_key.is_empty() {
+                source.to_owned()
+            } else {
+                module_key.clone()
+            };
+
+            for reference in refs {
+                if reference.prefix() != PathPrefix::Crate {
+                    continue;
+                }
+                let segments = reference.segments();
+                if let Some(resolved) = graph::find_module_target(segments, &known_modules) {
+                    if resolved == target {
+                        filtered
+                            .entry(source_name.clone())
+                            .or_default()
+                            .insert(reference.clone());
+                    }
+                }
+            }
+        }
+
+        Ok(filtered)
+    }
+
     /// Determine the root module path for each unique compilation target.
     ///
     /// For lib targets the root is always `"lib"`. For binary and test targets

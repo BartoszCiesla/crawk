@@ -28,6 +28,7 @@ crate::graph::cycles::detect_cycles
 crate::graph::edges
 crate::graph::edges::AnnotatedEdges
 crate::graph::edges::build_edges
+crate::graph::edges::find_module_target
 crate::graph::edges::truncate_module_path
 crate::graph::edges::{AnnotatedEdges, Edge}
 crate::graph::orphans::find_orphans

@@ -84,6 +84,7 @@ graph
  - crate::graph::edges::AnnotatedEdges
  - crate::graph::edges::Edge
  - crate::graph::edges::build_edges
+ - crate::graph::edges::find_module_target
  - crate::graph::edges::truncate_module_path
  - crate::graph::orphans::find_orphans
 graph::cycles
@@ -98,6 +99,7 @@ graph::edges::tests
  - crate::graph::edges::AnnotatedEdges
  - crate::graph::edges::Edge
  - crate::graph::edges::build_edges
+ - crate::graph::edges::find_module_target
  - crate::graph::edges::truncate_module_path
 graph::orphans
  - crate::graph::edges::AnnotatedEdges
@@ -111,6 +113,7 @@ graph::tests
  - crate::graph::Edge
  - crate::graph::build_edges
  - crate::graph::detect_cycles
+ - crate::graph::find_module_target
  - crate::graph::find_orphans
  - crate::graph::truncate_module_path
 model

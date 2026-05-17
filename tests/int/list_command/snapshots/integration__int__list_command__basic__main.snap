@@ -18,6 +18,7 @@ format::deps_cmd
 format::list_cmd
 format::orphans
 format::use_cmd
+format::why_cmd
 logger
 main
 

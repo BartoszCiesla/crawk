@@ -5,7 +5,7 @@ mod logger;
 use clap::Parser;
 use cli::{
     CrawkArgs, CrawkCommands, CyclesMode, DepsArgs, DepsOutputFormat, ListArgs, ListOutputFormat,
-    UseArgs, UseOutputFormat,
+    UseArgs, UseOutputFormat, WhyArgs, WhyOutputFormat,
 };
 use crawk::{AnalysisOptions, Analyzer, DependencyGraphOptions, version};
 use logger::configure_tracing;
@@ -33,6 +33,7 @@ fn main() -> anyhow::Result<()> {
         CrawkCommands::Use(ref args) => handle_use_command(&crate_root, args)?,
         CrawkCommands::List(ref args) => handle_list_command(&crate_root, args)?,
         CrawkCommands::Deps(ref args) => handle_deps_command(&crate_root, args)?,
+        CrawkCommands::Why(ref args) => handle_why_command(&crate_root, args)?,
     }
 
     Ok(())
@@ -154,6 +155,30 @@ fn handle_list_command(crate_root: &Path, args: &ListArgs) -> anyhow::Result<()>
             ListOutputFormat::Table => {
                 format::list_cmd::render_list_table(&modules, &display_opts, crate_root)
             }
+        };
+        print!("{output}");
+    }
+
+    Ok(())
+}
+
+/// Handle the 'why' subcommand
+fn handle_why_command(crate_root: &Path, args: &WhyArgs) -> anyhow::Result<()> {
+    let mut analyzer = Analyzer::new(crate_root)?;
+    let options = AnalysisOptions {
+        recursive: args.recursive,
+        include_tests: args.include_tests,
+        expand_groups: true,
+        resolve_globs: false,
+    };
+    let refs = analyzer.explain_dependency(&args.source, &args.target, &options)?;
+
+    if refs.is_empty() {
+        info!("No references from '{}' to '{}'.", args.source, args.target);
+    } else {
+        let output = match args.format {
+            WhyOutputFormat::Plain => format::why_cmd::render_plain(&refs),
+            WhyOutputFormat::Grouped => format::why_cmd::render_grouped(&refs),
         };
         print!("{output}");
     }

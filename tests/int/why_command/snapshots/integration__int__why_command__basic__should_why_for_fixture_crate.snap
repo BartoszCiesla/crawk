@@ -1,0 +1,16 @@
+---
+source: tests/int/why_command/basic.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/modules
+    - why
+    - engine
+    - config
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+----- stderr -----

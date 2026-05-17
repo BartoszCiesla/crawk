@@ -170,6 +170,23 @@ pub(crate) enum CrawkCommands {
     /// Note: global options (-p, -v, -l) must appear before the subcommand.
     #[clap(verbatim_doc_comment, visible_aliases = ["d", "dependencies"])]
     Deps(DepsArgs),
+
+    /// Explain why a module depends on another module
+    ///
+    /// Shows the concrete references that create the dependency edge from
+    /// SOURCE to TARGET. This is a drill-down from `deps` — it answers
+    /// "what specific items does SOURCE use from TARGET?"
+    ///
+    /// Both SOURCE and TARGET are `::` separated module paths without
+    /// `crate::` prefix. e.g. "analyzer", "parser::visitor"
+    ///
+    /// Empty output (exit 0) means SOURCE has no references to TARGET.
+    ///
+    /// Use -r to include SOURCE's submodules in the search.
+    ///
+    /// Note: global options (-p, -v, -l) must appear before the subcommand.
+    #[clap(verbatim_doc_comment, visible_alias = "w")]
+    Why(WhyArgs),
 }
 
 #[derive(ValueEnum, Debug, Clone, Default, PartialEq, Eq)]
@@ -460,4 +477,54 @@ pub(crate) struct ListDisplayArgs {
     #[clap(verbatim_doc_comment)]
     #[arg(short = 'T', long = "targets", default_value_t = false)]
     pub show_targets: bool,
+}
+
+#[derive(ValueEnum, Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) enum WhyOutputFormat {
+    /// Flat sorted list of references (default)
+    #[default]
+    Plain,
+    /// Grouped by source submodule
+    Grouped,
+}
+
+impl Display for WhyOutputFormat {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        match self {
+            Self::Plain => f.write_str("plain"),
+            Self::Grouped => f.write_str("grouped"),
+        }
+    }
+}
+
+#[derive(Parser, Debug, Clone)]
+/// Arguments for the `why` subcommand — explains a dependency between two modules.
+pub(crate) struct WhyArgs {
+    /// Source module that depends on TARGET (e.g., "analyzer" or "parser::visitor")
+    #[clap(verbatim_doc_comment)]
+    #[arg(value_parser = validate_module_path)]
+    pub source: String,
+
+    /// Target module being depended on (e.g., "reference" or "discover::module_tree")
+    #[clap(verbatim_doc_comment)]
+    #[arg(value_parser = validate_module_path)]
+    pub target: String,
+
+    /// Recursively include SOURCE's submodules (disabled by default)
+    #[clap(verbatim_doc_comment)]
+    #[arg(short = 'r', long = "recursive", default_value_t = false)]
+    pub recursive: bool,
+
+    /// Include modules defined in `#[cfg(test)]` blocks (excluded by default)
+    #[clap(verbatim_doc_comment)]
+    #[arg(short = 't', long = "include-tests", default_value_t = false)]
+    pub include_tests: bool,
+
+    /// Output format
+    ///
+    /// plain   — flat sorted list of references (default)
+    /// grouped — grouped by source submodule (useful with -r)
+    #[clap(verbatim_doc_comment)]
+    #[arg(short = 'f', long = "format", default_value_t = WhyOutputFormat::Plain)]
+    pub format: WhyOutputFormat,
 }

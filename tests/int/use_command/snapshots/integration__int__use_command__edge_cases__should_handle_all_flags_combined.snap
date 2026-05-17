@@ -104,6 +104,7 @@ graph::tests
  - crate::graph::Edge
  - crate::graph::build_edges
  - crate::graph::detect_cycles
+ - crate::graph::find_module_target
  - crate::graph::find_orphans
  - crate::graph::truncate_module_path
 model

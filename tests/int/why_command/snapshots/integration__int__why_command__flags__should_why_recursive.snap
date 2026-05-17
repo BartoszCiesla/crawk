@@ -1,0 +1,21 @@
+---
+source: tests/int/why_command/flags.rs
+info:
+  program: crawk
+  args:
+    - why
+    - "-r"
+    - parser
+    - reference
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::reference::GroupItem
+crate::reference::GroupItem::Aliased
+crate::reference::GroupItem::Glob
+crate::reference::GroupItem::Simple
+crate::reference::PathPrefix
+crate::reference::TypeReference
+
+----- stderr -----

@@ -41,7 +41,7 @@ pub(crate) fn truncate_module_path(path: &str, depth: Option<usize>) -> String {
 ///
 /// Returns `None` when no prefix matches (e.g. a crate-root re-export with no
 /// corresponding module path).
-fn find_module_target<'a>(
+pub(crate) fn find_module_target<'a>(
     segments: &[String],
     known_modules: &'a HashSet<String>,
 ) -> Option<&'a str> {

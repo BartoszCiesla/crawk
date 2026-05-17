@@ -25,6 +25,8 @@ main
  - crate::cli::ListOutputFormat
  - crate::cli::UseArgs
  - crate::cli::UseOutputFormat
+ - crate::cli::WhyArgs
+ - crate::cli::WhyOutputFormat
  - crate::format::cycles::render_cycles_dot
  - crate::format::cycles::render_cycles_dot_highlight
  - crate::format::cycles::render_cycles_grouped
@@ -38,6 +40,8 @@ main
  - crate::format::orphans::render_orphans
  - crate::format::use_cmd::render_flat
  - crate::format::use_cmd::render_grouped
+ - crate::format::why_cmd::render_grouped
+ - crate::format::why_cmd::render_plain
  - crate::logger::configure_tracing
  - crawk::AnalysisOptions
  - crawk::Analyzer
@@ -84,6 +88,8 @@ format::use_cmd
 format::use_cmd::tests
  - crate::format::use_cmd::render_flat
  - crate::format::use_cmd::render_grouped
+format::why_cmd
+ - crawk::TypeReference
 logger
  - crate::cli::CrawkArgs
 

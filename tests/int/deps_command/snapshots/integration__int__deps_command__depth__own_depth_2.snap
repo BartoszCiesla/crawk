@@ -32,6 +32,7 @@ format::cycles -> lib
 format::deps_cmd -> lib
 format::list_cmd -> lib
 format::use_cmd -> lib
+format::why_cmd -> lib
 graph -> graph::cycles
 graph -> graph::edges
 graph -> graph::orphans
@@ -52,6 +53,7 @@ main -> format::deps_cmd
 main -> format::list_cmd
 main -> format::orphans
 main -> format::use_cmd
+main -> format::why_cmd
 main -> lib
 main -> logger
 main -> version

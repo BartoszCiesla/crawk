@@ -49,5 +49,10 @@ int::use_command::visibility::inner_glob
 int::use_command::visibility::restricted
 int::verbosity
 int::version
+int::why_command
+int::why_command::basic
+int::why_command::error_cases
+int::why_command::flags
+int::why_command::overview
 
 ----- stderr -----

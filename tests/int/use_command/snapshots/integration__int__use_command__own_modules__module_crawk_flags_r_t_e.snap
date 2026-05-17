@@ -50,6 +50,7 @@ crate::graph::edges::*
 crate::graph::edges::AnnotatedEdges
 crate::graph::edges::Edge
 crate::graph::edges::build_edges
+crate::graph::edges::find_module_target
 crate::graph::edges::truncate_module_path
 crate::graph::orphans::*
 crate::graph::orphans::find_orphans

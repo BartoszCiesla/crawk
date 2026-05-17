@@ -22,6 +22,8 @@ crate::cli::ListArgs
 crate::cli::ListOutputFormat
 crate::cli::UseArgs
 crate::cli::UseOutputFormat
+crate::cli::WhyArgs
+crate::cli::WhyOutputFormat
 crate::cli::overview::generate_after_help
 crate::cli::validation::validate_depth
 crate::cli::validation::validate_module_path
@@ -38,6 +40,8 @@ crate::format::list_cmd::render_list_table
 crate::format::orphans::render_orphans
 crate::format::use_cmd::render_flat
 crate::format::use_cmd::render_grouped
+crate::format::why_cmd::render_grouped
+crate::format::why_cmd::render_plain
 crate::logger::configure_tracing
 crawk::AnalysisOptions
 crawk::AnalysisResult

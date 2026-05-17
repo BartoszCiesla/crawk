@@ -20,6 +20,7 @@ pub(crate) use edges::truncate_module_path;
 pub(crate) use orphans::find_orphans;
 
 pub(crate) use edges::build_edges;
+pub(crate) use edges::find_module_target;
 
 /// Options controlling dependency graph construction.
 ///

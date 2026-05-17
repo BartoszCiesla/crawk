@@ -1,0 +1,58 @@
+---
+source: tests/int/why_command/overview.rs
+info:
+  program: crawk
+  args:
+    - why
+    - "--help"
+---
+success: true
+exit_code: 0
+----- stdout -----
+Explain why a module depends on another module
+
+Shows the concrete references that create the dependency edge from
+SOURCE to TARGET. This is a drill-down from `deps` — it answers
+"what specific items does SOURCE use from TARGET?"
+
+Both SOURCE and TARGET are `::` separated module paths without
+`crate::` prefix. e.g. "analyzer", "parser::visitor"
+
+Empty output (exit 0) means SOURCE has no references to TARGET.
+
+Use -r to include SOURCE's submodules in the search.
+
+Note: global options (-p, -v, -l) must appear before the subcommand.
+
+Usage: crawk why [OPTIONS] <SOURCE> <TARGET>
+
+Arguments:
+  <SOURCE>
+          Source module that depends on TARGET (e.g., "analyzer" or "parser::visitor")
+
+  <TARGET>
+          Target module being depended on (e.g., "reference" or "discover::module_tree")
+
+Options:
+  -r, --recursive
+          Recursively include SOURCE's submodules (disabled by default)
+
+  -t, --include-tests
+          Include modules defined in `#[cfg(test)]` blocks (excluded by default)
+
+  -f, --format <FORMAT>
+          Output format
+          
+          plain   — flat sorted list of references (default)
+          grouped — grouped by source submodule (useful with -r)
+
+          Possible values:
+          - plain:   Flat sorted list of references (default)
+          - grouped: Grouped by source submodule
+          
+          [default: plain]
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+----- stderr -----

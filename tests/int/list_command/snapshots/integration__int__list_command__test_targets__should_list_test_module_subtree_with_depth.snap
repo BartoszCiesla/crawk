@@ -20,5 +20,6 @@ int::list_command
 int::use_command
 int::verbosity
 int::version
+int::why_command
 
 ----- stderr -----

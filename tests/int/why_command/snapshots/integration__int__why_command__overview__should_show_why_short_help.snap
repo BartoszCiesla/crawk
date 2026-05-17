@@ -1,0 +1,26 @@
+---
+source: tests/int/why_command/overview.rs
+info:
+  program: crawk
+  args:
+    - why
+    - "-h"
+---
+success: true
+exit_code: 0
+----- stdout -----
+Explain why a module depends on another module
+
+Usage: crawk why [OPTIONS] <SOURCE> <TARGET>
+
+Arguments:
+  <SOURCE>  Source module that depends on TARGET (e.g., "analyzer" or "parser::visitor")
+  <TARGET>  Target module being depended on (e.g., "reference" or "discover::module_tree")
+
+Options:
+  -r, --recursive        Recursively include SOURCE's submodules (disabled by default)
+  -t, --include-tests    Include modules defined in `#[cfg(test)]` blocks (excluded by default)
+  -f, --format <FORMAT>  Output format [default: plain] [possible values: plain, grouped]
+  -h, --help             Print help (see more with '--help')
+
+----- stderr -----

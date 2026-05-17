@@ -1,0 +1,19 @@
+---
+source: tests/int/why_command/flags.rs
+info:
+  program: crawk
+  args:
+    - why
+    - "-t"
+    - analyzer
+    - reference
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::reference::GroupItem
+crate::reference::PathPrefix
+crate::reference::PathSuffix
+crate::reference::TypeReference
+
+----- stderr -----

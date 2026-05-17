@@ -1,0 +1,15 @@
+---
+source: tests/int/why_command/error_cases.rs
+info:
+  program: crawk
+  args:
+    - why
+    - nonexistent
+    - reference
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: Module 'nonexistent' not found

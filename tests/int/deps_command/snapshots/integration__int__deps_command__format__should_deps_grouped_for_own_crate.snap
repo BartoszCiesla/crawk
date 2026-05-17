@@ -52,6 +52,9 @@ format::list_cmd (1)
 format::use_cmd (1)
   -> lib
 
+format::why_cmd (1)
+  -> lib
+
 graph (3)
   -> graph::cycles
   -> graph::edges
@@ -78,13 +81,14 @@ lib (6)
 logger (1)
   -> cli
 
-main (9)
+main (10)
   -> cli
   -> format::cycles
   -> format::deps_cmd
   -> format::list_cmd
   -> format::orphans
   -> format::use_cmd
+  -> format::why_cmd
   -> lib
   -> logger
   -> version
