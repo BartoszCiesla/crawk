@@ -29,10 +29,14 @@ jobs:
         uses: taiki-e/install-action@7769b73c2ec98c38dfcf2e18c83cfd4880c038c1 # v2.75.27
         with:
           tool: cargo-sort, cargo-machete, cargo-sort, cargo-nextest
-      - name: Run checks
+      - name: Run pre-commit checks
         uses: j178/prek-action@6ad80277337ad479fe43bd70701c3f7f8aa74db3 # v2.0.3
         with:
-          extra-args: '--all-files'
+          extra-args: '--all-files --hook-stage pre-commit'
+      - name: Run pre-push checks
+        uses: j178/prek-action@6ad80277337ad479fe43bd70701c3f7f8aa74db3 # v2.0.3
+        with:
+          extra-args: '--all-files --hook-stage pre-push'
   build-checks:
     name: Build Checks
     permissions:
