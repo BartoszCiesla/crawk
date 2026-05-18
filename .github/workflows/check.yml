@@ -29,6 +29,9 @@ jobs:
         uses: taiki-e/install-action@ec28e287910af896fd98e04056d31fa68607e7ad # v2.77.4
         with:
           tool: cargo-sort, cargo-machete, cargo-sort, cargo-nextest, cargo-deny
+      - name: Fetch PR base ref
+        if: github.event_name == 'pull_request'
+        run: git fetch --depth=1 origin ${{ github.event.pull_request.base.sha }}
       - name: Run pre-commit checks (PR - changed files only)
         if: github.event_name == 'pull_request'
         uses: j178/prek-action@6ad80277337ad479fe43bd70701c3f7f8aa74db3 # v2.0.3
