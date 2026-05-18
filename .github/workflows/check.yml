@@ -29,14 +29,26 @@ jobs:
         uses: taiki-e/install-action@ec28e287910af896fd98e04056d31fa68607e7ad # v2.77.4
         with:
           tool: cargo-sort, cargo-machete, cargo-sort, cargo-nextest, cargo-deny
-      - name: Run pre-commit checks
+      - name: Run pre-commit checks (PR - changed files only)
+        if: github.event_name == 'pull_request'
         uses: j178/prek-action@6ad80277337ad479fe43bd70701c3f7f8aa74db3 # v2.0.3
         with:
-          extra-args: '--hook-stage pre-commit'
-      - name: Run pre-push checks
+          extra-args: '--hook-stage pre-commit --from-ref ${{ github.event.pull_request.base.sha }} --to-ref ${{ github.event.pull_request.head.sha }} --show-diff-on-failure'
+      - name: Run pre-push checks (PR - changed files only)
+        if: github.event_name == 'pull_request'
         uses: j178/prek-action@6ad80277337ad479fe43bd70701c3f7f8aa74db3 # v2.0.3
         with:
-          extra-args: '--hook-stage pre-push'
+          extra-args: '--hook-stage pre-push --from-ref ${{ github.event.pull_request.base.sha }} --to-ref ${{ github.event.pull_request.head.sha }} --show-diff-on-failure'
+      - name: Run pre-commit checks (push - all files)
+        if: github.event_name == 'push'
+        uses: j178/prek-action@6ad80277337ad479fe43bd70701c3f7f8aa74db3 # v2.0.3
+        with:
+          extra-args: '--hook-stage pre-commit --all-files --show-diff-on-failure'
+      - name: Run pre-push checks (push - all files)
+        if: github.event_name == 'push'
+        uses: j178/prek-action@6ad80277337ad479fe43bd70701c3f7f8aa74db3 # v2.0.3
+        with:
+          extra-args: '--hook-stage pre-push --all-files --show-diff-on-failure'
   build-checks:
     name: Build Checks
     permissions:
