@@ -8,8 +8,40 @@ on:
       - master
 permissions: {}
 jobs:
-  prek-checks:
-    name: Prek Checks
+  prek-checks-pr:
+    name: Prek Checks (PR)
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read # For checking the code in the repository.
+    runs-on: ubuntu-latest
+    concurrency:
+      group: prek-checks-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0 # Full history needed for base..head diff.
+      - name: Install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@2b1f5e9b395427c92ee4e3331786ca3c37afe2d7 # v1.16.0
+        with:
+          components: clippy, rustfmt
+      - name: Install cargo tools
+        uses: taiki-e/install-action@ec28e287910af896fd98e04056d31fa68607e7ad # v2.77.4
+        with:
+          tool: cargo-sort, cargo-machete, cargo-sort, cargo-nextest, cargo-deny
+      - name: Run pre-commit checks
+        uses: j178/prek-action@6ad80277337ad479fe43bd70701c3f7f8aa74db3 # v2.0.3
+        with:
+          extra-args: '--hook-stage pre-commit --from-ref ${{ github.event.pull_request.base.sha }} --to-ref ${{ github.event.pull_request.head.sha }}'
+      - name: Run pre-push checks
+        uses: j178/prek-action@6ad80277337ad479fe43bd70701c3f7f8aa74db3 # v2.0.3
+        with:
+          extra-args: '--hook-stage pre-push --from-ref ${{ github.event.pull_request.base.sha }} --to-ref ${{ github.event.pull_request.head.sha }}'
+  prek-checks-push:
+    name: Prek Checks (Push)
+    if: github.event_name == 'push'
     permissions:
       contents: read # For checking the code in the repository.
     runs-on: ubuntu-latest
@@ -29,26 +61,11 @@ jobs:
         uses: taiki-e/install-action@ec28e287910af896fd98e04056d31fa68607e7ad # v2.77.4
         with:
           tool: cargo-sort, cargo-machete, cargo-sort, cargo-nextest, cargo-deny
-      - name: Fetch PR base ref
-        if: github.event_name == 'pull_request'
-        run: git fetch --depth=1 origin ${{ github.event.pull_request.base.sha }}
-      - name: Run pre-commit checks (PR - changed files only)
-        if: github.event_name == 'pull_request'
-        uses: j178/prek-action@6ad80277337ad479fe43bd70701c3f7f8aa74db3 # v2.0.3
-        with:
-          extra-args: '--hook-stage pre-commit --from-ref ${{ github.event.pull_request.base.sha }} --to-ref ${{ github.event.pull_request.head.sha }}'
-      - name: Run pre-push checks (PR - changed files only)
-        if: github.event_name == 'pull_request'
-        uses: j178/prek-action@6ad80277337ad479fe43bd70701c3f7f8aa74db3 # v2.0.3
-        with:
-          extra-args: '--hook-stage pre-push --from-ref ${{ github.event.pull_request.base.sha }} --to-ref ${{ github.event.pull_request.head.sha }}'
-      - name: Run pre-commit checks (push - all files)
-        if: github.event_name == 'push'
+      - name: Run pre-commit checks
         uses: j178/prek-action@6ad80277337ad479fe43bd70701c3f7f8aa74db3 # v2.0.3
         with:
           extra-args: '--hook-stage pre-commit --all-files'
-      - name: Run pre-push checks (push - all files)
-        if: github.event_name == 'push'
+      - name: Run pre-push checks
         uses: j178/prek-action@6ad80277337ad479fe43bd70701c3f7f8aa74db3 # v2.0.3
         with:
           extra-args: '--hook-stage pre-push --all-files'
@@ -93,7 +110,8 @@ jobs:
       group: finalize-${{ github.ref }}
       cancel-in-progress: false
     needs:
-      - prek-checks
+      - prek-checks-pr
+      - prek-checks-push
       - build-checks
     if: always()
     steps:
