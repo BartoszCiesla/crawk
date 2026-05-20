@@ -100,6 +100,25 @@ crawk deps --show-apis
 crawk -p /path/to/my-crate deps --cycles highlight
 ```
 
+#### Module dependency explanation - `why` subcommand
+
+```sh
+# Explain why module 'analyzer' depends on module 'reference':
+crawk why analyzer reference
+
+# Include submodules of the source module:
+crawk why parser reference -r
+
+# Include test modules in the search:
+crawk why analyzer model -t
+
+# Group output by source submodule (useful with -r):
+crawk why parser reference -r --format grouped
+
+# Analyze a crate at a custom path:
+crawk -p /path/to/my-crate why db utils
+```
+
 ## CLI Options
 
 Please refer to `crawk` command CLI help for a comprehensive list of options:
@@ -116,6 +135,9 @@ crawk use --help
 
 # Help for the 'deps' subcommand (including options specific to dependency graph)
 crawk deps --help
+
+# Help for the 'why' subcommand (including options specific to dependency explanation)
+crawk why --help
 ```
 
 Note: option `-h` gives short help, while `--help` provides detailed information about available options and their usage.
