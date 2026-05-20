@@ -12,6 +12,7 @@ Dependency crawler for Rust. It crawls so you don't have to untangle
 - **Module listing**: See which modules are defined in a crate.
 - **Module usage**: See which modules are used by a given module in a crate.
 - **Dependency graph**: Visualize inter-module dependencies, detect cycles, find orphan modules.
+- **Dependency explanation**: See why one module depends on another — lists concrete references that create the dependency edge.
 
 ## Installation
 
@@ -62,7 +63,7 @@ crawk -p /path/to/my-crate list -t -s
 #### Module usage - `use` subcommand
 
 ```sh
-# Analyze which internal modules a given module depends on
+# Analyze which internal modules a given module depends on:
 crawk use utils
 
 # Recursively analyze all submodules of a module:
@@ -100,7 +101,7 @@ crawk deps --show-apis
 crawk -p /path/to/my-crate deps --cycles highlight
 ```
 
-#### Module dependency explanation - `why` subcommand
+#### Dependency explanation - `why` subcommand
 
 ```sh
 # Explain why module 'analyzer' depends on module 'reference':
@@ -144,7 +145,7 @@ Note: option `-h` gives short help, while `--help` provides detailed information
 
 ## License
 
-This project is licensed under the Apache License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
 
 ## Why "crawk"?
 
