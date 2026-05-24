@@ -17,7 +17,7 @@ fn should_command_short_help_match(help_flag: &str) {
     // Filter out non-deterministic part with build timestamp
     with_settings!({
     filters => vec![
-        (r"Built on \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z for [\w-]+ \([\d.]+\) by \w+",
+        (r"Built on \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z for [\w-]+ \([\w.-]+\) by \w+",
          "Built on [TIMESTAMP] for [TARGET] ([RUSTC]) by [USER]"),
     ],
     }, {
