@@ -43,6 +43,45 @@ pub(crate) fn resolve_reference(reference: TypeReference, module_path: &[String]
     }
 }
 
+/// Increments the `super::` nesting level from the current [`PathPrefix`].
+const fn super_level(path_prefix: PathPrefix) -> usize {
+    match path_prefix {
+        PathPrefix::Super(n) => n + 1,
+        _ => 1,
+    }
+}
+
+/// Resolves a single path segment's contribution to the accumulated prefix and
+/// [`PathPrefix`] during use-tree traversal.
+///
+/// Handles `crate::`, `self::`, `super::` (including chained) at the start of
+/// a path, and regular identifiers elsewhere.
+fn resolve_path_segment(
+    ident: &str,
+    prefix: Vec<String>,
+    path_prefix: PathPrefix,
+) -> (Vec<String>, PathPrefix) {
+    if prefix.is_empty() {
+        match ident {
+            PATH_QUALIFIER_CRATE => (Vec::new(), PathPrefix::Crate),
+            PATH_QUALIFIER_SELF => (Vec::new(), PathPrefix::SelfModule),
+            PATH_QUALIFIER_SUPER => (Vec::new(), PathPrefix::Super(super_level(path_prefix))),
+            _ => {
+                let mut new_prefix = prefix;
+                new_prefix.push(ident.to_owned());
+                (new_prefix, path_prefix)
+            }
+        }
+    } else if ident == PATH_QUALIFIER_SUPER {
+        // Handle chained super:: in the middle of path
+        (prefix, PathPrefix::Super(super_level(path_prefix)))
+    } else {
+        let mut new_prefix = prefix;
+        new_prefix.push(ident.to_owned());
+        (new_prefix, path_prefix)
+    }
+}
+
 /// Type references collected from a single module, grouped by syntactic role.
 ///
 /// Each category represents a distinct kind of dependency signal:
@@ -394,39 +433,8 @@ impl ModuleVisitor {
     fn process_use_tree(&mut self, tree: &UseTree, prefix: Vec<String>, path_prefix: PathPrefix) {
         match tree {
             UseTree::Path(p) => {
-                let ident = p.ident.to_string();
-
-                // Check for special prefixes at the start
-                let (new_prefix, new_path_prefix) = if prefix.is_empty() {
-                    match ident.as_str() {
-                        PATH_QUALIFIER_CRATE => (Vec::new(), PathPrefix::Crate),
-                        PATH_QUALIFIER_SELF => (Vec::new(), PathPrefix::SelfModule),
-                        PATH_QUALIFIER_SUPER => {
-                            let levels = match path_prefix {
-                                PathPrefix::Super(n) => n + 1,
-                                _ => 1,
-                            };
-                            (Vec::new(), PathPrefix::Super(levels))
-                        }
-                        _ => {
-                            let mut new_prefix = prefix;
-                            new_prefix.push(ident);
-                            (new_prefix, path_prefix)
-                        }
-                    }
-                } else if ident == PATH_QUALIFIER_SUPER {
-                    // Handle chained super:: in the middle of path
-                    let levels = match path_prefix {
-                        PathPrefix::Super(n) => n + 1,
-                        _ => 1,
-                    };
-                    (prefix, PathPrefix::Super(levels))
-                } else {
-                    let mut new_prefix = prefix;
-                    new_prefix.push(ident);
-                    (new_prefix, path_prefix)
-                };
-
+                let (new_prefix, new_path_prefix) =
+                    resolve_path_segment(&p.ident.to_string(), prefix, path_prefix);
                 self.process_use_tree(&p.tree, new_prefix, new_path_prefix);
             }
 
