@@ -50,3 +50,6 @@
 /.remember
 /.github/prompts
 /.github/copilot-instructions.md
+
+# Coverage reports
+lcov.info

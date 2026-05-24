@@ -1,0 +1,4 @@
+exclude = ["tests/**", "fixtures/**", "build.rs"]
+min = 10.0
+threshold = 20.0
+fail-above = true
