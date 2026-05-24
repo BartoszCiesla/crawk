@@ -21,6 +21,7 @@ crate::custom_path
 crate::dir_module
 crate::file_module
 crate::file_module::*
+crate::file_module::{*}
 crate::foo
 crate::glob_patterns
 crate::glob_showcase

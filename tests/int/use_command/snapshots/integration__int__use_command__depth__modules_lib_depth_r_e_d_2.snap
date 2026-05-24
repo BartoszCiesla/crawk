@@ -42,6 +42,7 @@ crate::file_module
 crate::file_module::*
 crate::file_module::greet
 crate::file_module::nesting_depth
+crate::file_module::{*}
 crate::foo::bar
 crate::foo::bar::*
 crate::glob_patterns::constants::*

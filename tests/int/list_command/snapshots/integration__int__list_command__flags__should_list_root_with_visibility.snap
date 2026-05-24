@@ -66,6 +66,7 @@ glob_showcase::utils                    pub
 glob_showcase::utils::collection        pub
 glob_showcase::utils::math              pub
 glob_showcase::utils::string            pub
+group_patterns                          pub
 inline_modules                          pub
 inline_modules::inner                   pub
 inline_modules::nested                  pub

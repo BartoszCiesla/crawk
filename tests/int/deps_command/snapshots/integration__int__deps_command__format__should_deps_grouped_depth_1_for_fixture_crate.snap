@@ -54,6 +54,10 @@ glob_showcase (3)
   -> inline_modules
   -> nesting
 
+group_patterns (2)
+  -> file_module
+  -> nesting
+
 inline_modules (2)
   -> dir_module
   -> file_module

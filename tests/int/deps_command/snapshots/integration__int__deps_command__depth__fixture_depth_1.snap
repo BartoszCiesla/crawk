@@ -36,6 +36,8 @@ glob_patterns -> file_module
 glob_showcase -> file_module
 glob_showcase -> inline_modules
 glob_showcase -> nesting
+group_patterns -> file_module
+group_patterns -> nesting
 inline_modules -> dir_module
 inline_modules -> file_module
 item_visibility -> reexports

@@ -1,0 +1,20 @@
+---
+source: tests/int/use_command/basic_output.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/modules
+    - use
+    - group_patterns
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::file_module::{*}
+crate::nesting::{level1::level2::level3::{deepest as deep_fn}}
+crate::nesting::{level1::level2::level3::{depth as l3_depth}}
+crate::nesting::{level1::level2::{*}}
+crate::nesting::{self as Nest}
+
+----- stderr -----

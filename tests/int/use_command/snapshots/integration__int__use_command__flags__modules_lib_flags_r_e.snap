@@ -43,6 +43,7 @@ crate::file_module
 crate::file_module::*
 crate::file_module::greet
 crate::file_module::nesting_depth
+crate::file_module::{*}
 crate::foo::bar::*
 crate::foo::bar::public_fn
 crate::glob_patterns::constants::*
@@ -109,6 +110,9 @@ crate::nesting::level1::depth
 crate::nesting::level1::level2::*
 crate::nesting::level1::level2::depth
 crate::nesting::level1::level2::level3
+crate::nesting::level1::level2::level3::deepest
+crate::nesting::level1::level2::level3::depth
+crate::nesting::level1::level2::{*}
 crate::no_pub_items::*
 crate::reexports::Foo
 crate::reexports::internal::Baz

@@ -100,6 +100,10 @@ glob_showcase::prelude -> glob_showcase::utils::math
 glob_showcase::utils -> glob_showcase::utils::collection
 glob_showcase::utils -> glob_showcase::utils::math
 glob_showcase::utils -> glob_showcase::utils::string
+group_patterns -> file_module
+group_patterns -> nesting
+group_patterns -> nesting::level1::level2
+group_patterns -> nesting::level1::level2::level3
 helpers -> advanced_globs
 helpers -> dir_module
 helpers -> dir_module::child_dir

@@ -142,6 +142,12 @@ glob_showcase::utils (3)
   -> glob_showcase::utils::math [add, divide, multiply, subtract]
   -> glob_showcase::utils::string [lowercase, uppercase]
 
+group_patterns (4)
+  -> file_module
+  -> nesting
+  -> nesting::level1::level2
+  -> nesting::level1::level2::level3 [deepest, depth]
+
 inline_modules (2)
   -> file_module [greet]
   -> inline_modules::private_inline [_secret]

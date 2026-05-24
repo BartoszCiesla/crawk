@@ -43,6 +43,7 @@ use test_case::test_case;
 #[test_case("foo::bar"; "for foo bar")]
 #[test_case("foo::other"; "for foo other")]
 #[test_case("baz"; "for baz")]
+#[test_case("group_patterns"; "for group_patterns")]
 #[test_case("nonexisting"; "for nonexisting module")]
 fn should_modules_use_provide_output(module: &str) {
     let snapshot_name = format!("modules_{}", module.replace("::", "__"));

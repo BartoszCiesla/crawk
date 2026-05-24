@@ -141,6 +141,12 @@ glob_showcase::utils (3)
   -> glob_showcase::utils::math
   -> glob_showcase::utils::string
 
+group_patterns (4)
+  -> file_module
+  -> nesting
+  -> nesting::level1::level2
+  -> nesting::level1::level2::level3
+
 inline_modules (2)
   -> file_module
   -> inline_modules::private_inline

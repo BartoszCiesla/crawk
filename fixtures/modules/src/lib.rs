@@ -47,6 +47,9 @@ pub mod no_pub_items;
 // Module that glob-imports from no_pub_items (glob resolves to nothing)
 pub mod uses_empty_glob;
 
+// Advanced use-group patterns (self as, glob in group, nested rename/glob)
+pub mod group_patterns;
+
 // Fixture for `pub(super)` visibility: `foo::bar` exposes a `pub(super)`
 // helper visible only within `foo`'s subtree (`foo::other` sees it, `baz`
 // does not).
@@ -516,6 +519,13 @@ mod tests {
 
         assert_eq!(add(10, 20), 30);
         assert!(connect("test"));
+    }
+
+    #[test]
+    fn group_patterns_work() {
+        let result = group_patterns::demonstrate_group_patterns();
+        assert!(result.contains("nest=0"));
+        assert!(result.contains("deep=hello from level3"));
     }
 
     #[test]

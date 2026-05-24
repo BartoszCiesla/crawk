@@ -20,6 +20,7 @@ foo::other
 glob_showcase::config
 glob_showcase::prelude
 glob_showcase::utils
+group_patterns
 inline_modules::nested
 lib
 main

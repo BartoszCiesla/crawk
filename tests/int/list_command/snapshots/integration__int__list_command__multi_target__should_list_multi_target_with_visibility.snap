@@ -66,6 +66,7 @@ exit_code: 0
 [lib]              glob_showcase::utils::collection        pub
 [lib]              glob_showcase::utils::math              pub
 [lib]              glob_showcase::utils::string            pub
+[lib]              group_patterns                          pub
 [lib]              inline_modules                          pub
 [lib]              inline_modules::inner                   pub
 [lib]              inline_modules::nested                  pub

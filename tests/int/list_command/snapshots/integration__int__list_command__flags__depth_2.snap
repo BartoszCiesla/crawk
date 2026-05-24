@@ -53,6 +53,7 @@ exit_code: 0
 [lib]             glob_showcase::prelude
 [lib]             glob_showcase::traits
 [lib]             glob_showcase::utils
+[lib]             group_patterns
 [lib]             inline_modules
 [lib]             inline_modules::inner
 [lib]             inline_modules::nested

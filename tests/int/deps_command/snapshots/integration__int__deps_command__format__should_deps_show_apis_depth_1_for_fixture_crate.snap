@@ -37,6 +37,8 @@ glob_patterns -> file_module [greet, nesting_depth]
 glob_showcase -> file_module
 glob_showcase -> inline_modules
 glob_showcase -> nesting
+group_patterns -> file_module
+group_patterns -> nesting [deepest, depth]
 inline_modules -> dir_module [greet]
 inline_modules -> file_module [greet]
 item_visibility -> reexports [Foo]

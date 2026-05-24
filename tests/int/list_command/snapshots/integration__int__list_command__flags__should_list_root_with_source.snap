@@ -66,6 +66,7 @@ glob_showcase::utils                    src/glob_showcase.rs
 glob_showcase::utils::collection        src/glob_showcase.rs
 glob_showcase::utils::math              src/glob_showcase.rs
 glob_showcase::utils::string            src/glob_showcase.rs
+group_patterns                          src/group_patterns.rs
 inline_modules                          src/inline_modules.rs
 inline_modules::inner                   src/inline_modules.rs
 inline_modules::nested                  src/inline_modules.rs

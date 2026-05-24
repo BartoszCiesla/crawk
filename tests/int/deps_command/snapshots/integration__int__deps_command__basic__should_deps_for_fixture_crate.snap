@@ -99,6 +99,10 @@ glob_showcase::prelude -> glob_showcase::utils::math
 glob_showcase::utils -> glob_showcase::utils::collection
 glob_showcase::utils -> glob_showcase::utils::math
 glob_showcase::utils -> glob_showcase::utils::string
+group_patterns -> file_module
+group_patterns -> nesting
+group_patterns -> nesting::level1::level2
+group_patterns -> nesting::level1::level2::level3
 inline_modules -> file_module
 inline_modules -> inline_modules::private_inline
 inline_modules::inner -> file_module

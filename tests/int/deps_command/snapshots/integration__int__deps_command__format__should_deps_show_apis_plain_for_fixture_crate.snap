@@ -100,6 +100,10 @@ glob_showcase::prelude -> glob_showcase::utils::math [add, subtract]
 glob_showcase::utils -> glob_showcase::utils::collection
 glob_showcase::utils -> glob_showcase::utils::math [add, divide, multiply, subtract]
 glob_showcase::utils -> glob_showcase::utils::string [lowercase, uppercase]
+group_patterns -> file_module
+group_patterns -> nesting
+group_patterns -> nesting::level1::level2
+group_patterns -> nesting::level1::level2::level3 [deepest, depth]
 inline_modules -> file_module [greet]
 inline_modules -> inline_modules::private_inline [_secret]
 inline_modules::inner -> file_module

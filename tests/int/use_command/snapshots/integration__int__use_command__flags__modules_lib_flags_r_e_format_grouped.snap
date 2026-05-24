@@ -168,6 +168,12 @@ glob_showcase::utils
 glob_showcase::utils::collection
 glob_showcase::utils::math
 glob_showcase::utils::string
+group_patterns
+ - crate::file_module::{*}
+ - crate::nesting
+ - crate::nesting::level1::level2::level3::deepest
+ - crate::nesting::level1::level2::level3::depth
+ - crate::nesting::level1::level2::{*}
 inline_modules
  - crate::file_module::greet
  - crate::inline_modules::private_inline::_secret

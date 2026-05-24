@@ -87,6 +87,9 @@ glob_showcase::prelude -> glob_showcase::errors
 glob_showcase::prelude -> glob_showcase::models
 glob_showcase::prelude -> glob_showcase::traits
 glob_showcase::prelude -> glob_showcase::utils
+group_patterns -> file_module
+group_patterns -> nesting
+group_patterns -> nesting::level1
 inline_modules -> file_module
 inline_modules -> inline_modules::private_inline
 inline_modules::inner -> file_module

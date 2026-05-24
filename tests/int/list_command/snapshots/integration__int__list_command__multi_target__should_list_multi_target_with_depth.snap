@@ -22,6 +22,7 @@ exit_code: 0
 [lib]              foo
 [lib]              glob_patterns
 [lib]              glob_showcase
+[lib]              group_patterns
 [lib]              inline_modules
 [lib]              item_visibility
 [lib]              lib
