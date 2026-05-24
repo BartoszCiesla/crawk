@@ -12,7 +12,6 @@ readme = "README.md"
 exclude = ["fixtures/", "tests/", ".github/", ".envrc", "justfile"]
 keywords = ["rust", "modules", "dependencies", "ast", "analysis"]
 categories = ["command-line-utilities", "development-tools"]
-build = "src/build.rs"
 
 [package.metadata.binstall]
 pkg-url = "{repo}/releases/download/v{version}/{name}-{target}-v{version}{archive-suffix}"

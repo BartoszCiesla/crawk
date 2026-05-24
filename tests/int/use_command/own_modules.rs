@@ -37,10 +37,9 @@ fn should_use_command_resolve_binary_submodule(module: &str) {
 // - crawk and lib shall give the same output for all flags, as they are both crate roots. The only difference
 //   will be the module name in the output, which will be "lib" for lib and "crawk" for crawk.
 // - main should give the output for binary only.
-// - build should give the output for build script only.
 // - tests should give the output for test module in the lib only.
 #[test_matrix(
-        ["crawk", "parser", "discover", "reference", "resolve", "lib", "main", "build", "cli", "constants", "logger", "version"],
+        ["crawk", "parser", "discover", "reference", "resolve", "lib", "main", "cli", "constants", "logger", "version"],
         [&["-t"],
          &["-t", "-e"],
          &["-t", "-e", "-d", "1"],
