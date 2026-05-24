@@ -16,6 +16,8 @@ exit_code: 0
 int::list_command
 int::list_command::basic
  - crate::common::{crawk, crawk_modules}
+int::list_command::bin_only
+ - crate::common::crawk_bin_only
 int::list_command::error_cases
  - crate::common::{backtrace_filters, crawk_modules}
 int::list_command::filter

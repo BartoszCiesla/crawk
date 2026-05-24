@@ -1100,6 +1100,16 @@ mod tests {
     }
 
     #[test]
+    fn analyzer_debug_format() {
+        let manifest_dir = env!("CARGO_MANIFEST_DIR");
+        let analyzer = Analyzer::new(std::path::Path::new(manifest_dir))
+            .expect("crawk's own crate root should be valid");
+        let s = format!("{analyzer:?}");
+        assert!(s.contains("Analyzer"));
+        assert!(s.contains("entries"));
+    }
+
+    #[test]
     fn test_expand_groups_deeply_nested() {
         let r = make_ref(
             &["a"],

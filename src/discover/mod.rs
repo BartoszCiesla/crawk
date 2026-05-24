@@ -104,9 +104,8 @@ impl TargetInfo {
 impl fmt::Display for TargetInfo {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.kind {
-            TargetKind::Lib => f.write_str("lib"),
-            TargetKind::Bin => write!(f, "bin:{}", self.name),
-            TargetKind::Test => write!(f, "test:{}", self.name),
+            TargetKind::Lib => fmt::Display::fmt(&self.kind, f),
+            TargetKind::Bin | TargetKind::Test => write!(f, "{}:{}", self.kind, self.name),
         }
     }
 }

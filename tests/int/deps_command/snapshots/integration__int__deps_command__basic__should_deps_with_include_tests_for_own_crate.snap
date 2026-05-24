@@ -75,6 +75,7 @@ main -> logger
 main -> version
 model -> reference
 model::tests -> model
+model::tests -> reference
 parser -> cache
 parser -> parser::visitor
 parser -> reference

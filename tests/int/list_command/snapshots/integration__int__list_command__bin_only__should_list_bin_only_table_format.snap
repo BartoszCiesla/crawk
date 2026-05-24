@@ -1,0 +1,27 @@
+---
+source: tests/int/list_command/bin_only.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/bin_only
+    - list
+    - "--format"
+    - table
+---
+success: true
+exit_code: 0
+----- stdout -----
++---------------+
+| Module        |
++===============+
+| config        |
+|---------------|
+| main          |
+|---------------|
+| utils         |
+|---------------|
+| utils::helper |
++---------------+
+
+----- stderr -----

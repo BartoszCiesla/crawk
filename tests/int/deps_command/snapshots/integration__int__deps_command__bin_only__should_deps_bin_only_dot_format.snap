@@ -1,0 +1,29 @@
+---
+source: tests/int/deps_command/bin_only.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/bin_only
+    - deps
+    - "--format"
+    - dot
+---
+success: true
+exit_code: 0
+----- stdout -----
+digraph dependencies {
+    rankdir=LR;
+    node [shape=box, style=rounded, fontname="monospace", fontsize=10];
+    edge [color="#444444"];
+
+    "config";
+    "main";
+    "utils::helper";
+
+    "main" -> "config";
+    "main" -> "utils::helper";
+    "utils::helper" -> "config";
+}
+
+----- stderr -----

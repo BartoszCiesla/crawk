@@ -12,6 +12,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::common::crawk
+crate::common::crawk_bin_only
 crate::common::crawk_modules
 crate::common::{backtrace_filters, crawk, crawk_modules}
 crate::common::{backtrace_filters, crawk_modules}

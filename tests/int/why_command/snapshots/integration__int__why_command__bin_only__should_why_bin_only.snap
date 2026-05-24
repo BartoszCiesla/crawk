@@ -1,0 +1,17 @@
+---
+source: tests/int/why_command/bin_only.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/bin_only
+    - why
+    - main
+    - config
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::config::Config
+
+----- stderr -----

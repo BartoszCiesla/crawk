@@ -1,0 +1,17 @@
+---
+source: tests/int/use_command/bin_only.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/bin_only
+    - use
+    - main
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::config::Config
+crate::utils::helper::run
+
+----- stderr -----

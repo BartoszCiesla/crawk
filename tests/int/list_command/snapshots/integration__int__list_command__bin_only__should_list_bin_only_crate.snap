@@ -1,0 +1,18 @@
+---
+source: tests/int/list_command/bin_only.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/bin_only
+    - list
+---
+success: true
+exit_code: 0
+----- stdout -----
+config
+main
+utils
+utils::helper
+
+----- stderr -----

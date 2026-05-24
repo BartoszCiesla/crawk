@@ -29,3 +29,9 @@ pub(crate) fn crawk_workspace() -> Command {
     cmd.arg("-p").arg("fixtures/workspace");
     cmd
 }
+
+pub(crate) fn crawk_bin_only() -> Command {
+    let mut cmd = crawk();
+    cmd.arg("-p").arg("fixtures/bin_only");
+    cmd
+}

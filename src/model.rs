@@ -199,4 +199,24 @@ mod tests {
             AnalysisResult::new("foo::bar::baz".to_owned(), HashMap::new(), PathBuf::new());
         assert_eq!(result.module_path(), "foo::bar::baz");
     }
+
+    #[test]
+    fn test_into_sorted_vec_deduplicates_and_sorts() {
+        use crate::reference::TypeReference;
+
+        let r1 = TypeReference::new(["z_module", "Type"]);
+        let r2 = TypeReference::new(["a_module", "Type"]);
+        let r3 = TypeReference::new(["z_module", "Type"]); // duplicate of r1
+
+        let mut deps = HashMap::new();
+        deps.insert("mod_a".to_owned(), HashSet::from([r1.clone(), r2.clone()]));
+        deps.insert("mod_b".to_owned(), HashSet::from([r3]));
+
+        let result = AnalysisResult::new("root".to_owned(), deps, PathBuf::new());
+        let sorted = result.into_sorted_vec();
+
+        assert_eq!(sorted.len(), 2);
+        assert_eq!(sorted[0], r2); // a_module before z_module
+        assert_eq!(sorted[1], r1);
+    }
 }

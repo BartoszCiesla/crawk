@@ -1,4 +1,5 @@
 mod basic_output;
+mod bin_only;
 mod binaries;
 mod custom_path;
 mod depth;

@@ -15,6 +15,7 @@ exit_code: 0
 int::command
 int::deps_command
 int::deps_command::basic
+int::deps_command::bin_only
 int::deps_command::cycles
 int::deps_command::depth
 int::deps_command::error_cases
@@ -23,6 +24,7 @@ int::deps_command::orphans
 int::deps_command::overview
 int::list_command
 int::list_command::basic
+int::list_command::bin_only
 int::list_command::error_cases
 int::list_command::filter
 int::list_command::flags
@@ -31,6 +33,7 @@ int::list_command::overview
 int::list_command::test_targets
 int::use_command
 int::use_command::basic_output
+int::use_command::bin_only
 int::use_command::binaries
 int::use_command::custom_path
 int::use_command::depth
@@ -49,6 +52,7 @@ int::use_command::visibility::inner_glob
 int::use_command::visibility::restricted
 int::why_command
 int::why_command::basic
+int::why_command::bin_only
 int::why_command::error_cases
 int::why_command::flags
 int::why_command::overview

@@ -43,12 +43,6 @@ impl Deref for Segments {
     }
 }
 
-impl<S: Into<String>> FromIterator<S> for Segments {
-    fn from_iter<I: IntoIterator<Item = S>>(iter: I) -> Self {
-        Self::new(iter)
-    }
-}
-
 impl From<Vec<String>> for Segments {
     fn from(v: Vec<String>) -> Self {
         Self(v)

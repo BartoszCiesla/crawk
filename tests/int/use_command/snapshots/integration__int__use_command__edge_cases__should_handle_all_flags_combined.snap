@@ -112,6 +112,7 @@ model
 model::tests
  - crate::model::AnalysisOptions
  - crate::model::AnalysisResult
+ - crate::reference::TypeReference
 parser
  - crate::cache::ParseCache
  - crate::parser::visitor

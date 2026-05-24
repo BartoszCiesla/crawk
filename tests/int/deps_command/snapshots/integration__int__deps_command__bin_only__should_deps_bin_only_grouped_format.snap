@@ -1,0 +1,22 @@
+---
+source: tests/int/deps_command/bin_only.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/bin_only
+    - deps
+    - "--format"
+    - grouped
+---
+success: true
+exit_code: 0
+----- stdout -----
+main (2)
+  -> config
+  -> utils::helper
+
+utils::helper (1)
+  -> config
+
+----- stderr -----
