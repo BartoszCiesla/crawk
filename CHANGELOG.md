@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.5.1](https://github.com/BartoszCiesla/crawk/compare/v0.5.0...v0.5.1)
+
+### ⚙️ Miscellaneous Tasks
+
+
+- *(release)* Publish draft releases after binaries build - ([8125f9d](https://github.com/BartoszCiesla/crawk/commit/8125f9d13c45bd845a378f7574cdb552d3d08c9d))
+
+
 ## [0.5.0](https://github.com/BartoszCiesla/crawk/compare/v0.4.2...v0.5.0)
 
 ### ⛰️ Features
