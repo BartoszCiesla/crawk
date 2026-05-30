@@ -2,6 +2,39 @@
 
 ## [Unreleased]
 
+## [0.5.0](https://github.com/BartoszCiesla/crawk/compare/v0.4.2...v0.5.0)
+
+### ⛰️ Features
+
+
+- *(cli)* Add why command to explain module dependencies - ([0b6fa7f](https://github.com/BartoszCiesla/crawk/commit/0b6fa7f6890186ac513eb704073b2e436b0635cf))
+
+### 🚜 Refactor
+
+
+- *(build)* Move build script to standard location - ([8e7df80](https://github.com/BartoszCiesla/crawk/commit/8e7df80b9797ad4e146a7c524b9e26de84edfa15))
+- *(format)* Extract shared format_api_suffix helper - ([6a3b69d](https://github.com/BartoszCiesla/crawk/commit/6a3b69d2d960a74b17a60ca25ac0c01eb11133dd))
+- *(parser)* Extract complexity from process_use_tree - ([bdc113b](https://github.com/BartoszCiesla/crawk/commit/bdc113b5dca6bba6974c57a724520e1dd27d753d))
+
+### 📚 Documentation
+
+
+- *(readme)* Improve consistency and clarity - ([af71ce1](https://github.com/BartoszCiesla/crawk/commit/af71ce1f266cdeac51f8dc1f1e797800a585615f))
+- *(readme)* Add documentation for why subcommand - ([d58d078](https://github.com/BartoszCiesla/crawk/commit/d58d07851e27135f0f8f5f78844fb7e54bf2b6ea))
+
+### 🧪 Testing
+
+
+- Add bin_only fixture and improve bin-only crates testing - ([fe36656](https://github.com/BartoszCiesla/crawk/commit/fe3665677141700c30c2357bbfd067b8dfda8aed))
+
+### ⚙️ Miscellaneous Tasks
+
+
+- *(build)* Bump MSRV to 1.88.0 and adopt let-chains - ([726aa76](https://github.com/BartoszCiesla/crawk/commit/726aa768da2be6175822d68af17e622a8a48e181))
+- *(dev)* Add cargo-crap for code complexity tracking - ([03c897b](https://github.com/BartoszCiesla/crawk/commit/03c897b2a4a12e0d99ac538de929352a5e8faa81))
+- *(toolchain)* Bump Rust toolchain to 1.96.0 - ([54cdad7](https://github.com/BartoszCiesla/crawk/commit/54cdad75b6c9b8fad2c4a4f26245b47b4620ce01))
+
+
 ## [0.4.2](https://github.com/BartoszCiesla/crawk/compare/v0.4.1...v0.4.2)
 
 ### 🐛 Bug Fixes
