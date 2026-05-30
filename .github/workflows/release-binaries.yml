@@ -1,7 +1,10 @@
 name: Release Binaries
 on:
   release:
-    types: [published]
+    types: [created]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 permissions: {}
 env:
   BIN_NAME: crawk
@@ -39,3 +42,18 @@ jobs:
           target: ${{ matrix.target }}
           archive: ${{ env.BIN_NAME }}-${{ matrix.target }}-${{ github.event.release.tag_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
+  publish:
+    name: Publish Release
+    needs: [build]
+    if: ${{ success() && github.event.release.draft }}
+    permissions:
+      contents: write # Required to publish the release.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ github.event.release.tag_name }}
+          REPO: ${{ github.repository }}
+        run: gh release edit "$TAG_NAME" --draft=false --repo "$REPO"

@@ -3,6 +3,7 @@ pr_labels = ["release"]                # add the `release` label to the release 
 publish = true                         # publish the package to crates.io after the release is created
 features_always_increment_minor = true # always increment the minor version when a new feature is added, even if there are no breaking changes
 semver_check = false                   # disable semver check
+git_release_draft = true               # create release as draft; published after binary build completes
 git_release_body = """
 {{ changelog }}
 {% if remote.contributors %}
