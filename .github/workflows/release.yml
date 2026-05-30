@@ -3,7 +3,12 @@ on:
   push:
     branches:
       - master
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 permissions: {}
+env:
+  BIN_NAME: crawk
 jobs:
   # Release unpublished packages.
   release-plz-release:
@@ -18,6 +23,9 @@ jobs:
       group: release-plz-release-${{ github.ref }}
       cancel-in-progress: false
     if: ${{ github.repository_owner == 'BartoszCiesla' }}
+    outputs:
+      releases_created: ${{ steps.release-plz.outputs.releases_created }}
+      releases: ${{ steps.release-plz.outputs.releases }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -27,12 +35,71 @@ jobs:
       - name: Install Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@46268bd060767258de96ed93c1251119784f2ab6 # v1.16.1
       - name: Run release-plz
+        id: release-plz
         uses: release-plz/action@064f4d1e36c843611ddf013be726beaa4ad804db # v0.5.129
         with:
           command: release
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+  # Build release binaries and upload them to the draft GitHub release created above.
+  # Uploads to draft (not yet immutable) so that assets can be attached before publication.
+  release-binaries:
+    name: Binaries
+    needs: release-plz-release
+    if: ${{ needs.release-plz-release.outputs.releases_created == 'true' }}
+    permissions:
+      contents: write # For adding files to the releases.
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: refs/tags/${{ fromJSON(needs.release-plz-release.outputs.releases)[0].tag }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Upload Rust binary to GitHub Release
+        uses: taiki-e/upload-rust-binary-action@f0d45ae91ee7b8ee928de7a9d04d893a08bcbec6 # v1.30.2
+        env:
+          # Override VERGEN_SYSINFO_USER which upload-rust-binary-action replaces
+          # with VERGEN_IDEMPOTENT_OUTPUT via its internal VERGEN_IDEMPOTENT=1 flag.
+          CRAWK_BUILD_USER: ${{ github.actor }}
+          TAG_NAME: ${{ fromJSON(needs.release-plz-release.outputs.releases)[0].tag }}
+        with:
+          bin: ${{ env.BIN_NAME }}
+          target: ${{ matrix.target }}
+          archive: ${{ env.BIN_NAME }}-${{ matrix.target }}-${{ env.TAG_NAME }}
+          ref: refs/tags/${{ env.TAG_NAME }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          locked: true # Use exact versions from Cargo.lock for reproducible builds.
+          checksum: sha256 # Generate .sha256 file per archive for integrity verification.
+  # Publish the draft release after all binaries have been uploaded.
+  # Once published, the release becomes immutable (repo-level setting), so assets
+  # must already be attached at this point.
+  publish-release:
+    name: Publish Release
+    needs: [release-plz-release, release-binaries]
+    if: ${{ success() && needs.release-plz-release.outputs.releases_created == 'true' }}
+    permissions:
+      contents: write # Required to publish the release.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Publish draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ fromJSON(needs.release-plz-release.outputs.releases)[0].tag }}
+          REPO: ${{ github.repository }}
+        run: gh release edit "$TAG_NAME" --draft=false --repo "$REPO"
   # Create a PR with the new versions and changelog, preparing the next release.
   release-plz-pr:
     name: Pull Request
