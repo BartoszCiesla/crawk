@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.5.2](https://github.com/BartoszCiesla/crawk/compare/v0.5.1...v0.5.2)
+
+### ⚙️ Miscellaneous Tasks
+
+
+- *(release)* Merge binary build into release workflow - ([0a0108b](https://github.com/BartoszCiesla/crawk/commit/0a0108b23166dada9e5219ae8b81a76b0722e801))
+
+
 ## [0.5.1](https://github.com/BartoszCiesla/crawk/compare/v0.5.0...v0.5.1)
 
 ### ⚙️ Miscellaneous Tasks
