@@ -113,3 +113,19 @@ repos:
         files: '^(Cargo\.(toml|lock)|deny\.toml)$'
         pass_filenames: false
         stages: [pre-push]
+      - id: cargo-build-fixture-modules
+        name: cargo build fixture/modules
+        entry: cargo
+        language: system
+        args: ["build", "--manifest-path", "fixtures/modules/Cargo.toml"]
+        files: '^fixtures/modules/'
+        pass_filenames: false
+        stages: [pre-push]
+      - id: cargo-build-fixture-cycles
+        name: cargo build fixture/cycles
+        entry: cargo
+        language: system
+        args: ["build", "--manifest-path", "fixtures/cycles/Cargo.toml"]
+        files: '^fixtures/cycles/'
+        pass_filenames: false
+        stages: [pre-push]

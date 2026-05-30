@@ -36,10 +36,8 @@ anyhow = "1.0.102"
 vergen-git2 = { version = "9.1.0", features = ["build", "cargo", "rustc", "si"] }
 
 [dev-dependencies]
-cycles = { path = "fixtures/cycles", version = "0.1.0" }
 insta = { version = "1.47.2", features = ["filters"] }
 insta-cmd = "0.6.0"
-modules = { path = "fixtures/modules", version = "0.1.0" }
 tempfile = "3.27"
 test-case = "3.3.1"
 
