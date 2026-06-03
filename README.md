@@ -3,6 +3,7 @@
 [![Checks](https://github.com/BartoszCiesla/crawk/actions/workflows/check.yml/badge.svg)](https://github.com/BartoszCiesla/crawk/actions/workflows/check.yml)
 [![crates.io](https://img.shields.io/crates/v/crawk.svg)](https://crates.io/crates/crawk)
 [![docs.rs](https://docs.rs/crawk/badge.svg)](https://docs.rs/crawk)
+[![codecov](https://codecov.io/gh/BartoszCiesla/crawk/branch/master/graph/badge.svg?token=TZFVBYEOZJ)](https://codecov.io/gh/BartoszCiesla/crawk)
 [![License](https://img.shields.io/crates/l/crawk.svg)](LICENSE)
 
 Dependency crawler for Rust. It crawls so you don't have to untangle
