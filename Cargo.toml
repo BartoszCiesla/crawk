@@ -73,3 +73,9 @@ lto = "fat"
 codegen-units = 1
 panic = 'abort'
 strip = "symbols"
+
+[profile.fast-build]
+inherits = "dev"
+opt-level = 0
+debug = false
+incremental = false
