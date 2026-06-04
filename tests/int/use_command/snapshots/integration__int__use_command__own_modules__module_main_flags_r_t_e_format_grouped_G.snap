@@ -38,6 +38,9 @@ main
  - crate::format::list_cmd::render_list_plain
  - crate::format::list_cmd::render_list_table
  - crate::format::orphans::render_orphans
+ - crate::format::paths::render_paths_dot
+ - crate::format::paths::render_paths_grouped
+ - crate::format::paths::render_paths_plain
  - crate::format::use_cmd::render_flat
  - crate::format::use_cmd::render_grouped
  - crate::format::why_cmd::render_grouped
@@ -84,6 +87,15 @@ format::list_cmd
 format::orphans
 format::orphans::tests
  - crate::format::orphans::render_orphans
+format::paths
+ - crawk::AnnotatedEdges
+ - crawk::ShortestPaths
+format::paths::tests
+ - crate::format::paths::render_paths_dot
+ - crate::format::paths::render_paths_grouped
+ - crate::format::paths::render_paths_plain
+ - crate::format::paths::truncate_paths_dedup
+ - crawk::AnnotatedEdges
 format::use_cmd
  - crawk::AnalysisResult
  - crawk::TypeReference

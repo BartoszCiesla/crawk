@@ -42,6 +42,9 @@ format::deps_cmd -> lib
 format::deps_cmd::tests -> format::deps_cmd
 format::list_cmd -> lib
 format::orphans::tests -> format::orphans
+format::paths -> lib
+format::paths::tests -> format::paths
+format::paths::tests -> lib
 format::use_cmd -> lib
 format::use_cmd::tests -> format::use_cmd
 format::why_cmd -> lib
@@ -72,6 +75,7 @@ main -> format::cycles
 main -> format::deps_cmd
 main -> format::list_cmd
 main -> format::orphans
+main -> format::paths
 main -> format::use_cmd
 main -> format::why_cmd
 main -> lib

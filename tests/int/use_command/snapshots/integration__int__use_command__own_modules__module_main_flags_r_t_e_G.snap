@@ -39,6 +39,10 @@ crate::format::list_cmd::ListDisplayOptions
 crate::format::list_cmd::render_list_plain
 crate::format::list_cmd::render_list_table
 crate::format::orphans::render_orphans
+crate::format::paths::render_paths_dot
+crate::format::paths::render_paths_grouped
+crate::format::paths::render_paths_plain
+crate::format::paths::truncate_paths_dedup
 crate::format::use_cmd::render_flat
 crate::format::use_cmd::render_grouped
 crate::format::why_cmd::render_grouped
@@ -51,6 +55,7 @@ crawk::AnnotatedEdges
 crawk::Cycle
 crawk::DependencyGraphOptions
 crawk::ModuleInfo
+crawk::ShortestPaths
 crawk::TypeReference
 crawk::version
 crawk::version::LONG_VERSION_MESSAGE

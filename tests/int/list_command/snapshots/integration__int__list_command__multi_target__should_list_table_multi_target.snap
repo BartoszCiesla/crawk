@@ -67,6 +67,8 @@ exit_code: 0
 |-----------+-----------------------|
 | bin:crawk | format::orphans       |
 |-----------+-----------------------|
+| bin:crawk | format::paths         |
+|-----------+-----------------------|
 | bin:crawk | format::use_cmd       |
 |-----------+-----------------------|
 | bin:crawk | format::why_cmd       |

@@ -31,6 +31,10 @@ crate::format::list_cmd::render_list_plain
 crate::format::list_cmd::render_list_table
 crate::format::orphans::*
 crate::format::orphans::render_orphans
+crate::format::paths::*
+crate::format::paths::render_paths_dot
+crate::format::paths::render_paths_grouped
+crate::format::paths::render_paths_plain
 crate::format::use_cmd::*
 crate::format::use_cmd::render_flat
 crate::format::use_cmd::render_grouped
@@ -47,5 +51,6 @@ crawk::version::VERSION
 crawk::{AnalysisOptions, Analyzer, DependencyGraphOptions, version}
 crawk::{AnalysisResult, TypeReference}
 crawk::{AnnotatedEdges, Cycle}
+crawk::{AnnotatedEdges, ShortestPaths}
 
 ----- stderr -----

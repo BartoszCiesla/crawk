@@ -31,6 +31,7 @@ format::cycles -> lib
 format::deps_cmd -> format
 format::deps_cmd -> lib
 format::list_cmd -> lib
+format::paths -> lib
 format::use_cmd -> lib
 format::why_cmd -> lib
 graph -> error
@@ -55,6 +56,7 @@ main -> format::cycles
 main -> format::deps_cmd
 main -> format::list_cmd
 main -> format::orphans
+main -> format::paths
 main -> format::use_cmd
 main -> format::why_cmd
 main -> lib

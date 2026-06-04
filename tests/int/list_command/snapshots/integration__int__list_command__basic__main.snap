@@ -17,6 +17,7 @@ format::cycles
 format::deps_cmd
 format::list_cmd
 format::orphans
+format::paths
 format::use_cmd
 format::why_cmd
 logger

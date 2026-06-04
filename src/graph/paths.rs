@@ -19,7 +19,8 @@ pub struct ShortestPaths {
 }
 
 impl ShortestPaths {
-    pub(super) const fn new(source: String, target: String, paths: Vec<Vec<String>>) -> Self {
+    #[must_use]
+    pub const fn new(source: String, target: String, paths: Vec<Vec<String>>) -> Self {
         Self {
             source,
             target,

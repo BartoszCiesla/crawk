@@ -49,7 +49,27 @@ fn handle_deps_command(crate_root: &Path, args: &DepsArgs) -> anyhow::Result<()>
     graph_opts.show_apis = args.show_apis;
     let graph = analyzer.dependency_graph(&graph_opts)?;
 
-    let output = if args.orphans {
+    let output = if let Some(ref pair) = args.path {
+        let (src, tgt) = (&pair[0], &pair[1]);
+        let sp = graph.shortest_paths(src, tgt)?;
+        if sp.is_empty() {
+            eprintln!("No path from {src} to {tgt}.");
+            String::new()
+        } else {
+            info!(
+                "Found {} shortest path(s) of length {}.",
+                sp.paths.len(),
+                sp.length().unwrap_or(0)
+            );
+            match args.format {
+                DepsOutputFormat::Plain => format::paths::render_paths_plain(&sp, args.depth),
+                DepsOutputFormat::Grouped => format::paths::render_paths_grouped(&sp, args.depth),
+                DepsOutputFormat::Dot => {
+                    format::paths::render_paths_dot(graph.edges(), &sp, args.depth)
+                }
+            }
+        }
+    } else if args.orphans {
         let orphans = graph.orphans();
         if orphans.is_empty() {
             String::new()
