@@ -426,6 +426,7 @@ pub(crate) struct DepsArgs {
         num_args = 0..=1,
         default_missing_value = "detect",
         value_enum,
+        conflicts_with = "path",
     )]
     pub cycles: Option<CyclesMode>,
 
@@ -437,7 +438,12 @@ pub(crate) struct DepsArgs {
     ///
     /// e.g.  analyzer -> reference [GroupItem, PathPrefix, TypeReference]
     #[clap(verbatim_doc_comment)]
-    #[arg(short = 'a', long = "show-apis", default_value_t = false)]
+    #[arg(
+        short = 'a',
+        long = "show-apis",
+        default_value_t = false,
+        conflicts_with = "path"
+    )]
     pub show_apis: bool,
 
     /// List modules with no incoming dependencies (orphans)
@@ -451,8 +457,19 @@ pub(crate) struct DepsArgs {
     ///
     /// Empty output means every module has at least one dependent.
     #[clap(verbatim_doc_comment)]
-    #[arg(long = "orphans", default_value_t = false, conflicts_with = "cycles")]
+    #[arg(long = "orphans", default_value_t = false, conflicts_with_all = ["cycles", "path"])]
     pub orphans: bool,
+
+    /// Show all shortest dependency paths from SOURCE to TARGET
+    #[clap(verbatim_doc_comment)]
+    #[arg(
+        long = "path",
+        num_args = 2,
+        value_names = ["SOURCE", "TARGET"],
+        value_parser = validate_module_path,
+        conflicts_with_all = ["cycles", "orphans", "show_apis"],
+    )]
+    pub path: Option<Vec<String>>,
 }
 
 #[derive(Parser, Debug, Clone, Default)]
