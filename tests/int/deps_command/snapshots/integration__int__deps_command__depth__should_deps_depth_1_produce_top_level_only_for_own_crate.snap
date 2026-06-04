@@ -24,6 +24,7 @@ discover -> constants
 discover -> utils
 error -> discover
 format -> lib
+graph -> error
 graph -> model
 graph -> reference
 lib -> analyzer

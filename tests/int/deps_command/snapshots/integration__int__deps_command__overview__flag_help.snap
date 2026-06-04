@@ -122,6 +122,9 @@ Options:
           
           Empty output means every module has at least one dependent.
 
+      --path <SOURCE> <TARGET>
+          Show all shortest dependency paths from SOURCE to TARGET
+
   -h, --help
           Print help (see a summary with '-h')
 

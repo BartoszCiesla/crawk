@@ -19,6 +19,7 @@ graph
 graph::cycles
 graph::edges
 graph::orphans
+graph::paths
 lib
 model
 parser

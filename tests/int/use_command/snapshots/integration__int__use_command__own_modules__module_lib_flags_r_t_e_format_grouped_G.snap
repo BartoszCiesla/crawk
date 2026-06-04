@@ -27,6 +27,7 @@ lib
  - crate::graph::DependencyGraph
  - crate::graph::DependencyGraphOptions
  - crate::graph::Edge
+ - crate::graph::ShortestPaths
  - crate::model::AnalysisOptions
  - crate::model::AnalysisResult
  - crate::reference::GroupItem
@@ -78,6 +79,8 @@ discover::module_tree::tests
 error
  - crate::discover::CrateInfoError
 graph
+ - crate::AnalysisError::ModuleNotFound
+ - crate::error::Result
  - crate::graph::cycles::Cycle
  - crate::graph::cycles::detect_cycles
  - crate::graph::edges
@@ -87,6 +90,8 @@ graph
  - crate::graph::edges::find_module_target
  - crate::graph::edges::truncate_module_path
  - crate::graph::orphans::find_orphans
+ - crate::graph::paths::ShortestPaths
+ - crate::graph::paths::compute_shortest_paths
 graph::cycles
  - crate::graph::edges::AnnotatedEdges
 graph::cycles::tests
@@ -105,13 +110,20 @@ graph::orphans
  - crate::graph::edges::AnnotatedEdges
 graph::orphans::tests
  - crate::graph::orphans::find_orphans
+graph::paths
+ - crate::graph::edges::AnnotatedEdges
+graph::paths::tests
+ - crate::graph::paths::ShortestPaths
+ - crate::graph::paths::compute_shortest_paths
 graph::tests
  - crate::graph::AnnotatedEdges
  - crate::graph::Cycle
  - crate::graph::DependencyGraph
  - crate::graph::DependencyGraphOptions
  - crate::graph::Edge
+ - crate::graph::ShortestPaths
  - crate::graph::build_edges
+ - crate::graph::compute_shortest_paths
  - crate::graph::detect_cycles
  - crate::graph::find_module_target
  - crate::graph::find_orphans

@@ -12,6 +12,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+crate::AnalysisError::ModuleNotFound
 crate::analyzer::*
 crate::analyzer::Analyzer
 crate::analyzer::expand_groups
@@ -42,6 +43,7 @@ crate::graph::Cycle
 crate::graph::DependencyGraph
 crate::graph::DependencyGraphOptions
 crate::graph::Edge
+crate::graph::ShortestPaths
 crate::graph::cycles::*
 crate::graph::cycles::Cycle
 crate::graph::cycles::detect_cycles
@@ -54,6 +56,9 @@ crate::graph::edges::find_module_target
 crate::graph::edges::truncate_module_path
 crate::graph::orphans::*
 crate::graph::orphans::find_orphans
+crate::graph::paths::*
+crate::graph::paths::ShortestPaths
+crate::graph::paths::compute_shortest_paths
 crate::model::*
 crate::model::AnalysisOptions
 crate::model::AnalysisResult

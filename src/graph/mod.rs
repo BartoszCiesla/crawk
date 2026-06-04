@@ -9,15 +9,18 @@
 mod cycles;
 mod edges;
 mod orphans;
+mod paths;
 
 use std::collections::BTreeSet;
 
 pub use cycles::Cycle;
 pub use edges::{AnnotatedEdges, Edge};
+pub use paths::ShortestPaths;
 
 pub(crate) use cycles::detect_cycles;
 pub(crate) use edges::truncate_module_path;
 pub(crate) use orphans::find_orphans;
+pub(crate) use paths::compute_shortest_paths;
 
 pub(crate) use edges::build_edges;
 pub(crate) use edges::find_module_target;
@@ -195,6 +198,38 @@ impl DependencyGraph {
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.edges.is_empty()
+    }
+
+    /// Find all shortest dependency paths from `source` to `target`.
+    ///
+    /// Uses BFS over the dependency graph. Returns all paths of minimum length
+    /// (hops), sorted lexicographically by `" -> "` joined string.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`crate::AnalysisError::ModuleNotFound`] if `source` or `target`
+    /// is not present in [`Self::modules`].
+    pub fn shortest_paths(
+        &self,
+        source: &str,
+        target: &str,
+    ) -> crate::error::Result<ShortestPaths> {
+        if !self.modules.contains(source) {
+            return Err(crate::AnalysisError::ModuleNotFound {
+                module_path: source.to_owned(),
+            });
+        }
+        if !self.modules.contains(target) {
+            return Err(crate::AnalysisError::ModuleNotFound {
+                module_path: target.to_owned(),
+            });
+        }
+        let raw = compute_shortest_paths(&self.edges, &self.modules, source, target);
+        Ok(ShortestPaths::new(
+            source.to_owned(),
+            target.to_owned(),
+            raw,
+        ))
     }
 }
 

@@ -35,13 +35,16 @@ format::deps_cmd -> lib
 format::list_cmd -> lib
 format::use_cmd -> lib
 format::why_cmd -> lib
+graph -> error
 graph -> graph::cycles
 graph -> graph::edges
 graph -> graph::orphans
+graph -> graph::paths
 graph::cycles -> graph::edges
 graph::edges -> model
 graph::edges -> reference
 graph::orphans -> graph::edges
+graph::paths -> graph::edges
 lib -> analyzer
 lib -> discover
 lib -> error

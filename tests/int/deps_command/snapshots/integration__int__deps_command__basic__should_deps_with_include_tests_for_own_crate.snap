@@ -45,9 +45,11 @@ format::orphans::tests -> format::orphans
 format::use_cmd -> lib
 format::use_cmd::tests -> format::use_cmd
 format::why_cmd -> lib
+graph -> error
 graph -> graph::cycles
 graph -> graph::edges
 graph -> graph::orphans
+graph -> graph::paths
 graph::cycles -> graph::edges
 graph::cycles::tests -> graph::cycles
 graph::edges -> model
@@ -55,6 +57,8 @@ graph::edges -> reference
 graph::edges::tests -> graph::edges
 graph::orphans -> graph::edges
 graph::orphans::tests -> graph::orphans
+graph::paths -> graph::edges
+graph::paths::tests -> graph::paths
 graph::tests -> graph
 lib -> analyzer
 lib -> discover

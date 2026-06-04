@@ -57,10 +57,12 @@ format::use_cmd (1)
 format::why_cmd (1)
   -> lib
 
-graph (3)
+graph (5)
+  -> error
   -> graph::cycles
   -> graph::edges
   -> graph::orphans
+  -> graph::paths
 
 graph::cycles (1)
   -> graph::edges
@@ -70,6 +72,9 @@ graph::edges (2)
   -> reference
 
 graph::orphans (1)
+  -> graph::edges
+
+graph::paths (1)
   -> graph::edges
 
 lib (6)

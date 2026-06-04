@@ -86,6 +86,8 @@ pub mod version;
 pub use crate::analyzer::Analyzer;
 pub use crate::discover::{ModuleInfo, ModuleVisibility, TargetInfo, TargetKind};
 pub use crate::error::AnalysisError;
-pub use crate::graph::{AnnotatedEdges, Cycle, DependencyGraph, DependencyGraphOptions, Edge};
+pub use crate::graph::{
+    AnnotatedEdges, Cycle, DependencyGraph, DependencyGraphOptions, Edge, ShortestPaths,
+};
 pub use crate::model::{AnalysisOptions, AnalysisResult};
 pub use crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference};

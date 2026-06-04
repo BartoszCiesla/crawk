@@ -14,12 +14,13 @@ Show inter-module dependency graph for the entire crate
 Usage: crawk deps [OPTIONS]
 
 Options:
-  -t, --include-tests      Include modules defined in `#[cfg(test)]` blocks (excluded by default)
-  -d, --depth <DEPTH>      Truncate module paths to at most N segments.
-  -f, --format <FORMAT>    Output format [default: plain] [possible values: plain, grouped, dot]
-      --cycles [<CYCLES>]  Detect and display dependency cycles (strongly connected components) [possible values: detect, highlight]
-  -a, --show-apis          Show API names (symbols) that create each dependency edge
-      --orphans            List modules with no incoming dependencies (orphans)
-  -h, --help               Print help (see more with '--help')
+  -t, --include-tests           Include modules defined in `#[cfg(test)]` blocks (excluded by default)
+  -d, --depth <DEPTH>           Truncate module paths to at most N segments.
+  -f, --format <FORMAT>         Output format [default: plain] [possible values: plain, grouped, dot]
+      --cycles [<CYCLES>]       Detect and display dependency cycles (strongly connected components) [possible values: detect, highlight]
+  -a, --show-apis               Show API names (symbols) that create each dependency edge
+      --orphans                 List modules with no incoming dependencies (orphans)
+      --path <SOURCE> <TARGET>  Show all shortest dependency paths from SOURCE to TARGET
+  -h, --help                    Print help (see more with '--help')
 
 ----- stderr -----

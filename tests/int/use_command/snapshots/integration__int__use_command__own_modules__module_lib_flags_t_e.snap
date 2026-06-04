@@ -22,6 +22,7 @@ crate::graph::Cycle
 crate::graph::DependencyGraph
 crate::graph::DependencyGraphOptions
 crate::graph::Edge
+crate::graph::ShortestPaths
 crate::model::AnalysisOptions
 crate::model::AnalysisResult
 crate::reference::GroupItem

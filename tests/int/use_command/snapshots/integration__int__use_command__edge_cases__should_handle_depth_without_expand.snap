@@ -14,7 +14,7 @@ exit_code: 0
 crate::analyzer
 crate::discover::{ModuleInfo, ModuleVisibility, TargetInfo, TargetKind}
 crate::error
-crate::graph::{AnnotatedEdges, Cycle, DependencyGraph, DependencyGraphOptions, Edge}
+crate::graph::{AnnotatedEdges, Cycle, DependencyGraph, DependencyGraphOptions, Edge, ShortestPaths}
 crate::model::{AnalysisOptions, AnalysisResult}
 crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference}
 

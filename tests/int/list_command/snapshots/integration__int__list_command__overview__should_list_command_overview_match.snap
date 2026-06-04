@@ -18,6 +18,7 @@ exit_code: 0
 [lib]       graph::cycles
 [lib]       graph::edges
 [lib]       graph::orphans
+[lib]       graph::paths
 [lib]       lib
 [lib]       model
 [lib]       parser
