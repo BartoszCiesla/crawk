@@ -461,6 +461,29 @@ pub(crate) struct DepsArgs {
     pub orphans: bool,
 
     /// Show all shortest dependency paths from SOURCE to TARGET
+    ///
+    /// Finds every path of minimum hop-count that leads from SOURCE to
+    /// TARGET in the dependency graph. Multiple paths are reported when
+    /// the graph contains several equally short routes (e.g. a diamond
+    /// dependency where two parallel chains have the same length).
+    ///
+    /// Each path is printed as a chain of arrows:
+    ///   source -> intermediate -> target
+    ///
+    /// "Shortest" is measured in edges (hops). All reported paths have
+    /// the same length; longer routes are not shown.
+    ///
+    /// SOURCE and TARGET are `::` separated module paths, the same
+    /// format used by other commands (e.g. `parser`, `format::deps_cmd`).
+    ///
+    /// Useful combinations:
+    ///   --depth N     truncate each node to N segments; paths that
+    ///                 become identical after truncation are deduplicated
+    ///   --format dot  full dependency graph with path edges highlighted
+    ///                 in red (bold) on top of all other edges
+    ///
+    /// Prints "No path from SOURCE to TARGET." to stderr and exits 0
+    /// when no dependency path exists between the two modules.
     #[clap(verbatim_doc_comment)]
     #[arg(
         long = "path",

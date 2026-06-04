@@ -8,6 +8,7 @@
 /fixtures/broken_syntax/target
 /fixtures/cycles/target
 /fixtures/bin_only/target
+/fixtures/paths/target
 /result
 # Alternative cache directory for IDE's and other tools
 /.ide/

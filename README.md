@@ -98,6 +98,9 @@ crawk deps --format dot
 # Annotate edges with API symbol names:
 crawk deps --show-apis
 
+# Find all shortest dependency paths between two modules:
+crawk deps --path parser visitor
+
 # Analyze a crate at a custom path:
 crawk -p /path/to/my-crate deps --cycles highlight
 ```
