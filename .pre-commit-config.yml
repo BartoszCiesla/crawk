@@ -129,3 +129,11 @@ repos:
         files: '^fixtures/cycles/'
         pass_filenames: false
         stages: [pre-push]
+      - id: cargo-build-fixture-paths
+        name: cargo build fixture/paths
+        entry: cargo
+        language: system
+        args: ["build", "--manifest-path", "fixtures/paths/Cargo.toml"]
+        files: '^fixtures/paths/'
+        pass_filenames: false
+        stages: [pre-push]

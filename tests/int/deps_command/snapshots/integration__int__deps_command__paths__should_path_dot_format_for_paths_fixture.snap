@@ -1,0 +1,43 @@
+---
+source: tests/int/deps_command/paths.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/paths
+    - deps
+    - "--path"
+    - lib
+    - leaf
+    - "-f"
+    - dot
+---
+success: true
+exit_code: 0
+----- stdout -----
+digraph dependencies {
+    rankdir=LR;
+    node [shape=box, style=rounded, fontname="monospace", fontsize=10];
+    edge [color="#444444"];
+
+    "a";
+    "b";
+    "deep";
+    "deep_a";
+    "deep_b";
+    "leaf";
+    "leaf_via_a";
+    "lib";
+
+    "a" -> "deep_a";
+    "a" -> "leaf" [color=red, style=bold, penwidth=2.0];
+    "a" -> "leaf_via_a";
+    "b" -> "deep_b";
+    "b" -> "leaf" [color=red, style=bold, penwidth=2.0];
+    "deep_a" -> "deep";
+    "deep_b" -> "deep";
+    "lib" -> "a" [color=red, style=bold, penwidth=2.0];
+    "lib" -> "b" [color=red, style=bold, penwidth=2.0];
+}
+
+----- stderr -----

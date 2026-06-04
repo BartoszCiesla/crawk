@@ -1,0 +1,10 @@
+[package]
+name = "paths"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "paths"
+path = "src/lib.rs"
+
+[dependencies]

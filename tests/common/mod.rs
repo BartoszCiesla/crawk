@@ -35,3 +35,9 @@ pub(crate) fn crawk_bin_only() -> Command {
     cmd.arg("-p").arg("fixtures/bin_only");
     cmd
 }
+
+pub(crate) fn crawk_paths() -> Command {
+    let mut cmd = crawk();
+    cmd.arg("-p").arg("fixtures/paths");
+    cmd
+}

@@ -1,0 +1,23 @@
+---
+source: tests/int/deps_command/paths.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/cycles
+    - deps
+    - "--path"
+    - alpha
+    - beta
+    - "-a"
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+error: the argument '--path <SOURCE> <TARGET>' cannot be used with '--show-apis'
+
+Usage: crawk deps --path <SOURCE> <TARGET>
+
+For more information, try '--help'.

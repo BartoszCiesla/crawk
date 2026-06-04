@@ -6,3 +6,4 @@ mod error_cases;
 mod format;
 mod orphans;
 mod overview;
+mod paths;

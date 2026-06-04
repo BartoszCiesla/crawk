@@ -1,0 +1,22 @@
+---
+source: tests/int/deps_command/paths.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/paths
+    - deps
+    - "--path"
+    - lib
+    - leaf
+    - "-f"
+    - grouped
+---
+success: true
+exit_code: 0
+----- stdout -----
+length 2:
+  lib -> a -> leaf
+  lib -> b -> leaf
+
+----- stderr -----

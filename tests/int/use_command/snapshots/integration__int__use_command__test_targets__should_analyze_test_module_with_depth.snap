@@ -16,6 +16,7 @@ exit_code: 0
 crate::common
 crate::common::{backtrace_filters, crawk, crawk_modules}
 crate::common::{backtrace_filters, crawk, crawk_workspace}
+crate::common::{backtrace_filters, crawk_cycles, crawk_paths}
 crate::common::{backtrace_filters, crawk_modules}
 crate::common::{backtrace_filters, crawk}
 crate::common::{crawk, crawk_cycles, crawk_modules}

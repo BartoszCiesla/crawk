@@ -1,0 +1,18 @@
+---
+source: tests/int/deps_command/paths.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/paths
+    - deps
+    - "--path"
+    - a
+    - deep
+---
+success: true
+exit_code: 0
+----- stdout -----
+a -> deep_a -> deep
+
+----- stderr -----
