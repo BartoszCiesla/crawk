@@ -224,11 +224,11 @@ impl DependencyGraph {
                 module_path: target.to_owned(),
             });
         }
-        let raw = compute_shortest_paths(&self.edges, &self.modules, source, target);
-        Ok(ShortestPaths::new(
-            source.to_owned(),
-            target.to_owned(),
-            raw,
+        Ok(compute_shortest_paths(
+            &self.edges,
+            &self.modules,
+            source,
+            target,
         ))
     }
 }
