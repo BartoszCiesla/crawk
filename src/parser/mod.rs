@@ -154,23 +154,33 @@ impl CrateAnalyzer {
     /// `children_map` maps each module path to the set of its direct child module
     /// names. This allows bare `use child::Item` paths (valid in Rust ≥2018 for
     /// direct children declared via `mod`) to be recognised as internal references.
+    ///
+    /// When `module_filter` is `Some`, only modules in that set are yielded. This
+    /// scopes a single `analyze_module` call to its target's modules and prevents
+    /// refs parsed for an earlier target (e.g. lib) from leaking into the result
+    /// of a later, narrower analysis (e.g. a test target). When `None`, every
+    /// module ever parsed by this analyzer is yielded.
     pub(crate) fn all_crate_references<'a>(
         &'a self,
         children_map: &'a HashMap<String, HashSet<String>>,
+        module_filter: Option<&'a HashSet<String>>,
     ) -> impl Iterator<Item = (&'a String, Vec<&'a TypeReference>)> {
-        self.file_order.iter().filter_map(move |module| {
-            self.files.get(module).map(|refs| {
-                let crate_refs: Vec<&TypeReference> = refs
-                    .iter()
-                    .filter(|r| {
-                        r.is_relative()
-                            || r.is_from_crate(&self.crate_name)
-                            || Self::is_bare_child(r, module, children_map)
-                    })
-                    .collect();
-                (module, crate_refs)
+        self.file_order
+            .iter()
+            .filter(move |module| module_filter.is_none_or(|f| f.contains(module.as_str())))
+            .filter_map(move |module| {
+                self.files.get(module).map(|refs| {
+                    let crate_refs: Vec<&TypeReference> = refs
+                        .iter()
+                        .filter(|r| {
+                            r.is_relative()
+                                || r.is_from_crate(&self.crate_name)
+                                || Self::is_bare_child(r, module, children_map)
+                        })
+                        .collect();
+                    (module, crate_refs)
+                })
             })
-        })
     }
 
     /// Check if a `PathPrefix::None` reference targets an internal module.

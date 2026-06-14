@@ -382,8 +382,13 @@ impl Analyzer {
         };
 
         let file_root = self.build_file_root_map(&modules);
+        // Capture module names BEFORE consuming `modules`. The filter prevents
+        // refs parsed for an earlier `analyze_module` call (e.g. lib) from
+        // leaking into the result of a later call (e.g. a test target with
+        // overlapping or differently-rooted module paths).
+        let module_filter: HashSet<String> = modules.iter().map(|m| m.path().to_owned()).collect();
         self.parse_all_modules(modules, &file_root, &children_map)?;
-        let dependencies = self.collect_references(options, &children_map);
+        let dependencies = self.collect_references(options, &children_map, &module_filter);
 
         Ok(AnalysisResult::new(module_path, dependencies, source_file))
     }
@@ -468,13 +473,23 @@ impl Analyzer {
     ///
     /// Bare child paths (`use child::Item` without `crate::` prefix) are normalised
     /// to `crate::<parent>::child::Item` so downstream code handles them uniformly.
+    ///
+    /// `module_filter` scopes iteration to the modules belonging to the current
+    /// `analyze_module` call. Required because the underlying `CrateAnalyzer`
+    /// accumulates parsed refs across all calls — without this filter, an
+    /// `analyze_module("helpers")` call for a test target would re-process refs
+    /// parsed for the lib target in an earlier call and emit phantom edges.
     fn collect_references(
         &mut self,
         options: &AnalysisOptions,
         children_map: &HashMap<String, HashSet<String>>,
+        module_filter: &HashSet<String>,
     ) -> HashMap<String, HashSet<TypeReference>> {
         let mut dependencies = HashMap::new();
-        for (module, module_references) in self.parser.all_crate_references(children_map) {
+        for (module, module_references) in self
+            .parser
+            .all_crate_references(children_map, Some(module_filter))
+        {
             debug!("Processing module: {}", module);
 
             // Pre-compute parent segments for bare-path normalisation.

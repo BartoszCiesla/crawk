@@ -25,8 +25,6 @@ cli -> cli::validation
 cli -> version
 cli::overview -> version
 cli::validation::tests -> cli::validation
-common -> lib
-common -> version
 discover -> cache
 discover::module_tree -> cache
 discover::module_tree -> constants
