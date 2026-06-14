@@ -79,3 +79,8 @@ inherits = "dev"
 opt-level = 0
 debug = false
 incremental = false
+
+[profile.profiling]
+inherits = "release"
+debug = true
+strip = "none"
