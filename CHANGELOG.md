@@ -2,6 +2,47 @@
 
 ## [Unreleased]
 
+## [0.6.0](https://github.com/BartoszCiesla/crawk/compare/v0.5.2...v0.6.0)
+
+### ⛰️ Features
+
+
+- *(cli)* Add --path flag to deps command - ([79020cc](https://github.com/BartoszCiesla/crawk/commit/79020cce9870892e8ddf2ce45cb9ea1c1f2aec78))
+- *(deps)* Add path renderers and wire --path dispatch - ([7834355](https://github.com/BartoszCiesla/crawk/commit/7834355f2f7693e9f2552af53b9cf63d8b1f13fe))
+- *(graph)* Add shortest_paths BFS algorithm - ([cdf86a5](https://github.com/BartoszCiesla/crawk/commit/cdf86a559b6f9bcb8feb8fd3df006d4eebf78a52))
+
+### 🐛 Bug Fixes
+
+
+- *(analyzer)* Scope collect_references to current target's modules - ([b1f0b04](https://github.com/BartoszCiesla/crawk/commit/b1f0b044361298625b06e0c760ef027a8e55292e))
+
+### 🚜 Refactor
+
+
+- *(graph)* Return ShortestPaths from compute_shortest_paths - ([6f521ed](https://github.com/BartoszCiesla/crawk/commit/6f521ed7dcd347f24b6081207e8379a111982a17))
+
+### 📚 Documentation
+
+
+- *(readme)* Add codecov coverage badge - ([6fd1ad1](https://github.com/BartoszCiesla/crawk/commit/6fd1ad1f37486859ac9240daec25f3877dfad8eb))
+- Document --path in README and CLI help - ([130ed38](https://github.com/BartoszCiesla/crawk/commit/130ed385ec76be95ba4b38877d5f5f5fd42ac336))
+
+### 🧪 Testing
+
+
+- *(deps)* Add paths fixture and integration tests for --path - ([e8f8af3](https://github.com/BartoszCiesla/crawk/commit/e8f8af34a78275ab1797de24222389d7c4048b62))
+
+### ⚙️ Miscellaneous Tasks
+
+
+- *(coverage)* Add codecov upload workflow - ([c32b232](https://github.com/BartoszCiesla/crawk/commit/c32b232b1581e8bf143e93b5f5aa9c44451591b3))
+
+### Build
+
+
+- Add profiling Cargo profile with debug symbols - ([d2be7e6](https://github.com/BartoszCiesla/crawk/commit/d2be7e68c98babfa144965c99082f0f824f68801))
+
+
 ## [0.5.2](https://github.com/BartoszCiesla/crawk/compare/v0.5.1...v0.5.2)
 
 ### ⚙️ Miscellaneous Tasks
