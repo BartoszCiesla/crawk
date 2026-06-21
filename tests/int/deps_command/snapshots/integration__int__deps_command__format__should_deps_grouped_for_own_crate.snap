@@ -10,7 +10,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-analyzer (8)
+analyzer (9)
   -> cache
   -> discover
   -> error
@@ -19,6 +19,7 @@ analyzer (8)
   -> parser
   -> reference
   -> resolve
+  -> rules
 
 cli (3)
   -> cli::overview
@@ -39,6 +40,10 @@ discover::module_tree (4)
 
 error (1)
   -> discover
+
+format::check_cmd (2)
+  -> format
+  -> lib
 
 format::cycles (2)
   -> format
@@ -80,20 +85,22 @@ graph::orphans (1)
 graph::paths (1)
   -> graph::edges
 
-lib (6)
+lib (7)
   -> analyzer
   -> discover
   -> error
   -> graph
   -> model
   -> reference
+  -> rules
 
 logger (1)
   -> cli
 
-main (12)
+main (13)
   -> cli
   -> format
+  -> format::check_cmd
   -> format::cycles
   -> format::deps_cmd
   -> format::list_cmd
@@ -127,6 +134,19 @@ resolve (4)
   -> discover
   -> reference
   -> utils
+
+rules (3)
+  -> graph
+  -> rules::eval
+  -> rules::load
+
+rules::eval (2)
+  -> graph
+  -> rules
+
+rules::load (2)
+  -> error
+  -> rules
 
 utils (1)
   -> constants

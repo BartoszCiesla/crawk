@@ -80,6 +80,7 @@ mod model;
 mod parser;
 mod reference;
 mod resolve;
+mod rules;
 mod utils;
 pub mod version;
 
@@ -91,3 +92,4 @@ pub use crate::graph::{
 };
 pub use crate::model::{AnalysisOptions, AnalysisResult};
 pub use crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference};
+pub use crate::rules::{CheckOptions, CheckReport, Violation, ViolationKind};

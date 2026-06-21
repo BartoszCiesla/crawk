@@ -31,6 +31,8 @@ crate::error::AnalysisError
 crate::error::Result
 crate::error::{AnalysisError, Result}
 crate::graph::*
+crate::graph::DependencyGraph
+crate::graph::DependencyGraphOptions
 crate::graph::cycles::*
 crate::graph::cycles::Cycle
 crate::graph::cycles::detect_cycles
@@ -72,6 +74,13 @@ crate::reference::{GroupItem, PathPrefix, TypeReference}
 crate::reference::{PathPrefix, TypeReference}
 crate::resolve::*
 crate::resolve::resolve_glob
+crate::rules::eval::evaluate
+crate::rules::load::*
+crate::rules::load::resolve_config_path
+crate::rules::{CheckOptions, CheckReport, Violation, ViolationKind}
+crate::rules::{CheckReport, LayerPos, RuleSet, Violation, ViolationKind}
+crate::rules::{LayerRule, ModulePattern, RuleSet}
+crate::rules::{self, CheckOptions, CheckReport, RuleSet}
 crate::utils::*
 crate::utils::ReadFileError::TooLarge
 crate::utils::has_cfg_test

@@ -6,6 +6,7 @@ use crate::model::{AnalysisOptions, AnalysisResult};
 use crate::parser::CrateAnalyzer;
 use crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference};
 use crate::resolve::resolve_glob;
+use crate::rules::{self, CheckOptions, CheckReport, RuleSet};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt::{Debug, Formatter, Result as FmtResult};
 use std::path::{Path, PathBuf};
@@ -813,6 +814,29 @@ impl Analyzer {
             .collect();
 
         Ok(DependencyGraph::new(all_edges, truncated_modules))
+    }
+
+    /// Check the crate's module dependencies against architectural rules.
+    ///
+    /// Builds the dependency graph, loads the rule set from `crawk.toml` /
+    /// `.crawk.toml` (or [`CheckOptions::config`]), and evaluates the rules.
+    /// A [`CheckReport`] with violations is a normal result, **not** an error —
+    /// callers map a non-empty report to a non-zero exit code.
+    ///
+    /// # Arguments
+    ///
+    /// * `crate_root` — crate root directory, used to discover the config file.
+    /// * `opts` — config path and graph options.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the graph cannot be built, the config file is missing
+    /// or malformed, or a rule references an unknown module.
+    pub fn check(&mut self, crate_root: &Path, opts: &CheckOptions) -> Result<CheckReport> {
+        let graph = self.dependency_graph(&opts.graph_opts())?;
+        let path = rules::resolve_config_path(crate_root, opts.config.as_deref())?;
+        let rule_set = RuleSet::load(&path, graph.modules())?;
+        Ok(rules::evaluate(&rule_set, &graph))
     }
 
     /// Explain why `source` depends on `target` by listing the concrete references.

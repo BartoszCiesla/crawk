@@ -1,0 +1,11 @@
+# Two independent, disjoint layer groups. All fixture edges are downward
+# within their group (cli -> web::repo is cross-group, so unconstrained):
+# this config is satisfied (exit 0).
+
+[[check.layers]]
+name = "app"
+order = ["cli", "analyzer", "parser", "discover"]
+
+[[check.layers]]
+name = "web"
+order = ["web::api", "web::service", "web::repo"]

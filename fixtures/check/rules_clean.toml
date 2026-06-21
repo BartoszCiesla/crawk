@@ -1,0 +1,4 @@
+# Single-group config used to exercise the -c flag. Satisfied (exit 0).
+[[check.layers]]
+name = "app"
+order = ["cli", "analyzer", "parser", "discover"]

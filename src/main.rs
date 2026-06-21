@@ -4,11 +4,12 @@ mod logger;
 
 use clap::Parser;
 use cli::{
-    CrawkArgs, CrawkCommands, CyclesMode, DepsArgs, DepsOutputFormat, ListArgs, ListOutputFormat,
-    UseArgs, UseOutputFormat, WhyArgs, WhyOutputFormat,
+    CheckArgs, CheckOutputFormat, CrawkArgs, CrawkCommands, CyclesMode, DepsArgs, DepsOutputFormat,
+    ListArgs, ListOutputFormat, UseArgs, UseOutputFormat, WhyArgs, WhyOutputFormat,
 };
 use crawk::{
-    AnalysisOptions, Analyzer, AnnotatedEdges, DependencyGraph, DependencyGraphOptions, version,
+    AnalysisOptions, Analyzer, AnnotatedEdges, CheckOptions, DependencyGraph,
+    DependencyGraphOptions, version,
 };
 use logger::configure_tracing;
 use std::path::Path;
@@ -36,9 +37,45 @@ fn main() -> anyhow::Result<()> {
         CrawkCommands::List(ref args) => handle_list_command(&crate_root, args)?,
         CrawkCommands::Deps(ref args) => handle_deps_command(&crate_root, args)?,
         CrawkCommands::Why(ref args) => handle_why_command(&crate_root, args)?,
+        CrawkCommands::Check(ref args) => {
+            // Distinct exit-code contract: 0 clean, 1 violations, 2 operational
+            // error. Map handler errors to 2 here rather than letting anyhow
+            // return the default exit code 1 from `main`.
+            let code = handle_check_command(&crate_root, args).unwrap_or_else(|e| {
+                eprintln!("Error: {e:#}");
+                2
+            });
+            if code != 0 {
+                std::process::exit(code);
+            }
+        }
     }
 
     Ok(())
+}
+
+/// Handle the 'check' subcommand. Returns the intended process exit code:
+/// `0` (clean) or `1` (violations). Operational errors propagate as `Err`.
+fn handle_check_command(crate_root: &Path, args: &CheckArgs) -> anyhow::Result<i32> {
+    let mut analyzer = Analyzer::new(crate_root)?;
+
+    let opts = CheckOptions {
+        config: args.config.clone(),
+        include_tests: args.include_tests,
+        show_apis: args.show_apis,
+    };
+    let report = analyzer.check(crate_root, &opts)?;
+
+    if report.is_clean() {
+        info!("All architectural rules satisfied.");
+        return Ok(0);
+    }
+
+    let output = match args.format {
+        CheckOutputFormat::Plain => format::check_cmd::render_plain(&report),
+    };
+    print!("{output}");
+    Ok(report.exit_code())
 }
 
 /// Handle the 'deps' subcommand

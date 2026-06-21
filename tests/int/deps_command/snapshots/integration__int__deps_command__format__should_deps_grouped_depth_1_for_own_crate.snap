@@ -12,7 +12,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-analyzer (8)
+analyzer (9)
   -> cache
   -> discover
   -> error
@@ -21,6 +21,7 @@ analyzer (8)
   -> parser
   -> reference
   -> resolve
+  -> rules
 
 cli (1)
   -> version
@@ -41,13 +42,14 @@ graph (3)
   -> model
   -> reference
 
-lib (6)
+lib (7)
   -> analyzer
   -> discover
   -> error
   -> graph
   -> model
   -> reference
+  -> rules
 
 logger (1)
   -> cli
@@ -76,6 +78,10 @@ resolve (4)
   -> discover
   -> reference
   -> utils
+
+rules (2)
+  -> error
+  -> graph
 
 utils (1)
   -> constants

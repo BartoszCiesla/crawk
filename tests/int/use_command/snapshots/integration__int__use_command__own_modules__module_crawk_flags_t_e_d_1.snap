@@ -19,5 +19,6 @@ crate::error
 crate::graph
 crate::model
 crate::reference
+crate::rules
 
 ----- stderr -----

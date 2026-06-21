@@ -187,6 +187,31 @@ pub(crate) enum CrawkCommands {
     /// Note: global options (-p, -v, -l) must appear before the subcommand.
     #[clap(verbatim_doc_comment, visible_alias = "w")]
     Why(WhyArgs),
+
+    /// Check module dependencies against architectural rules
+    ///
+    /// Loads rules from a `crawk.toml` (or `.crawk.toml`) file in the crate root
+    /// — or from the path given with --config — and verifies that the crate's
+    /// inter-module dependencies obey them. Designed for CI:
+    ///
+    ///   exit 0   all rules satisfied
+    ///   exit 1   one or more violations (printed to stdout)
+    ///   exit 2   operational error (missing/invalid config, unknown module)
+    ///
+    /// Check category `layers`: named groups, each an ordered stack where a
+    /// lower layer must not depend on a higher one. Each entry covers its whole
+    /// module subtree; groups are independent and must be disjoint.
+    ///
+    /// Example:
+    ///   [check.layers.arch]
+    ///   order = ["api", "service", "infra"]
+    ///
+    /// `api` may depend on `service`/`infra`, but `infra` must not depend on
+    /// `service` or `api`.
+    ///
+    /// Note: global options (-p, -v, -l) must appear before the subcommand.
+    #[clap(verbatim_doc_comment, visible_alias = "c")]
+    Check(CheckArgs),
 }
 
 #[derive(ValueEnum, Debug, Clone, Default, PartialEq, Eq)]
@@ -567,4 +592,49 @@ pub(crate) struct WhyArgs {
     #[clap(verbatim_doc_comment)]
     #[arg(short = 'f', long = "format", default_value_t = WhyOutputFormat::Plain)]
     pub format: WhyOutputFormat,
+}
+
+#[derive(ValueEnum, Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) enum CheckOutputFormat {
+    /// One violation per line (default)
+    #[default]
+    Plain,
+}
+
+impl Display for CheckOutputFormat {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        match self {
+            Self::Plain => f.write_str("plain"),
+        }
+    }
+}
+
+#[derive(Parser, Debug, Clone)]
+/// Arguments for the `check` subcommand — validates dependencies against rules.
+pub(crate) struct CheckArgs {
+    /// Path to the rule config file
+    ///
+    /// When omitted, the crate root is searched for `crawk.toml`, then
+    /// `.crawk.toml` (the plain name wins if both exist). A missing config is an
+    /// error (exit 2), not a silent pass.
+    #[clap(verbatim_doc_comment)]
+    #[arg(short = 'c', long = "config")]
+    pub config: Option<PathBuf>,
+
+    /// Include modules defined in `#[cfg(test)]` blocks (excluded by default)
+    #[clap(verbatim_doc_comment)]
+    #[arg(short = 't', long = "include-tests", default_value_t = false)]
+    pub include_tests: bool,
+
+    /// Annotate each violation with the API symbols that create the edge
+    #[clap(verbatim_doc_comment)]
+    #[arg(short = 'a', long = "show-apis", default_value_t = false)]
+    pub show_apis: bool,
+
+    /// Output format
+    ///
+    /// plain — one violation per line (default)
+    #[clap(verbatim_doc_comment)]
+    #[arg(short = 'f', long = "format", default_value_t = CheckOutputFormat::Plain)]
+    pub format: CheckOutputFormat,
 }

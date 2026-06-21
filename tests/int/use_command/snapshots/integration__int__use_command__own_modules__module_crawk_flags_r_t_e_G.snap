@@ -80,6 +80,17 @@ crate::reference::Segments
 crate::reference::TypeReference
 crate::resolve::extract_public_items
 crate::resolve::resolve_glob
+crate::rules
+crate::rules::CheckOptions
+crate::rules::CheckReport
+crate::rules::LayerPos
+crate::rules::LayerRule
+crate::rules::ModulePattern
+crate::rules::RuleSet
+crate::rules::Violation
+crate::rules::ViolationKind
+crate::rules::eval::evaluate
+crate::rules::load::resolve_config_path
 crate::utils::MAX_FILE_BYTES
 crate::utils::ReadFileError
 crate::utils::ReadFileError::TooLarge

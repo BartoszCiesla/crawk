@@ -1,0 +1,22 @@
+---
+source: tests/int/check_command/layers.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/check
+    - check
+    - "-c"
+    - fixtures/check/rules_layers_violated.toml
+    - "--show-apis"
+---
+success: false
+exit_code: 1
+----- stdout -----
+crawk check: 3 violations
+
+  LAYER analyzer -> parser [ParserType]   (rule: layer 'app' forbids upward dependency (analyzer -> parser))
+  LAYER cli -> analyzer [AnalyzerType]   (rule: layer 'app' forbids upward dependency (cli -> analyzer))
+  LAYER parser -> discover [DiscoverType]   (rule: layer 'app' forbids upward dependency (parser -> discover))
+
+----- stderr -----

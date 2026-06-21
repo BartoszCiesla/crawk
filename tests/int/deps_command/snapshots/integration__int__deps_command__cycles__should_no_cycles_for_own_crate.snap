@@ -9,6 +9,10 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+cycle 1 (3 modules)
+  rules -> rules::eval
+  rules -> rules::load
+  rules::eval -> rules
+  rules::load -> rules
 
 ----- stderr -----
-No dependency cycles found.

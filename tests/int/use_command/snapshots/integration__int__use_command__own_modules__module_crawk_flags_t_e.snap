@@ -29,5 +29,9 @@ crate::reference::GroupItem
 crate::reference::PathPrefix
 crate::reference::PathSuffix
 crate::reference::TypeReference
+crate::rules::CheckOptions
+crate::rules::CheckReport
+crate::rules::Violation
+crate::rules::ViolationKind
 
 ----- stderr -----

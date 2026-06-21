@@ -1,0 +1,64 @@
+---
+source: tests/int/check_command/overview.rs
+info:
+  program: crawk
+  args:
+    - check
+    - "--help"
+---
+success: true
+exit_code: 0
+----- stdout -----
+Check module dependencies against architectural rules
+
+Loads rules from a `crawk.toml` (or `.crawk.toml`) file in the crate root
+— or from the path given with --config — and verifies that the crate's
+inter-module dependencies obey them. Designed for CI:
+
+  exit 0   all rules satisfied
+  exit 1   one or more violations (printed to stdout)
+  exit 2   operational error (missing/invalid config, unknown module)
+
+Check category `layers`: named groups, each an ordered stack where a
+lower layer must not depend on a higher one. Each entry covers its whole
+module subtree; groups are independent and must be disjoint.
+
+Example:
+  [check.layers.arch]
+  order = ["api", "service", "infra"]
+
+`api` may depend on `service`/`infra`, but `infra` must not depend on
+`service` or `api`.
+
+Note: global options (-p, -v, -l) must appear before the subcommand.
+
+Usage: crawk check [OPTIONS]
+
+Options:
+  -c, --config <CONFIG>
+          Path to the rule config file
+          
+          When omitted, the crate root is searched for `crawk.toml`, then
+          `.crawk.toml` (the plain name wins if both exist). A missing config is an
+          error (exit 2), not a silent pass.
+
+  -t, --include-tests
+          Include modules defined in `#[cfg(test)]` blocks (excluded by default)
+
+  -a, --show-apis
+          Annotate each violation with the API symbols that create the edge
+
+  -f, --format <FORMAT>
+          Output format
+          
+          plain — one violation per line (default)
+
+          Possible values:
+          - plain: One violation per line (default)
+          
+          [default: plain]
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+----- stderr -----

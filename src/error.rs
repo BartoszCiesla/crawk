@@ -36,6 +36,24 @@ pub enum AnalysisError {
         /// Human-readable description of the parse or read error.
         message: String,
     },
+
+    /// The rule configuration file could not be found, read, or parsed.
+    #[error("Invalid rule config ({path}): {reason}")]
+    RuleConfigError {
+        /// The configuration file path involved.
+        path: PathBuf,
+        /// Human-readable description of what went wrong.
+        reason: String,
+    },
+
+    /// A rule references a module that does not exist in the crate.
+    #[error("Rule references unknown module '{module}' (in rule '{rule}')")]
+    UnknownRuleModule {
+        /// The unknown module path named in the rule.
+        module: String,
+        /// Human-readable description of the offending rule.
+        rule: String,
+    },
 }
 
 /// Result type alias for analysis info operations.

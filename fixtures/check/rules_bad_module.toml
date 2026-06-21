@@ -1,0 +1,4 @@
+# "analyzerr" is a typo — no such module → operational error (exit 2).
+[[check.layers]]
+name = "app"
+order = ["cli", "analyzerr", "parser"]

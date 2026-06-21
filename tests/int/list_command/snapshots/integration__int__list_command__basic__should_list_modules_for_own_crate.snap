@@ -25,12 +25,16 @@ exit_code: 0
 [lib]       parser::visitor
 [lib]       reference
 [lib]       resolve
+[lib]       rules
+[lib]       rules::eval
+[lib]       rules::load
 [lib]       utils
 [lib]       version
 [bin:crawk] cli
 [bin:crawk] cli::overview
 [bin:crawk] cli::validation
 [bin:crawk] format
+[bin:crawk] format::check_cmd
 [bin:crawk] format::cycles
 [bin:crawk] format::deps_cmd
 [bin:crawk] format::list_cmd

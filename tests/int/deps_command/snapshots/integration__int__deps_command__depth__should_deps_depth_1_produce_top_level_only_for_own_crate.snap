@@ -18,6 +18,7 @@ analyzer -> model
 analyzer -> parser
 analyzer -> reference
 analyzer -> resolve
+analyzer -> rules
 cli -> version
 discover -> cache
 discover -> constants
@@ -33,6 +34,7 @@ lib -> error
 lib -> graph
 lib -> model
 lib -> reference
+lib -> rules
 logger -> cli
 main -> cli
 main -> format
@@ -49,6 +51,8 @@ resolve -> cache
 resolve -> discover
 resolve -> reference
 resolve -> utils
+rules -> error
+rules -> graph
 utils -> constants
 
 ----- stderr -----

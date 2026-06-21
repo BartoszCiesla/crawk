@@ -1,0 +1,4 @@
+# Reversed "app" order: every real edge now points upward → violations (exit 1).
+[[check.layers]]
+name = "app"
+order = ["discover", "parser", "analyzer", "cli"]

@@ -15,5 +15,6 @@ crate::error::AnalysisError
 crate::graph::{AnnotatedEdges, Cycle, DependencyGraph, DependencyGraphOptions, Edge, ShortestPaths}
 crate::model::{AnalysisOptions, AnalysisResult}
 crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference}
+crate::rules::{CheckOptions, CheckReport, Violation, ViolationKind}
 
 ----- stderr -----

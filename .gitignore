@@ -9,6 +9,7 @@
 /fixtures/cycles/target
 /fixtures/bin_only/target
 /fixtures/paths/target
+/fixtures/check/target
 /result
 # Alternative cache directory for IDE's and other tools
 /.ide/

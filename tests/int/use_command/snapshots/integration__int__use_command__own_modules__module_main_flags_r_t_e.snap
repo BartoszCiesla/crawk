@@ -12,6 +12,8 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+crate::cli::CheckArgs
+crate::cli::CheckOutputFormat
 crate::cli::CrawkArgs
 crate::cli::CrawkCommands
 crate::cli::CyclesMode
@@ -28,6 +30,7 @@ crate::cli::validation::*
 crate::cli::validation::validate_depth
 crate::cli::validation::validate_module_path
 crate::format
+crate::format::check_cmd::render_plain
 crate::format::cycles::*
 crate::format::cycles::render_cycles_dot
 crate::format::cycles::render_cycles_dot_highlight
@@ -57,6 +60,8 @@ crawk::AnalysisOptions
 crawk::AnalysisResult
 crawk::Analyzer
 crawk::AnnotatedEdges
+crawk::CheckOptions
+crawk::CheckReport
 crawk::Cycle
 crawk::DependencyGraph
 crawk::DependencyGraphOptions

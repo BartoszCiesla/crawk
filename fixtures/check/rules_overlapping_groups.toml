@@ -1,0 +1,8 @@
+# "parser" belongs to two groups with equal specificity → ambiguous (exit 2).
+[[check.layers]]
+name = "a"
+order = ["cli", "parser"]
+
+[[check.layers]]
+name = "b"
+order = ["parser", "discover"]

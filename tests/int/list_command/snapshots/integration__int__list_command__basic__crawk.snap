@@ -26,6 +26,9 @@ parser
 parser::visitor
 reference
 resolve
+rules
+rules::eval
+rules::load
 utils
 version
 

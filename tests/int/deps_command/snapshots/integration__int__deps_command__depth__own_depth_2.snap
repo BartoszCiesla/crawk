@@ -18,6 +18,7 @@ analyzer -> model
 analyzer -> parser
 analyzer -> reference
 analyzer -> resolve
+analyzer -> rules
 cli -> cli::overview
 cli -> cli::validation
 cli -> version
@@ -28,6 +29,8 @@ discover::module_tree -> constants
 discover::module_tree -> discover
 discover::module_tree -> utils
 error -> discover
+format::check_cmd -> format
+format::check_cmd -> lib
 format::cycles -> format
 format::cycles -> lib
 format::deps_cmd -> format
@@ -52,9 +55,11 @@ lib -> error
 lib -> graph
 lib -> model
 lib -> reference
+lib -> rules
 logger -> cli
 main -> cli
 main -> format
+main -> format::check_cmd
 main -> format::cycles
 main -> format::deps_cmd
 main -> format::list_cmd
@@ -78,6 +83,13 @@ resolve -> cache
 resolve -> discover
 resolve -> reference
 resolve -> utils
+rules -> graph
+rules -> rules::eval
+rules -> rules::load
+rules::eval -> graph
+rules::eval -> rules
+rules::load -> error
+rules::load -> rules
 utils -> constants
 
 ----- stderr -----

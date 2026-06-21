@@ -1,0 +1,17 @@
+---
+source: tests/int/check_command/config.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/check
+    - check
+    - "-c"
+    - fixtures/check/does_not_exist.toml
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+Error: Invalid rule config (fixtures/check/does_not_exist.toml): config file does not exist

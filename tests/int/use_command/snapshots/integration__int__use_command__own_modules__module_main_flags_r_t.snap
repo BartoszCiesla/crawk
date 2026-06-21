@@ -15,8 +15,9 @@ crate::cli::CrawkArgs
 crate::cli::overview::generate_after_help
 crate::cli::validation::*
 crate::cli::validation::{validate_depth, validate_module_path}
-crate::cli::{CrawkArgs, CrawkCommands, CyclesMode, DepsArgs, DepsOutputFormat, ListArgs, ListOutputFormat, UseArgs, UseOutputFormat, WhyArgs, WhyOutputFormat}
+crate::cli::{CheckArgs, CheckOutputFormat, CrawkArgs, CrawkCommands, CyclesMode, DepsArgs, DepsOutputFormat, ListArgs, ListOutputFormat, UseArgs, UseOutputFormat, WhyArgs, WhyOutputFormat}
 crate::format
+crate::format::check_cmd::render_plain
 crate::format::cycles::*
 crate::format::cycles::render_cycles_dot
 crate::format::cycles::render_cycles_dot_highlight
@@ -43,13 +44,14 @@ crate::format::why_cmd::render_grouped
 crate::format::why_cmd::render_plain
 crate::logger::configure_tracing
 crawk::AnnotatedEdges
+crawk::CheckReport
 crawk::ModuleInfo
 crawk::TypeReference
 crawk::version
 crawk::version::LONG_VERSION_MESSAGE
 crawk::version::NAME
 crawk::version::VERSION
-crawk::{AnalysisOptions, Analyzer, AnnotatedEdges, DependencyGraph, DependencyGraphOptions, version}
+crawk::{AnalysisOptions, Analyzer, AnnotatedEdges, CheckOptions, DependencyGraph, DependencyGraphOptions, version}
 crawk::{AnalysisResult, TypeReference}
 crawk::{AnnotatedEdges, Cycle}
 crawk::{AnnotatedEdges, ShortestPaths}

@@ -1,0 +1,17 @@
+---
+source: tests/int/check_command/error_cases.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/check
+    - check
+    - "-c"
+    - fixtures/check/rules_bad_module.toml
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+Error: Rule references unknown module 'analyzerr' (in rule 'layers 'app'')

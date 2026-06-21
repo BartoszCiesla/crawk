@@ -1,3 +1,4 @@
+mod check_command;
 mod command;
 mod deps_command;
 mod error_cases;

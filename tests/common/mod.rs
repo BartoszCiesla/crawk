@@ -24,6 +24,12 @@ pub(crate) fn crawk_cycles() -> Command {
     cmd
 }
 
+pub(crate) fn crawk_check() -> Command {
+    let mut cmd = crawk();
+    cmd.arg("-p").arg("fixtures/check").arg("check");
+    cmd
+}
+
 pub(crate) fn crawk_workspace() -> Command {
     let mut cmd = crawk();
     cmd.arg("-p").arg("fixtures/workspace");

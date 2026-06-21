@@ -36,6 +36,10 @@ lib
  - crate::reference::PathPrefix
  - crate::reference::PathSuffix
  - crate::reference::TypeReference
+ - crate::rules::CheckOptions
+ - crate::rules::CheckReport
+ - crate::rules::Violation
+ - crate::rules::ViolationKind
 analyzer
  - crate::cache::ParseCache
  - crate::discover::CrateInfo
@@ -55,6 +59,10 @@ analyzer
  - crate::reference::PathSuffix
  - crate::reference::TypeReference
  - crate::resolve::resolve_glob
+ - crate::rules
+ - crate::rules::CheckOptions
+ - crate::rules::CheckReport
+ - crate::rules::RuleSet
 analyzer::tests
  - crate::analyzer::Analyzer
  - crate::analyzer::expand_groups
@@ -169,6 +177,29 @@ resolve
 resolve::tests
  - crate::resolve::extract_public_items
  - crate::resolve::resolve_glob
+rules
+ - crate::graph::DependencyGraphOptions
+ - crate::rules::eval
+ - crate::rules::load
+rules::eval
+ - crate::graph::DependencyGraph
+ - crate::rules::CheckReport
+ - crate::rules::LayerPos
+ - crate::rules::RuleSet
+ - crate::rules::Violation
+ - crate::rules::ViolationKind
+rules::eval::tests
+ - crate::rules::LayerRule
+ - crate::rules::ModulePattern
+ - crate::rules::RuleSet
+rules::load
+ - crate::error::AnalysisError
+ - crate::error::Result
+ - crate::rules::LayerRule
+ - crate::rules::ModulePattern
+ - crate::rules::RuleSet
+rules::load::tests
+ - crate::rules::load
 utils
  - crate::constants::ATTR_CFG
  - crate::constants::MODULE_NAME_TEST

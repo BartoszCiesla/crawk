@@ -10,7 +10,7 @@ repos:
         exclude: '\.rs$'
       - id: end-of-file-fixer
       - id: trailing-whitespace
-        exclude: '^tests/int/(use_command|list_command|deps_command|why_command)/snapshots/'
+        exclude: '^tests/int/(use_command|list_command|deps_command|why_command|check_command)/snapshots/'
       - id: check-toml
       - id: check-json
   # Standard pre-commit hooks
@@ -134,6 +134,14 @@ repos:
         entry: cargo
         language: system
         args: ["build", "--manifest-path", "fixtures/paths/Cargo.toml"]
+        files: '^fixtures/paths/'
+        pass_filenames: false
+        stages: [pre-push]
+      - id: cargo-build-fixture-check
+        name: cargo build fixture/check
+        entry: cargo
+        language: system
+        args: ["build", "--manifest-path", "fixtures/check/Cargo.toml"]
         files: '^fixtures/paths/'
         pass_filenames: false
         stages: [pre-push]
