@@ -7,7 +7,9 @@ use cli::{
     CrawkArgs, CrawkCommands, CyclesMode, DepsArgs, DepsOutputFormat, ListArgs, ListOutputFormat,
     UseArgs, UseOutputFormat, WhyArgs, WhyOutputFormat,
 };
-use crawk::{AnalysisOptions, Analyzer, DependencyGraphOptions, version};
+use crawk::{
+    AnalysisOptions, Analyzer, AnnotatedEdges, DependencyGraph, DependencyGraphOptions, version,
+};
 use logger::configure_tracing;
 use std::path::Path;
 use tracing::info;
@@ -50,63 +52,15 @@ fn handle_deps_command(crate_root: &Path, args: &DepsArgs) -> anyhow::Result<()>
     let graph = analyzer.dependency_graph(&graph_opts)?;
 
     let output = if let Some(ref pair) = args.path {
-        let (src, tgt) = (&pair[0], &pair[1]);
-        let sp = graph.shortest_paths(src, tgt)?;
-        if sp.is_empty() {
-            eprintln!("No path from {src} to {tgt}.");
-            String::new()
-        } else {
-            info!(
-                "Found {} shortest path(s) of length {}.",
-                sp.paths.len(),
-                sp.length().unwrap_or(0)
-            );
-            match args.format {
-                DepsOutputFormat::Plain => format::paths::render_paths_plain(&sp, args.depth),
-                DepsOutputFormat::Grouped => format::paths::render_paths_grouped(&sp, args.depth),
-                DepsOutputFormat::Dot => {
-                    format::paths::render_paths_dot(graph.edges(), &sp, args.depth)
-                }
-            }
-        }
+        render_path_output(&graph, &pair[0], &pair[1], args)?
     } else if args.orphans {
-        let orphans = graph.orphans();
-        if orphans.is_empty() {
-            String::new()
-        } else {
-            info!("Found {} orphan module(s).", orphans.len());
-            format::orphans::render_orphans(&orphans)
-        }
-    } else if let Some(cycles_mode) = args.cycles.as_ref() {
-        let cycles = graph.cycles();
-        if cycles.is_empty() {
-            String::new()
-        } else {
-            info!("Found {} dependency cycle(s).", cycles.len());
-            if *cycles_mode == CyclesMode::Highlight && args.format != DepsOutputFormat::Dot {
-                eprintln!(
-                    "warning: --cycles highlight has no effect with {} format, showing cycles only",
-                    args.format
-                );
-            }
-            match (&args.format, cycles_mode) {
-                (DepsOutputFormat::Plain, _) => format::cycles::render_cycles_plain(&cycles),
-                (DepsOutputFormat::Grouped, _) => format::cycles::render_cycles_grouped(&cycles),
-                (DepsOutputFormat::Dot, CyclesMode::Detect) => {
-                    format::cycles::render_cycles_dot(&cycles)
-                }
-                (DepsOutputFormat::Dot, CyclesMode::Highlight) => {
-                    format::cycles::render_cycles_dot_highlight(&cycles, graph.edges())
-                }
-            }
-        }
+        render_orphans_output(&graph)
+    } else if let Some(ref cycles_mode) = args.cycles {
+        render_cycles_output(&graph, cycles_mode, args)
     } else {
-        match args.format {
-            DepsOutputFormat::Plain => format::deps_cmd::render_plain(graph.edges()),
-            DepsOutputFormat::Grouped => format::deps_cmd::render_grouped(graph.edges()),
-            DepsOutputFormat::Dot => format::deps_cmd::render_dot(graph.edges()),
-        }
+        render_deps_output(graph.edges(), &args.format)
     };
+
     if output.is_empty() {
         if args.orphans {
             eprintln!("No orphan modules found.");
@@ -120,6 +74,72 @@ fn handle_deps_command(crate_root: &Path, args: &DepsArgs) -> anyhow::Result<()>
     }
 
     Ok(())
+}
+
+fn render_path_output(
+    graph: &DependencyGraph,
+    src: &str,
+    tgt: &str,
+    args: &DepsArgs,
+) -> anyhow::Result<String> {
+    let sp = graph.shortest_paths(src, tgt)?;
+    if sp.is_empty() {
+        eprintln!("No path from {src} to {tgt}.");
+        return Ok(String::new());
+    }
+    info!(
+        "Found {} shortest path(s) of length {}.",
+        sp.paths.len(),
+        sp.length().unwrap_or(0)
+    );
+    Ok(match args.format {
+        DepsOutputFormat::Plain => format::paths::render_paths_plain(&sp, args.depth),
+        DepsOutputFormat::Grouped => format::paths::render_paths_grouped(&sp, args.depth),
+        DepsOutputFormat::Dot => format::paths::render_paths_dot(graph.edges(), &sp, args.depth),
+    })
+}
+
+fn render_orphans_output(graph: &DependencyGraph) -> String {
+    let orphans = graph.orphans();
+    if orphans.is_empty() {
+        return String::new();
+    }
+    info!("Found {} orphan module(s).", orphans.len());
+    format::orphans::render_orphans(&orphans)
+}
+
+fn render_cycles_output(
+    graph: &DependencyGraph,
+    cycles_mode: &CyclesMode,
+    args: &DepsArgs,
+) -> String {
+    let cycles = graph.cycles();
+    if cycles.is_empty() {
+        return String::new();
+    }
+    info!("Found {} dependency cycle(s).", cycles.len());
+    if *cycles_mode == CyclesMode::Highlight && args.format != DepsOutputFormat::Dot {
+        eprintln!(
+            "warning: --cycles highlight has no effect with {} format, showing cycles only",
+            args.format
+        );
+    }
+    match (&args.format, cycles_mode) {
+        (DepsOutputFormat::Plain, _) => format::cycles::render_cycles_plain(&cycles),
+        (DepsOutputFormat::Grouped, _) => format::cycles::render_cycles_grouped(&cycles),
+        (DepsOutputFormat::Dot, CyclesMode::Detect) => format::cycles::render_cycles_dot(&cycles),
+        (DepsOutputFormat::Dot, CyclesMode::Highlight) => {
+            format::cycles::render_cycles_dot_highlight(&cycles, graph.edges())
+        }
+    }
+}
+
+fn render_deps_output(edges: &AnnotatedEdges, format: &DepsOutputFormat) -> String {
+    match format {
+        DepsOutputFormat::Plain => format::deps_cmd::render_plain(edges),
+        DepsOutputFormat::Grouped => format::deps_cmd::render_grouped(edges),
+        DepsOutputFormat::Dot => format::deps_cmd::render_dot(edges),
+    }
 }
 
 /// Handle the 'list' subcommand

@@ -137,3 +137,10 @@ repos:
         files: '^fixtures/paths/'
         pass_filenames: false
         stages: [pre-push]
+      - id: cargo-crap
+        name: cargo crap (complexity and coverage)
+        entry: bash -c "cargo llvm-cov --lcov --output-path lcov.info && cargo crap --lcov lcov.info"
+        language: system
+        types: [rust]
+        pass_filenames: false
+        stages: [pre-push]

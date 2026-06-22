@@ -27,6 +27,7 @@ crate::cli::overview::generate_after_help
 crate::cli::validation::*
 crate::cli::validation::validate_depth
 crate::cli::validation::validate_module_path
+crate::format
 crate::format::cycles::*
 crate::format::cycles::render_cycles_dot
 crate::format::cycles::render_cycles_dot_highlight
@@ -57,6 +58,7 @@ crawk::AnalysisResult
 crawk::Analyzer
 crawk::AnnotatedEdges
 crawk::Cycle
+crawk::DependencyGraph
 crawk::DependencyGraphOptions
 crawk::ModuleInfo
 crawk::ShortestPaths

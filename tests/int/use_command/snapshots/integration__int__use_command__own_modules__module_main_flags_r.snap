@@ -14,6 +14,7 @@ crate::cli::CrawkArgs
 crate::cli::overview::generate_after_help
 crate::cli::validation::{validate_depth, validate_module_path}
 crate::cli::{CrawkArgs, CrawkCommands, CyclesMode, DepsArgs, DepsOutputFormat, ListArgs, ListOutputFormat, UseArgs, UseOutputFormat, WhyArgs, WhyOutputFormat}
+crate::format
 crate::format::cycles::render_cycles_dot
 crate::format::cycles::render_cycles_dot_highlight
 crate::format::cycles::render_cycles_grouped
@@ -41,7 +42,7 @@ crawk::version
 crawk::version::LONG_VERSION_MESSAGE
 crawk::version::NAME
 crawk::version::VERSION
-crawk::{AnalysisOptions, Analyzer, DependencyGraphOptions, version}
+crawk::{AnalysisOptions, Analyzer, AnnotatedEdges, DependencyGraph, DependencyGraphOptions, version}
 crawk::{AnalysisResult, TypeReference}
 crawk::{AnnotatedEdges, Cycle}
 crawk::{AnnotatedEdges, ShortestPaths}

@@ -11,6 +11,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::cli::{CrawkArgs, CrawkCommands, CyclesMode, DepsArgs, DepsOutputFormat, ListArgs, ListOutputFormat, UseArgs, UseOutputFormat, WhyArgs, WhyOutputFormat}
+crate::format
 crate::format::cycles::render_cycles_dot
 crate::format::cycles::render_cycles_dot_highlight
 crate::format::cycles::render_cycles_grouped
@@ -32,6 +33,6 @@ crate::format::why_cmd::render_plain
 crate::logger::configure_tracing
 crawk::version::NAME
 crawk::version::VERSION
-crawk::{AnalysisOptions, Analyzer, DependencyGraphOptions, version}
+crawk::{AnalysisOptions, Analyzer, AnnotatedEdges, DependencyGraph, DependencyGraphOptions, version}
 
 ----- stderr -----

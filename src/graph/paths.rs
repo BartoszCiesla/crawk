@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet, HashMap, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use super::edges::AnnotatedEdges;
 
@@ -69,58 +69,40 @@ pub(crate) fn compute_shortest_paths(
         }
     }
 
-    // BFS: track the shortest distance and predecessors for each node.
+    // Level-by-level BFS: each iteration processes one full frontier level,
+    // so all alternate predecessors at the same depth are captured naturally.
     let mut dist: HashMap<&str, usize> = HashMap::new();
     let mut preds: HashMap<&str, Vec<&str>> = HashMap::new();
-    let mut queue: VecDeque<&str> = VecDeque::new();
+    let mut level: Vec<&str> = vec![source];
 
     dist.insert(source, 0);
-    queue.push_back(source);
 
-    'bfs: while let Some(v) = queue.pop_front() {
-        let v_dist = dist[v];
-        let neighbours = adj.get(v).map_or(&[] as &[&str], Vec::as_slice);
-        for &w in neighbours {
-            match dist.get(w) {
-                None => {
-                    dist.insert(w, v_dist + 1);
-                    preds.entry(w).or_default().push(v);
-                    queue.push_back(w);
-                    if w == target {
-                        // Drain the rest of this BFS level before stopping so we
-                        // don't miss alternate predecessors at the same distance.
-                        let target_dist = v_dist + 1;
-                        while let Some(u) = queue.pop_front() {
-                            let u_dist = dist[u];
-                            if u_dist > target_dist {
-                                break 'bfs;
-                            }
-                            let u_neighbours = adj.get(u).map_or(&[] as &[&str], Vec::as_slice);
-                            for &x in u_neighbours {
-                                match dist.get(x) {
-                                    None => {
-                                        dist.insert(x, u_dist + 1);
-                                        preds.entry(x).or_default().push(u);
-                                        if u_dist < target_dist {
-                                            queue.push_back(x);
-                                        }
-                                    }
-                                    Some(&d) if d == u_dist + 1 => {
-                                        preds.entry(x).or_default().push(u);
-                                    }
-                                    _ => {}
-                                }
-                            }
+    'bfs: while !level.is_empty() {
+        let mut next: Vec<&str> = Vec::new();
+        let mut found = false;
+        for &v in &level {
+            let v_dist = dist[v];
+            for &w in adj.get(v).map_or(&[] as &[&str], Vec::as_slice) {
+                match dist.get(w) {
+                    None => {
+                        dist.insert(w, v_dist + 1);
+                        preds.entry(w).or_default().push(v);
+                        next.push(w);
+                        if w == target {
+                            found = true;
                         }
-                        break 'bfs;
                     }
+                    Some(&d) if d == v_dist + 1 => {
+                        preds.entry(w).or_default().push(v);
+                    }
+                    _ => {}
                 }
-                Some(&d) if d == v_dist + 1 => {
-                    preds.entry(w).or_default().push(v);
-                }
-                _ => {}
             }
         }
+        if found {
+            break 'bfs;
+        }
+        level = next;
     }
 
     if !dist.contains_key(target) {

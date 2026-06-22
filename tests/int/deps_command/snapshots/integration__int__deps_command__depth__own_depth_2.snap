@@ -54,6 +54,7 @@ lib -> model
 lib -> reference
 logger -> cli
 main -> cli
+main -> format
 main -> format::cycles
 main -> format::deps_cmd
 main -> format::list_cmd

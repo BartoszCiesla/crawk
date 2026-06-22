@@ -22,6 +22,7 @@ crate::cli::UseArgs
 crate::cli::UseOutputFormat
 crate::cli::WhyArgs
 crate::cli::WhyOutputFormat
+crate::format
 crate::format::cycles::render_cycles_dot
 crate::format::cycles::render_cycles_dot_highlight
 crate::format::cycles::render_cycles_grouped
@@ -43,6 +44,8 @@ crate::format::why_cmd::render_plain
 crate::logger::configure_tracing
 crawk::AnalysisOptions
 crawk::Analyzer
+crawk::AnnotatedEdges
+crawk::DependencyGraph
 crawk::DependencyGraphOptions
 crawk::version
 crawk::version::NAME
