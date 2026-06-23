@@ -30,7 +30,7 @@ jobs:
       - name: Install cargo tools
         uses: taiki-e/install-action@9e1e5806d4a4822de933115878265be9aaa786d9 # v2.82.2
         with:
-          tool: cargo-sort, cargo-machete, cargo-sort, cargo-nextest, cargo-deny, cargo-crap
+          tool: cargo-sort, cargo-machete, cargo-sort, cargo-nextest, cargo-deny, cargo-llvm-cov, cargo-crap
       - name: Run pre-commit checks
         uses: j178/prek-action@bdca6f102f98e2b4c7029491a53dfd366469e33d # v2.0.4
         with:
@@ -60,7 +60,7 @@ jobs:
       - name: Install cargo tools
         uses: taiki-e/install-action@9e1e5806d4a4822de933115878265be9aaa786d9 # v2.82.2
         with:
-          tool: cargo-sort, cargo-machete, cargo-sort, cargo-nextest, cargo-deny
+          tool: cargo-sort, cargo-machete, cargo-sort, cargo-nextest, cargo-deny, cargo-llvm-cov, cargo-crap
       - name: Run pre-commit checks
         uses: j178/prek-action@bdca6f102f98e2b4c7029491a53dfd366469e33d # v2.0.4
         with:
