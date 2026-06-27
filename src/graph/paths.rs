@@ -114,7 +114,7 @@ pub(crate) fn compute_shortest_paths(
     backtrack(target, source, &preds, &mut Vec::new(), &mut paths);
 
     // Sort lexicographically by "a -> b -> c" string.
-    paths.sort_by_key(|p| p.join(" -> "));
+    paths.sort_by_cached_key(|p| p.join(" -> "));
     ShortestPaths::new(source.to_owned(), target.to_owned(), paths)
 }
 

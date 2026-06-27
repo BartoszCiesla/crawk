@@ -153,7 +153,7 @@ impl AnalysisResult {
     pub fn into_sorted_vec(self) -> Vec<TypeReference> {
         let all_deps_unique: HashSet<_> = self.dependencies.values().flatten().cloned().collect();
         let mut all_deps_unique: Vec<TypeReference> = all_deps_unique.into_iter().collect();
-        all_deps_unique.sort_by_key(TypeReference::to_path_string);
+        all_deps_unique.sort_by_cached_key(TypeReference::to_path_string);
         all_deps_unique
     }
 }
