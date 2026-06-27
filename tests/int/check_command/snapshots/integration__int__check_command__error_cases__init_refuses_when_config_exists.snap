@@ -1,0 +1,16 @@
+---
+source: tests/int/check_command/error_cases.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/check
+    - check
+    - "--init"
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+Error: Invalid rule config ([ROOT]/fixtures/check/.crawk.toml): config already exists; edit it directly or remove it first

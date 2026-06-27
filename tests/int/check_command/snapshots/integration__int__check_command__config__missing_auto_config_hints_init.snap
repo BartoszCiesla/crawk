@@ -1,0 +1,15 @@
+---
+source: tests/int/check_command/config.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/modules
+    - check
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+Error: Invalid rule config ([ROOT]/fixtures/modules): no crawk.toml or .crawk.toml found in [ROOT]/fixtures/modules; run `crawk check --init` to generate a starter config

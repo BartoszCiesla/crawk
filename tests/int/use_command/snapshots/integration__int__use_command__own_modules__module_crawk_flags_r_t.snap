@@ -76,7 +76,7 @@ crate::resolve::*
 crate::resolve::resolve_glob
 crate::rules::eval::evaluate
 crate::rules::load::*
-crate::rules::load::resolve_config_path
+crate::rules::load::{resolve_config_path, scaffold_config}
 crate::rules::{CheckOptions, CheckReport, Violation, ViolationKind}
 crate::rules::{CheckReport, LayerPos, RuleSet, Violation, ViolationKind}
 crate::rules::{LayerRule, ModulePattern, RuleSet}

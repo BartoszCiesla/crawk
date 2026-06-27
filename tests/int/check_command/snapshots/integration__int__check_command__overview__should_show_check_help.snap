@@ -24,7 +24,8 @@ lower layer must not depend on a higher one. Each entry covers its whole
 module subtree; groups are independent and must be disjoint.
 
 Example:
-  [check.layers.arch]
+  [[check.layers]]
+  name = "arch"
   order = ["api", "service", "infra"]
 
 `api` may depend on `service`/`infra`, but `infra` must not depend on
@@ -35,6 +36,13 @@ Note: global options (-p, -v, -l) must appear before the subcommand.
 Usage: crawk check [OPTIONS]
 
 Options:
+      --init
+          Generate a starter `crawk.toml` in the crate root and exit
+          
+          Lists the crate's top-level modules as a single `layers` group for you
+          to order (highest layer first). Refuses to overwrite an existing
+          `crawk.toml` or `.crawk.toml`.
+
   -c, --config <CONFIG>
           Path to the rule config file
           

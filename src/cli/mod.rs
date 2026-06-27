@@ -203,13 +203,18 @@ pub(crate) enum CrawkCommands {
     /// module subtree; groups are independent and must be disjoint.
     ///
     /// Example:
-    ///   [check.layers.arch]
+    ///   [[check.layers]]
+    ///   name = "arch"
     ///   order = ["api", "service", "infra"]
     ///
     /// `api` may depend on `service`/`infra`, but `infra` must not depend on
     /// `service` or `api`.
     ///
     /// Note: global options (-p, -v, -l) must appear before the subcommand.
+    // The `order = ["api", ...]` TOML example reads as an intra-doc link to
+    // clippy; it is a config snippet, and clap renders the doc verbatim so a
+    // fenced code block would leak backticks into `--help`.
+    #[allow(clippy::doc_link_with_quotes)]
     #[clap(verbatim_doc_comment, visible_alias = "c")]
     Check(CheckArgs),
 }
@@ -612,6 +617,15 @@ impl Display for CheckOutputFormat {
 #[derive(Parser, Debug, Clone)]
 /// Arguments for the `check` subcommand — validates dependencies against rules.
 pub(crate) struct CheckArgs {
+    /// Generate a starter `crawk.toml` in the crate root and exit
+    ///
+    /// Lists the crate's top-level modules as a single `layers` group for you
+    /// to order (highest layer first). Refuses to overwrite an existing
+    /// `crawk.toml` or `.crawk.toml`.
+    #[clap(verbatim_doc_comment)]
+    #[arg(long = "init", default_value_t = false)]
+    pub init: bool,
+
     /// Path to the rule config file
     ///
     /// When omitted, the crate root is searched for `crawk.toml`, then

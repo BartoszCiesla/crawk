@@ -64,6 +64,20 @@ fn handle_check_command(crate_root: &Path, args: &CheckArgs) -> anyhow::Result<i
         include_tests: args.include_tests,
         show_apis: args.show_apis,
     };
+
+    if args.init {
+        let path = analyzer.init_check_config(crate_root, &opts)?;
+        eprintln!("Created {}", path.display());
+        // A custom `-c` path is not auto-discovered, so the re-run hint must
+        // carry it; the default crawk.toml is found by a plain `crawk check`.
+        let rerun = args.config.as_ref().map_or_else(
+            || "crawk check".to_owned(),
+            |cfg| format!("crawk check -c {}", cfg.display()),
+        );
+        eprintln!("Edit the `order` to reflect your layer hierarchy, then run `{rerun}`.");
+        return Ok(0);
+    }
+
     let report = analyzer.check(crate_root, &opts)?;
 
     if report.is_clean() {

@@ -839,6 +839,34 @@ impl Analyzer {
         Ok(rules::evaluate(&rule_set, &graph))
     }
 
+    /// Scaffold a starter config from discovered modules. Returns the path written.
+    ///
+    /// Builds the dependency graph to enumerate modules, then writes a single
+    /// `layers` group skeleton for the user to order. Writes to
+    /// [`CheckOptions::config`] when set (`--config`), otherwise `crawk.toml` in
+    /// `crate_root`. Refuses to overwrite an existing config.
+    ///
+    /// # Arguments
+    ///
+    /// * `crate_root` — crate root directory; the default write location.
+    /// * `opts` — graph options plus the optional explicit config path
+    ///   (`--config`), which takes precedence over the default location.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the graph cannot be built, a config already exists,
+    /// or the file cannot be written.
+    pub fn init_check_config(&mut self, crate_root: &Path, opts: &CheckOptions) -> Result<PathBuf> {
+        let graph = self.dependency_graph(&opts.graph_opts())?;
+        let crate_name = self.crate_info.root_package_name();
+        rules::scaffold_config(
+            crate_root,
+            opts.config.as_deref(),
+            crate_name,
+            graph.modules(),
+        )
+    }
+
     /// Explain why `source` depends on `target` by listing the concrete references.
     ///
     /// Analyses the `source` module (and its submodules when

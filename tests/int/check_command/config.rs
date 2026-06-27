@@ -1,4 +1,5 @@
-use crate::common::crawk_check;
+use crate::common::{crate_root_filters, crawk_check, crawk_modules};
+use insta::with_settings;
 use insta_cmd::assert_cmd_snapshot;
 
 // Explicit single-group config via -c is satisfied (exit 0).
@@ -19,4 +20,15 @@ fn should_error_on_missing_explicit_config() {
             .arg("-c")
             .arg("fixtures/check/does_not_exist.toml")
     );
+}
+
+// Auto-discovery against a crate with no config fails (exit 2) and points the
+// user at `crawk check --init`. The absolute crate root is filtered out.
+#[test]
+fn missing_auto_config_hints_init() {
+    with_settings!({
+        filters => crate_root_filters(),
+    }, {
+        assert_cmd_snapshot!(crawk_modules().arg("check"));
+    });
 }

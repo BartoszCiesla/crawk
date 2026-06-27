@@ -10,6 +10,11 @@
 //! Check category `layers` is currently supported (named, disjoint layer
 //! groups, each an independent total order over a subtree of the module
 //! hierarchy).
+//!
+//! The config is **required**: a *missing* file is an operational error (so a
+//! typo fails CI rather than passing silently), whereas an *empty* `[check]`
+//! table is valid and yields zero rules (always clean). `crawk check --init`
+//! ([`scaffold_config`]) writes a starter file from the discovered modules.
 
 mod eval;
 mod load;
@@ -21,7 +26,7 @@ use std::path::PathBuf;
 use crate::graph::DependencyGraphOptions;
 
 pub(crate) use eval::evaluate;
-pub(crate) use load::resolve_config_path;
+pub(crate) use load::{resolve_config_path, scaffold_config};
 
 /// Options controlling a `check` run.
 #[derive(Debug, Clone, Default)]

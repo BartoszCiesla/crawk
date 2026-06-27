@@ -8,6 +8,16 @@ pub(crate) fn backtrace_filters() -> Vec<(&'static str, &'static str)> {
     vec![(r"(?s)\n\nStack backtrace:.*", "")]
 }
 
+/// Returns insta filters that collapse a canonicalized, machine-specific crate
+/// root (e.g. `/home/user/crawk/fixtures/check`) down to `[ROOT]/fixtures/...`.
+/// Apply to any test whose output embeds an absolute crate path.
+pub(crate) fn crate_root_filters() -> Vec<(&'static str, &'static str)> {
+    // Lazily consume the absolute prefix up to `/fixtures/`. Exclude only `)`
+    // (the path appears inside `(...)`); allowing spaces keeps the filter working
+    // when the checkout path itself contains a space.
+    vec![(r"/[^)]*?/fixtures/", "[ROOT]/fixtures/")]
+}
+
 pub(crate) fn crawk() -> Command {
     Command::new(get_cargo_bin("crawk"))
 }

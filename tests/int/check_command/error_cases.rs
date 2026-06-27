@@ -1,4 +1,5 @@
-use crate::common::crawk_check;
+use crate::common::{crate_root_filters, crawk_check};
+use insta::with_settings;
 use insta_cmd::assert_cmd_snapshot;
 
 // A rule naming a non-existent module → UnknownRuleModule (exit 2).
@@ -19,4 +20,15 @@ fn should_error_on_overlapping_groups() {
             .arg("-c")
             .arg("fixtures/check/rules_overlapping_groups.toml")
     );
+}
+
+// `--init` refuses to clobber an existing config (the fixture has .crawk.toml),
+// exiting 2. The absolute crate root is filtered out.
+#[test]
+fn init_refuses_when_config_exists() {
+    with_settings!({
+        filters => crate_root_filters(),
+    }, {
+        assert_cmd_snapshot!(crawk_check().arg("--init"));
+    });
 }

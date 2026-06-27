@@ -201,6 +201,7 @@ rules
  - crate::graph::DependencyGraphOptions
  - crate::rules::eval::evaluate
  - crate::rules::load::resolve_config_path
+ - crate::rules::load::scaffold_config
 rules::eval
  - crate::graph::DependencyGraph
  - crate::rules::CheckReport
@@ -220,6 +221,8 @@ rules::load
  - crate::rules::RuleSet
 rules::load::tests
  - crate::rules::load::resolve_config_path
+ - crate::rules::load::scaffold
+ - crate::rules::load::scaffold_config
 utils
  - crate::constants::ATTR_CFG
  - crate::constants::MODULE_NAME_TEST

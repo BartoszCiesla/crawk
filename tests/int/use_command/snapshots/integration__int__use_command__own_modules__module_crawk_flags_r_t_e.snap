@@ -92,6 +92,7 @@ crate::rules::ViolationKind
 crate::rules::eval::evaluate
 crate::rules::load::*
 crate::rules::load::resolve_config_path
+crate::rules::load::scaffold_config
 crate::utils::*
 crate::utils::MAX_FILE_BYTES
 crate::utils::ReadFileError
