@@ -21,6 +21,7 @@ version = "*"
 
 [advisories]
 version = 2
+unsound = "all"
 
 [bans]
 multiple-versions = "allow"
