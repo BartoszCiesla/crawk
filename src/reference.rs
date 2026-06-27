@@ -330,7 +330,7 @@ impl TypeReference {
     /// Converts to string representation.
     #[must_use]
     pub fn to_path_string(&self) -> String {
-        let mut result = String::new();
+        let mut result = String::with_capacity(self.segments.len() * 16 + 32); // rough estimate
 
         // Prefix
         match self.prefix {
