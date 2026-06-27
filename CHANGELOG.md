@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+## [0.6.1](https://github.com/BartoszCiesla/crawk/compare/v0.6.0...v0.6.1)
+
+### 🚜 Refactor
+
+
+- Reduce complexity - ([75d536c](https://github.com/BartoszCiesla/crawk/commit/75d536c0537514f583b3f24f01c942732debf635))
+
+### ⚡ Performance
+
+
+- *(model)* Cache sort keys via sort_by_cached_key - ([39fc9a1](https://github.com/BartoszCiesla/crawk/commit/39fc9a1996be13a346f02932ea087cb105e21da6))
+- *(reference)* Preallocate to_path_string buffer - ([3837bb0](https://github.com/BartoszCiesla/crawk/commit/3837bb0b0c06a6de13421fbafceb43a4cd287da7))
+
+
 ## [0.6.0](https://github.com/BartoszCiesla/crawk/compare/v0.5.2...v0.6.0)
 
 ### ⛰️ Features
