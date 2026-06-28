@@ -200,7 +200,8 @@ pub(crate) enum CrawkCommands {
     ///
     /// Check category `layers`: named groups, each an ordered stack where a
     /// lower layer must not depend on a higher one. Each entry covers its whole
-    /// module subtree; groups are independent and must be disjoint.
+    /// module subtree; groups are independent and may overlap (a shared module
+    /// is checked in each group it belongs to).
     ///
     /// Example:
     ///   [[check.layers]]

@@ -1,0 +1,16 @@
+---
+source: tests/int/check_command/layers.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/check
+    - check
+    - "-c"
+    - fixtures/check/rules_overlapping_clean.toml
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+----- stderr -----

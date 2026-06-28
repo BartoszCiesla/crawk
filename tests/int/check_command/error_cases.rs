@@ -12,16 +12,6 @@ fn should_error_on_unknown_module() {
     );
 }
 
-// A module matched by two layer groups → ambiguous config (exit 2).
-#[test]
-fn should_error_on_overlapping_groups() {
-    assert_cmd_snapshot!(
-        crawk_check()
-            .arg("-c")
-            .arg("fixtures/check/rules_overlapping_groups.toml")
-    );
-}
-
 // `--init` refuses to clobber an existing config (the fixture has .crawk.toml),
 // exiting 2. The absolute crate root is filtered out.
 #[test]

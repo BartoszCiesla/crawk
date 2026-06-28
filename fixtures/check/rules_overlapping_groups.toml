@@ -1,8 +1,11 @@
-# "parser" belongs to two groups with equal specificity → ambiguous (exit 2).
+# Overlapping groups: `analyzer` and `parser` belong to BOTH groups, which are
+# checked independently. Both reverse the analyzer/parser order, so the real
+# edge `analyzer -> parser` points upward in each — yielding one violation per
+# group (exit 1). Demonstrates per-group violation reporting.
 [[check.layers]]
-name = "a"
-order = ["cli", "parser"]
+name = "left"
+order = ["parser", "analyzer"]
 
 [[check.layers]]
-name = "b"
-order = ["parser", "discover"]
+name = "right"
+order = ["parser", "analyzer", "discover"]

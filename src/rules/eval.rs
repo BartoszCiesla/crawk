@@ -7,64 +7,75 @@ use crate::graph::DependencyGraph;
 use super::{CheckReport, LayerPos, RuleSet, Violation, ViolationKind};
 
 impl RuleSet {
-    /// Build `module -> LayerPos` via longest-prefix match.
+    /// Build `module -> [LayerPos]` via per-group longest-prefix match.
     ///
-    /// Modules that tie across groups are skipped here; that ambiguity is
-    /// reported earlier, during [`RuleSet::load`](super::RuleSet::load).
+    /// A module may belong to several overlapping groups, so each maps to a
+    /// list of positions (one per covering group). Uncovered modules are
+    /// omitted.
     pub(crate) fn build_layer_index(
         &self,
         modules: &BTreeSet<String>,
-    ) -> HashMap<String, LayerPos> {
+    ) -> HashMap<String, Vec<LayerPos>> {
         let mut index = HashMap::new();
         for module in modules {
-            if let Ok(Some(pos)) = self.resolve_layer(module) {
-                index.insert(module.clone(), pos);
+            let positions = self.memberships(module);
+            if !positions.is_empty() {
+                index.insert(module.clone(), positions);
             }
         }
         index
     }
 
     /// Check a single edge against the layer rules, pushing any violation.
+    ///
+    /// Each group containing **both** endpoints is checked independently, so an
+    /// edge forbidden by several overlapping groups produces one violation per
+    /// group (the rule message names the offending group).
     fn check_layers(
         &self,
         source: &str,
         target: &str,
-        layer_index: &HashMap<String, LayerPos>,
+        layer_index: &HashMap<String, Vec<LayerPos>>,
         apis: &BTreeSet<String>,
         out: &mut Vec<Violation>,
     ) {
-        let (Some(src_pos), Some(tgt_pos)) = (layer_index.get(source), layer_index.get(target))
+        let (Some(src_positions), Some(tgt_positions)) =
+            (layer_index.get(source), layer_index.get(target))
         else {
             return; // at least one endpoint is unassigned
         };
-        if src_pos.group != tgt_pos.group {
-            return; // independent stacks: no cross-group constraint
+
+        for src_pos in src_positions {
+            // The edge is only constrained where both endpoints share a group.
+            let Some(tgt_pos) = tgt_positions.iter().find(|t| t.group == src_pos.group) else {
+                continue; // independent stacks: no cross-group constraint
+            };
+
+            let upward = src_pos.index > tgt_pos.index;
+            let same_layer = src_pos.index == tgt_pos.index;
+            let violates = upward || (same_layer && self.deny_same_layer);
+            if !violates {
+                continue;
+            }
+
+            let group_name = self
+                .layers
+                .get(src_pos.group)
+                .map_or("?", |layer| layer.name.as_str());
+            let rule = if upward {
+                format!("layer '{group_name}' forbids upward dependency ({source} -> {target})")
+            } else {
+                format!("layer '{group_name}' forbids same-layer dependency ({source} -> {target})")
+            };
+
+            out.push(Violation {
+                kind: ViolationKind::Layer,
+                source: source.to_owned(),
+                target: target.to_owned(),
+                rule,
+                apis: apis.clone(),
+            });
         }
-
-        let upward = src_pos.index > tgt_pos.index;
-        let same_layer = src_pos.index == tgt_pos.index;
-        let violates = upward || (same_layer && self.deny_same_layer);
-        if !violates {
-            return;
-        }
-
-        let group_name = self
-            .layers
-            .get(src_pos.group)
-            .map_or("?", |layer| layer.name.as_str());
-        let rule = if upward {
-            format!("layer '{group_name}' forbids upward dependency ({source} -> {target})")
-        } else {
-            format!("layer '{group_name}' forbids same-layer dependency ({source} -> {target})")
-        };
-
-        out.push(Violation {
-            kind: ViolationKind::Layer,
-            source: source.to_owned(),
-            target: target.to_owned(),
-            rule,
-            apis: apis.clone(),
-        });
     }
 }
 
@@ -183,6 +194,45 @@ mod tests {
         let mut out = Vec::new();
         rules.check_layers("mid::a", "mid::b", &index, &BTreeSet::new(), &mut out);
         assert_eq!(out.len(), 1);
+    }
+
+    #[test]
+    fn overlapping_groups_each_yield_a_violation() {
+        // `mid` and `top` belong to both groups, each reversing their order, so
+        // the edge mid -> top is upward in both → one violation per group.
+        let rules = RuleSet {
+            layers: vec![
+                layer("left", &["top", "mid"]),
+                layer("right", &["top", "mid"]),
+            ],
+            strict_layers: false,
+            deny_same_layer: false,
+        };
+        let modules = module_set(&["top", "mid"]);
+        let index = rules.build_layer_index(&modules);
+        let mut out = Vec::new();
+        rules.check_layers("mid", "top", &index, &BTreeSet::new(), &mut out);
+        assert_eq!(out.len(), 2, "one violation per overlapping group");
+    }
+
+    #[test]
+    fn overlapping_groups_clean_when_each_satisfied() {
+        // `shared` is index 0 in both groups; each edge is downward in its own
+        // group, so overlap produces no violation.
+        let rules = RuleSet {
+            layers: vec![
+                layer("a", &["shared", "low_a"]),
+                layer("b", &["shared", "low_b"]),
+            ],
+            strict_layers: false,
+            deny_same_layer: false,
+        };
+        let modules = module_set(&["shared", "low_a", "low_b"]);
+        let index = rules.build_layer_index(&modules);
+        let mut out = Vec::new();
+        rules.check_layers("shared", "low_a", &index, &BTreeSet::new(), &mut out);
+        rules.check_layers("shared", "low_b", &index, &BTreeSet::new(), &mut out);
+        assert!(out.is_empty());
     }
 
     #[test]

@@ -1,0 +1,20 @@
+---
+source: tests/int/check_command/layers.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/check
+    - check
+    - "-c"
+    - fixtures/check/rules_overlapping_groups.toml
+---
+success: false
+exit_code: 1
+----- stdout -----
+crawk check: 2 violations
+
+  LAYER analyzer -> parser   (rule: layer 'left' forbids upward dependency (analyzer -> parser))
+  LAYER analyzer -> parser   (rule: layer 'right' forbids upward dependency (analyzer -> parser))
+
+----- stderr -----

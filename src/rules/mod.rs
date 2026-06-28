@@ -7,9 +7,9 @@
 //! malformed config, unknown module in a rule) surface as
 //! [`AnalysisError`](crate::AnalysisError).
 //!
-//! Check category `layers` is currently supported (named, disjoint layer
-//! groups, each an independent total order over a subtree of the module
-//! hierarchy).
+//! Check category `layers` is currently supported (named layer groups, each an
+//! independent total order over a subtree of the module hierarchy). Groups may
+//! overlap: a module that falls under several groups is checked in each.
 //!
 //! The config is **required**: a *missing* file is an operational error (so a
 //! typo fails CI rather than passing silently), whereas an *empty* `[check]`
@@ -145,13 +145,6 @@ pub(crate) struct LayerPos {
     pub(crate) index: usize,
 }
 
-/// A module matched two distinct layer groups with equal specificity.
-pub(crate) struct LayerAmbiguity {
-    pub(crate) module: String,
-    pub(crate) group_a: String,
-    pub(crate) group_b: String,
-}
-
 /// A validated set of architectural rules, ready to evaluate.
 ///
 /// Construct via [`RuleSet::load`]. Currently, includes only `layers` groups.
@@ -163,45 +156,30 @@ pub(crate) struct RuleSet {
 }
 
 impl RuleSet {
-    /// Resolve a module to its layer position by longest-prefix match.
+    /// All layer positions a module occupies — one per group that covers it.
     ///
-    /// `Ok(None)` — module is not covered by any group.
-    /// `Err` — two distinct groups tie for the most specific match (ambiguous).
-    pub(crate) fn resolve_layer(&self, module: &str) -> Result<Option<LayerPos>, LayerAmbiguity> {
-        // (specificity, group, index) for every matching pattern.
-        let mut matches: Vec<(usize, usize, usize)> = Vec::new();
+    /// Groups are independent and may overlap, so a module can belong to
+    /// several. Within a single group, the longest-prefix (most specific)
+    /// matching pattern wins, with ties broken by the lowest index (highest
+    /// layer); that yields at most one position per group.
+    pub(crate) fn memberships(&self, module: &str) -> Vec<LayerPos> {
+        let mut positions = Vec::new();
         for (group, layer) in self.layers.iter().enumerate() {
-            for (index, pattern) in layer.order.iter().enumerate() {
-                if pattern.matches(module) {
-                    matches.push((pattern.specificity(), group, index));
-                }
+            // Pick the most specific matching pattern; on a specificity tie the
+            // lowest index (highest layer) wins.
+            let index = layer
+                .order
+                .iter()
+                .enumerate()
+                .filter(|(_, pattern)| pattern.matches(module))
+                .map(|(index, pattern)| (pattern.specificity(), index))
+                .max_by(|a, b| a.0.cmp(&b.0).then_with(|| b.1.cmp(&a.1)))
+                .map(|(_, index)| index);
+            if let Some(index) = index {
+                positions.push(LayerPos { group, index });
             }
         }
-
-        let Some(max_spec) = matches.iter().map(|m| m.0).max() else {
-            return Ok(None);
-        };
-        let top: Vec<&(usize, usize, usize)> = matches.iter().filter(|m| m.0 == max_spec).collect();
-
-        let groups: BTreeSet<usize> = top.iter().map(|m| m.1).collect();
-        if groups.len() > 1 {
-            let mut names = groups
-                .iter()
-                .filter_map(|g| self.layers.get(*g))
-                .map(|layer| layer.name.clone());
-            return Err(LayerAmbiguity {
-                module: module.to_owned(),
-                group_a: names.next().unwrap_or_default(),
-                group_b: names.next().unwrap_or_default(),
-            });
-        }
-
-        // Single group: the highest layer (lowest index) wins.
-        let pos = top.iter().min_by_key(|m| m.2).map(|m| LayerPos {
-            group: m.1,
-            index: m.2,
-        });
-        Ok(pos)
+        positions
     }
 }
 

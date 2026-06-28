@@ -1,0 +1,10 @@
+# `cli` belongs to two overlapping groups. Each is checked independently and
+# both are satisfied: cli -> analyzer is downward in "app", cli -> web::repo is
+# downward in "frontend". Overlap alone is no longer an error (exit 0).
+[[check.layers]]
+name = "app"
+order = ["cli", "analyzer", "parser", "discover"]
+
+[[check.layers]]
+name = "frontend"
+order = ["cli", "web::repo"]

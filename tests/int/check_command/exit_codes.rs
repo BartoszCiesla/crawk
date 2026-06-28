@@ -27,11 +27,22 @@ fn unknown_module_is_two() {
     );
 }
 
+// Overlapping groups are valid config: the shared module is checked in each
+// group, so this fixture lints (exit 1) rather than erroring (exit 2).
 #[test]
-fn overlapping_groups_is_two() {
+fn overlapping_groups_violation_is_one() {
     assert_eq!(
         exit_code(&["-c", "fixtures/check/rules_overlapping_groups.toml"]),
-        Some(2)
+        Some(1)
+    );
+}
+
+// Overlap alone, with every shared edge downward, is clean (exit 0).
+#[test]
+fn overlapping_groups_clean_is_zero() {
+    assert_eq!(
+        exit_code(&["-c", "fixtures/check/rules_overlapping_clean.toml"]),
+        Some(0)
     );
 }
 
