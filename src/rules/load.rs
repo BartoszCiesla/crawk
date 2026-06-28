@@ -34,7 +34,7 @@ struct RawCheck {
 
 /// Serde shape of one `[[check.layers]]` group.
 ///
-/// `name` is [`Spanned`](Spanned) so a duplicate group name can be
+/// `name` is [`Spanned`] so a duplicate group name can be
 /// reported with the source line it occurs on.
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -160,7 +160,7 @@ fn line_of(text: &str, offset: usize) -> usize {
 }
 
 /// Reject duplicate `[[check.layers]]` group names, pinning the duplicate to its
-/// source line via the [`Spanned`](Spanned) name.
+/// source line via the [`Spanned`] name.
 fn check_unique_names(path: &Path, text: &str, layers: &[RawLayer]) -> Result<()> {
     let mut seen = BTreeSet::new();
     for layer in layers {

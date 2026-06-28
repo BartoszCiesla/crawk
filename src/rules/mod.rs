@@ -217,7 +217,7 @@ pub struct Violation {
     pub apis: BTreeSet<String>,
 }
 
-/// The result of evaluating a [`RuleSet`] against a dependency graph.
+/// The result of evaluating architectural rules against a dependency graph.
 #[derive(Debug, Clone, Default)]
 pub struct CheckReport {
     /// All violations found, sorted for deterministic output.

@@ -257,7 +257,7 @@ impl ModuleVisitor {
     ///
     /// Used for paths extracted from opaque token streams (macro arguments, attribute
     /// values) where no `syn::Path` is available. Applies the same internal-path
-    /// filtering and prefix resolution as [`build_reference`].
+    /// filtering and prefix resolution as [`Self::build_reference`].
     fn build_reference_from_segments(&self, segments: &[String]) -> Option<TypeReference> {
         if segments.is_empty() {
             return None;

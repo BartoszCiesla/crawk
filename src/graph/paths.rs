@@ -4,7 +4,7 @@ use super::edges::AnnotatedEdges;
 
 /// All shortest dependency paths between two modules.
 ///
-/// Produced by [`DependencyGraph::shortest_paths`].
+/// Produced by [`super::DependencyGraph::shortest_paths`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct ShortestPaths {
