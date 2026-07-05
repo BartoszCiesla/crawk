@@ -44,6 +44,13 @@ repos:
   # Rust project-specific local hooks
   - repo: local
     hooks:
+      - id: toolchain-flake-lock-sync
+        name: rust-toolchain.toml requires flake.lock update
+        entry: bash -c 'git diff --cached --name-only | grep -qx "flake.lock" || { echo "rust-toolchain.toml changed without flake.lock -- run nix flake update rust-overlay"; exit 1; }'
+        language: system
+        files: '^rust-toolchain\.toml$'
+        pass_filenames: false
+        stages: [pre-commit]
       - id: cargo-build
         name: cargo build
         entry: cargo

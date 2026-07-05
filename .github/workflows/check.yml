@@ -103,6 +103,25 @@ jobs:
         env:
           TARGET: ${{ matrix.target }}
           RUST_BACKTRACE: "0"
+  nix-checks:
+    name: Nix Checks
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    concurrency:
+      group: nix-checks-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+      - name: nix develop resolves toolchain
+        run: nix develop --command cargo --version
+      - name: nix build produces package
+        run: nix build .#default
   finalize:
     name: Finalize Checks
     runs-on: ubuntu-latest
@@ -113,6 +132,7 @@ jobs:
       - prek-checks-pr
       - prek-checks-push
       - build-checks
+      - nix-checks
     if: always()
     steps:
       - name: Exit with appropriate code
