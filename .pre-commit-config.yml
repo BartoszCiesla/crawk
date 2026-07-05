@@ -152,3 +152,12 @@ repos:
         types: [rust]
         pass_filenames: false
         stages: [pre-push]
+      - id: crawk-check
+        name: crawk check (architectural rules)
+        entry: cargo
+        language: system
+        args: ["run", "--", "check"]
+        types_or: [rust, cargo, toml]
+        files: '^(src/.*\.rs|Cargo\.(toml|lock)|crawk\.toml|\.crawk\.toml)$'
+        pass_filenames: false
+        stages: [pre-push]
