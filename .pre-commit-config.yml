@@ -46,8 +46,8 @@ repos:
     hooks:
       - id: toolchain-flake-lock-sync
         name: rust-toolchain.toml requires flake.lock update
-        entry: bash -c 'git diff --cached --name-only | grep -qx "flake.lock" || { echo "rust-toolchain.toml changed without flake.lock -- run nix flake update rust-overlay"; exit 1; }'
-        language: system
+        entry: scripts/check-toolchain-flake-sync.sh
+        language: script
         files: '^rust-toolchain\.toml$'
         pass_filenames: false
         stages: [pre-commit]
