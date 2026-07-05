@@ -24,6 +24,9 @@ struct RawConfig {
 }
 
 /// Serde shape of the `[check]` table.
+///
+/// `deny_same_layer` here is the crate-wide *default*; each `[[check.layers]]`
+/// group may override it (see [`RawLayer`]).
 #[derive(Debug, Default, Deserialize)]
 #[serde(default, rename_all = "kebab-case", deny_unknown_fields)]
 struct RawCheck {
@@ -35,12 +38,15 @@ struct RawCheck {
 /// Serde shape of one `[[check.layers]]` group.
 ///
 /// `name` is [`Spanned`] so a duplicate group name can be
-/// reported with the source line it occurs on.
+/// reported with the source line it occurs on. `deny_same_layer` is optional:
+/// `None` inherits the `[check]`-level default.
 #[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 struct RawLayer {
     name: Spanned<String>,
     order: Vec<String>,
+    #[serde(default)]
+    deny_same_layer: Option<bool>,
 }
 
 /// Resolve which rule-config file to use.
@@ -207,6 +213,9 @@ impl RuleSet {
 
     /// Convert the deserialized shape into the validated in-memory form.
     fn from_raw(raw: RawCheck) -> Self {
+        // The `[check]`-level flag is the default each group inherits unless it
+        // sets its own `deny-same-layer`.
+        let default_deny = raw.deny_same_layer;
         let layers = raw
             .layers
             .into_iter()
@@ -217,12 +226,12 @@ impl RuleSet {
                     .iter()
                     .map(|entry| ModulePattern::parse_subtree(entry))
                     .collect(),
+                deny_same_layer: raw_layer.deny_same_layer.unwrap_or(default_deny),
             })
             .collect();
         Self {
             layers,
             strict_layers: raw.strict_layers,
-            deny_same_layer: raw.deny_same_layer,
         }
     }
 
@@ -451,5 +460,61 @@ mod tests {
         );
         let modules = module_set(&["cli", "analyzer"]);
         assert!(RuleSet::load(&cfg, &modules).is_ok());
+    }
+
+    #[test]
+    fn group_deny_same_layer_overrides_default() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        // Global default off; one group opts in, the other omits the key.
+        let cfg = write_config(
+            dir.path(),
+            "crawk.toml",
+            "[check]\ndeny-same-layer = false\n\
+             [[check.layers]]\nname = \"strict\"\norder = [\"cli\"]\ndeny-same-layer = true\n\
+             [[check.layers]]\nname = \"lax\"\norder = [\"analyzer\"]\n",
+        );
+        let modules = module_set(&["cli", "analyzer"]);
+        let rules = RuleSet::load(&cfg, &modules).expect("load");
+        assert!(rules.layers[0].deny_same_layer, "explicit override wins");
+        assert!(
+            !rules.layers[1].deny_same_layer,
+            "omitted key stays default"
+        );
+    }
+
+    #[test]
+    fn global_deny_same_layer_propagates_to_groups() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        // Global default on; the group omits the key, so it inherits `true`.
+        let cfg = write_config(
+            dir.path(),
+            "crawk.toml",
+            "[check]\ndeny-same-layer = true\n\
+             [[check.layers]]\nname = \"app\"\norder = [\"cli\"]\n",
+        );
+        let modules = module_set(&["cli"]);
+        let rules = RuleSet::load(&cfg, &modules).expect("load");
+        assert!(
+            rules.layers[0].deny_same_layer,
+            "group inherits the default"
+        );
+    }
+
+    #[test]
+    fn group_can_override_global_deny_to_false() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        // Global default on; the group turns it back off for itself.
+        let cfg = write_config(
+            dir.path(),
+            "crawk.toml",
+            "[check]\ndeny-same-layer = true\n\
+             [[check.layers]]\nname = \"app\"\norder = [\"cli\"]\ndeny-same-layer = false\n",
+        );
+        let modules = module_set(&["cli"]);
+        let rules = RuleSet::load(&cfg, &modules).expect("load");
+        assert!(
+            !rules.layers[0].deny_same_layer,
+            "group override to false wins"
+        );
     }
 }

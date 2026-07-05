@@ -124,6 +124,23 @@ crawk why parser reference -r --format grouped
 crawk -p /path/to/my-crate why db utils
 ```
 
+#### Architectural checks - `check` subcommand
+
+Enforce a layered-architecture contract on internal module dependencies, loaded
+from a required `crawk.toml` / `.crawk.toml`. See [docs/check.md](docs/check.md)
+for the full config schema, layering rules, and exit codes.
+
+```sh
+# Scaffold a starter crawk.toml from the crate's modules, then exit:
+crawk check --init
+
+# Check the crate against its crawk.toml (exit 0 clean, 1 violations, 2 error):
+crawk check
+
+# Use an explicit config and annotate violations with API symbols:
+crawk check -c config/arch.toml --show-apis
+```
+
 ## CLI Options
 
 Please refer to `crawk` command CLI help for a comprehensive list of options:
@@ -143,6 +160,9 @@ crawk deps --help
 
 # Help for the 'why' subcommand (including options specific to dependency explanation)
 crawk why --help
+
+# Help for the 'check' subcommand (including options specific to architectural checks)
+crawk check --help
 ```
 
 Note: option `-h` gives short help, while `--help` provides detailed information about available options and their usage.

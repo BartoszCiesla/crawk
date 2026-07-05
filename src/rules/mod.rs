@@ -136,6 +136,10 @@ impl ModulePattern {
 pub(crate) struct LayerRule {
     pub(crate) name: String,
     pub(crate) order: Vec<ModulePattern>,
+    /// Whether a dependency between two modules in the *same* layer of this
+    /// group is a violation. Resolved at load time from the group's own
+    /// `deny-same-layer`, falling back to the `[check]`-level default.
+    pub(crate) deny_same_layer: bool,
 }
 
 /// Where a module sits: which layer group, and its index within that group.
@@ -152,7 +156,6 @@ pub(crate) struct LayerPos {
 pub(crate) struct RuleSet {
     layers: Vec<LayerRule>,
     strict_layers: bool,
-    deny_same_layer: bool,
 }
 
 impl RuleSet {

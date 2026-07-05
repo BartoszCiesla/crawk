@@ -51,17 +51,17 @@ impl RuleSet {
                 continue; // independent stacks: no cross-group constraint
             };
 
+            // Fetch the covering group once; its `deny_same_layer` is per-group.
+            let layer = self.layers.get(src_pos.group);
+            let deny_same = layer.is_some_and(|l| l.deny_same_layer);
             let upward = src_pos.index > tgt_pos.index;
             let same_layer = src_pos.index == tgt_pos.index;
-            let violates = upward || (same_layer && self.deny_same_layer);
+            let violates = upward || (same_layer && deny_same);
             if !violates {
                 continue;
             }
 
-            let group_name = self
-                .layers
-                .get(src_pos.group)
-                .map_or("?", |layer| layer.name.as_str());
+            let group_name = layer.map_or("?", |layer| layer.name.as_str());
             let rule = if upward {
                 format!("layer '{group_name}' forbids upward dependency ({source} -> {target})")
             } else {
@@ -98,12 +98,21 @@ mod tests {
     use std::collections::BTreeSet;
 
     fn layer(name: &str, order: &[&str]) -> LayerRule {
+        layer_with_deny(name, order, false)
+    }
+
+    fn layer_deny(name: &str, order: &[&str]) -> LayerRule {
+        layer_with_deny(name, order, true)
+    }
+
+    fn layer_with_deny(name: &str, order: &[&str], deny_same_layer: bool) -> LayerRule {
         LayerRule {
             name: name.to_owned(),
             order: order
                 .iter()
                 .map(|s| ModulePattern::parse_subtree(s))
                 .collect(),
+            deny_same_layer,
         }
     }
 
@@ -115,7 +124,6 @@ mod tests {
         RuleSet {
             layers: vec![layer("app", &["cli", "analyzer", "parser", "discover"])],
             strict_layers: false,
-            deny_same_layer: false,
         }
     }
 
@@ -158,7 +166,6 @@ mod tests {
                 layer("web", &["web::api", "web::repo"]),
             ],
             strict_layers: false,
-            deny_same_layer: false,
         };
         let modules = module_set(&["cli", "web::repo"]);
         let index = rules.build_layer_index(&modules);
@@ -173,7 +180,6 @@ mod tests {
         let rules = RuleSet {
             layers: vec![layer("app", &["mid"])],
             strict_layers: false,
-            deny_same_layer: false,
         };
         let modules = module_set(&["mid::a", "mid::b"]);
         let index = rules.build_layer_index(&modules);
@@ -185,15 +191,30 @@ mod tests {
     #[test]
     fn same_layer_denied_when_flag_set() {
         let rules = RuleSet {
-            layers: vec![layer("app", &["mid"])],
+            layers: vec![layer_deny("app", &["mid"])],
             strict_layers: false,
-            deny_same_layer: true,
         };
         let modules = module_set(&["mid::a", "mid::b"]);
         let index = rules.build_layer_index(&modules);
         let mut out = Vec::new();
         rules.check_layers("mid::a", "mid::b", &index, &BTreeSet::new(), &mut out);
         assert_eq!(out.len(), 1);
+    }
+
+    #[test]
+    fn deny_same_layer_is_per_group() {
+        // `strict` denies same-layer deps; `lax` (same modules) does not. The
+        // edge a -> b is same-layer in both, so only `strict` yields a violation.
+        let rules = RuleSet {
+            layers: vec![layer_deny("strict", &["mid"]), layer("lax", &["mid"])],
+            strict_layers: false,
+        };
+        let modules = module_set(&["mid::a", "mid::b"]);
+        let index = rules.build_layer_index(&modules);
+        let mut out = Vec::new();
+        rules.check_layers("mid::a", "mid::b", &index, &BTreeSet::new(), &mut out);
+        assert_eq!(out.len(), 1, "only the deny group contributes a violation");
+        assert!(out[0].rule.contains("'strict'"), "{}", out[0].rule);
     }
 
     #[test]
@@ -206,7 +227,6 @@ mod tests {
                 layer("right", &["top", "mid"]),
             ],
             strict_layers: false,
-            deny_same_layer: false,
         };
         let modules = module_set(&["top", "mid"]);
         let index = rules.build_layer_index(&modules);
@@ -225,7 +245,6 @@ mod tests {
                 layer("b", &["shared", "low_b"]),
             ],
             strict_layers: false,
-            deny_same_layer: false,
         };
         let modules = module_set(&["shared", "low_a", "low_b"]);
         let index = rules.build_layer_index(&modules);
