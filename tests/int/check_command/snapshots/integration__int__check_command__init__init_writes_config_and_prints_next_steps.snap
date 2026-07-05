@@ -1,0 +1,20 @@
+---
+source: tests/int/check_command/init.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /tmp/nix-shell-793070-180637236/.tmpE8z0Hn
+    - check
+    - "--init"
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+----- stderr -----
+Scaffolded [ROOT]/crawk.toml.
+
+  Reorder the modules: highest-level layer first, lowest last.
+  A lower layer must never depend on a higher one.
+  Then run `crawk check`.

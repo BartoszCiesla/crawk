@@ -67,14 +67,17 @@ fn handle_check_command(crate_root: &Path, args: &CheckArgs) -> anyhow::Result<i
 
     if args.init {
         let path = analyzer.init_check_config(crate_root, &opts)?;
-        eprintln!("Created {}", path.display());
         // A custom `-c` path is not auto-discovered, so the re-run hint must
         // carry it; the default crawk.toml is found by a plain `crawk check`.
         let rerun = args.config.as_ref().map_or_else(
             || "crawk check".to_owned(),
             |cfg| format!("crawk check -c {}", cfg.display()),
         );
-        eprintln!("Edit the `order` to reflect your layer hierarchy, then run `{rerun}`.");
+        eprintln!("Scaffolded {}.", path.display());
+        eprintln!();
+        eprintln!("  Reorder the modules: highest-level layer first, lowest last.");
+        eprintln!("  A lower layer must never depend on a higher one.");
+        eprintln!("  Then run `{rerun}`.");
         return Ok(0);
     }
 

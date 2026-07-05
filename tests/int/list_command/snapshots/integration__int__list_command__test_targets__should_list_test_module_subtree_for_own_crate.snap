@@ -16,6 +16,7 @@ int::check_command::basic
 int::check_command::config
 int::check_command::error_cases
 int::check_command::exit_codes
+int::check_command::init
 int::check_command::layers
 int::check_command::overview
 int::command
