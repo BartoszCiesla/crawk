@@ -9,7 +9,7 @@ use tracing::warn;
 
 use crate::error::{AnalysisError, Result};
 
-use super::{LayerRule, ModulePattern, RuleSet};
+use super::{DenyRule, LayerRule, ModulePattern, RuleSet};
 
 /// Preferred config file name (searched first).
 const CONFIG_FILE: &str = "crawk.toml";
@@ -31,8 +31,18 @@ struct RawConfig {
 #[serde(default, rename_all = "kebab-case", deny_unknown_fields)]
 struct RawCheck {
     layers: Vec<RawLayer>,
+    deny: Vec<RawDeny>,
     strict_layers: bool,
     deny_same_layer: bool,
+}
+
+/// Serde shape of one `[[check.deny]]` rule. Subtree matching requires an
+/// explicit `::*` suffix on the pattern.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RawDeny {
+    from: String,
+    to: String,
 }
 
 /// Serde shape of one `[[check.layers]]` group.
@@ -229,8 +239,17 @@ impl RuleSet {
                 deny_same_layer: raw_layer.deny_same_layer.unwrap_or(default_deny),
             })
             .collect();
+        let deny = raw
+            .deny
+            .into_iter()
+            .map(|raw_deny| DenyRule {
+                from: ModulePattern::parse(&raw_deny.from),
+                to: ModulePattern::parse(&raw_deny.to),
+            })
+            .collect();
         Self {
             layers,
+            deny,
             strict_layers: raw.strict_layers,
         }
     }
@@ -248,7 +267,18 @@ impl RuleSet {
                 }
             }
         }
-        // 2. Under strict mode, every module must be covered by some group.
+        // 2. Both patterns of every deny rule must reference a real module.
+        for rule in &self.deny {
+            for pattern in [&rule.from, &rule.to] {
+                if !pattern.references_known(modules) {
+                    return Err(AnalysisError::UnknownRuleModule {
+                        module: pattern.pattern_display(),
+                        rule: rule.display(),
+                    });
+                }
+            }
+        }
+        // 3. Under strict mode, every module must be covered by some group.
         //    Groups may overlap, so coverage just means at least one membership.
         if self.strict_layers {
             for module in modules {
@@ -448,6 +478,66 @@ mod tests {
         let modules = module_set(&["cli"]);
         // Reuses discovery, so the hidden name blocks scaffolding too.
         assert!(scaffold_config(dir.path(), None, "my_crate", &modules).is_err());
+    }
+
+    #[test]
+    fn deny_rules_parse_with_explicit_subtree() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let cfg = write_config(
+            dir.path(),
+            "crawk.toml",
+            "[[check.deny]]\nfrom = \"cli\"\nto = \"web::*\"\n",
+        );
+        let modules = module_set(&["cli", "web", "web::repo"]);
+        let rules = RuleSet::load(&cfg, &modules).expect("load");
+        assert_eq!(rules.deny.len(), 1);
+        assert!(!rules.deny[0].from.subtree, "bare name stays exact");
+        assert!(rules.deny[0].to.subtree, "explicit ::* marks the subtree");
+        assert_eq!(rules.deny[0].display(), "deny cli -> web::*");
+    }
+
+    #[test]
+    fn unknown_module_in_deny_is_error() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let cfg = write_config(
+            dir.path(),
+            "crawk.toml",
+            "[[check.deny]]\nfrom = \"clii\"\nto = \"web\"\n",
+        );
+        let modules = module_set(&["cli", "web"]);
+        let err = RuleSet::load(&cfg, &modules).expect_err("should reject unknown module");
+        assert!(matches!(
+            &err,
+            AnalysisError::UnknownRuleModule { module, rule }
+                if module == "clii" && rule == "deny clii -> web"
+        ));
+    }
+
+    #[test]
+    fn unknown_key_in_deny_is_rejected() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let cfg = write_config(
+            dir.path(),
+            "crawk.toml",
+            "[[check.deny]]\nfrom = \"cli\"\nto = \"web\"\nvia = \"x\"\n",
+        );
+        let modules = module_set(&["cli", "web"]);
+        assert!(RuleSet::load(&cfg, &modules).is_err());
+    }
+
+    #[test]
+    fn deny_and_layers_coexist() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let cfg = write_config(
+            dir.path(),
+            "crawk.toml",
+            "[[check.layers]]\nname = \"app\"\norder = [\"cli\", \"analyzer\"]\n\
+             [[check.deny]]\nfrom = \"cli\"\nto = \"analyzer\"\n",
+        );
+        let modules = module_set(&["cli", "analyzer"]);
+        let rules = RuleSet::load(&cfg, &modules).expect("load");
+        assert_eq!(rules.layers.len(), 1);
+        assert_eq!(rules.deny.len(), 1);
     }
 
     #[test]

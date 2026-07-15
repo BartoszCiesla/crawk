@@ -7,9 +7,10 @@
 //! malformed config, unknown module in a rule) surface as
 //! [`AnalysisError`](crate::AnalysisError).
 //!
-//! Check category `layers` is currently supported (named layer groups, each an
-//! independent total order over a subtree of the module hierarchy). Groups may
-//! overlap: a module that falls under several groups is checked in each.
+//! Two check categories are supported: `layers` (named layer groups, each an
+//! independent total order over a subtree of the module hierarchy; groups may
+//! overlap — a module that falls under several groups is checked in each) and
+//! `deny` (an explicit ban on edges matching a `from` -> `to` pattern pair).
 //!
 //! The config is **required**: a *missing* file is an operational error (so a
 //! typo fails CI rather than passing silently), whereas an *empty* `[check]`
@@ -128,6 +129,40 @@ impl ModulePattern {
             self.base.clone()
         }
     }
+
+    /// The pattern as the user wrote it, keeping the `::*` subtree suffix.
+    ///
+    /// Used by `deny`, where subtree matching is opt-in (explicit `::*`) and the
+    /// suffix must be quoted verbatim in diagnostics — unlike `layers`, where
+    /// subtree coverage is implicit and [`display`](Self::display) hides it.
+    fn pattern_display(&self) -> String {
+        if self.base.is_empty() {
+            "*".to_owned()
+        } else if self.subtree {
+            format!("{}::*", self.base)
+        } else {
+            self.base.clone()
+        }
+    }
+}
+
+/// An explicit edge ban: no module matching `from` may depend on a module
+/// matching `to`. Patterns match the subtree only with an explicit `::*`.
+#[derive(Debug, Clone)]
+pub(crate) struct DenyRule {
+    pub(crate) from: ModulePattern,
+    pub(crate) to: ModulePattern,
+}
+
+impl DenyRule {
+    /// Human-readable rule citation for diagnostics and violation reports.
+    pub(crate) fn display(&self) -> String {
+        format!(
+            "deny {} -> {}",
+            self.from.pattern_display(),
+            self.to.pattern_display()
+        )
+    }
 }
 
 /// A named layer group: an independent total order over a fragment of the
@@ -151,10 +186,11 @@ pub(crate) struct LayerPos {
 
 /// A validated set of architectural rules, ready to evaluate.
 ///
-/// Construct via [`RuleSet::load`]. Currently, includes only `layers` groups.
+/// Construct via [`RuleSet::load`]. Holds `layers` groups and `deny` rules.
 #[derive(Debug, Clone, Default)]
 pub(crate) struct RuleSet {
     layers: Vec<LayerRule>,
+    deny: Vec<DenyRule>,
     strict_layers: bool,
 }
 
@@ -190,6 +226,11 @@ impl RuleSet {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[non_exhaustive]
 pub enum ViolationKind {
+    /// A `deny` rule matched the edge (explicitly banned dependency).
+    ///
+    /// Declared before `Layer` so `DENY` rows sort first in reports (the
+    /// derived `Ord` on [`Violation`] compares `kind` first).
+    Deny,
     /// A `layers` ordering was broken (dependency points "upward").
     Layer,
 }
@@ -197,6 +238,7 @@ pub enum ViolationKind {
 impl Display for ViolationKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         match self {
+            Self::Deny => f.write_str("DENY"),
             Self::Layer => f.write_str("LAYER"),
         }
     }

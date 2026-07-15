@@ -26,6 +26,31 @@ impl RuleSet {
         index
     }
 
+    /// Check a single edge against the deny rules, pushing any violation.
+    ///
+    /// Each matching rule contributes its own violation, so an edge banned by
+    /// several rules is reported once per rule (consistent with overlapping
+    /// layer groups).
+    fn check_deny(
+        &self,
+        source: &str,
+        target: &str,
+        apis: &BTreeSet<String>,
+        out: &mut Vec<Violation>,
+    ) {
+        for rule in &self.deny {
+            if rule.from.matches(source) && rule.to.matches(target) {
+                out.push(Violation {
+                    kind: ViolationKind::Deny,
+                    source: source.to_owned(),
+                    target: target.to_owned(),
+                    rule: rule.display(),
+                    apis: apis.clone(),
+                });
+            }
+        }
+    }
+
     /// Check a single edge against the layer rules, pushing any violation.
     ///
     /// Each group containing **both** endpoints is checked independently, so an
@@ -85,6 +110,7 @@ pub(crate) fn evaluate(rules: &RuleSet, graph: &DependencyGraph) -> CheckReport 
     let layer_index = rules.build_layer_index(graph.modules());
 
     for ((source, target), apis) in graph.edges() {
+        rules.check_deny(source, target, apis, &mut violations);
         rules.check_layers(source, target, &layer_index, apis, &mut violations);
     }
 
@@ -94,7 +120,7 @@ pub(crate) fn evaluate(rules: &RuleSet, graph: &DependencyGraph) -> CheckReport 
 
 #[cfg(test)]
 mod tests {
-    use super::super::{LayerRule, ModulePattern, RuleSet};
+    use super::super::{DenyRule, LayerRule, ModulePattern, RuleSet, ViolationKind};
     use std::collections::BTreeSet;
 
     fn layer(name: &str, order: &[&str]) -> LayerRule {
@@ -123,6 +149,7 @@ mod tests {
     fn app_rules() -> RuleSet {
         RuleSet {
             layers: vec![layer("app", &["cli", "analyzer", "parser", "discover"])],
+            deny: Vec::new(),
             strict_layers: false,
         }
     }
@@ -165,6 +192,7 @@ mod tests {
                 layer("app", &["cli", "core"]),
                 layer("web", &["web::api", "web::repo"]),
             ],
+            deny: Vec::new(),
             strict_layers: false,
         };
         let modules = module_set(&["cli", "web::repo"]);
@@ -179,6 +207,7 @@ mod tests {
     fn same_layer_allowed_by_default() {
         let rules = RuleSet {
             layers: vec![layer("app", &["mid"])],
+            deny: Vec::new(),
             strict_layers: false,
         };
         let modules = module_set(&["mid::a", "mid::b"]);
@@ -192,6 +221,7 @@ mod tests {
     fn same_layer_denied_when_flag_set() {
         let rules = RuleSet {
             layers: vec![layer_deny("app", &["mid"])],
+            deny: Vec::new(),
             strict_layers: false,
         };
         let modules = module_set(&["mid::a", "mid::b"]);
@@ -207,6 +237,7 @@ mod tests {
         // edge a -> b is same-layer in both, so only `strict` yields a violation.
         let rules = RuleSet {
             layers: vec![layer_deny("strict", &["mid"]), layer("lax", &["mid"])],
+            deny: Vec::new(),
             strict_layers: false,
         };
         let modules = module_set(&["mid::a", "mid::b"]);
@@ -226,6 +257,7 @@ mod tests {
                 layer("left", &["top", "mid"]),
                 layer("right", &["top", "mid"]),
             ],
+            deny: Vec::new(),
             strict_layers: false,
         };
         let modules = module_set(&["top", "mid"]);
@@ -244,6 +276,7 @@ mod tests {
                 layer("a", &["shared", "low_a"]),
                 layer("b", &["shared", "low_b"]),
             ],
+            deny: Vec::new(),
             strict_layers: false,
         };
         let modules = module_set(&["shared", "low_a", "low_b"]);
@@ -252,6 +285,79 @@ mod tests {
         rules.check_layers("shared", "low_a", &index, &BTreeSet::new(), &mut out);
         rules.check_layers("shared", "low_b", &index, &BTreeSet::new(), &mut out);
         assert!(out.is_empty());
+    }
+
+    fn deny(from: &str, to: &str) -> DenyRule {
+        DenyRule {
+            from: ModulePattern::parse(from),
+            to: ModulePattern::parse(to),
+        }
+    }
+
+    fn deny_rules(rules: Vec<DenyRule>) -> RuleSet {
+        RuleSet {
+            layers: Vec::new(),
+            deny: rules,
+            strict_layers: false,
+        }
+    }
+
+    #[test]
+    fn deny_flags_matching_edge() {
+        let rules = deny_rules(vec![deny("cli", "web::*")]);
+        let mut out = Vec::new();
+        rules.check_deny("cli", "web::repo", &BTreeSet::new(), &mut out);
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].kind, ViolationKind::Deny);
+        assert_eq!(out[0].rule, "deny cli -> web::*");
+    }
+
+    #[test]
+    fn deny_ignores_non_matching_edge() {
+        let rules = deny_rules(vec![deny("cli", "web::*")]);
+        let mut out = Vec::new();
+        // cli::args is not `cli` (no explicit ::*); webs is not under web::*.
+        rules.check_deny("cli::args", "web::repo", &BTreeSet::new(), &mut out);
+        rules.check_deny("cli", "webs", &BTreeSet::new(), &mut out);
+        rules.check_deny("analyzer", "web::repo", &BTreeSet::new(), &mut out);
+        assert!(out.is_empty());
+    }
+
+    #[test]
+    fn deny_subtree_matches_base_and_descendants() {
+        let rules = deny_rules(vec![deny("format::*", "discover")]);
+        let mut out = Vec::new();
+        rules.check_deny("format", "discover", &BTreeSet::new(), &mut out);
+        rules.check_deny("format::deps_cmd", "discover", &BTreeSet::new(), &mut out);
+        assert_eq!(out.len(), 2);
+    }
+
+    #[test]
+    fn edge_banned_by_several_rules_reports_each() {
+        let rules = deny_rules(vec![deny("cli", "web::*"), deny("*", "web::repo")]);
+        let mut out = Vec::new();
+        rules.check_deny("cli", "web::repo", &BTreeSet::new(), &mut out);
+        assert_eq!(out.len(), 2, "one violation per matching rule");
+    }
+
+    #[test]
+    fn deny_sorts_before_layer_violations() {
+        // The same edge breaks a deny rule and a layer order; the derived Ord on
+        // Violation compares `kind` first, so DENY rows lead the report.
+        let rules = RuleSet {
+            layers: vec![layer("app", &["low", "high"])],
+            deny: vec![deny("high", "low")],
+            strict_layers: false,
+        };
+        let modules = module_set(&["high", "low"]);
+        let index = rules.build_layer_index(&modules);
+        let mut out = Vec::new();
+        rules.check_layers("high", "low", &index, &BTreeSet::new(), &mut out);
+        rules.check_deny("high", "low", &BTreeSet::new(), &mut out);
+        out.sort();
+        assert_eq!(out.len(), 2);
+        assert_eq!(out[0].kind, ViolationKind::Deny);
+        assert_eq!(out[1].kind, ViolationKind::Layer);
     }
 
     #[test]

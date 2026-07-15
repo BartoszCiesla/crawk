@@ -189,12 +189,15 @@ rules::eval
  - crate::rules::Violation
  - crate::rules::ViolationKind
 rules::eval::tests
+ - crate::rules::DenyRule
  - crate::rules::LayerRule
  - crate::rules::ModulePattern
  - crate::rules::RuleSet
+ - crate::rules::ViolationKind
 rules::load
  - crate::error::AnalysisError
  - crate::error::Result
+ - crate::rules::DenyRule
  - crate::rules::LayerRule
  - crate::rules::ModulePattern
  - crate::rules::RuleSet

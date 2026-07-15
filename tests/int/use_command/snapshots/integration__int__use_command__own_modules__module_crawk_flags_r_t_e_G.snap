@@ -83,12 +83,15 @@ crate::resolve::resolve_glob
 crate::rules
 crate::rules::CheckOptions
 crate::rules::CheckReport
+crate::rules::DenyRule
 crate::rules::LayerPos
 crate::rules::LayerRule
 crate::rules::ModulePattern
 crate::rules::RuleSet
 crate::rules::Violation
 crate::rules::ViolationKind
+crate::rules::ViolationKind::Deny
+crate::rules::ViolationKind::Layer
 crate::rules::eval::evaluate
 crate::rules::load::resolve_config_path
 crate::rules::load::scaffold
