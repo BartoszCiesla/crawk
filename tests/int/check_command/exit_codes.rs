@@ -28,6 +28,30 @@ fn unknown_module_is_two() {
     );
 }
 
+#[test]
+fn denied_edge_is_one() {
+    assert_eq!(
+        exit_code(&["-c", "fixtures/check/rules_deny_violated.toml"]),
+        Some(1)
+    );
+}
+
+#[test]
+fn satisfied_deny_is_zero() {
+    assert_eq!(
+        exit_code(&["-c", "fixtures/check/rules_deny_clean.toml"]),
+        Some(0)
+    );
+}
+
+#[test]
+fn unknown_module_in_deny_is_two() {
+    assert_eq!(
+        exit_code(&["-c", "fixtures/check/rules_deny_bad_module.toml"]),
+        Some(2)
+    );
+}
+
 // Overlapping groups are valid config: the shared module is checked in each
 // group, so this fixture lints (exit 1) rather than erroring (exit 2).
 #[test]

@@ -1,0 +1,10 @@
+# Deny rules that match no edge in the fixture: discover is a leaf (no outgoing
+# edges) and nothing depends on cli, so both bans are satisfied (exit 0).
+
+[[check.deny]]
+from = "discover"
+to = "cli"
+
+[[check.deny]]
+from = "web::repo"
+to = "analyzer"

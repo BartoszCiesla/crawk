@@ -1,0 +1,6 @@
+# "clii" is a typo — no such module → operational error (exit 2), not a silent
+# pass. Guards CI against a misspelled module name in a deny rule.
+
+[[check.deny]]
+from = "clii"
+to = "web"

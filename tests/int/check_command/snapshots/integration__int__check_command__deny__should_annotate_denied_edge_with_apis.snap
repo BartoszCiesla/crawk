@@ -1,0 +1,20 @@
+---
+source: tests/int/check_command/deny.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/check
+    - check
+    - "-c"
+    - fixtures/check/rules_deny_violated.toml
+    - "--show-apis"
+---
+success: false
+exit_code: 1
+----- stdout -----
+crawk check: 1 violation
+
+  DENY cli -> web::repo [RepoType]   (rule: deny cli -> web::*)
+
+----- stderr -----

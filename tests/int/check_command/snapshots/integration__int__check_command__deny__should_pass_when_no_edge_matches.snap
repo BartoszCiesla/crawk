@@ -1,0 +1,16 @@
+---
+source: tests/int/check_command/deny.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/check
+    - check
+    - "-c"
+    - fixtures/check/rules_deny_clean.toml
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+----- stderr -----

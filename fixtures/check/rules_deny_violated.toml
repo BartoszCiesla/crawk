@@ -1,0 +1,12 @@
+# A deny rule plus a satisfied layers group, to exercise both rule kinds in one
+# run. `deny cli -> web::*` catches the cross-group edge cli -> web::repo that
+# layers deliberately leaves unconstrained → one DENY violation (exit 1). The
+# layers group is the clean baseline, so no LAYER rows appear.
+
+[[check.layers]]
+name = "app"
+order = ["cli", "analyzer", "parser", "discover"]
+
+[[check.deny]]
+from = "cli"
+to = "web::*"
