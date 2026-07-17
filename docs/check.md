@@ -2,10 +2,12 @@
 
 ## Overview
 
-`crawk check` enforces a **layered-architecture contract** on a crate's
-internal module dependencies. You declare named *layer groups* — ordered stacks
-of modules where a lower layer must not depend on a higher one — in a config
-file, and `check` verifies every inter-module dependency edge against them. It
+`crawk check` enforces an **architectural contract** on a crate's internal
+module dependencies. The contract is declared in a config file using two rule
+kinds — named *layer groups* (`[[check.layers]]`: ordered stacks of modules
+where a lower layer must not depend on a higher one) and *deny rules*
+(`[[check.deny]]`: explicit bans on a specific `from -> to` edge) — and `check`
+verifies every inter-module dependency edge against all of them in one pass. It
 is built for CI: a clean crate exits `0`, a contract breach exits `1`, and an
 operational problem exits `2`.
 
@@ -43,7 +45,16 @@ config, a rule that names a module that does not exist, an uncovered module unde
 exits. It writes a single `[[check.layers]]` group named after the crate, listing
 the crate's top-level modules alphabetically, with a comment reminding you to
 reorder them (highest layer first). It deliberately does **not** guess the
-hierarchy — layer ordering encodes design intent the source cannot reveal.
+hierarchy — layer ordering encodes design intent the source cannot reveal. The
+next steps are spelled out on completion:
+
+```
+Scaffolded <crate root>/crawk.toml.
+
+  Reorder the modules: highest-level layer first, lowest last.
+  A lower layer must never depend on a higher one.
+  Then run `crawk check`.
+```
 
 `--init` refuses to clobber an existing config: if a `crawk.toml` or
 `.crawk.toml` is already present (or, with `--config`, the explicit target
@@ -56,11 +67,12 @@ The config is a single `[check]` table. All keys are **kebab-case**, and unknown
 keys are rejected (so `layerz` or a misspelling fails loudly instead of being
 ignored).
 
-| Key                | Type                    | Default | Meaning                                                                 |
-|--------------------|-------------------------|---------|-------------------------------------------------------------------------|
-| `layers`           | array of layer groups   | `[]`    | The `[[check.layers]]` groups to enforce (see below).                   |
-| `strict-layers`    | bool                    | `false` | Require every module in the crate to belong to at least one group.      |
-| `deny-same-layer`  | bool                    | `false` | **Default** same-layer policy for all groups; each group may override it. |
+| Key               | Type                  | Default | Meaning                                                                   |
+|-------------------|-----------------------|---------|---------------------------------------------------------------------------|
+| `layers`          | array of layer groups | `[]`    | The `[[check.layers]]` groups to enforce (see below).                     |
+| `deny`            | array of deny rules   | `[]`    | The `[[check.deny]]` edge bans to enforce (see below).                    |
+| `strict-layers`   | bool                  | `false` | Require every module in the crate to belong to at least one group.        |
+| `deny-same-layer` | bool                  | `false` | **Default** same-layer policy for all groups; each group may override it. |
 
 An empty `[check]` table (no keys at all) is valid and yields zero rules — a
 clean pass.
@@ -69,11 +81,11 @@ clean pass.
 
 Each `[[check.layers]]` entry defines one layer group:
 
-| Key               | Type                | Meaning                                                                                          |
-|-------------------|---------------------|--------------------------------------------------------------------------------------------------|
-| `name`            | string              | Group name. Must be **unique** across all groups. Appears in violation messages.                 |
-| `order`           | array of strings    | Module patterns, **highest layer first**. Each pattern covers a module and its entire subtree.   |
-| `deny-same-layer` | bool (optional)     | Override the same-layer policy for this group. When omitted, inherits the `[check]`-level value.  |
+| Key               | Type             | Meaning                                                                                          |
+|-------------------|------------------|--------------------------------------------------------------------------------------------------|
+| `name`            | string           | Group name. Must be **unique** across all groups. Appears in violation messages.                 |
+| `order`           | array of strings | Module patterns, **highest layer first**. Each pattern covers a module and its entire subtree.   |
+| `deny-same-layer` | bool (optional)  | Override the same-layer policy for this group. When omitted, inherits the `[check]`-level value. |
 
 Notes on `order`:
 
@@ -84,6 +96,18 @@ Notes on `order`:
   nothing fails the load with exit `2` (`UnknownRuleModule`), catching typos.
 - A duplicate `name` across groups is an operational error, reported with its
   source line: `duplicate layer group name '<name>' (line N)`.
+
+### `[[check.deny]]` sub-table
+
+Each `[[check.deny]]` entry bans one dependency edge:
+
+| Key    | Type   | Meaning                                                              |
+|--------|--------|----------------------------------------------------------------------|
+| `from` | string | Pattern for the **source** module of the banned edge.                |
+| `to`   | string | Pattern for the **target** module of the banned edge.                |
+
+Both keys are required; any other key is rejected. Pattern semantics differ
+from `layers` — see [Deny Rules](#deny-rules--checkdeny) below.
 
 ## How Layering Works
 
@@ -188,6 +212,73 @@ edge is downward (or unconstrained) in a given group, that group contributes
 nothing. Overlap lets you express several independent orderings over the same
 modules without them interfering.
 
+## Deny Rules — `[[check.deny]]`
+
+A deny rule is an **explicit edge ban**: no module matching `from` may depend
+on a module matching `to`. Where layering derives violations from an ordering,
+`deny` names the forbidden edge directly — use it for point rules that don't
+fit a stack, like "the CLI must never touch the web subsystem".
+
+Deny rules are evaluated **independently of layers** (and of each other): every
+dependency edge is tested against every deny rule, and each rule that matches
+yields its own violation. In the report, `DENY` rows sort **before** `LAYER`
+rows.
+
+### Pattern semantics
+
+Deny patterns are stricter than `layers` patterns — subtree matching is
+**opt-in**, not implicit:
+
+- A bare path matches **exactly** that module: `from = "cli"` covers `cli` but
+  *not* `cli::validation`.
+- An explicit `::*` suffix matches the module **and its subtree**:
+  `to = "web::*"` covers `web`, `web::api`, `web::repo`, `web::service`.
+- A lone `"*"` is a wildcard matching **every** module: `from = "*"` bans all
+  edges into the `to` pattern, wherever they come from.
+
+This contrast with `layers` (where `"graph"` implicitly covers `graph::edges`)
+is deliberate: a ban should say exactly what it bans.
+
+### Validation
+
+As with layer patterns, both `from` and `to` must reference a **real module**
+in the crate — a pattern that matches nothing fails the load with exit `2`,
+catching typos before they silently ban nothing:
+
+```
+Error: Rule references unknown module 'clii' (in rule 'deny clii -> web')
+```
+
+### Example
+
+```toml
+# Layers govern the top-to-bottom stack; the deny rule catches a cross-group
+# edge that layering deliberately leaves unconstrained.
+[[check.layers]]
+name = "app"
+order = ["cli", "analyzer", "parser", "discover"]
+
+[[check.deny]]
+from = "cli"
+to = "web::*"
+```
+
+If `cli` depends on `web::repo`, the run exits `1` and reports:
+
+```
+crawk check: 1 violation
+
+  DENY cli -> web::repo   (rule: deny cli -> web::*)
+```
+
+The violation quotes the rule **as written**, `::*` suffix included, and names
+the concrete edge that tripped it. `-a` / `--show-apis` annotates the offending
+symbols, same as for layer violations:
+
+```
+  DENY cli -> web::repo [RepoType]   (rule: deny cli -> web::*)
+```
+
 ## Worked Example
 
 A complete, copy-pasteable `crawk.toml`:
@@ -214,6 +305,12 @@ deny-same-layer = true
 [[check.layers]]
 name = "parser-internal"
 order = ["parser", "parser::visitor"]
+
+# A point rule outside the stack: the CLI layer (and only it — no `::*`, so
+# submodules are not covered) must never reach into the cache internals.
+[[check.deny]]
+from = "cli"
+to = "cache::*"
 ```
 
 A sample violation line (default `plain` format):
@@ -235,13 +332,16 @@ With `-a` / `--show-apis`, each line also lists the API symbols on the edge:
   LAYER  parser -> cli [CrawkArgs]   (rule: layer 'arch' forbids upward dependency (parser -> cli))
 ```
 
+When both rule kinds fire in one run, all `DENY` rows are listed before all
+`LAYER` rows.
+
 ## Exit Codes
 
-| Code | Meaning                                                                                          |
-|------|--------------------------------------------------------------------------------------------------|
-| `0`  | Clean — all rules satisfied (including an empty `[check]` table).                                 |
-| `1`  | One or more violations found (printed to stdout).                                                |
-| `2`  | Operational error — missing/invalid config, a rule naming an unknown module, a duplicate group name, or (under `strict-layers`) an uncovered module. |
+| Code | Meaning                                                                                                                                                              |
+|------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `0`  | Clean — all rules satisfied (including an empty `[check]` table).                                                                                                    |
+| `1`  | One or more violations found (printed to stdout).                                                                                                                    |
+| `2`  | Operational error — missing/invalid config, a rule (layer or deny) naming an unknown module, a duplicate group name, or (under `strict-layers`) an uncovered module. |
 
 ## CLI Flags
 
@@ -249,12 +349,12 @@ With `-a` / `--show-apis`, each line also lists the API symbols on the edge:
 crawk check [OPTIONS]
 ```
 
-| Flag                      | Description                                                                                  |
-|---------------------------|----------------------------------------------------------------------------------------------|
-| `--init`                  | Scaffold a starter `crawk.toml` from discovered modules, then exit (refuses to overwrite).    |
-| `-c, --config <FILE>`     | Rule config path. When omitted, search the crate root for `crawk.toml`, then `.crawk.toml`.    |
-| `-t, --include-tests`     | Include `#[cfg(test)]` modules and test targets in the dependency graph (excluded by default). |
-| `-a, --show-apis`         | Annotate each violation with the API symbols that create the offending edge.                  |
-| `-f, --format <FMT>`      | Output format: `plain` (default) — one violation per line.                                    |
+| Flag                  | Description                                                                                    |
+|-----------------------|------------------------------------------------------------------------------------------------|
+| `--init`              | Scaffold a starter `crawk.toml` from discovered modules, then exit (refuses to overwrite).     |
+| `-c, --config <FILE>` | Rule config path. When omitted, search the crate root for `crawk.toml`, then `.crawk.toml`.    |
+| `-t, --include-tests` | Include `#[cfg(test)]` modules and test targets in the dependency graph (excluded by default). |
+| `-a, --show-apis`     | Annotate each violation with the API symbols that create the offending edge.                   |
+| `-f, --format <FMT>`  | Output format: `plain` (default) — one violation per line.                                     |
 
 Global options (`-p`, `-v`, `-l`) must appear **before** the `check` subcommand.
