@@ -28,7 +28,7 @@ jobs:
         with:
           components: clippy, rustfmt
       - name: Install cargo tools
-        uses: taiki-e/install-action@4684b8405694ae9dd42c9f39ba901a70ae83f4a3 # v2.82.9
+        uses: taiki-e/install-action@43aecc8d72668fbcfe75c31400bc4f890f1c5853 # v2.83.2
         with:
           tool: cargo-sort, cargo-machete, cargo-sort, cargo-nextest, cargo-deny, cargo-llvm-cov, cargo-crap
       - name: Run pre-commit checks
@@ -58,7 +58,7 @@ jobs:
         with:
           components: clippy, rustfmt
       - name: Install cargo tools
-        uses: taiki-e/install-action@4684b8405694ae9dd42c9f39ba901a70ae83f4a3 # v2.82.9
+        uses: taiki-e/install-action@43aecc8d72668fbcfe75c31400bc4f890f1c5853 # v2.83.2
         with:
           tool: cargo-sort, cargo-machete, cargo-sort, cargo-nextest, cargo-deny, cargo-llvm-cov, cargo-crap
       - name: Run pre-commit checks
