@@ -14,6 +14,7 @@ Dependency crawler for Rust. It crawls so you don't have to untangle
 - **Module usage**: See which modules are used by a given module in a crate.
 - **Dependency graph**: Visualize inter-module dependencies, detect cycles, find orphan modules.
 - **Dependency explanation**: See why one module depends on another — lists concrete references that create the dependency edge.
+- **Architectural checks**: Enforce a layered-architecture contract (and banned edges) on internal module dependencies, CI-friendly with dedicated exit codes.
 
 ## Installation
 
