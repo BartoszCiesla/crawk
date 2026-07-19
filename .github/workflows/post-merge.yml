@@ -1,0 +1,69 @@
+name: Post-Merge Analysis
+on:
+  push:
+    branches:
+      - master
+permissions: {}
+jobs:
+  coverage:
+    name: Coverage
+    permissions:
+      contents: read # For checking the code in the repository.
+    runs-on: ubuntu-latest
+    environment: codecov
+    concurrency:
+      group: coverage-${{ github.ref }}
+      cancel-in-progress: false
+    if: ${{ github.repository_owner == 'BartoszCiesla' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        with:
+          components: llvm-tools-preview
+      - name: Install cargo tools
+        uses: taiki-e/install-action@4684b8405694ae9dd42c9f39ba901a70ae83f4a3 # v2.82.9
+        with:
+          tool: cargo-llvm-cov, cargo-nextest
+      - name: Generate coverage
+        run: cargo llvm-cov nextest --cargo-profile fast-build --lcov --output-path lcov.info
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        with:
+          files: lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+  self_score:
+    name: Self Score (cargo-crap)
+    permissions:
+      contents: read # For checking the code in the repository.
+      security-events: write # For uploading SARIF to GitHub Code Scanning.
+    runs-on: ubuntu-latest
+    concurrency:
+      group: self-score-${{ github.ref }}
+      cancel-in-progress: false
+    if: ${{ github.repository_owner == 'BartoszCiesla' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        with:
+          components: llvm-tools-preview
+      - name: Install cargo tools
+        uses: taiki-e/install-action@4684b8405694ae9dd42c9f39ba901a70ae83f4a3 # v2.82.9
+        with:
+          tool: cargo-llvm-cov, cargo-crap
+      - name: Generate coverage
+        run: cargo llvm-cov --lcov --output-path lcov.info
+      - name: Generate cargo-crap SARIF report
+        run: cargo crap --lcov lcov.info --format sarif --output crap.sarif
+      - name: Upload SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@b7351df727350dca84cb9d725d57dcf5bc82ba26 # v3.37.1
+        with:
+          sarif_file: crap.sarif
+          category: cargo-crap
