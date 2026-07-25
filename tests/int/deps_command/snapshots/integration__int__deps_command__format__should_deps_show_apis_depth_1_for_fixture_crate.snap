@@ -17,6 +17,7 @@ advanced_globs -> dir_module [greet]
 advanced_globs -> file_module [greet]
 advanced_globs -> visibility [greet]
 app -> advanced_globs
+app -> app_only [helper_only]
 app -> dir_module [greet]
 app -> file_module [greet]
 app -> glob_patterns [demonstrate_glob_utilities, demonstrate_nested_glob, renamed_special]

@@ -12,6 +12,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+crate::app_only::helper_only
 modules::advanced_globs::AliasedStruct
 modules::advanced_globs::MultiImpl
 modules::advanced_globs::aliased_module

@@ -97,6 +97,7 @@ exit_code: 0
 [lib]              visibility::restricted_mod
 [bin:modules]      main
 [bin:modules-cli]  app
+[bin:modules-cli]  app_only
 [test:helpers]     helpers
 [test:integration] helpers
 [test:integration] integration

@@ -38,8 +38,9 @@ advanced_globs::layer1::layer2 (1)
 advanced_globs::prelude (1)
   -> advanced_globs [Consumer, MultiImpl, Provider, Transformer, deep_function, layer1_function, layer2_function]
 
-app (23)
+app (24)
   -> advanced_globs
+  -> app_only [helper_only]
   -> dir_module [greet]
   -> dir_module::child_dir [greet]
   -> dir_module::child_file [greet]

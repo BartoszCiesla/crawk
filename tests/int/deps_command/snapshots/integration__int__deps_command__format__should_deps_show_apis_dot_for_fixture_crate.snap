@@ -33,6 +33,7 @@ digraph dependencies {
     "advanced_globs::unix_specific";
     "advanced_globs::windows_specific";
     "app";
+    "app_only";
     "baz";
     "custom_path";
     "dir_module";
@@ -118,6 +119,7 @@ digraph dependencies {
     "advanced_globs::layer1::layer2" -> "advanced_globs::layer1::layer2::layer3";
     "advanced_globs::prelude" -> "advanced_globs" [label="Consumer, MultiImpl, Provider, Transformer, deep_function, layer1_function, layer2_function", fontcolor="#c96a00"];
     "app" -> "advanced_globs";
+    "app" -> "app_only" [label="helper_only", fontcolor="#c96a00"];
     "app" -> "dir_module" [label="greet", fontcolor="#c96a00"];
     "app" -> "dir_module::child_dir" [label="greet", fontcolor="#c96a00"];
     "app" -> "dir_module::child_file" [label="greet", fontcolor="#c96a00"];

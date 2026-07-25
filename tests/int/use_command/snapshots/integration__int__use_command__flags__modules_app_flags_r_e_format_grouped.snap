@@ -16,6 +16,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 app
+ - crate::app_only::helper_only
  - modules::advanced_globs::*
  - modules::dir_module
  - modules::dir_module::child_dir::greet
@@ -51,5 +52,6 @@ app
  - modules::reexports::*
  - modules::visibility
  - modules::visibility::pub_mod::greet
+app_only
 
 ----- stderr -----

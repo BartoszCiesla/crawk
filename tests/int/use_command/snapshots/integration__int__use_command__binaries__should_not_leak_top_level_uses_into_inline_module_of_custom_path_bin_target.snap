@@ -6,14 +6,10 @@ info:
     - "-p"
     - fixtures/modules
     - use
-    - app
-    - "-d"
-    - "1"
+    - "app::app_only"
 ---
 success: true
 exit_code: 0
 ----- stdout -----
-crate::app_only
-modules
 
 ----- stderr -----

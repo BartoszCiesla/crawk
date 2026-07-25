@@ -16,6 +16,7 @@ advanced_globs -> dir_module
 advanced_globs -> file_module
 advanced_globs -> visibility
 app -> advanced_globs
+app -> app_only
 app -> dir_module
 app -> file_module
 app -> glob_patterns

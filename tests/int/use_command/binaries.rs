@@ -32,3 +32,15 @@ fn should_modules_use_handle_binaries(module: &str, flags: &[&str]) {
         crawk_modules().arg("use").arg(module).args(flags)
     );
 }
+
+// ============================================================================
+// Regression: non-standard-path bin target root
+// ============================================================================
+
+/// `app.rs` (bin target `modules-cli`) is not named `main.rs`/`lib.rs`. An
+/// inline submodule scoped to it must not leak the file's top-level `use`
+/// statements — it has none of its own, so output must be empty.
+#[test]
+fn should_not_leak_top_level_uses_into_inline_module_of_custom_path_bin_target() {
+    assert_cmd_snapshot!(crawk_modules().arg("use").arg("app::app_only"));
+}

@@ -744,11 +744,9 @@ impl Analyzer {
             return String::new();
         }
 
-        // First check if this file is the crate root (lib.rs or main.rs in src/)
-        let is_crate_root = source_file.to_string_lossy().ends_with("src/lib.rs")
-            || source_file.to_string_lossy().ends_with("src/main.rs");
-
-        if is_crate_root {
+        // First check if this file is a compilation target's own entry point
+        // (library root, binary root, or integration-test root).
+        if self.crate_info.is_target_entry_point(source_file) {
             trace!(
                 "Source file is crate root, returning empty string for module '{}'",
                 module_path

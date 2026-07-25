@@ -39,7 +39,7 @@ pub fn sibling_greet() -> &'static str {
 
 // File-based `mod` declared inside an inline module. Its real file lives at
 // `inline_modules/outer/file_child.rs` (nested under the inline module's own
-// name), not `inline_modules/file_child.rs` (regression test for CORR-01).
+// name), not `inline_modules/file_child.rs`.
 pub mod outer {
     pub mod file_child;
 

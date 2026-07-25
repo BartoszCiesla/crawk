@@ -13,6 +13,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+crate::app_only::helper_only
 modules::advanced_globs::*
 modules::dir_module
 modules::file_module

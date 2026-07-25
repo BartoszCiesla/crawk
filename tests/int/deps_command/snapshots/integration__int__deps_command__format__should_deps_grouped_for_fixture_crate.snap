@@ -37,8 +37,9 @@ advanced_globs::layer1::layer2 (1)
 advanced_globs::prelude (1)
   -> advanced_globs
 
-app (23)
+app (24)
   -> advanced_globs
+  -> app_only
   -> dir_module
   -> dir_module::child_dir
   -> dir_module::child_file

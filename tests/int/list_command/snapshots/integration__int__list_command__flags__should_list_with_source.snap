@@ -96,5 +96,6 @@ exit_code: 0
 [lib]             visibility::restricted_mod              src/visibility/mod.rs
 [bin:modules]     main                                    src/main.rs
 [bin:modules-cli] app                                     src/app.rs
+[bin:modules-cli] app_only                                src/app.rs
 
 ----- stderr -----

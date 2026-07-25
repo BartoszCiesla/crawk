@@ -348,6 +348,18 @@ impl CrateInfo {
         result
     }
 
+    /// Returns `true` if `file_path` is a compilation target's own entry-point
+    /// source file (library root, binary root, or integration-test root), as
+    /// reported by `cargo_metadata` — not inferred from a hardcoded filename.
+    pub(crate) fn is_target_entry_point(&self, file_path: &Path) -> bool {
+        self.root_package().is_some_and(|package| {
+            package
+                .targets
+                .iter()
+                .any(|target| target.src_path.as_std_path() == file_path)
+        })
+    }
+
     /// Returns the root package from cargo metadata.
     fn root_package(&self) -> Option<&cargo_metadata::Package> {
         self.metadata

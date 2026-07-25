@@ -98,6 +98,7 @@ exit_code: 0
 [lib]              visibility::restricted_mod              pub(in crate::visibility)
 [bin:modules]      main                                    pub
 [bin:modules-cli]  app                                     pub
+[bin:modules-cli]  app_only                                
 [test:helpers]     helpers                                 pub
 [test:integration] helpers                                 
 [test:integration] integration                             pub

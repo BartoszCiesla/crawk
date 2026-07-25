@@ -17,6 +17,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 app
+ - crate::app_only::helper_only
  - modules::advanced_globs::AliasedStruct
  - modules::advanced_globs::MultiImpl
  - modules::advanced_globs::aliased_module
@@ -139,5 +140,6 @@ app
  - modules::reexports::secret_data
  - modules::visibility
  - modules::visibility::pub_mod::greet
+app_only
 
 ----- stderr -----

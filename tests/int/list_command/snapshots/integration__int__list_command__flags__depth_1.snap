@@ -33,5 +33,6 @@ exit_code: 0
 [lib]             visibility
 [bin:modules]     main
 [bin:modules-cli] app
+[bin:modules-cli] app_only
 
 ----- stderr -----

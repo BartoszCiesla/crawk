@@ -37,7 +37,20 @@ use modules::advanced_globs::*;
 // Comprehensive glob showcase
 use modules::glob_showcase::*;
 
+// Inline module scoped to this non-standard-path bin target: a bin-target
+// root file not named main.rs/lib.rs must still be recognised as its own
+// entry point, so an inline submodule here doesn't leak this file's
+// top-level `use` statements.
+mod app_only {
+    pub fn helper_only() -> &'static str {
+        "app_only"
+    }
+}
+
 fn main() {
+    // Bin-target-scoped inline module
+    println!("{}", app_only::helper_only());
+
     // File-based module
     println!("{}", file_module::greet());
 

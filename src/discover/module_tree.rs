@@ -881,11 +881,8 @@ impl CrateInfo {
             }
         }
 
-        // Check if the file is crate root
-        let is_crate_root = file_path.to_string_lossy().ends_with("src/lib.rs")
-            || file_path.to_string_lossy().ends_with("src/main.rs");
-
-        if is_crate_root {
+        // Check if the file is a compilation target's own entry point.
+        if self.is_target_entry_point(file_path) {
             // The entire module path is inline scope within crate root
             return segments.iter().map(ToString::to_string).collect();
         }
