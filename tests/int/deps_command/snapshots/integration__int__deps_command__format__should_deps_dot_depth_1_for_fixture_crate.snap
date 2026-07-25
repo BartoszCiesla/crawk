@@ -23,8 +23,10 @@ digraph dependencies {
     "app";
     "app_only";
     "baz";
+    "crate_root_reexport";
     "custom_path";
     "dir_module";
+    "empty_module";
     "file_module";
     "foo";
     "glob_patterns";
@@ -32,6 +34,7 @@ digraph dependencies {
     "group_patterns";
     "inline_modules";
     "item_visibility";
+    "lib";
     "main";
     "mixed";
     "nesting";
@@ -56,7 +59,9 @@ digraph dependencies {
     "app" -> "reexports";
     "app" -> "visibility";
     "baz" -> "foo";
+    "crate_root_reexport" -> "lib";
     "custom_path" -> "item_visibility";
+    "custom_path" -> "lib";
     "dir_module" -> "file_module";
     "dir_module" -> "inline_modules";
     "file_module" -> "nesting";
@@ -71,6 +76,7 @@ digraph dependencies {
     "inline_modules" -> "file_module";
     "inline_modules" -> "no_pub_items";
     "item_visibility" -> "reexports";
+    "lib" -> "empty_module";
     "main" -> "advanced_globs";
     "main" -> "dir_module";
     "main" -> "file_module";

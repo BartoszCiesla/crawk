@@ -67,8 +67,12 @@ app (24)
 baz (1)
   -> foo::bar
 
-custom_path (1)
+crate_root_reexport (1)
+  -> lib [Standalone]
+
+custom_path (2)
   -> item_visibility [PUB_CONST]
+  -> lib [aliased]
 
 dir_module (1)
   -> inline_modules::nested::deep [value]
@@ -167,6 +171,9 @@ inline_modules::outer::file_child (1)
 
 item_visibility (1)
   -> reexports [Foo]
+
+lib (1)
+  -> empty_module [Standalone]
 
 main (23)
   -> advanced_globs

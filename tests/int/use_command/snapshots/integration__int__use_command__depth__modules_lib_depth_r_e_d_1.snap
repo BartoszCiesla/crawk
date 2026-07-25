@@ -15,10 +15,12 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+crate::Standalone
 crate::advanced_globs
 crate::aliased
 crate::custom_path
 crate::dir_module
+crate::empty_module
 crate::file_module
 crate::file_module::*
 crate::file_module::{*}

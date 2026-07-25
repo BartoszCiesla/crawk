@@ -18,6 +18,7 @@ crate::advanced_globs::prelude::*
 crate::dir_module::child_dir::greet
 crate::dir_module::child_file::greet
 crate::dir_module::greet
+crate::empty_module::Standalone
 crate::file_module::greet
 crate::glob_patterns::*
 crate::glob_patterns::demonstrate_glob_utilities

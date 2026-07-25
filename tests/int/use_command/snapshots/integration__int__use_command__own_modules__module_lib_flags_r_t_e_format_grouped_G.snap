@@ -94,7 +94,7 @@ discover::module_tree::tests
 error
  - crate::discover::CrateInfoError
 graph
- - crate::AnalysisError::ModuleNotFound
+ - crate::error::AnalysisError::ModuleNotFound
  - crate::error::Result
  - crate::graph::cycles::Cycle
  - crate::graph::cycles::detect_cycles

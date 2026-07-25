@@ -53,7 +53,9 @@ app -> reexports
 app -> visibility
 app -> visibility::pub_mod [greet]
 baz -> foo::bar
+crate_root_reexport -> lib [Standalone]
 custom_path -> item_visibility [PUB_CONST]
+custom_path -> lib [aliased]
 dir_module -> inline_modules::nested::deep [value]
 dir_module::child_dir -> file_module [greet]
 dir_module::child_file -> dir_module [greet]
@@ -112,6 +114,7 @@ inline_modules::nested::deep -> dir_module [greet]
 inline_modules::outer -> inline_modules::outer::file_child [greet]
 inline_modules::outer::file_child -> no_pub_items [exercise_private]
 item_visibility -> reexports [Foo]
+lib -> empty_module [Standalone]
 main -> advanced_globs
 main -> dir_module [greet]
 main -> dir_module::child_dir [greet]

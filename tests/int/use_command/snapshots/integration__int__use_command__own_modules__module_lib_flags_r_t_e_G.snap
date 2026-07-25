@@ -13,7 +13,6 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::AnalysisError::ModuleNotFound
 crate::analyzer::Analyzer
 crate::analyzer::expand_groups
 crate::cache::ParseCache
@@ -33,6 +32,7 @@ crate::discover::Result
 crate::discover::TargetInfo
 crate::discover::TargetKind
 crate::error::AnalysisError
+crate::error::AnalysisError::ModuleNotFound
 crate::error::Result
 crate::graph
 crate::graph::AnnotatedEdges

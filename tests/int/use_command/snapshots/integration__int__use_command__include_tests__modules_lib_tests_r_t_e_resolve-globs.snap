@@ -16,6 +16,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::*
+crate::Standalone
 crate::advanced_globs::AliasedStruct
 crate::advanced_globs::Consumer
 crate::advanced_globs::MultiImpl
@@ -79,6 +80,7 @@ crate::dir_module::child_dir::greet
 crate::dir_module::child_file
 crate::dir_module::child_file::greet
 crate::dir_module::greet
+crate::empty_module::Standalone
 crate::file_module
 crate::file_module::greet
 crate::file_module::nesting_depth

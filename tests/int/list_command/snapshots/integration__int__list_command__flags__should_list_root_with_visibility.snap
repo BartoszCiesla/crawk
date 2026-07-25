@@ -27,6 +27,7 @@ advanced_globs::trait_providers         pub
 advanced_globs::unix_specific           pub
 advanced_globs::windows_specific        pub
 baz                                     pub
+crate_root_reexport                     pub
 custom_path                             pub
 dir_module                              pub
 dir_module::child_dir                   pub

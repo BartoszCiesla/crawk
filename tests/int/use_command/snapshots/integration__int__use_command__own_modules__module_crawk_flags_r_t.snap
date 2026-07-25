@@ -11,7 +11,6 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::AnalysisError::ModuleNotFound
 crate::analyzer::*
 crate::analyzer::Analyzer
 crate::analyzer::expand_groups
@@ -28,6 +27,7 @@ crate::discover::{CrateInfo, CrateInfoError, ModuleInfo, ModuleVisibility, Resul
 crate::discover::{CrateInfo, ModuleInfo, TargetInfo, TargetKind}
 crate::discover::{ModuleInfo, ModuleVisibility, TargetInfo, TargetKind}
 crate::error::AnalysisError
+crate::error::AnalysisError::ModuleNotFound
 crate::error::Result
 crate::error::{AnalysisError, Result}
 crate::graph::*

@@ -27,6 +27,7 @@ exit_code: 0
 [lib]             advanced_globs::unix_specific           pub                        src/advanced_globs.rs
 [lib]             advanced_globs::windows_specific        pub                        src/advanced_globs.rs
 [lib]             baz                                     pub                        src/baz.rs
+[lib]             crate_root_reexport                     pub                        src/crate_root_reexport.rs
 [lib]             custom_path                             pub                        src/custom_path.rs
 [lib]             dir_module                              pub                        src/dir_module/mod.rs
 [lib]             dir_module::child_dir                   pub                        src/dir_module/child_dir/mod.rs

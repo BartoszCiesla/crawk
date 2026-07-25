@@ -35,10 +35,12 @@ digraph dependencies {
     "app";
     "app_only";
     "baz";
+    "crate_root_reexport";
     "custom_path";
     "dir_module";
     "dir_module::child_dir";
     "dir_module::child_file";
+    "empty_module";
     "file_module";
     "foo";
     "foo::bar";
@@ -80,6 +82,7 @@ digraph dependencies {
     "inline_modules::outer::file_child";
     "inline_modules::private_inline";
     "item_visibility";
+    "lib";
     "main";
     "mixed";
     "mixed::file_child";
@@ -143,7 +146,9 @@ digraph dependencies {
     "app" -> "visibility";
     "app" -> "visibility::pub_mod" [label="greet", fontcolor="#c96a00"];
     "baz" -> "foo::bar";
+    "crate_root_reexport" -> "lib" [label="Standalone", fontcolor="#c96a00"];
     "custom_path" -> "item_visibility" [label="PUB_CONST", fontcolor="#c96a00"];
+    "custom_path" -> "lib" [label="aliased", fontcolor="#c96a00"];
     "dir_module" -> "inline_modules::nested::deep" [label="value", fontcolor="#c96a00"];
     "dir_module::child_dir" -> "file_module" [label="greet", fontcolor="#c96a00"];
     "dir_module::child_file" -> "dir_module" [label="greet", fontcolor="#c96a00"];
@@ -202,6 +207,7 @@ digraph dependencies {
     "inline_modules::outer" -> "inline_modules::outer::file_child" [label="greet", fontcolor="#c96a00"];
     "inline_modules::outer::file_child" -> "no_pub_items" [label="exercise_private", fontcolor="#c96a00"];
     "item_visibility" -> "reexports" [label="Foo", fontcolor="#c96a00"];
+    "lib" -> "empty_module" [label="Standalone", fontcolor="#c96a00"];
     "main" -> "advanced_globs";
     "main" -> "dir_module" [label="greet", fontcolor="#c96a00"];
     "main" -> "dir_module::child_dir" [label="greet", fontcolor="#c96a00"];

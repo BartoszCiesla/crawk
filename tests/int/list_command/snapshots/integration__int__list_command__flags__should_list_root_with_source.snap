@@ -27,6 +27,7 @@ advanced_globs::trait_providers         src/advanced_globs.rs
 advanced_globs::unix_specific           src/advanced_globs.rs
 advanced_globs::windows_specific        src/advanced_globs.rs
 baz                                     src/baz.rs
+crate_root_reexport                     src/crate_root_reexport.rs
 custom_path                             src/custom_path.rs
 dir_module                              src/dir_module/mod.rs
 dir_module::child_dir                   src/dir_module/child_dir/mod.rs

@@ -56,6 +56,17 @@ pub mod group_patterns;
 pub mod foo;
 pub mod baz;
 
+// Crate-root re-export: `Standalone` becomes reachable as `crate::Standalone`
+// with no module of its own on the path. Regression fixture for intra-target
+// `crate::` refs into a re-export like this — they must still produce a
+// dependency edge, not be silently dropped.
+pub use empty_module::Standalone;
+
+// References `crate::Standalone` (the re-export above) with no other path
+// segment between `crate::` and the item — this is the shape that was
+// silently dropped from `deps`/`check`.
+pub mod crate_root_reexport;
+
 #[cfg(test)]
 mod tests {
     use super::*;

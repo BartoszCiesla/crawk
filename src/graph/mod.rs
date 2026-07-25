@@ -215,12 +215,12 @@ impl DependencyGraph {
         target: &str,
     ) -> crate::error::Result<ShortestPaths> {
         if !self.modules.contains(source) {
-            return Err(crate::AnalysisError::ModuleNotFound {
+            return Err(crate::error::AnalysisError::ModuleNotFound {
                 module_path: source.to_owned(),
             });
         }
         if !self.modules.contains(target) {
-            return Err(crate::AnalysisError::ModuleNotFound {
+            return Err(crate::error::AnalysisError::ModuleNotFound {
                 module_path: target.to_owned(),
             });
         }

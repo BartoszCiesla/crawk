@@ -15,6 +15,7 @@ exit_code: 0
 ----- stdout -----
 advanced_globs
 baz
+crate_root_reexport
 custom_path
 dir_module
 empty_module

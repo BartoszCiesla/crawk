@@ -62,8 +62,11 @@ pub(crate) fn find_module_target<'a>(
 /// - `crate::` prefixed — intra-target references resolved via `known_modules`
 /// - `<package>::` prefixed — cross-target references from a binary/test to the
 ///   lib target; the package-name prefix is stripped and the rest is resolved
-///   against `known_modules`, falling back to `"lib"` when no specific module
-///   matches (e.g. `crawk::Analyzer` re-exported at crate root → `"lib"`)
+///   against `known_modules`
+///
+/// Both kinds fall back to `"lib"` when no specific module matches (e.g.
+/// `crate::Analyzer`/`crawk::Analyzer` re-exported at crate root → `"lib"`),
+/// so a re-export never silently drops the edge.
 ///
 /// The target is resolved by finding the longest segment prefix present in
 /// `known_modules`, stripping trailing item names (types, functions, …) so that
@@ -128,9 +131,14 @@ pub(crate) fn build_edges(
             // Resolve the reference to (module_path, api_segments) where
             // api_segments are the trailing segments after the module path.
             let resolved: Option<(&str, &[String])> = match reference.prefix() {
-                // Intra-target: crate:: references resolved directly.
-                PathPrefix::Crate => find_module_target(segments, known_modules)
-                    .map(|m| (m, &segments[m.split("::").count()..])),
+                // Intra-target: crate:: references resolved directly, falling
+                // back to "lib" for crate-root re-exports (no module in the
+                // path matches, e.g. `crate::Widget` re-exported in lib.rs).
+                PathPrefix::Crate => Some(
+                    find_module_target(segments, known_modules).map_or(("lib", segments), |m| {
+                        (m, &segments[m.split("::").count()..])
+                    }),
+                ),
 
                 // Cross-target: <package>::Foo references from binaries/tests to lib.
                 PathPrefix::None => {

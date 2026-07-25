@@ -14,7 +14,7 @@ exit_code: 0
 advanced_globs::prelude
 app
 baz
-empty_module
+crate_root_reexport
 foo
 foo::other
 glob_showcase::config
@@ -23,7 +23,6 @@ glob_showcase::utils
 group_patterns
 inline_modules::nested
 inline_modules::outer
-lib
 main
 uses_empty_glob
 

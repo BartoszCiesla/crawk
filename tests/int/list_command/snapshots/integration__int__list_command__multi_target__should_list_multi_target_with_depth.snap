@@ -15,6 +15,7 @@ exit_code: 0
 ----- stdout -----
 [lib]              advanced_globs
 [lib]              baz
+[lib]              crate_root_reexport
 [lib]              custom_path
 [lib]              dir_module
 [lib]              empty_module

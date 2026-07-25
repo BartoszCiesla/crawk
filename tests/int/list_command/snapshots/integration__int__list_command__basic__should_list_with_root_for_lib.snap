@@ -26,6 +26,7 @@ advanced_globs::trait_providers
 advanced_globs::unix_specific
 advanced_globs::windows_specific
 baz
+crate_root_reexport
 custom_path
 dir_module
 dir_module::child_dir

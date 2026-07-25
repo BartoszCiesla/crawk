@@ -16,6 +16,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 lib
+ - crate::empty_module::Standalone
 advanced_globs
  - crate::advanced_globs::aliased_module::OriginalStruct
  - crate::advanced_globs::aliased_module::original_name
@@ -58,6 +59,8 @@ advanced_globs::unix_specific
 advanced_globs::windows_specific
 baz
  - crate::foo::bar::*
+crate_root_reexport
+ - crate::Standalone
 custom_path
  - crate::aliased
  - crate::item_visibility::PUB_CONST

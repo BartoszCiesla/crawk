@@ -29,7 +29,9 @@ app -> nesting [deepest, depth]
 app -> reexports
 app -> visibility [greet]
 baz -> foo
+crate_root_reexport -> lib [Standalone]
 custom_path -> item_visibility [PUB_CONST]
+custom_path -> lib [aliased]
 dir_module -> file_module [greet]
 dir_module -> inline_modules [value]
 file_module -> nesting [depth]
@@ -44,6 +46,7 @@ inline_modules -> dir_module [greet]
 inline_modules -> file_module [greet]
 inline_modules -> no_pub_items [exercise_private]
 item_visibility -> reexports [Foo]
+lib -> empty_module [Standalone]
 main -> advanced_globs
 main -> dir_module [greet]
 main -> file_module [greet]

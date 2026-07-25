@@ -26,6 +26,7 @@ exit_code: 0
 [lib]             advanced_globs::unix_specific           pub
 [lib]             advanced_globs::windows_specific        pub
 [lib]             baz                                     pub
+[lib]             crate_root_reexport                     pub
 [lib]             custom_path                             pub
 [lib]             dir_module                              pub
 [lib]             dir_module::child_dir                   pub
