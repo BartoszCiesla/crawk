@@ -83,6 +83,7 @@ crate::nesting::depth
 crate::nesting::level1
 crate::no_pub_items
 crate::no_pub_items::*
+crate::no_pub_items::exercise_private
 crate::reexports::Foo
 crate::reexports::internal
 crate::reexports::types::*

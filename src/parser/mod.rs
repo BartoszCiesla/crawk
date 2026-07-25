@@ -97,6 +97,7 @@ impl CrateAnalyzer {
         path: &Path,
         inline_scope: &[String],
         children: HashSet<String>,
+        root_children: HashSet<String>,
         cache: &mut ParseCache,
     ) -> Result<Vec<TypeReference>> {
         let syntax: Rc<File> = cache.get_or_parse(path, |p| {
@@ -119,7 +120,7 @@ impl CrateAnalyzer {
 
         let module = module.into();
         let package_name = Some(self.crate_name.clone());
-        let mut visitor = ModuleVisitor::new(module.clone(), children, package_name);
+        let mut visitor = ModuleVisitor::new(module.clone(), children, root_children, package_name);
 
         if inline_scope.is_empty() {
             visitor.visit_file(&syntax);
@@ -238,7 +239,7 @@ mod tests {
 
     fn parse_use(code: &str) -> Vec<TypeReference> {
         let syntax: File = syn::parse_file(code).unwrap();
-        let mut visitor = ModuleVisitor::new("", HashSet::new(), None);
+        let mut visitor = ModuleVisitor::new("", HashSet::new(), HashSet::new(), None);
         visitor.visit_file(&syntax);
         visitor.references.all().cloned().collect()
     }
@@ -456,7 +457,7 @@ mod tests {
         // Test resolution of self:: in a nested module
         let code = "use self::submodule::Type;";
         let syntax: File = syn::parse_file(code).unwrap();
-        let mut visitor = ModuleVisitor::new("utils::parser", HashSet::new(), None);
+        let mut visitor = ModuleVisitor::new("utils::parser", HashSet::new(), HashSet::new(), None);
         visitor.visit_file(&syntax);
 
         let uses = &visitor.references.use_statements;
@@ -473,7 +474,7 @@ mod tests {
         // Test resolution of super:: in a nested module
         let code = "use super::sibling::Type;";
         let syntax: File = syn::parse_file(code).unwrap();
-        let mut visitor = ModuleVisitor::new("utils::parser", HashSet::new(), None);
+        let mut visitor = ModuleVisitor::new("utils::parser", HashSet::new(), HashSet::new(), None);
         visitor.visit_file(&syntax);
 
         let uses = &visitor.references.use_statements;
@@ -487,7 +488,7 @@ mod tests {
         // Test resolution of super::super:: in a deeply nested module
         let code = "use super::super::ancestor::Type;";
         let syntax: File = syn::parse_file(code).unwrap();
-        let mut visitor = ModuleVisitor::new("a::b::c", HashSet::new(), None);
+        let mut visitor = ModuleVisitor::new("a::b::c", HashSet::new(), HashSet::new(), None);
         visitor.visit_file(&syntax);
 
         let uses = &visitor.references.use_statements;
@@ -501,7 +502,7 @@ mod tests {
         // Test that resolution works with grouped imports
         let code = "use self::{foo, bar::Baz};";
         let syntax: File = syn::parse_file(code).unwrap();
-        let mut visitor = ModuleVisitor::new("utils", HashSet::new(), None);
+        let mut visitor = ModuleVisitor::new("utils", HashSet::new(), HashSet::new(), None);
         visitor.visit_file(&syntax);
 
         let uses = &visitor.references.use_statements;
@@ -515,7 +516,7 @@ mod tests {
         // Test that resolution works with glob imports
         let code = "use self::submodule::*;";
         let syntax: File = syn::parse_file(code).unwrap();
-        let mut visitor = ModuleVisitor::new("utils", HashSet::new(), None);
+        let mut visitor = ModuleVisitor::new("utils", HashSet::new(), HashSet::new(), None);
         visitor.visit_file(&syntax);
 
         let uses = &visitor.references.use_statements;
@@ -530,7 +531,7 @@ mod tests {
         // Test that resolution works with aliased imports
         let code = "use self::submodule::Type as MyType;";
         let syntax: File = syn::parse_file(code).unwrap();
-        let mut visitor = ModuleVisitor::new("utils", HashSet::new(), None);
+        let mut visitor = ModuleVisitor::new("utils", HashSet::new(), HashSet::new(), None);
         visitor.visit_file(&syntax);
 
         let uses = &visitor.references.use_statements;
@@ -552,7 +553,7 @@ mod tests {
             }
         ";
         let syntax: File = syn::parse_file(code).unwrap();
-        let mut visitor = ModuleVisitor::new("utils::parser", HashSet::new(), None);
+        let mut visitor = ModuleVisitor::new("utils::parser", HashSet::new(), HashSet::new(), None);
         visitor.visit_file(&syntax);
 
         assert!(visitor.references.value_refs.len() >= 2);
@@ -583,6 +584,7 @@ mod tests {
                 Path::new("/nonexistent/file.rs"),
                 &[],
                 HashSet::new(),
+                HashSet::new(),
                 &mut cache,
             )
             .unwrap_err();
@@ -596,7 +598,14 @@ mod tests {
         let mut analyzer = CrateAnalyzer::new("test");
         let mut cache = ParseCache::new();
         let err = analyzer
-            .parse_file("mod", f.path(), &[], HashSet::new(), &mut cache)
+            .parse_file(
+                "mod",
+                f.path(),
+                &[],
+                HashSet::new(),
+                HashSet::new(),
+                &mut cache,
+            )
             .unwrap_err();
         assert!(matches!(err, AnalyzerError::Parse { .. }));
     }

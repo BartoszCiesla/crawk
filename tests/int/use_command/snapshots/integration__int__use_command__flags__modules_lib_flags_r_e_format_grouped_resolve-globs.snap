@@ -80,6 +80,7 @@ dir_module::child_file
 empty_module
 file_module
  - crate::nesting
+ - crate::nesting::depth
 foo
  - crate::foo::bar::public_fn
 foo::bar
@@ -245,6 +246,7 @@ inline_modules
  - crate::inline_modules::private_inline::_secret
 inline_modules::inner
  - crate::file_module
+ - crate::file_module::greet
 inline_modules::nested
 inline_modules::nested::deep
  - crate::dir_module::greet
@@ -252,6 +254,7 @@ inline_modules::outer
  - crate::inline_modules::outer::file_child::greet
 inline_modules::outer::file_child
  - crate::no_pub_items
+ - crate::no_pub_items::exercise_private
 inline_modules::private_inline
 item_visibility
  - crate::reexports::Foo
@@ -263,6 +266,7 @@ mixed::inline_child
  - crate::mixed::file_child::greet
 nesting
  - crate::inline_modules
+ - crate::inline_modules::nested::deep::value
 nesting::level1
  - crate::nesting::depth
 nesting::level1::level2
@@ -274,7 +278,9 @@ nesting::level1::level2::level3
 no_pub_items
 reexports
  - crate::file_module
+ - crate::file_module::greet
  - crate::nesting
+ - crate::nesting::depth
  - crate::reexports::internal::Baz
  - crate::reexports::internal::Foo
  - crate::reexports::internal::INTERNAL_CONST_A
@@ -301,6 +307,7 @@ reexports::internal
  - crate::item_visibility::PUB_STATIC
 reexports::types
  - crate::visibility
+ - crate::visibility::pub_mod::greet
 uses_empty_glob
  - crate::no_pub_items::exercise_private
 visibility
@@ -331,9 +338,11 @@ visibility::pub_crate_mod
  - crate::visibility::pub_mod::greet
 visibility::pub_mod
  - crate::file_module
+ - crate::file_module::greet
 visibility::pub_super_mod
  - crate::dir_module::greet
 visibility::restricted_mod
  - crate::nesting
+ - crate::nesting::depth
 
 ----- stderr -----

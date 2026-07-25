@@ -13,7 +13,9 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::file_module
+crate::file_module::greet
 crate::nesting
+crate::nesting::depth
 crate::reexports::internal::Foo
 crate::reexports::internal::Foo as Bar
 crate::reexports::internal::Secret

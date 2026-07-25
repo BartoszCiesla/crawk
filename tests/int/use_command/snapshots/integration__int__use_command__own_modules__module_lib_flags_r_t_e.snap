@@ -44,6 +44,7 @@ crate::graph::DependencyGraph
 crate::graph::DependencyGraphOptions
 crate::graph::Edge
 crate::graph::ShortestPaths
+crate::graph::build_edges
 crate::graph::cycles::*
 crate::graph::cycles::Cycle
 crate::graph::cycles::detect_cycles
@@ -54,11 +55,13 @@ crate::graph::edges::Edge
 crate::graph::edges::build_edges
 crate::graph::edges::find_module_target
 crate::graph::edges::truncate_module_path
+crate::graph::find_module_target
 crate::graph::orphans::*
 crate::graph::orphans::find_orphans
 crate::graph::paths::*
 crate::graph::paths::ShortestPaths
 crate::graph::paths::compute_shortest_paths
+crate::graph::truncate_module_path
 crate::model::*
 crate::model::AnalysisOptions
 crate::model::AnalysisResult
@@ -93,9 +96,12 @@ crate::rules::ViolationKind
 crate::rules::ViolationKind::Deny
 crate::rules::ViolationKind::Layer
 crate::rules::eval::evaluate
+crate::rules::evaluate
 crate::rules::load::*
 crate::rules::load::resolve_config_path
 crate::rules::load::scaffold_config
+crate::rules::resolve_config_path
+crate::rules::scaffold_config
 crate::utils::*
 crate::utils::MAX_FILE_BYTES
 crate::utils::ReadFileError

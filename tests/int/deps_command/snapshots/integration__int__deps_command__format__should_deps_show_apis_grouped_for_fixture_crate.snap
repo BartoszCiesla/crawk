@@ -79,7 +79,7 @@ dir_module::child_file (1)
   -> dir_module [greet]
 
 file_module (1)
-  -> nesting
+  -> nesting [depth]
 
 foo (1)
   -> foo::bar [public_fn]
@@ -153,7 +153,7 @@ inline_modules (2)
   -> inline_modules::private_inline [_secret]
 
 inline_modules::inner (1)
-  -> file_module
+  -> file_module [greet]
 
 inline_modules::nested::deep (1)
   -> dir_module [greet]
@@ -162,7 +162,7 @@ inline_modules::outer (1)
   -> inline_modules::outer::file_child [greet]
 
 inline_modules::outer::file_child (1)
-  -> no_pub_items
+  -> no_pub_items [exercise_private]
 
 item_visibility (1)
   -> reexports [Foo]
@@ -199,8 +199,9 @@ mixed::file_child (2)
 mixed::inline_child (1)
   -> mixed::file_child [greet]
 
-nesting (1)
+nesting (2)
   -> inline_modules
+  -> inline_modules::nested::deep [value]
 
 nesting::level1 (1)
   -> nesting [depth]
@@ -214,16 +215,17 @@ nesting::level1::level2::level3 (3)
   -> nesting::level1::level2 [depth]
 
 reexports (4)
-  -> file_module
-  -> nesting
+  -> file_module [greet]
+  -> nesting [depth]
   -> reexports::internal [Baz, Foo, INTERNAL_CONST_A, INTERNAL_CONST_B, InternalEnum, InternalTrait, Qux, Secret, internal_helper_1, internal_helper_2]
   -> reexports::types
 
 reexports::internal (1)
   -> item_visibility [PUB_STATIC]
 
-reexports::types (1)
+reexports::types (2)
   -> visibility
+  -> visibility::pub_mod [greet]
 
 uses_empty_glob (1)
   -> no_pub_items
@@ -246,12 +248,12 @@ visibility::pub_crate_mod (1)
   -> visibility::pub_mod [greet]
 
 visibility::pub_mod (1)
-  -> file_module
+  -> file_module [greet]
 
 visibility::pub_super_mod (1)
   -> dir_module [greet]
 
 visibility::restricted_mod (1)
-  -> nesting
+  -> nesting [depth]
 
 ----- stderr -----

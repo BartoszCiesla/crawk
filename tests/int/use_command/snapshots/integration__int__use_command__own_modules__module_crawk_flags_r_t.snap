@@ -33,6 +33,8 @@ crate::error::{AnalysisError, Result}
 crate::graph::*
 crate::graph::DependencyGraph
 crate::graph::DependencyGraphOptions
+crate::graph::Edge
+crate::graph::build_edges
 crate::graph::cycles::*
 crate::graph::cycles::Cycle
 crate::graph::cycles::detect_cycles
@@ -43,11 +45,13 @@ crate::graph::edges::build_edges
 crate::graph::edges::find_module_target
 crate::graph::edges::truncate_module_path
 crate::graph::edges::{AnnotatedEdges, Edge}
+crate::graph::find_module_target
 crate::graph::orphans::*
 crate::graph::orphans::find_orphans
 crate::graph::paths::*
 crate::graph::paths::ShortestPaths
 crate::graph::paths::compute_shortest_paths
+crate::graph::truncate_module_path
 crate::graph::{AnnotatedEdges, Cycle, DependencyGraph, DependencyGraphOptions, Edge, ShortestPaths}
 crate::graph::{self, DependencyGraph, DependencyGraphOptions}
 crate::model::*
@@ -77,8 +81,11 @@ crate::resolve::resolve_glob
 crate::rules::ViolationKind::Deny
 crate::rules::ViolationKind::Layer
 crate::rules::eval::evaluate
+crate::rules::evaluate
 crate::rules::load::*
 crate::rules::load::{resolve_config_path, scaffold_config}
+crate::rules::resolve_config_path
+crate::rules::scaffold_config
 crate::rules::{CheckOptions, CheckReport, Violation, ViolationKind}
 crate::rules::{CheckReport, LayerPos, RuleSet, Violation, ViolationKind}
 crate::rules::{DenyRule, LayerRule, ModulePattern, RuleSet, ViolationKind}

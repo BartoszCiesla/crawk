@@ -132,6 +132,15 @@ pub(super) struct ModuleVisitor {
     /// in expressions, types, patterns, and macro invocations.
     children: HashSet<String>,
 
+    /// Crate-root top-level module names, for edition-2015-style bare sibling
+    /// resolution (e.g. `inline_modules::inner::greet()` reached via `use super::*;`
+    /// inside `#[cfg(test)] mod tests`). Checked in addition to `children` everywhere
+    /// except macro invocation paths, where a bare single-segment name is a macro
+    /// name (e.g. `format!`), not a module reference — matching it against
+    /// `root_children` would misclassify `format!()` as a reference to a crate-root
+    /// module literally named `format`.
+    root_children: HashSet<String>,
+
     /// Collected type references found in this module, grouped by syntactic role.
     /// All relative paths are resolved to absolute paths before being added.
     pub(super) references: CollectedReferences,
@@ -168,6 +177,7 @@ impl ModuleVisitor {
     pub(super) fn new(
         module_name: impl Into<String>,
         children: HashSet<String>,
+        root_children: HashSet<String>,
         package_name: Option<String>,
     ) -> Self {
         let module_name = module_name.into();
@@ -181,6 +191,7 @@ impl ModuleVisitor {
             module_name,
             module_path,
             children,
+            root_children,
             references: CollectedReferences::new(),
             in_test_module: false,
             package_name,
@@ -190,20 +201,32 @@ impl ModuleVisitor {
 
     /// Checks if a syn::Path is an internal crate reference.
     /// Returns true if the path starts with `crate::`, `self::`, `super::`,
-    /// or a known child module name.
-    fn is_internal_path(&self, path: &syn::Path) -> bool {
+    /// a known child module name, or (when `include_root` is set) a crate-root
+    /// top-level module name qualifying a *multi-segment* path.
+    ///
+    /// The root-children check requires more than one segment because a bare
+    /// single-segment path is virtually always a local variable, parameter, or
+    /// field access (e.g. `cache` in `&mut cache`) rather than a genuine
+    /// reference to a same-named crate-root module — modules aren't values, so
+    /// a single segment can only name one legitimately.
+    fn is_internal_path(&self, path: &syn::Path, include_root: bool) -> bool {
         path.segments.first().is_some_and(|first_segment| {
             let ident = first_segment.ident.to_string();
             matches!(
                 ident.as_str(),
                 PATH_QUALIFIER_CRATE | PATH_QUALIFIER_SELF | PATH_QUALIFIER_SUPER
             ) || self.children.contains(&ident)
+                || (include_root && path.segments.len() > 1 && self.root_children.contains(&ident))
         })
     }
 
     /// Builds a TypeReference from a syn::Path if it's an internal crate reference.
-    fn build_reference(&self, path: &syn::Path) -> Option<TypeReference> {
-        if !self.is_internal_path(path) {
+    ///
+    /// `include_root` widens matching to crate-root top-level modules; pass `false`
+    /// for macro invocation paths, where a bare name is in the macro namespace, not
+    /// the module namespace (see [`Self::root_children`]).
+    fn build_reference(&self, path: &syn::Path, include_root: bool) -> Option<TypeReference> {
+        if !self.is_internal_path(path, include_root) {
             return None;
         }
 
@@ -258,8 +281,15 @@ impl ModuleVisitor {
     /// Used for paths extracted from opaque token streams (macro arguments, attribute
     /// values) where no `syn::Path` is available. Applies the same internal-path
     /// filtering and prefix resolution as [`Self::build_reference`].
+    ///
+    /// Requires at least two segments — mirrors [`Self::is_internal_path`]'s guard
+    /// against a bare single-segment name (e.g. a local variable `cache`) colliding
+    /// with a same-named crate-root module. The single current caller
+    /// (`extract_paths_from_tokens`) already enforces this before calling in, but
+    /// the guard is duplicated here so the function is self-defending for any
+    /// future caller.
     fn build_reference_from_segments(&self, segments: &[String]) -> Option<TypeReference> {
-        if segments.is_empty() {
+        if segments.len() < 2 {
             return None;
         }
 
@@ -267,7 +297,8 @@ impl ModuleVisitor {
         let is_internal = matches!(
             first.as_str(),
             PATH_QUALIFIER_CRATE | PATH_QUALIFIER_SELF | PATH_QUALIFIER_SUPER
-        ) || self.children.contains(first);
+        ) || self.children.contains(first)
+            || self.root_children.contains(first);
 
         if !is_internal {
             return None;
@@ -610,7 +641,7 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
     /// Visit expression paths - captures paths in expressions like `crate::foo::bar()`
     fn visit_expr_path(&mut self, node: &'ast syn::ExprPath) {
         if !self.in_test_module
-            && let Some(r) = self.build_reference(&node.path)
+            && let Some(r) = self.build_reference(&node.path, true)
         {
             self.references.value_refs.push(r);
         }
@@ -620,7 +651,7 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
     /// Visit struct expressions - captures struct literal construction
     fn visit_expr_struct(&mut self, node: &'ast syn::ExprStruct) {
         if !self.in_test_module
-            && let Some(r) = self.build_reference(&node.path)
+            && let Some(r) = self.build_reference(&node.path, true)
         {
             self.references.value_refs.push(r);
         }
@@ -632,7 +663,7 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
         if !self.in_test_module {
             // Check the trait being implemented (if any)
             if let Some((_, trait_path, _)) = &node.trait_
-                && let Some(r) = self.build_reference(trait_path)
+                && let Some(r) = self.build_reference(trait_path, true)
             {
                 self.references.type_refs.push(r);
             }
@@ -695,7 +726,7 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
     /// for internal crate paths (e.g. `info!("...", version::NAME)`).
     fn visit_macro(&mut self, node: &'ast syn::Macro) {
         if !self.in_test_module {
-            if let Some(r) = self.build_reference(&node.path) {
+            if let Some(r) = self.build_reference(&node.path, false) {
                 self.references.macro_calls.push(r);
             }
             self.extract_paths_from_tokens(&node.tokens);
@@ -706,7 +737,7 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
     /// Visit pattern structs - captures struct patterns in match arms
     fn visit_pat_struct(&mut self, node: &'ast syn::PatStruct) {
         if !self.in_test_module
-            && let Some(r) = self.build_reference(&node.path)
+            && let Some(r) = self.build_reference(&node.path, true)
         {
             self.references.value_refs.push(r);
         }
@@ -716,7 +747,7 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
     /// Visit pattern tuple structs - captures tuple struct patterns
     fn visit_pat_tuple_struct(&mut self, node: &'ast syn::PatTupleStruct) {
         if !self.in_test_module
-            && let Some(r) = self.build_reference(&node.path)
+            && let Some(r) = self.build_reference(&node.path, true)
         {
             self.references.value_refs.push(r);
         }
@@ -726,7 +757,7 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
     /// Visit trait bounds - captures trait bounds in generics
     fn visit_trait_bound(&mut self, node: &'ast syn::TraitBound) {
         if !self.in_test_module
-            && let Some(r) = self.build_reference(&node.path)
+            && let Some(r) = self.build_reference(&node.path, true)
         {
             self.references.type_refs.push(r);
         }
@@ -736,7 +767,7 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
     /// Visit type paths - captures type annotations like `let x: crate::Foo`
     fn visit_type_path(&mut self, node: &'ast syn::TypePath) {
         if !self.in_test_module {
-            if let Some(r) = self.build_reference(&node.path) {
+            if let Some(r) = self.build_reference(&node.path, true) {
                 self.references.type_refs.push(r);
             }
 
@@ -863,7 +894,12 @@ mod tests {
 
     fn visitor_with_children(children: &[&str]) -> ModuleVisitor {
         let children = children.iter().map(|s| (*s).to_owned()).collect();
-        ModuleVisitor::new("test_mod", children, None)
+        ModuleVisitor::new("test_mod", children, HashSet::new(), None)
+    }
+
+    fn visitor_with_root_children(root_children: &[&str]) -> ModuleVisitor {
+        let root_children = root_children.iter().map(|s| (*s).to_owned()).collect();
+        ModuleVisitor::new("test_mod", HashSet::new(), root_children, None)
     }
 
     fn tokens(code: &str) -> TokenStream {
@@ -905,6 +941,45 @@ mod tests {
         v.extract_paths_from_tokens(&tokens("version"));
 
         assert!(v.references.value_refs.is_empty());
+    }
+
+    // --- root_children collision guard tests ---
+
+    #[test]
+    fn test_build_reference_from_segments_rejects_single_segment_root_child() {
+        // Self-defense: even called directly (bypassing extract_paths_from_tokens's
+        // own segments.len() >= 2 guard), a lone name must not match root_children —
+        // guards against e.g. a bare local variable `cache` colliding with a
+        // crate-root module literally named `cache`.
+        let v = visitor_with_root_children(&["cache"]);
+        assert!(
+            v.build_reference_from_segments(&["cache".to_owned()])
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn test_build_reference_from_segments_accepts_multi_segment_root_child() {
+        // Regression guard: the fix must not break legitimate multi-segment matches.
+        let v = visitor_with_root_children(&["version"]);
+        let r = v.build_reference_from_segments(&["version".to_owned(), "NAME".to_owned()]);
+        assert_eq!(r.unwrap().to_path_string(), "version::NAME");
+    }
+
+    #[test]
+    fn test_is_internal_path_root_children_requires_multi_segment() {
+        let v = visitor_with_root_children(&["cache"]);
+        let path: syn::Path = syn::parse_str("cache").expect("valid path");
+        assert!(!v.is_internal_path(&path, true));
+    }
+
+    #[test]
+    fn test_is_internal_path_root_children_ignored_for_macros() {
+        // include_root=false is what build_reference(path, false) passes for
+        // macro invocation paths (format!(), etc.) — must not match even multi-segment.
+        let v = visitor_with_root_children(&["format"]);
+        let path: syn::Path = syn::parse_str("format::helper").expect("valid path");
+        assert!(!v.is_internal_path(&path, false));
     }
 
     #[test]
@@ -967,7 +1042,12 @@ mod tests {
     // --- Import-aware token resolution tests ---
 
     fn visitor_with_package(package: &str) -> ModuleVisitor {
-        ModuleVisitor::new("test_mod", HashSet::new(), Some(package.to_owned()))
+        ModuleVisitor::new(
+            "test_mod",
+            HashSet::new(),
+            HashSet::new(),
+            Some(package.to_owned()),
+        )
     }
 
     #[test]
@@ -1103,7 +1183,7 @@ mod tests {
             }
         "#;
         let syntax: syn::File = syn::parse_file(code).expect("parse");
-        let mut v = ModuleVisitor::new("test_mod", HashSet::new(), None);
+        let mut v = ModuleVisitor::new("test_mod", HashSet::new(), HashSet::new(), None);
         v.visit_file(&syntax);
 
         // Without package_name, version::NAME should not resolve

@@ -7,7 +7,7 @@ use test_case::test_matrix;
 // ============================================================================
 
 #[test_matrix(
-    ["lib", "inline_modules", "reexports", "glob_patterns",
+    ["lib", "tests", "inline_modules", "reexports", "glob_patterns",
      "advanced_globs", "glob_showcase"],
     [&["-t"],
      &["-t", "-e"],

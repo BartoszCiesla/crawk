@@ -226,6 +226,7 @@ digraph dependencies {
     "mixed::file_child" -> "mixed";
     "mixed::inline_child" -> "mixed::file_child";
     "nesting" -> "inline_modules";
+    "nesting" -> "inline_modules::nested::deep";
     "nesting::level1" -> "nesting";
     "nesting::level1::level2" -> "nesting";
     "nesting::level1::level2::level3" -> "nesting";
@@ -237,6 +238,7 @@ digraph dependencies {
     "reexports" -> "reexports::types";
     "reexports::internal" -> "item_visibility";
     "reexports::types" -> "visibility";
+    "reexports::types" -> "visibility::pub_mod";
     "uses_empty_glob" -> "no_pub_items";
     "visibility" -> "visibility::inner";
     "visibility" -> "visibility::private_mod";

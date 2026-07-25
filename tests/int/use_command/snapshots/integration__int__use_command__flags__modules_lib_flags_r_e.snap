@@ -116,6 +116,7 @@ crate::nesting::level1::level2::level3::depth
 crate::nesting::level1::level2::{*}
 crate::no_pub_items
 crate::no_pub_items::*
+crate::no_pub_items::exercise_private
 crate::reexports::Foo
 crate::reexports::internal::Baz
 crate::reexports::internal::Foo

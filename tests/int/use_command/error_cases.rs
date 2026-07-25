@@ -102,3 +102,58 @@ fn should_reject_symlink_escaping_crate_root() {
             .arg("escape"));
     });
 }
+
+// ============================================================================
+// Broken lib target during root_children top-up — warn, don't hard-fail
+// ============================================================================
+
+/// A bin-target query with `-t` triggers the `root_children` top-up, which
+/// discovers the *lib* target's module tree even though the query is about
+/// the bin. If lib.rs has a syntax error, that discovery fails — the top-up
+/// must warn and continue rather than hard-failing an otherwise-healthy
+/// query about an unrelated, healthy target.
+///
+/// Queries a *nested* bin submodule (`main::tool::sub`, `sub` inline inside
+/// `tool.rs`) rather than a bare top-level one: for a single-segment
+/// normalized path, `compute_root_visibility` unconditionally treats the
+/// crate root (which prefers lib.rs) as the parent to look up `mod`
+/// visibility in — a separate, pre-existing resolution quirk that would
+/// otherwise make the very first, pre-top-up discovery call itself need to
+/// parse the broken lib.rs before this test ever reaches the code under
+/// test. Nesting one level deeper resolves visibility from `tool.rs`
+/// instead, isolating the top-up's own warn-and-continue behavior.
+#[test]
+fn should_warn_not_fail_when_lib_broken_during_root_children_top_up() {
+    use std::fs;
+    use tempfile::TempDir;
+
+    let root = TempDir::new().unwrap();
+    let src = root.path().join("src");
+    fs::create_dir(&src).unwrap();
+    fs::write(
+        root.path().join("Cargo.toml"),
+        "[package]\nname = \"test-broken-lib-top-up\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+    )
+    .unwrap();
+    // Broken: unclosed function signature.
+    fs::write(src.join("lib.rs"), "pub fn broken(\n").unwrap();
+    fs::write(src.join("main.rs"), "mod tool;\nfn main() {}\n").unwrap();
+    fs::write(
+        src.join("tool.rs"),
+        "pub mod sub {\n    pub fn helper() -> &'static str {\n        \"hello\"\n    }\n}\n",
+    )
+    .unwrap();
+
+    let root_str = root.path().to_str().unwrap_or("");
+    let mut filters: Vec<(&str, &str)> = vec![(root_str, "[ROOT]")];
+    filters.extend(backtrace_filters());
+    with_settings!({
+        filters => filters,
+    }, {
+        assert_cmd_snapshot!(crawk()
+            .arg("-p").arg(root.path())
+            .arg("use")
+            .arg("main::tool::sub")
+            .arg("-t"));
+    });
+}

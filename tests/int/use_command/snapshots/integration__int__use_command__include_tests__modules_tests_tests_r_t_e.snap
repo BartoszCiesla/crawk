@@ -6,8 +6,10 @@ info:
     - "-p"
     - fixtures/modules
     - use
-    - lib
+    - tests
+    - "-r"
     - "-t"
+    - "-e"
 ---
 success: true
 exit_code: 0
@@ -34,13 +36,14 @@ crate::item_visibility::PUB_CRATE_STATIC
 crate::item_visibility::PUB_STATIC
 crate::item_visibility::PubAlias
 crate::item_visibility::PubCrateAlias
+crate::item_visibility::PubCrateEnum
 crate::item_visibility::PubCrateStruct
+crate::item_visibility::PubCrateTrait
 crate::item_visibility::PubStruct::default
 crate::item_visibility::exercise_all
 crate::item_visibility::pub_crate_function
 crate::item_visibility::pub_function
 crate::item_visibility::pub_super_function
-crate::item_visibility::{PubCrateEnum, PubCrateTrait}
 crate::mixed::file_child::greet
 crate::mixed::inline_child::greet
 crate::nesting::level1::level2::level3::deepest

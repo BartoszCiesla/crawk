@@ -56,7 +56,7 @@ custom_path -> item_visibility [PUB_CONST]
 dir_module -> inline_modules::nested::deep [value]
 dir_module::child_dir -> file_module [greet]
 dir_module::child_file -> dir_module [greet]
-file_module -> nesting
+file_module -> nesting [depth]
 foo -> foo::bar [public_fn]
 foo::other -> foo::bar
 glob_patterns -> dir_module
@@ -106,10 +106,10 @@ group_patterns -> nesting::level1::level2
 group_patterns -> nesting::level1::level2::level3 [deepest, depth]
 inline_modules -> file_module [greet]
 inline_modules -> inline_modules::private_inline [_secret]
-inline_modules::inner -> file_module
+inline_modules::inner -> file_module [greet]
 inline_modules::nested::deep -> dir_module [greet]
 inline_modules::outer -> inline_modules::outer::file_child [greet]
-inline_modules::outer::file_child -> no_pub_items
+inline_modules::outer::file_child -> no_pub_items [exercise_private]
 item_visibility -> reexports [Foo]
 main -> advanced_globs
 main -> dir_module [greet]
@@ -138,17 +138,19 @@ mixed::file_child -> custom_path [greet]
 mixed::file_child -> mixed [greet]
 mixed::inline_child -> mixed::file_child [greet]
 nesting -> inline_modules
+nesting -> inline_modules::nested::deep [value]
 nesting::level1 -> nesting [depth]
 nesting::level1::level2 -> nesting [depth]
 nesting::level1::level2::level3 -> nesting [depth]
 nesting::level1::level2::level3 -> nesting::level1 [depth]
 nesting::level1::level2::level3 -> nesting::level1::level2 [depth]
-reexports -> file_module
-reexports -> nesting
+reexports -> file_module [greet]
+reexports -> nesting [depth]
 reexports -> reexports::internal [Baz, Foo, INTERNAL_CONST_A, INTERNAL_CONST_B, InternalEnum, InternalTrait, Qux, Secret, internal_helper_1, internal_helper_2]
 reexports -> reexports::types
 reexports::internal -> item_visibility [PUB_STATIC]
 reexports::types -> visibility
+reexports::types -> visibility::pub_mod [greet]
 uses_empty_glob -> no_pub_items
 visibility -> visibility::inner [uses_restricted]
 visibility -> visibility::private_mod [deepest_greet, greet]
@@ -159,8 +161,8 @@ visibility -> visibility::restricted_mod [RestrictedConfig, VERSION, greet, nest
 visibility::inner -> visibility
 visibility::private_mod -> nesting::level1::level2::level3
 visibility::pub_crate_mod -> visibility::pub_mod [greet]
-visibility::pub_mod -> file_module
+visibility::pub_mod -> file_module [greet]
 visibility::pub_super_mod -> dir_module [greet]
-visibility::restricted_mod -> nesting
+visibility::restricted_mod -> nesting [depth]
 
 ----- stderr -----

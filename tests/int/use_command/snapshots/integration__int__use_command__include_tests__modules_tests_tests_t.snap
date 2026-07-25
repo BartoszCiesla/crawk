@@ -6,7 +6,7 @@ info:
     - "-p"
     - fixtures/modules
     - use
-    - lib
+    - tests
     - "-t"
 ---
 success: true

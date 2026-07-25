@@ -31,7 +31,7 @@ baz -> foo
 custom_path -> item_visibility [PUB_CONST]
 dir_module -> file_module [greet]
 dir_module -> inline_modules [value]
-file_module -> nesting
+file_module -> nesting [depth]
 glob_patterns -> dir_module [greet]
 glob_patterns -> file_module [greet, nesting_depth]
 glob_showcase -> file_module
@@ -41,7 +41,7 @@ group_patterns -> file_module
 group_patterns -> nesting [deepest, depth]
 inline_modules -> dir_module [greet]
 inline_modules -> file_module [greet]
-inline_modules -> no_pub_items
+inline_modules -> no_pub_items [exercise_private]
 item_visibility -> reexports [Foo]
 main -> advanced_globs
 main -> dir_module [greet]
@@ -55,14 +55,14 @@ main -> nesting [deepest, depth]
 main -> reexports
 main -> visibility [greet]
 mixed -> custom_path [greet]
-nesting -> inline_modules
-reexports -> file_module
+nesting -> inline_modules [value]
+reexports -> file_module [greet]
 reexports -> item_visibility [PUB_STATIC]
-reexports -> nesting
-reexports -> visibility
+reexports -> nesting [depth]
+reexports -> visibility [greet]
 uses_empty_glob -> no_pub_items
 visibility -> dir_module [greet]
-visibility -> file_module
-visibility -> nesting
+visibility -> file_module [greet]
+visibility -> nesting [depth]
 
 ----- stderr -----

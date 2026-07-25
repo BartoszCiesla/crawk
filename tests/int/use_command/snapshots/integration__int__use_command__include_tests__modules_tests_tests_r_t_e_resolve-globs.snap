@@ -1,0 +1,140 @@
+---
+source: tests/int/use_command/include_tests.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/modules
+    - use
+    - tests
+    - "-r"
+    - "-t"
+    - "-e"
+    - "--resolve-globs"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::::*
+crate::advanced_globs::AliasedStruct
+crate::advanced_globs::MultiImpl
+crate::advanced_globs::aliased_module
+crate::advanced_globs::demonstrate_internal
+crate::advanced_globs::demonstrate_multi_layer
+crate::advanced_globs::demonstrate_platform
+crate::advanced_globs::demonstrate_shadowing
+crate::advanced_globs::demonstrate_traits
+crate::advanced_globs::enum_variants
+crate::advanced_globs::layer1
+crate::advanced_globs::macro_module
+crate::advanced_globs::original
+crate::advanced_globs::prelude
+crate::advanced_globs::prelude::Consumer
+crate::advanced_globs::prelude::MultiImpl
+crate::advanced_globs::prelude::Provider
+crate::advanced_globs::prelude::Transformer
+crate::advanced_globs::prelude::deep_function
+crate::advanced_globs::prelude::layer1_function
+crate::advanced_globs::prelude::layer2_function
+crate::advanced_globs::renamed_func
+crate::advanced_globs::shadowed_func
+crate::advanced_globs::shadowing
+crate::advanced_globs::trait_providers
+crate::advanced_globs::unix_specific
+crate::advanced_globs::use_color_variants
+crate::advanced_globs::use_multiple_crate_globs
+crate::advanced_globs::windows_specific
+crate::dir_module::child_dir::greet
+crate::dir_module::child_file::greet
+crate::dir_module::greet
+crate::file_module::greet
+crate::glob_patterns::MyProcessor
+crate::glob_patterns::constants
+crate::glob_patterns::cross_module_glob_usage
+crate::glob_patterns::demonstrate_glob_types
+crate::glob_patterns::demonstrate_glob_utilities
+crate::glob_patterns::demonstrate_nested_glob
+crate::glob_patterns::mixed_exports
+crate::glob_patterns::outer
+crate::glob_patterns::pub_func_one
+crate::glob_patterns::renamed_special
+crate::glob_patterns::self_ref
+crate::glob_patterns::set_a
+crate::glob_patterns::set_b
+crate::glob_patterns::traits
+crate::glob_patterns::types
+crate::glob_patterns::use_both_sets
+crate::glob_patterns::use_mixed_imports
+crate::glob_patterns::utilities
+crate::glob_showcase::api
+crate::glob_showcase::config
+crate::glob_showcase::database
+crate::glob_showcase::demonstrate_all
+crate::glob_showcase::demonstrate_api
+crate::glob_showcase::demonstrate_config
+crate::glob_showcase::demonstrate_database
+crate::glob_showcase::demonstrate_models
+crate::glob_showcase::demonstrate_traits
+crate::glob_showcase::demonstrate_utils
+crate::glob_showcase::errors
+crate::glob_showcase::models
+crate::glob_showcase::prelude
+crate::glob_showcase::prelude::Comment
+crate::glob_showcase::prelude::ErrorKind
+crate::glob_showcase::prelude::Identifiable
+crate::glob_showcase::prelude::Nameable
+crate::glob_showcase::prelude::NotFoundError
+crate::glob_showcase::prelude::Post
+crate::glob_showcase::prelude::Status
+crate::glob_showcase::prelude::User
+crate::glob_showcase::prelude::Validatable
+crate::glob_showcase::prelude::ValidationError
+crate::glob_showcase::prelude::add
+crate::glob_showcase::prelude::connect
+crate::glob_showcase::prelude::delete_data
+crate::glob_showcase::prelude::disconnect
+crate::glob_showcase::prelude::execute
+crate::glob_showcase::prelude::get_data
+crate::glob_showcase::prelude::set_data
+crate::glob_showcase::prelude::subtract
+crate::glob_showcase::traits
+crate::glob_showcase::use_cross_crate_globs
+crate::glob_showcase::utils
+crate::group_patterns::demonstrate_group_patterns
+crate::inline_modules::inner::greet
+crate::inline_modules::nested::deep::value
+crate::item_visibility::PUB_CONST
+crate::item_visibility::PUB_CRATE_CONST
+crate::item_visibility::PUB_CRATE_STATIC
+crate::item_visibility::PUB_STATIC
+crate::item_visibility::PubAlias
+crate::item_visibility::PubCrateAlias
+crate::item_visibility::PubCrateEnum
+crate::item_visibility::PubCrateStruct
+crate::item_visibility::PubCrateTrait
+crate::item_visibility::PubStruct::default
+crate::item_visibility::exercise_all
+crate::item_visibility::pub_crate_function
+crate::item_visibility::pub_function
+crate::item_visibility::pub_super_function
+crate::mixed::file_child::greet
+crate::mixed::inline_child::greet
+crate::nesting::level1::level2::level3::deepest
+crate::reexports::Bar
+crate::reexports::Baz
+crate::reexports::Foo
+crate::reexports::INTERNAL_CONST_A
+crate::reexports::INTERNAL_CONST_B
+crate::reexports::InternalEnum
+crate::reexports::InternalTrait
+crate::reexports::Qux
+crate::reexports::Secret
+crate::reexports::file_module_greet
+crate::reexports::internal_helper_1
+crate::reexports::internal_helper_2
+crate::reexports::nesting_depth
+crate::reexports::secret_data
+crate::visibility::pub_crate_mod::greet
+crate::visibility::pub_mod::greet
+
+----- stderr -----

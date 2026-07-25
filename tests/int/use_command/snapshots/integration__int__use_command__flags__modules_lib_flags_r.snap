@@ -104,6 +104,7 @@ crate::nesting::{level1::level2::{*}}
 crate::nesting::{self as Nest}
 crate::no_pub_items
 crate::no_pub_items::*
+crate::no_pub_items::exercise_private
 crate::reexports::Foo
 crate::reexports::internal::Foo
 crate::reexports::internal::Foo as Bar

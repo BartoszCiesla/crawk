@@ -421,6 +421,7 @@ impl CrateInfo {
                 &file_path,
                 &normalized_path,
                 root_visibility,
+                &inline_scope,
                 include_tests,
                 target,
                 cache,

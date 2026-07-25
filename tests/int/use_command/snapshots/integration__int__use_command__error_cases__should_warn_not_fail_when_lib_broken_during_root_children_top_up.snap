@@ -1,0 +1,18 @@
+---
+source: tests/int/use_command/error_cases.rs
+assertion_line: 153
+info:
+  program: crawk
+  args:
+    - "-p"
+    - /tmp/.tmpFAAbKM
+    - use
+    - "main::tool::sub"
+    - "-t"
+---
+success: true
+exit_code: 0
+----- stdout -----
+[33mWARN[39m crate-root module discovery failed during bare-path top-up for 'tool::sub': Failed to parse file '[ROOT]/src/lib.rs': cannot parse string into token stream
+
+----- stderr -----

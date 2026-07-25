@@ -198,8 +198,9 @@ mixed::file_child (2)
 mixed::inline_child (1)
   -> mixed::file_child
 
-nesting (1)
+nesting (2)
   -> inline_modules
+  -> inline_modules::nested::deep
 
 nesting::level1 (1)
   -> nesting
@@ -221,8 +222,9 @@ reexports (4)
 reexports::internal (1)
   -> item_visibility
 
-reexports::types (1)
+reexports::types (2)
   -> visibility
+  -> visibility::pub_mod
 
 uses_empty_glob (1)
   -> no_pub_items

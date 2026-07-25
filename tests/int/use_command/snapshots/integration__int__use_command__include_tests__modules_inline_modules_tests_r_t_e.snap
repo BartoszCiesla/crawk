@@ -20,5 +20,6 @@ crate::file_module::greet
 crate::inline_modules::outer::file_child::greet
 crate::inline_modules::private_inline::_secret
 crate::no_pub_items
+crate::no_pub_items::exercise_private
 
 ----- stderr -----

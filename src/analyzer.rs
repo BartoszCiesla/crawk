@@ -10,7 +10,7 @@ use crate::rules::{self, CheckOptions, CheckReport, RuleSet};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt::{Debug, Formatter, Result as FmtResult};
 use std::path::{Path, PathBuf};
-use tracing::{debug, error, info, trace};
+use tracing::{debug, error, info, trace, warn};
 
 /// Expand grouped and aliased imports into individual references.
 ///
@@ -353,18 +353,19 @@ impl Analyzer {
             .map(|m| m.source().to_path_buf())
             .unwrap_or_default();
 
+        // Use the target from the already-discovered modules so further
+        // discovery below hits the same target (lib, bin, or test).
+        let target = modules
+            .first()
+            .map_or_else(|| default_target.clone(), |m| m.target().clone());
+
         // Build children_map from a recursive view of the module tree so that
         // bare child paths (e.g. `use child::Item`) can be recognised even when
         // the analysis itself is non-recursive.  The parse cache avoids redundant
         // I/O — files discovered here will be cache hits during parse_all_modules.
-        let children_map = if options.recursive {
+        let mut children_map = if options.recursive {
             Self::build_children_map(&modules)
         } else {
-            // Use the target from the already-discovered modules so the recursive
-            // discovery hits the same target (lib, bin, or test).
-            let target = modules
-                .first()
-                .map_or_else(|| default_target.clone(), |m| m.target().clone());
             let all_modules = self
                 .crate_info
                 .get_module_tree(
@@ -381,6 +382,66 @@ impl Analyzer {
                 })?;
             Self::build_children_map(&all_modules)
         };
+
+        // The discovery above is rooted at `module_path`, so `children_map[""]`
+        // is only populated when the query itself targets the crate root — a
+        // query scoped to a leaf module (e.g. a `#[cfg(test)] mod tests` with
+        // no submodules of its own) sees no crate-root siblings at all. Since
+        // bare paths to top-level sibling modules are overwhelmingly reached
+        // via `use super::*;` inside test modules, top up `children_map[""]`
+        // with a real crate-root listing whenever tests are in scope.
+        //
+        // `resolved_path` is the normalized form of the query (crate root
+        // collapses to ""); `modules.first().path()` already carries this
+        // because `get_module_tree` always pushes the queried module itself
+        // as the first entry, using the same normalization it applies
+        // everywhere else.
+        //
+        // Restricted to modules that genuinely belong to the lib target's own
+        // `mod` tree, verified by membership in a fresh recursive walk of
+        // "lib" (the same walk that supplies the root children below — no
+        // extra discovery cost). A bin/test target is a *separate* compilation
+        // unit from the lib, so its own bare paths can only reach lib modules
+        // via an explicit `use <package>::module;` (already handled via
+        // `imported_modules`/`resolve_via_import`) — merging in the lib's root
+        // children for one of ITS modules would misclassify those as
+        // same-target `crate::` refs instead of the correct cross-target
+        // `<package>::` form. A file-path/target-tag heuristic can't safely
+        // tell these apart (crawk's own module resolution is filesystem-shape
+        // based, not `mod`-declaration verified, so e.g. `cli::overview` —
+        // owned only by crawk's own bin target's `mod cli;`, absent from
+        // lib.rs entirely — still resolves via the generic fallback path);
+        // AST membership in the lib's real tree is the only thing that can't
+        // lie about this.
+        let resolved_path = modules
+            .first()
+            .map_or(module_path.as_str(), ModuleInfo::path);
+        if options.include_tests && !resolved_path.is_empty() {
+            let root_modules = self
+                .crate_info
+                .get_module_tree(
+                    "lib",
+                    true,
+                    options.include_tests,
+                    &default_target,
+                    &mut self.parse_cache,
+                )
+                .unwrap_or_else(|e| {
+                    warn!(
+                        "crate-root module discovery failed during bare-path top-up for '{resolved_path}': {e}"
+                    );
+                    Vec::new()
+                });
+            let belongs_to_lib = root_modules.iter().any(|m| m.path() == resolved_path);
+            if belongs_to_lib
+                && let Some(root_children) = Self::build_children_map(&root_modules).remove("")
+            {
+                children_map
+                    .entry(String::new())
+                    .or_default()
+                    .extend(root_children);
+            }
+        }
 
         let file_root = self.build_file_root_map(&modules);
         // Capture module names BEFORE consuming `modules`. The filter prevents
@@ -444,12 +505,21 @@ impl Analyzer {
             );
 
             let children = children_map.get(module.path()).cloned().unwrap_or_default();
+            // Crate-root top-level modules, passed separately so bare paths to
+            // top-level sibling modules (e.g. `inline_modules::inner::greet()`
+            // reached via `use super::*;` inside `#[cfg(test)] mod tests`) are
+            // recognised as internal refs. Mirrors the edition-2015-style
+            // fallback in `is_bare_child`. Kept separate from `children` because
+            // the visitor must not apply it to macro invocation paths (macro
+            // names live in a different namespace than modules).
+            let root_children = children_map.get("").cloned().unwrap_or_default();
 
             match self.parser.parse_file(
                 module.path(),
                 module.source(),
                 &inline_scope,
                 children,
+                root_children,
                 &mut self.parse_cache,
             ) {
                 Err(e) => {

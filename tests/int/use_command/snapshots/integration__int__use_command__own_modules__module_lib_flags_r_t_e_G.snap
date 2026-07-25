@@ -93,9 +93,12 @@ crate::rules::ViolationKind
 crate::rules::ViolationKind::Deny
 crate::rules::ViolationKind::Layer
 crate::rules::eval::evaluate
+crate::rules::evaluate
 crate::rules::load::resolve_config_path
 crate::rules::load::scaffold
 crate::rules::load::scaffold_config
+crate::rules::resolve_config_path
+crate::rules::scaffold_config
 crate::utils::MAX_FILE_BYTES
 crate::utils::ReadFileError
 crate::utils::ReadFileError::TooLarge

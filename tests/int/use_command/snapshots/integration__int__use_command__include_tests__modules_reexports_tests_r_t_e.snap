@@ -15,8 +15,10 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::file_module
+crate::file_module::greet
 crate::item_visibility::PUB_STATIC
 crate::nesting
+crate::nesting::depth
 crate::reexports::internal::Baz
 crate::reexports::internal::Foo
 crate::reexports::internal::INTERNAL_CONST_A
@@ -29,5 +31,6 @@ crate::reexports::internal::internal_helper_1
 crate::reexports::internal::internal_helper_2
 crate::reexports::types::*
 crate::visibility
+crate::visibility::pub_mod::greet
 
 ----- stderr -----

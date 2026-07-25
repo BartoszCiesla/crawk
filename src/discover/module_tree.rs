@@ -443,10 +443,17 @@ impl CrateInfo {
     ///
     /// When `include_tests` is `true`, also includes the direct test module
     /// (marked with `#[cfg(test)]`) if one exists directly under the given module.
+    ///
+    /// `inline_scope` must locate the current module's own body within
+    /// `file_path` (empty for file-based modules, whose top-level items
+    /// already are the module's body). Without it, an inline module scans its
+    /// *file's* top-level items rather than its own — so a query for an inline
+    /// `#[cfg(test)] mod tests` would rediscover itself as `tests::tests`.
     pub(super) fn collect_submodules_shallow(
         file_path: &Path,
         current_module_path: &str,
         current_visibility: ModuleVisibility,
+        inline_scope: &[String],
         include_tests: bool,
         target: &TargetInfo,
         cache: &mut ParseCache,
@@ -464,8 +471,9 @@ impl CrateInfo {
         if include_tests {
             // Read and parse the file to find a direct test module
             let syntax = Self::parse_cached(file_path, cache)?;
+            let items_to_process = Self::get_inline_module_items(&syntax.items, inline_scope)?;
 
-            for item in &syntax.items {
+            for item in items_to_process {
                 if let Item::Mod(item_mod) = item
                     && has_cfg_test(&item_mod.attrs)
                 {

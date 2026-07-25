@@ -51,6 +51,10 @@ analyzer
  - crate::graph
  - crate::graph::DependencyGraph
  - crate::graph::DependencyGraphOptions
+ - crate::graph::Edge
+ - crate::graph::build_edges
+ - crate::graph::find_module_target
+ - crate::graph::truncate_module_path
  - crate::model::AnalysisOptions
  - crate::model::AnalysisResult
  - crate::parser::CrateAnalyzer
@@ -63,6 +67,9 @@ analyzer
  - crate::rules::CheckOptions
  - crate::rules::CheckReport
  - crate::rules::RuleSet
+ - crate::rules::evaluate
+ - crate::rules::resolve_config_path
+ - crate::rules::scaffold_config
 analyzer::tests
  - crate::analyzer::Analyzer
  - crate::analyzer::expand_groups
