@@ -14,7 +14,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::::*
+crate::*
 crate::advanced_globs::*
 crate::advanced_globs::Consumer
 crate::advanced_globs::MultiImpl

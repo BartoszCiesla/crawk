@@ -13,7 +13,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-crate::::*
+crate::*
 crate::advanced_globs::*
 crate::advanced_globs::prelude::*
 crate::dir_module::child_dir::greet

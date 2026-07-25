@@ -362,7 +362,10 @@ impl TypeReference {
                 result.push('}');
             }
             PathSuffix::Glob => {
-                result.push_str("::*");
+                if !self.segments.is_empty() {
+                    result.push_str("::");
+                }
+                result.push('*');
             }
             PathSuffix::Alias(alias) => {
                 result.push_str(" as ");
@@ -463,6 +466,17 @@ mod tests {
     fn test_glob() {
         let r = TypeReference::new(["std", "collections"]).with_glob();
         assert_eq!(r.to_path_string(), "std::collections::*");
+        assert!(r.has_glob());
+    }
+
+    #[test]
+    fn test_crate_root_glob() {
+        // use super::* from a top-level module resolves to crate-prefix with no
+        // segments — must render as "crate::*", not "crate::::*".
+        let r = TypeReference::new::<[&str; 0], &str>([])
+            .with_crate_prefix()
+            .with_glob();
+        assert_eq!(r.to_path_string(), "crate::*");
         assert!(r.has_glob());
     }
 
