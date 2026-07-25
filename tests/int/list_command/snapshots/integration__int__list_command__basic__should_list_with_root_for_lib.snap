@@ -70,6 +70,8 @@ inline_modules
 inline_modules::inner
 inline_modules::nested
 inline_modules::nested::deep
+inline_modules::outer
+inline_modules::outer::file_child
 inline_modules::private_inline
 item_visibility
 lib

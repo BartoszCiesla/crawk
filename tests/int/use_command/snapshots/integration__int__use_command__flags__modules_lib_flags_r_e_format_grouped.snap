@@ -182,6 +182,10 @@ inline_modules::inner
 inline_modules::nested
 inline_modules::nested::deep
  - crate::dir_module::greet
+inline_modules::outer
+ - crate::inline_modules::outer::file_child::greet
+inline_modules::outer::file_child
+ - crate::empty_module
 inline_modules::private_inline
 item_visibility
  - crate::reexports::Foo

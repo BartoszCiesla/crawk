@@ -70,6 +70,8 @@ exit_code: 0
 [lib]             inline_modules::inner                   pub
 [lib]             inline_modules::nested                  pub
 [lib]             inline_modules::nested::deep            pub
+[lib]             inline_modules::outer                   pub
+[lib]             inline_modules::outer::file_child       pub
 [lib]             inline_modules::private_inline          
 [lib]             item_visibility                         pub
 [lib]             lib                                     pub

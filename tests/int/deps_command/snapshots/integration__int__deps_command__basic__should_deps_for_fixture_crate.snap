@@ -107,6 +107,8 @@ inline_modules -> file_module
 inline_modules -> inline_modules::private_inline
 inline_modules::inner -> file_module
 inline_modules::nested::deep -> dir_module
+inline_modules::outer -> inline_modules::outer::file_child
+inline_modules::outer::file_child -> empty_module
 item_visibility -> reexports
 main -> advanced_globs
 main -> dir_module

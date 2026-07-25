@@ -58,8 +58,9 @@ group_patterns (2)
   -> file_module
   -> nesting
 
-inline_modules (2)
+inline_modules (3)
   -> dir_module
+  -> empty_module
   -> file_module
 
 item_visibility (1)

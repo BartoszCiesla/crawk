@@ -71,6 +71,8 @@ inline_modules                          pub
 inline_modules::inner                   pub
 inline_modules::nested                  pub
 inline_modules::nested::deep            pub
+inline_modules::outer                   pub
+inline_modules::outer::file_child       pub
 inline_modules::private_inline          
 item_visibility                         pub
 lib                                     pub

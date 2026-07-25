@@ -38,6 +38,7 @@ crate::custom_path::greet
 crate::dir_module
 crate::dir_module::child_file
 crate::dir_module::greet
+crate::empty_module
 crate::file_module
 crate::file_module::*
 crate::file_module::greet
@@ -72,6 +73,7 @@ crate::glob_showcase::utils
 crate::inline_modules
 crate::inline_modules::*
 crate::inline_modules::nested
+crate::inline_modules::outer
 crate::inline_modules::private_inline
 crate::item_visibility::PUB_CONST
 crate::item_visibility::PUB_STATIC

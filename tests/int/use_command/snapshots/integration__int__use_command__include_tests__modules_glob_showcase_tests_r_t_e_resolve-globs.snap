@@ -73,6 +73,7 @@ crate::glob_showcase::utils::string::lowercase
 crate::glob_showcase::utils::string::uppercase
 crate::inline_modules::inner
 crate::inline_modules::nested
+crate::inline_modules::outer
 crate::inline_modules::sibling_greet
 crate::inline_modules::use_private
 crate::nesting::level1::level2::depth

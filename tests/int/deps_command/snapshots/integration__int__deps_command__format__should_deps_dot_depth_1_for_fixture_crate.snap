@@ -24,6 +24,7 @@ digraph dependencies {
     "baz";
     "custom_path";
     "dir_module";
+    "empty_module";
     "file_module";
     "foo";
     "glob_patterns";
@@ -66,6 +67,7 @@ digraph dependencies {
     "group_patterns" -> "file_module";
     "group_patterns" -> "nesting";
     "inline_modules" -> "dir_module";
+    "inline_modules" -> "empty_module";
     "inline_modules" -> "file_module";
     "item_visibility" -> "reexports";
     "main" -> "advanced_globs";

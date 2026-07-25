@@ -42,6 +42,7 @@ crate::dir_module
 crate::dir_module::child_file
 crate::dir_module::child_file::greet
 crate::dir_module::greet
+crate::empty_module
 crate::file_module
 crate::file_module::*
 crate::file_module::greet
@@ -93,6 +94,7 @@ crate::glob_showcase::utils::string::uppercase as str_upper
 crate::inline_modules
 crate::inline_modules::*
 crate::inline_modules::nested::deep::value
+crate::inline_modules::outer::file_child::greet
 crate::inline_modules::private_inline::_secret
 crate::item_visibility::PUB_CONST
 crate::item_visibility::PUB_STATIC
