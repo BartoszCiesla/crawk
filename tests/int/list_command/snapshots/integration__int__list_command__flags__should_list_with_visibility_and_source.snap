@@ -72,7 +72,7 @@ exit_code: 0
 [lib]             inline_modules::nested                  pub                        src/inline_modules.rs
 [lib]             inline_modules::nested::deep            pub                        src/inline_modules.rs
 [lib]             inline_modules::outer                   pub                        src/inline_modules.rs
-[lib]             inline_modules::outer::file_child       pub                        src/inline_modules/file_child.rs
+[lib]             inline_modules::outer::file_child       pub                        src/inline_modules/outer/file_child.rs
 [lib]             inline_modules::private_inline                                     src/inline_modules.rs
 [lib]             item_visibility                         pub                        src/item_visibility.rs
 [lib]             lib                                     pub                        src/lib.rs

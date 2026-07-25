@@ -38,7 +38,6 @@ crate::custom_path::greet
 crate::dir_module
 crate::dir_module::child_file
 crate::dir_module::greet
-crate::empty_module
 crate::file_module
 crate::file_module::*
 crate::file_module::greet
@@ -82,6 +81,7 @@ crate::mixed::greet
 crate::nesting
 crate::nesting::depth
 crate::nesting::level1
+crate::no_pub_items
 crate::no_pub_items::*
 crate::reexports::Foo
 crate::reexports::internal

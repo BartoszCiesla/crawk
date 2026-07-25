@@ -40,8 +40,8 @@ glob_showcase -> nesting
 group_patterns -> file_module
 group_patterns -> nesting [deepest, depth]
 inline_modules -> dir_module [greet]
-inline_modules -> empty_module
 inline_modules -> file_module [greet]
+inline_modules -> no_pub_items
 item_visibility -> reexports [Foo]
 main -> advanced_globs
 main -> dir_module [greet]

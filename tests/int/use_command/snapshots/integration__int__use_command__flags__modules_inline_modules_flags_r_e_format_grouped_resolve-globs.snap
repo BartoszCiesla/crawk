@@ -27,7 +27,7 @@ inline_modules::nested::deep
 inline_modules::outer
  - crate::inline_modules::outer::file_child::greet
 inline_modules::outer::file_child
- - crate::empty_module
+ - crate::no_pub_items
 inline_modules::private_inline
 
 ----- stderr -----

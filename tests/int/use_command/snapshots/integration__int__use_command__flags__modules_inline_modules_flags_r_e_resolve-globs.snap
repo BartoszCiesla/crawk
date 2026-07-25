@@ -15,10 +15,10 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::dir_module::greet
-crate::empty_module
 crate::file_module
 crate::file_module::greet
 crate::inline_modules::outer::file_child::greet
 crate::inline_modules::private_inline::_secret
+crate::no_pub_items
 
 ----- stderr -----

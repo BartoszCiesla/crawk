@@ -14,6 +14,7 @@ exit_code: 0
 advanced_globs::prelude
 app
 baz
+empty_module
 foo
 foo::other
 glob_showcase::config

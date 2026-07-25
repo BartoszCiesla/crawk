@@ -161,7 +161,7 @@ inline_modules::outer (1)
   -> inline_modules::outer::file_child
 
 inline_modules::outer::file_child (1)
-  -> empty_module
+  -> no_pub_items
 
 item_visibility (1)
   -> reexports

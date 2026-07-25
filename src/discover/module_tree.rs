@@ -350,7 +350,7 @@ impl CrateInfo {
                     "'{part}' no companion dir, checking inline in {}",
                     file_path.display()
                 );
-                return Self::check_inline_module(&file_path, &parts[idx + 1..]);
+                return Self::check_inline_module(&part_dir, &file_path, &parts[idx + 1..]);
             }
 
             // Check for `part/mod.rs` (older style)
@@ -372,7 +372,7 @@ impl CrateInfo {
                     "'{part}' not on disk, checking inline in {}",
                     parent_file.display()
                 );
-                return Self::check_inline_module(parent_file, &parts[idx..]);
+                return Self::check_inline_module(&current_dir, parent_file, &parts[idx..]);
             }
 
             debug!("'{part}' not found, no parent file to check inline");
@@ -383,48 +383,60 @@ impl CrateInfo {
     }
 
     /// Checks if a sequence of module names exists as inline modules in the given file.
-    /// Returns the file path if all parts exist as nested inline modules, None otherwise.
-    fn check_inline_module(file_path: &Path, module_parts: &[&str]) -> Result<Option<PathBuf>> {
+    ///
+    /// `current_dir` is the directory that would hold the *first* `module_parts`
+    /// segment's file if it turns out to be file-based rather than inline (i.e. the
+    /// companion directory for `file_path`) — needed so a file-based `mod` declared
+    /// inside an inline module resolves against the right on-disk directory instead
+    /// of being treated as unresolvable.
+    fn check_inline_module(
+        current_dir: &Path,
+        file_path: &Path,
+        module_parts: &[&str],
+    ) -> Result<Option<PathBuf>> {
         if module_parts.is_empty() {
             return Ok(Some(file_path.to_path_buf()));
         }
 
         let syntax = Self::parse_source_file(file_path)?;
-        Ok(Self::find_nested_inline_module(
-            &syntax.items,
-            module_parts,
-            file_path,
-        ))
+        Self::find_nested_inline_module(current_dir, &syntax.items, module_parts, file_path)
     }
 
     /// Recursively checks for nested inline modules within a list of items.
+    ///
+    /// Falls back to on-disk resolution (via [`resolve_module_parts`](Self::resolve_module_parts))
+    /// as soon as a `module_parts` segment matches a file-based `mod name;` (no body) rather
+    /// than an inline one, using `current_dir` extended by the inline ancestors already crossed.
     fn find_nested_inline_module(
+        current_dir: &Path,
         items: &[Item],
         module_parts: &[&str],
         file_path: &Path,
-    ) -> Option<PathBuf> {
+    ) -> Result<Option<PathBuf>> {
         if module_parts.is_empty() {
-            return Some(file_path.to_path_buf());
+            return Ok(Some(file_path.to_path_buf()));
         }
 
         let target_name = module_parts[0];
         for item in items {
-            if let Item::Mod(item_mod) = item
-                && item_mod.ident == target_name
-                && let Some((_, nested_items)) = &item_mod.content
-            {
-                if module_parts.len() == 1 {
-                    return Some(file_path.to_path_buf());
-                }
-                return Self::find_nested_inline_module(
+            let Item::Mod(item_mod) = item else { continue };
+            if item_mod.ident != target_name {
+                continue;
+            }
+
+            return match &item_mod.content {
+                Some(_) if module_parts.len() == 1 => Ok(Some(file_path.to_path_buf())),
+                Some((_, nested_items)) => Self::find_nested_inline_module(
+                    &current_dir.join(target_name),
                     nested_items,
                     &module_parts[1..],
                     file_path,
-                );
-            }
+                ),
+                None => Self::resolve_module_parts(current_dir, module_parts, None),
+            };
         }
 
-        None
+        Ok(None)
     }
 
     /// Collects only the current module (non-recursive, no submodules).
@@ -631,6 +643,7 @@ impl CrateInfo {
                         &submodule_path,
                         file_path,
                         base_dir,
+                        std::slice::from_ref(&mod_name),
                         include_tests,
                         target,
                         cache,
@@ -665,11 +678,18 @@ impl CrateInfo {
     }
 
     /// Collects submodules from inline module items.
+    ///
+    /// `inline_path` accumulates the inline-module name segments crossed since
+    /// the containing file, so a file-based `mod` declared inside an inline
+    /// module resolves against `base_dir/<inline_path...>/`, matching where
+    /// rustc actually looks for it — not `base_dir` itself.
+    #[allow(clippy::too_many_arguments)]
     fn collect_inline_submodules(
         items: &[Item],
         current_module_path: &str,
         containing_file: &Path,
         base_dir: &Path,
+        inline_path: &[String],
         include_tests: bool,
         target: &TargetInfo,
         cache: &mut ParseCache,
@@ -699,19 +719,26 @@ impl CrateInfo {
                         submodule_visibility,
                         target.clone(),
                     ));
+                    let mut nested_inline_path = inline_path.to_vec();
+                    nested_inline_path.push(mod_name.clone());
                     result.extend(Self::collect_inline_submodules(
                         nested_items,
                         &submodule_path,
                         containing_file,
                         base_dir,
+                        &nested_inline_path,
                         include_tests,
                         target,
                         cache,
                     )?);
                 } else {
-                    // File-based module declared inside an inline module
+                    // File-based module declared inside an inline module: resolve
+                    // against base_dir extended by the inline ancestors' names.
+                    let inline_base_dir = inline_path
+                        .iter()
+                        .fold(base_dir.to_path_buf(), |dir, segment| dir.join(segment));
                     if let Some(sub_mod_file) =
-                        Self::resolve_module_parts(base_dir, &[&mod_name], None)?
+                        Self::resolve_module_parts(&inline_base_dir, &[&mod_name], None)?
                     {
                         // File-based modules have empty inline scope
                         result.extend(Self::collect_submodules_recursive(
@@ -963,7 +990,7 @@ mod tests {
         let items = items_from("pub fn foo() {}");
         let path = Path::new("/fake/file.rs");
         assert_eq!(
-            CrateInfo::find_nested_inline_module(&items, &[], path),
+            CrateInfo::find_nested_inline_module(Path::new("/fake"), &items, &[], path).unwrap(),
             Some(path.to_path_buf())
         );
     }
@@ -973,7 +1000,8 @@ mod tests {
         let items = items_from("pub mod foo { pub fn inner() {} }");
         let path = Path::new("/fake/file.rs");
         assert_eq!(
-            CrateInfo::find_nested_inline_module(&items, &["foo"], path),
+            CrateInfo::find_nested_inline_module(Path::new("/fake"), &items, &["foo"], path)
+                .unwrap(),
             Some(path.to_path_buf())
         );
     }
@@ -982,8 +1010,14 @@ mod tests {
     fn find_nested_inline_module_returns_none_for_missing() {
         let items = items_from("pub fn foo() {}");
         assert!(
-            CrateInfo::find_nested_inline_module(&items, &["missing"], Path::new("/f.rs"))
-                .is_none()
+            CrateInfo::find_nested_inline_module(
+                Path::new("/f"),
+                &items,
+                &["missing"],
+                Path::new("/f.rs")
+            )
+            .unwrap()
+            .is_none()
         );
     }
 
@@ -992,7 +1026,13 @@ mod tests {
         let items = items_from("pub mod outer { pub mod inner { pub fn f() {} } }");
         let path = Path::new("/fake/file.rs");
         assert_eq!(
-            CrateInfo::find_nested_inline_module(&items, &["outer", "inner"], path),
+            CrateInfo::find_nested_inline_module(
+                Path::new("/fake"),
+                &items,
+                &["outer", "inner"],
+                path
+            )
+            .unwrap(),
             Some(path.to_path_buf())
         );
     }
@@ -1002,10 +1042,12 @@ mod tests {
         let items = items_from("pub mod outer {}");
         assert!(
             CrateInfo::find_nested_inline_module(
+                Path::new("/f"),
                 &items,
                 &["outer", "nonexistent"],
                 Path::new("/f.rs")
             )
+            .unwrap()
             .is_none()
         );
     }

@@ -109,7 +109,7 @@ inline_modules -> inline_modules::private_inline [_secret]
 inline_modules::inner -> file_module
 inline_modules::nested::deep -> dir_module [greet]
 inline_modules::outer -> inline_modules::outer::file_child [greet]
-inline_modules::outer::file_child -> empty_module
+inline_modules::outer::file_child -> no_pub_items
 item_visibility -> reexports [Foo]
 main -> advanced_globs
 main -> dir_module [greet]

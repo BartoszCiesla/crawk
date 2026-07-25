@@ -49,7 +49,6 @@ crate::dir_module
 crate::dir_module::child_file
 crate::dir_module::child_file::greet
 crate::dir_module::greet
-crate::empty_module
 crate::file_module
 crate::file_module::greet
 crate::file_module::nesting_depth
@@ -165,6 +164,7 @@ crate::nesting::level1::level2::level3::deepest
 crate::nesting::level1::level2::level3::depth
 crate::nesting::level1::level2::root_depth
 crate::nesting::level1::level2::{*}
+crate::no_pub_items
 crate::no_pub_items::exercise_private
 crate::reexports::Foo
 crate::reexports::internal::Baz

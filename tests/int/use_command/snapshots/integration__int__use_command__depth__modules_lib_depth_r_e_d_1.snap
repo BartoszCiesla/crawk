@@ -19,7 +19,6 @@ crate::advanced_globs
 crate::aliased
 crate::custom_path
 crate::dir_module
-crate::empty_module
 crate::file_module
 crate::file_module::*
 crate::file_module::{*}
@@ -31,6 +30,7 @@ crate::inline_modules::*
 crate::item_visibility
 crate::mixed
 crate::nesting
+crate::no_pub_items
 crate::no_pub_items::*
 crate::reexports
 crate::visibility

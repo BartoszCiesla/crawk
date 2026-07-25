@@ -42,7 +42,6 @@ crate::dir_module
 crate::dir_module::child_file
 crate::dir_module::child_file::greet
 crate::dir_module::greet
-crate::empty_module
 crate::file_module
 crate::file_module::*
 crate::file_module::greet
@@ -111,6 +110,7 @@ crate::nesting::{level1::level2::level3::{deepest as deep_fn}}
 crate::nesting::{level1::level2::level3::{depth as l3_depth}}
 crate::nesting::{level1::level2::{*}}
 crate::nesting::{self as Nest}
+crate::no_pub_items
 crate::no_pub_items::*
 crate::reexports::*
 crate::reexports::Foo
