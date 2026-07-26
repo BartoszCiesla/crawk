@@ -681,22 +681,14 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
 
         // Check if this module matches the target module or is on the path to it
         let module_ident = i.ident.to_string();
-        let should_visit = if self.module_name.is_empty() {
-            // No filter, visit all modules
-            true
-        } else if self.module_name == module_ident {
-            // Exact match
-            true
-        } else if self.module_name.contains("::") {
-            // For nested modules like "foo::bar::baz", check if this module
-            // is on the path (e.g., ident is "foo" and module_name starts with "foo::")
-            // or if this module is the final segment
-            self.module_name.split("::").any(|seg| seg == module_ident)
-                || self.module_name.ends_with(&format!("::{module_ident}"))
-        } else {
-            // Single-segment module name, check exact match
-            self.module_name == module_ident
-        };
+        // Navigation into the target inline module is performed externally by
+        // `descend_inline_module` (see `parser/mod.rs`); the items visited here
+        // are already the target module's own body. Every nested `mod x { ... }`
+        // is therefore a child submodule, discovered and parsed separately —
+        // descending into it here would misattribute the child's references to
+        // the parent. Only the unfiltered whole-file mode (empty module name,
+        // used by unit tests) descends into nested modules.
+        let should_visit = self.module_name.is_empty();
 
         if !should_visit {
             debug!(
@@ -888,6 +880,33 @@ mod tests {
         let resolved = resolve_reference(r, &module_path);
 
         assert_eq!(resolved.to_path_string(), "crate::utils::foo::*");
+    }
+
+    // --- Module-filter descent tests ---
+
+    #[test]
+    fn nested_mod_matching_ancestor_segment_is_not_visited() {
+        // Regression: when analyzing `foo::bar`, a nested `mod foo` whose name
+        // coincides with an ancestor segment of the target must NOT be descended
+        // into. Its references belong to the child submodule `foo::bar::foo`
+        // (parsed separately), not to `foo::bar`.
+        let code = r"
+            mod foo { use crate::qux::Z; }
+            mod other { use crate::qux::Q; }
+        ";
+        let syntax: syn::File = syn::parse_file(code).expect("parse");
+        let mut v = ModuleVisitor::new("foo::bar", HashSet::new(), HashSet::new(), None);
+        v.visit_file(&syntax);
+
+        let paths: Vec<String> = v
+            .references
+            .all()
+            .map(TypeReference::to_path_string)
+            .collect();
+        assert!(
+            paths.is_empty(),
+            "child submodule references leaked into parent 'foo::bar': {paths:?}"
+        );
     }
 
     // --- Token stream path extraction tests ---
