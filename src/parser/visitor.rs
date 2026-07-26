@@ -429,6 +429,14 @@ impl ModuleVisitor {
                             break;
                         }
                         iter.next(); // consume first ':'
+                        // Verify the joined token completes '::'; anything else
+                        // (e.g. ':=') is not a path separator.
+                        if !matches!(
+                            iter.peek(),
+                            Some(TokenTree::Punct(p)) if p.as_char() == ':'
+                        ) {
+                            break;
+                        }
                         iter.next(); // consume second ':'
 
                         // Expect Ident after ::
@@ -958,6 +966,17 @@ mod tests {
     fn test_extract_skips_lone_ident() {
         let mut v = visitor_with_children(&["version"]);
         v.extract_paths_from_tokens(&tokens("version"));
+
+        assert!(v.references.value_refs.is_empty());
+    }
+
+    #[test]
+    fn test_extract_skips_joint_colon_not_completing_path_sep() {
+        // `:=` inside macro tokens must not be misread as `::`.
+        // The first `:` is Joint-spaced but the following `=` does not complete
+        // a `::` separator, so `qux:=Z2` must not yield a phantom `qux::Z2`.
+        let mut v = visitor_with_children(&["qux"]);
+        v.extract_paths_from_tokens(&tokens("qux:=Z2"));
 
         assert!(v.references.value_refs.is_empty());
     }
