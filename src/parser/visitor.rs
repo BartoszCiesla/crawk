@@ -662,7 +662,7 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
     fn visit_item_impl(&mut self, node: &'ast syn::ItemImpl) {
         if !self.in_test_module {
             // Check the trait being implemented (if any)
-            if let Some((_, trait_path, _)) = &node.trait_
+            if let Some((trait_path, _)) = &node.trait_
                 && let Some(r) = self.build_reference(trait_path, true)
             {
                 self.references.type_refs.push(r);
