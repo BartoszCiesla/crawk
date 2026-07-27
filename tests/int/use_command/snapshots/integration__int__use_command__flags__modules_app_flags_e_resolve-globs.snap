@@ -113,6 +113,7 @@ modules::item_visibility::PubTrait
 modules::item_visibility::exercise_all
 modules::item_visibility::pub_crate_function
 modules::item_visibility::pub_function
+modules::item_visibility::pub_super_function
 modules::mixed
 modules::mixed::file_child::greet
 modules::mixed::greet

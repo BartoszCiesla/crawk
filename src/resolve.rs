@@ -329,6 +329,26 @@ pub(crate) fn resolve_glob(
         return vec![reference.clone()];
     }
 
+    // The visibility target must be a crawk-internal module path: bare `::`-joined
+    // segments, no `crate::` and no crate-name prefix (see `extract_public_items`
+    // docs), so `mycrate::foo` must become `foo`. A `crate::foo::*` glob already
+    // yields internal segments (`["foo"]`), but a package-name-prefixed glob
+    // (`mycrate::foo::*`) keeps the crate name in `segments` (`["mycrate","foo"]`).
+    // Left unstripped, `parent_module("mycrate::foo")` is `"mycrate"` instead of
+    // the crate root `""`, so every `pub(super)`/`pub(in ...)` item is wrongly
+    // hidden. Strip the leading crate-name segment on that branch only.
+    let target_module = if is_crate_name_prefix {
+        reference
+            .segments()
+            .iter()
+            .skip(1)
+            .map(String::as_str)
+            .collect::<Vec<_>>()
+            .join("::")
+    } else {
+        module_path.clone()
+    };
+
     // Resolve module path to file
     let file_path = match crate_info.resolve_module_path_to_file(&module_path) {
         Ok(path) => path,
@@ -347,12 +367,16 @@ pub(crate) fn resolve_glob(
     let inline_path = detect_inline_path(reference, &file_path, crate_info);
     let inline_refs: Vec<&str> = inline_path.iter().map(String::as_str).collect();
 
-    // `module_path` is the full path (including any inline segments) of the
-    // module whose glob we're resolving — it is also the target for visibility
-    // checks. See `extract_public_items` docs for the path format.
-    let Some(public_items) =
-        extract_public_items(&file_path, &inline_refs, &module_path, caller_module, cache)
-    else {
+    // `target_module` is the full crawk-internal path (including any inline
+    // segments) of the module whose glob we're resolving — the target for
+    // visibility checks. See `extract_public_items` docs for the path format.
+    let Some(public_items) = extract_public_items(
+        &file_path,
+        &inline_refs,
+        &target_module,
+        caller_module,
+        cache,
+    ) else {
         debug!("Cannot parse '{}' for glob resolution", file_path.display());
         return vec![reference.clone()];
     };
