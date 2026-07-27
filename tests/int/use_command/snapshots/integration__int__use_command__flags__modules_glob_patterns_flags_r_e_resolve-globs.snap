@@ -28,7 +28,9 @@ crate::glob_patterns::mixed_exports::func_three
 crate::glob_patterns::mixed_exports::func_two
 crate::glob_patterns::mixed_exports::special_function
 crate::glob_patterns::outer::inner
-crate::glob_patterns::outer::inner::*
+crate::glob_patterns::outer::inner::DeepStruct
+crate::glob_patterns::outer::inner::deep_func_a
+crate::glob_patterns::outer::inner::deep_func_b
 crate::glob_patterns::outer::outer_func
 crate::glob_patterns::self_ref::self_func_1
 crate::glob_patterns::self_ref::self_func_2

@@ -57,7 +57,9 @@ glob_patterns
 glob_patterns::constants
 glob_patterns::mixed_exports
 glob_patterns::outer
- - crate::glob_patterns::outer::inner::*
+ - crate::glob_patterns::outer::inner::DeepStruct
+ - crate::glob_patterns::outer::inner::deep_func_a
+ - crate::glob_patterns::outer::inner::deep_func_b
 glob_patterns::outer::inner
 glob_patterns::self_ref
 glob_patterns::set_a

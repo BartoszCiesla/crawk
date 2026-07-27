@@ -27,8 +27,11 @@ crate::advanced_globs::internal::internal_b
 crate::advanced_globs::internal::internal_c
 crate::advanced_globs::layer1::layer1_function
 crate::advanced_globs::layer1::layer2
-crate::advanced_globs::layer1::layer2::*
-crate::advanced_globs::layer1::layer2::layer3::*
+crate::advanced_globs::layer1::layer2::layer2_function
+crate::advanced_globs::layer1::layer2::layer3
+crate::advanced_globs::layer1::layer2::layer3::DEEP_CONST
+crate::advanced_globs::layer1::layer2::layer3::DeepStruct
+crate::advanced_globs::layer1::layer2::layer3::deep_function
 crate::advanced_globs::layer1_function
 crate::advanced_globs::layer2_function
 crate::advanced_globs::macro_module::helper

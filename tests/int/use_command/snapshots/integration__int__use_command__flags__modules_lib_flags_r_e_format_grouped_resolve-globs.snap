@@ -49,9 +49,12 @@ advanced_globs::aliased_module
 advanced_globs::enum_variants
 advanced_globs::internal
 advanced_globs::layer1
- - crate::advanced_globs::layer1::layer2::*
+ - crate::advanced_globs::layer1::layer2::layer2_function
+ - crate::advanced_globs::layer1::layer2::layer3
 advanced_globs::layer1::layer2
- - crate::advanced_globs::layer1::layer2::layer3::*
+ - crate::advanced_globs::layer1::layer2::layer3::DEEP_CONST
+ - crate::advanced_globs::layer1::layer2::layer3::DeepStruct
+ - crate::advanced_globs::layer1::layer2::layer3::deep_function
 advanced_globs::layer1::layer2::layer3
 advanced_globs::macro_module
 advanced_globs::original
@@ -131,7 +134,9 @@ glob_patterns
 glob_patterns::constants
 glob_patterns::mixed_exports
 glob_patterns::outer
- - crate::glob_patterns::outer::inner::*
+ - crate::glob_patterns::outer::inner::DeepStruct
+ - crate::glob_patterns::outer::inner::deep_func_a
+ - crate::glob_patterns::outer::inner::deep_func_b
 glob_patterns::outer::inner
 glob_patterns::self_ref
 glob_patterns::set_a
@@ -153,7 +158,6 @@ glob_showcase
  - crate::glob_showcase::api::list_all
  - crate::glob_showcase::api::set_data
  - crate::glob_showcase::api::update_data
- - crate::glob_showcase::config::all::*
  - crate::glob_showcase::database::connection
  - crate::glob_showcase::database::query
  - crate::glob_showcase::database::transaction
@@ -176,9 +180,19 @@ glob_showcase
  - crate::glob_showcase::traits::Serializable
  - crate::glob_showcase::traits::Timestamped
  - crate::glob_showcase::traits::Validatable
- - crate::glob_showcase::utils::collection::*
- - crate::glob_showcase::utils::math::*
- - crate::glob_showcase::utils::string::*
+ - crate::glob_showcase::utils::collection::first
+ - crate::glob_showcase::utils::collection::is_empty
+ - crate::glob_showcase::utils::collection::last
+ - crate::glob_showcase::utils::math::E
+ - crate::glob_showcase::utils::math::PI
+ - crate::glob_showcase::utils::math::add
+ - crate::glob_showcase::utils::math::divide
+ - crate::glob_showcase::utils::math::multiply
+ - crate::glob_showcase::utils::math::subtract
+ - crate::glob_showcase::utils::string::lowercase
+ - crate::glob_showcase::utils::string::reverse
+ - crate::glob_showcase::utils::string::trim
+ - crate::glob_showcase::utils::string::uppercase
  - crate::inline_modules::inner
  - crate::inline_modules::nested
  - crate::inline_modules::outer
@@ -190,16 +204,29 @@ glob_showcase
 glob_showcase::api
 glob_showcase::config
 glob_showcase::config::all
- - crate::glob_showcase::config::client::*
- - crate::glob_showcase::config::logging::*
- - crate::glob_showcase::config::server::*
+ - crate::glob_showcase::config::client::MAX_RETRIES
+ - crate::glob_showcase::config::client::TIMEOUT_MS
+ - crate::glob_showcase::config::client::USER_AGENT
+ - crate::glob_showcase::config::logging::LOG_FILE
+ - crate::glob_showcase::config::logging::LOG_LEVEL
+ - crate::glob_showcase::config::logging::MAX_LOG_SIZE_MB
+ - crate::glob_showcase::config::server::HOST
+ - crate::glob_showcase::config::server::MAX_CONNECTIONS
+ - crate::glob_showcase::config::server::PORT
 glob_showcase::config::client
 glob_showcase::config::logging
 glob_showcase::config::server
 glob_showcase::database
- - crate::glob_showcase::database::connection::*
- - crate::glob_showcase::database::query::*
- - crate::glob_showcase::database::transaction::*
+ - crate::glob_showcase::database::connection::DEFAULT_PORT
+ - crate::glob_showcase::database::connection::connect
+ - crate::glob_showcase::database::connection::disconnect
+ - crate::glob_showcase::database::query::MAX_QUERY_SIZE
+ - crate::glob_showcase::database::query::execute
+ - crate::glob_showcase::database::query::fetch_all
+ - crate::glob_showcase::database::query::fetch_one
+ - crate::glob_showcase::database::transaction::begin
+ - crate::glob_showcase::database::transaction::commit
+ - crate::glob_showcase::database::transaction::rollback
 glob_showcase::database::connection
 glob_showcase::database::query
 glob_showcase::database::transaction
@@ -226,14 +253,18 @@ glob_showcase::prelude
  - crate::glob_showcase::utils::math::subtract
 glob_showcase::traits
 glob_showcase::utils
- - crate::glob_showcase::utils::collection::*
- - crate::glob_showcase::utils::math::*
+ - crate::glob_showcase::utils::collection::first
+ - crate::glob_showcase::utils::collection::is_empty
+ - crate::glob_showcase::utils::collection::last
+ - crate::glob_showcase::utils::math::E
+ - crate::glob_showcase::utils::math::PI
  - crate::glob_showcase::utils::math::add
  - crate::glob_showcase::utils::math::divide
  - crate::glob_showcase::utils::math::multiply
  - crate::glob_showcase::utils::math::subtract
- - crate::glob_showcase::utils::string::*
  - crate::glob_showcase::utils::string::lowercase
+ - crate::glob_showcase::utils::string::reverse
+ - crate::glob_showcase::utils::string::trim
  - crate::glob_showcase::utils::string::uppercase
 glob_showcase::utils::collection
 glob_showcase::utils::math

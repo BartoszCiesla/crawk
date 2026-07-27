@@ -401,9 +401,18 @@ pub(crate) fn resolve_glob(
 /// Detect which trailing segments of a module path are inline modules
 /// within the resolved file.
 ///
-/// Compares progressive shorter prefixes of the module path against the
-/// resolved file. Once a shorter prefix resolves to a *different* file
-/// (or fails), the remaining segments are the inline module path.
+/// Compares progressively longer prefixes of the module path against the
+/// resolved file. The *first* (shortest) prefix that resolves to the same
+/// file is the file-backed module boundary; every segment past it is an
+/// inline module.
+///
+/// Shortest-first matters for doubly-nested inline modules: for
+/// `crate::foo::bar::baz::*` with both `bar` and `baz` inline in `foo.rs`,
+/// prefix `foo::bar` *also* resolves to `foo.rs` (inline modules resolve to
+/// their containing file). Longest-first would stop there and report only
+/// `["baz"]`, so the descent looks for a non-existent top-level `mod baz`
+/// and the glob silently passes through unresolved. Shortest-first stops at
+/// `foo` and correctly reports `["bar", "baz"]`.
 fn detect_inline_path(
     reference: &TypeReference,
     resolved_file: &Path,
@@ -411,22 +420,21 @@ fn detect_inline_path(
 ) -> Vec<String> {
     let segments = reference.segments();
 
-    // Walk from the full path backwards, peeling off one segment at a time.
-    // The segments that resolve to the same file are "consumed by" the file;
-    // any remainder must be inline modules.
-    for split in (1..segments.len()).rev() {
+    // Walk from the shortest prefix upward. The first prefix that resolves to
+    // the same file is the file-backed module; everything past it is inline.
+    for split in 1..segments.len() {
         let prefix_path = segments[..split].join("::");
         match crate_info.resolve_module_path_to_file(&prefix_path) {
             Ok(ref parent_file) if parent_file == resolved_file => {
-                // The shorter prefix still resolves to the same file,
-                // so segments[split..] are inline module names.
+                // This prefix is the file-backed module, so segments[split..]
+                // are inline module names within it.
                 let inline = segments[split..].to_vec();
                 debug!("Inline path for {}: {inline:?}", reference.to_path_string());
                 return inline;
             }
             _ => {
                 // Different file or resolution failed — this prefix is
-                // a different module, keep peeling.
+                // a shallower module, keep extending.
             }
         }
     }
