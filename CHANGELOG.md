@@ -2,6 +2,68 @@
 
 ## [Unreleased]
 
+## [0.7.0](https://github.com/BartoszCiesla/crawk/compare/v0.6.0...v0.7.0)
+
+### ⛰️ Features
+
+
+- *(check)* Add deny rules for bin/lib layer boundaries - ([fd64e80](https://github.com/BartoszCiesla/crawk/commit/fd64e80b38da9f9bf626dfbf929e0cd7f3783a78))
+- *(check)* Improve --init output with clearer instructions - ([f0ef2a2](https://github.com/BartoszCiesla/crawk/commit/f0ef2a20ff0430d5bd61ef7079cd310e95f7f028))
+- *(check)* Support per-group deny-same-layer policy - ([ef52d53](https://github.com/BartoszCiesla/crawk/commit/ef52d53c2bdc20b7cc123857374a33d5303a4b4a))
+- *(check)* Allow overlapping layer groups - ([bae5df3](https://github.com/BartoszCiesla/crawk/commit/bae5df3d07b90e226c791dd8a05e7e260d513c70))
+- *(check)* Add --init flag to scaffold starter config - ([4bfa09b](https://github.com/BartoszCiesla/crawk/commit/4bfa09b0ce4873a530303ad91fbe6a4d42a867e8))
+- *(check)* Add architectural linting command - ([942ee26](https://github.com/BartoszCiesla/crawk/commit/942ee2614df647b7b0074dbbf57df27aef414191))
+- *(rules)* Add deny rule to check command - ([5fd8eb0](https://github.com/BartoszCiesla/crawk/commit/5fd8eb031d166280089407f118a1eb17dcc0de3c))
+
+### 🐛 Bug Fixes
+
+
+- *(analyzer)* Make why resolve refs via shared deps resolver - ([2169e30](https://github.com/BartoszCiesla/crawk/commit/2169e30490d0708cab69173decafa0af6a5434ce))
+- *(discover)* Resolve external test module in shallow -t collection - ([e417d2a](https://github.com/BartoszCiesla/crawk/commit/e417d2a5c6d3b58d4d6a50e9096a652d2cd66ed5))
+- *(discover)* Detect target entry points via cargo metadata - ([95a2eaf](https://github.com/BartoszCiesla/crawk/commit/95a2eafec8a1c1790987bbd0af00f50256073191))
+- *(discover)* Resolve file-based mod nested inside inline module - ([dc86d30](https://github.com/BartoszCiesla/crawk/commit/dc86d30a7ef0e3657f59ba686e22b18938dd9daa))
+- *(graph)* Fall back to lib for unresolved crate-root refs - ([22113f3](https://github.com/BartoszCiesla/crawk/commit/22113f3bece47a62a877823cf411e93c81a13832))
+- *(parser)* Verify second colon before consuming in token scan - ([2d90152](https://github.com/BartoszCiesla/crawk/commit/2d901527afd334e332c878e9f97df0d2d09c018c))
+- *(parser)* Skip child submodules when analyzing a filtered module - ([c98cc9f](https://github.com/BartoszCiesla/crawk/commit/c98cc9ff30a3c8d5b5bd5e845e04f09b686b163a))
+- *(parser)* Resolve bare crate-root sibling paths in test modules - ([c433274](https://github.com/BartoszCiesla/crawk/commit/c4332748f265b73caccd2f20d0fd13a0833d5f52))
+- *(reference)* Avoid double colon in crate-root glob rendering - ([c7df3ec](https://github.com/BartoszCiesla/crawk/commit/c7df3ec9d112b533aaf20c3080994c26698b4c72))
+- *(resolve)* Detect inline glob path shortest-first - ([9abe734](https://github.com/BartoszCiesla/crawk/commit/9abe7346f6dc5d9e3a3ac76ab92672cfff3372cd))
+- *(resolve)* Strip crate name from package-name glob visibility target - ([d7d2332](https://github.com/BartoszCiesla/crawk/commit/d7d233257981dd1f7126402dc938a40547a86231))
+- *(rules)* Exempt parent-submodule edges from deny-same-layer - ([008f3c3](https://github.com/BartoszCiesla/crawk/commit/008f3c3c0acec56d494d3e3896b20908651665c5))
+
+### 🚜 Refactor
+
+
+- Reduce complexity - ([75d536c](https://github.com/BartoszCiesla/crawk/commit/75d536c0537514f583b3f24f01c942732debf635))
+
+### 📚 Documentation
+
+
+- *(check)* Document deny rules and --init output - ([cd489f4](https://github.com/BartoszCiesla/crawk/commit/cd489f4f103929b94578a4204dff9e360c889444))
+- Mention architectural checks in feature list - ([dc46fef](https://github.com/BartoszCiesla/crawk/commit/dc46fef53afa4cd3c58169ee1aeb03a356850cdf))
+- Fix intra-doc link syntax in rustdoc comments - ([50acc12](https://github.com/BartoszCiesla/crawk/commit/50acc1276b732415502bc8749634f76f6d4bf30b))
+
+### ⚡ Performance
+
+
+- *(model)* Cache sort keys via sort_by_cached_key - ([39fc9a1](https://github.com/BartoszCiesla/crawk/commit/39fc9a1996be13a346f02932ea087cb105e21da6))
+- *(reference)* Preallocate to_path_string buffer - ([3837bb0](https://github.com/BartoszCiesla/crawk/commit/3837bb0b0c06a6de13421fbafceb43a4cd287da7))
+
+### ⚙️ Miscellaneous Tasks
+
+
+- *(toolchain)* Bump Rust toolchain to 1.96.1 - ([e1cbbfb](https://github.com/BartoszCiesla/crawk/commit/e1cbbfb093bf09dec8283b277818c90cb12e3a38))
+- Bump toolchain and CI action versions - ([23538f6](https://github.com/BartoszCiesla/crawk/commit/23538f6078d413bbf979780a24b2c52257e308bf))
+- Fix toolchain-flake-lock-sync hook in CI replay - ([d9698b4](https://github.com/BartoszCiesla/crawk/commit/d9698b4d3b4fe1355810adc45a0e90d8b957dd0f))
+- Verify nix flake resolves and builds - ([f006bdd](https://github.com/BartoszCiesla/crawk/commit/f006bdd32993ad2a7fbbb8a0b40b438c1a712bc8))
+- Add crawk check as pre-push architectural gate - ([5513ddc](https://github.com/BartoszCiesla/crawk/commit/5513ddc002e5bb46ac5ecb1be81256a4e7f3d650))
+
+### Build
+
+
+- *(deps)* Bump syn to 3.0 and sync toolchain/flake - ([324e9c8](https://github.com/BartoszCiesla/crawk/commit/324e9c8614b9d9f6d90b6db45841f00d814a9dd4))
+
+
 ## [0.6.0](https://github.com/BartoszCiesla/crawk/compare/v0.5.2...v0.6.0)
 
 ### ⛰️ Features
