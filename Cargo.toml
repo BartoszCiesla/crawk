@@ -68,6 +68,11 @@ clone_on_ref_ptr = "deny"
 str_to_string = "deny"
 redundant_pub_crate = "allow"
 todo = "warn"
+unreachable = "deny"
+string_slice = "deny"
+panic_in_result_fn = "deny"
+exit = "deny"
+as_conversions = "deny"
 
 [profile.release]
 opt-level = 'z'

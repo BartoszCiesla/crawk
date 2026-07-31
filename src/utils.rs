@@ -200,7 +200,8 @@ mod tests {
     #[test]
     fn descend_inline_module_empty_path_returns_none() {
         let items = vec![struct_item("Foo")];
-        assert!(descend_inline_module(&items, &[] as &[&str]).is_none());
+        let empty: &[&str] = &[];
+        assert!(descend_inline_module(&items, empty).is_none());
     }
 
     #[test]

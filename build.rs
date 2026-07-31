@@ -24,7 +24,10 @@ pub fn main() -> Result<()> {
 
     if let Ok(ts) = std::env::var("CRAWK_BUILD_TIMESTAMP") {
         println!("cargo:rustc-env=VERGEN_BUILD_TIMESTAMP={ts}");
-        println!("cargo:rustc-env=VERGEN_BUILD_DATE={}", &ts[..10]);
+        println!(
+            "cargo:rustc-env=VERGEN_BUILD_DATE={}",
+            ts.get(..10).unwrap_or(ts.as_str())
+        );
     }
 
     Ok(())

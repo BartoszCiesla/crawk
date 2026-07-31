@@ -1178,7 +1178,7 @@ mod tests {
             &[],
             PathSuffix::Group(vec![GroupItem::SelfItem { alias: None }]),
         );
-        assert_eq!(expand_to_segments(&r), vec![vec![] as Vec<String>]);
+        assert_eq!(expand_to_segments(&r), vec![Vec::<String>::new()]);
     }
 
     #[test]

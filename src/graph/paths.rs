@@ -82,7 +82,7 @@ pub(crate) fn compute_shortest_paths(
         let mut found = false;
         for &v in &level {
             let v_dist = dist[v];
-            for &w in adj.get(v).map_or(&[] as &[&str], Vec::as_slice) {
+            for &w in adj.get(v).map(Vec::as_slice).unwrap_or_default() {
                 match dist.get(w) {
                     None => {
                         dist.insert(w, v_dist + 1);

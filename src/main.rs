@@ -46,6 +46,9 @@ fn main() -> anyhow::Result<()> {
                 2
             });
             if code != 0 {
+                // Sole audited process::exit: the check command's distinct
+                // exit-code contract (0 clean / 1 violations / 2 operational).
+                #[allow(clippy::exit)]
                 std::process::exit(code);
             }
         }

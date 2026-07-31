@@ -172,7 +172,12 @@ pub(crate) fn scaffold_config(
 /// 1-based line number of byte `offset` within `text`.
 fn line_of(text: &str, offset: usize) -> usize {
     let end = offset.min(text.len());
-    text[..end].bytes().filter(|&b| b == b'\n').count() + 1
+    text.get(..end)
+        .unwrap_or(text)
+        .bytes()
+        .filter(|&b| b == b'\n')
+        .count()
+        + 1
 }
 
 /// Reject duplicate `[[check.layers]]` group names, pinning the duplicate to its
