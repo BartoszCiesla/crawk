@@ -80,7 +80,13 @@ impl RuleSet {
             let layer = self.layers.get(src_pos.group);
             let deny_same = layer.is_some_and(|l| l.deny_same_layer);
             let upward = src_pos.index > tgt_pos.index;
-            let same_layer = src_pos.index == tgt_pos.index;
+            // A module and its own submodule share the implicit subtree match, so
+            // they land on the same index. Such an edge (e.g. a `mod.rs`
+            // re-exporting its own child) is a natural containment relation, not a
+            // same-layer coupling — exempt it from the deny-same-layer check.
+            let related =
+                is_ancestor_or_self(source, target) || is_ancestor_or_self(target, source);
+            let same_layer = src_pos.index == tgt_pos.index && !related;
             let violates = upward || (same_layer && deny_same);
             if !violates {
                 continue;
@@ -102,6 +108,17 @@ impl RuleSet {
             });
         }
     }
+}
+
+/// Is `descendant` the same module as `ancestor`, or nested beneath it?
+///
+/// Matching is on `::` segment boundaries, so `parser` covers `parser::visitor`
+/// but never `parser_extra`.
+fn is_ancestor_or_self(ancestor: &str, descendant: &str) -> bool {
+    descendant == ancestor
+        || descendant
+            .strip_prefix(ancestor)
+            .is_some_and(|rest| rest.starts_with("::"))
 }
 
 /// Evaluate `rules` against `graph`, returning all violations (sorted).
@@ -229,6 +246,45 @@ mod tests {
         let mut out = Vec::new();
         rules.check_layers("mid::a", "mid::b", &index, &BTreeSet::new(), &mut out);
         assert_eq!(out.len(), 1);
+    }
+
+    #[test]
+    fn same_layer_ancestor_edge_allowed_under_deny() {
+        // A parent depending on its own submodule (e.g. `parser` re-exporting
+        // `parser::visitor`) is same-layer under the implicit subtree match, but
+        // is a natural edge — deny-same-layer must not flag it.
+        let rules = RuleSet {
+            layers: vec![layer_deny("app", &["parser"])],
+            deny: Vec::new(),
+            strict_layers: false,
+        };
+        let modules = module_set(&["parser", "parser::visitor"]);
+        let index = rules.build_layer_index(&modules);
+        let mut out = Vec::new();
+        rules.check_layers(
+            "parser",
+            "parser::visitor",
+            &index,
+            &BTreeSet::new(),
+            &mut out,
+        );
+        assert!(out.is_empty(), "parent -> own submodule must not violate");
+    }
+
+    #[test]
+    fn same_layer_sibling_edge_still_denied() {
+        // Guarding ancestor edges must not weaken the sibling case: two distinct
+        // submodules of the same layer are still same-layer under the flag.
+        let rules = RuleSet {
+            layers: vec![layer_deny("app", &["parser"])],
+            deny: Vec::new(),
+            strict_layers: false,
+        };
+        let modules = module_set(&["parser::a", "parser::b"]);
+        let index = rules.build_layer_index(&modules);
+        let mut out = Vec::new();
+        rules.check_layers("parser::a", "parser::b", &index, &BTreeSet::new(), &mut out);
+        assert_eq!(out.len(), 1, "sibling same-layer edge still violates");
     }
 
     #[test]
