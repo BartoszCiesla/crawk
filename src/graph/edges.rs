@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 use crate::model::AnalysisResult;
-use crate::reference::PathPrefix;
+use crate::reference::{PathPrefix, TypeReference};
 
 /// A directed module dependency edge: `(source, target)`.
 ///
@@ -52,6 +52,59 @@ pub(crate) fn find_module_target<'a>(
         }
     }
     None
+}
+
+/// Resolve a single reference to its owning module path in the dependency graph.
+///
+/// Shared resolution logic used by both [`build_edges`] (the `deps` command) and
+/// [`crate::Analyzer::explain_dependency`] (the `why` command) so the two agree
+/// on how a reference maps to a target module. Two reference kinds resolve:
+///
+/// - `crate::` prefixed — intra-target refs resolved via `known_modules`,
+///   falling back to `"lib"` for crate-root re-exports
+/// - `<package>::` prefixed — cross-target refs from a binary/test to the lib
+///   target; the package-name prefix is stripped and the rest resolved,
+///   falling back to `"lib"`
+///
+/// Returns `(module_path, api_segments)` where `api_segments` are the trailing
+/// segments after the module path, or `None` when the reference is neither an
+/// intra-crate nor a matching package-name dependency.
+pub(crate) fn resolve_reference_target<'a>(
+    reference: &'a TypeReference,
+    known_modules: &'a HashSet<String>,
+    package_name: Option<&str>,
+) -> Option<(&'a str, &'a [String])> {
+    let segments = reference.segments();
+    if segments.is_empty() {
+        return None;
+    }
+
+    match reference.prefix() {
+        // Intra-target: crate:: references resolved directly, falling back to
+        // "lib" for crate-root re-exports (no module in the path matches,
+        // e.g. `crate::Widget` re-exported in lib.rs).
+        PathPrefix::Crate => Some(
+            find_module_target(segments, known_modules).map_or(("lib", segments), |m| {
+                (m, &segments[m.split("::").count()..])
+            }),
+        ),
+
+        // Cross-target: <package>::Foo references from binaries/tests to lib.
+        PathPrefix::None => {
+            let is_pkg_ref =
+                package_name.is_some_and(|pkg| segments.first().map(String::as_str) == Some(pkg));
+            if !is_pkg_ref {
+                return None;
+            }
+            let rest = &segments[1..];
+            Some(
+                find_module_target(rest, known_modules)
+                    .map_or(("lib", rest), |m| (m, &rest[m.split("::").count()..])),
+            )
+        }
+
+        _ => None,
+    }
 }
 
 /// Build a sorted, deduplicated map of module-to-module dependency edges.
@@ -123,41 +176,9 @@ pub(crate) fn build_edges(
         }
 
         for reference in refs {
-            let segments = reference.segments();
-            if segments.is_empty() {
-                continue;
-            }
-
-            // Resolve the reference to (module_path, api_segments) where
-            // api_segments are the trailing segments after the module path.
-            let resolved: Option<(&str, &[String])> = match reference.prefix() {
-                // Intra-target: crate:: references resolved directly, falling
-                // back to "lib" for crate-root re-exports (no module in the
-                // path matches, e.g. `crate::Widget` re-exported in lib.rs).
-                PathPrefix::Crate => Some(
-                    find_module_target(segments, known_modules).map_or(("lib", segments), |m| {
-                        (m, &segments[m.split("::").count()..])
-                    }),
-                ),
-
-                // Cross-target: <package>::Foo references from binaries/tests to lib.
-                PathPrefix::None => {
-                    let is_pkg_ref = package_name
-                        .is_some_and(|pkg| segments.first().map(String::as_str) == Some(pkg));
-                    if !is_pkg_ref {
-                        continue;
-                    }
-                    let rest = &segments[1..];
-                    Some(
-                        find_module_target(rest, known_modules)
-                            .map_or(("lib", rest), |m| (m, &rest[m.split("::").count()..])),
-                    )
-                }
-
-                _ => continue,
-            };
-
-            let Some((module_path, api_segments)) = resolved else {
+            let Some((module_path, api_segments)) =
+                resolve_reference_target(reference, known_modules, package_name)
+            else {
                 continue;
             };
             let target = truncate_module_path(module_path, depth);

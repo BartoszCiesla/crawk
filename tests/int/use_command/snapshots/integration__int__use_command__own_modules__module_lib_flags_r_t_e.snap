@@ -53,14 +53,14 @@ crate::graph::edges::*
 crate::graph::edges::AnnotatedEdges
 crate::graph::edges::Edge
 crate::graph::edges::build_edges
-crate::graph::edges::find_module_target
+crate::graph::edges::resolve_reference_target
 crate::graph::edges::truncate_module_path
-crate::graph::find_module_target
 crate::graph::orphans::*
 crate::graph::orphans::find_orphans
 crate::graph::paths::*
 crate::graph::paths::ShortestPaths
 crate::graph::paths::compute_shortest_paths
+crate::graph::resolve_reference_target
 crate::graph::truncate_module_path
 crate::model::*
 crate::model::AnalysisOptions

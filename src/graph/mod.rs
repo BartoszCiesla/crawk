@@ -23,7 +23,7 @@ pub(crate) use orphans::find_orphans;
 pub(crate) use paths::compute_shortest_paths;
 
 pub(crate) use edges::build_edges;
-pub(crate) use edges::find_module_target;
+pub(crate) use edges::resolve_reference_target;
 
 /// Options controlling dependency graph construction.
 ///

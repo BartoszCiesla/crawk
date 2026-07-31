@@ -24,3 +24,17 @@ fn should_why_no_dependency() {
 fn should_why_no_dependency_own_crate() {
     assert_cmd_snapshot!(crawk().args(["why", "constants", "analyzer"]));
 }
+
+// `why` must agree with `deps` for cross-target package-name references
+// (`crawk::version::…`) — `deps` reports `main -> version`.
+#[test]
+fn should_why_own_crate_pkg_name_ref() {
+    assert_cmd_snapshot!(crawk().args(["why", "main", "version"]));
+}
+
+// `why` must agree with `deps` for crate-root re-exports resolving to the
+// synthetic `lib` target — `deps` reports `main -> lib`.
+#[test]
+fn should_why_own_crate_lib_fallback() {
+    assert_cmd_snapshot!(crawk().args(["why", "main", "lib"]));
+}

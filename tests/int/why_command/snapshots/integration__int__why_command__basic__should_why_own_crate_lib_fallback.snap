@@ -1,0 +1,20 @@
+---
+source: tests/int/why_command/basic.rs
+info:
+  program: crawk
+  args:
+    - why
+    - main
+    - lib
+---
+success: true
+exit_code: 0
+----- stdout -----
+crawk::AnalysisOptions
+crawk::Analyzer
+crawk::AnnotatedEdges
+crawk::CheckOptions
+crawk::DependencyGraph
+crawk::DependencyGraphOptions
+
+----- stderr -----

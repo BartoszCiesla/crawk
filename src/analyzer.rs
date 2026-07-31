@@ -965,7 +965,14 @@ impl Analyzer {
         let known_modules: HashSet<String> =
             all_modules.iter().map(|m| m.path().to_owned()).collect();
 
-        if !known_modules.contains(target) {
+        let package_name: Option<String> = all_modules
+            .iter()
+            .find(|m| m.target().kind() == &TargetKind::Lib)
+            .map(|m| m.target().name().to_owned());
+
+        // Accept the synthetic `"lib"` root as a valid target even though it is
+        // not a discovered module path: crate-root re-exports resolve to it.
+        if target != "lib" && !known_modules.contains(target) {
             info!("Target module '{target}' not found in crate, returning empty result");
             return Ok(BTreeMap::new());
         }
@@ -987,12 +994,11 @@ impl Analyzer {
             };
 
             for reference in refs {
-                if reference.prefix() != PathPrefix::Crate {
-                    continue;
-                }
-                let segments = reference.segments();
-                if let Some(resolved) = graph::find_module_target(segments, &known_modules)
-                    && resolved == target
+                if let Some((module_path, _)) = graph::resolve_reference_target(
+                    reference,
+                    &known_modules,
+                    package_name.as_deref(),
+                ) && module_path == target
                 {
                     filtered
                         .entry(source_name.clone())

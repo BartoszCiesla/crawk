@@ -34,13 +34,13 @@ crate::graph::cycles::detect_cycles
 crate::graph::edges
 crate::graph::edges::AnnotatedEdges
 crate::graph::edges::build_edges
-crate::graph::edges::find_module_target
+crate::graph::edges::resolve_reference_target
 crate::graph::edges::truncate_module_path
 crate::graph::edges::{AnnotatedEdges, Edge}
-crate::graph::find_module_target
 crate::graph::orphans::find_orphans
 crate::graph::paths::ShortestPaths
 crate::graph::paths::compute_shortest_paths
+crate::graph::resolve_reference_target
 crate::graph::truncate_module_path
 crate::graph::{AnnotatedEdges, Cycle, DependencyGraph, DependencyGraphOptions, Edge, ShortestPaths}
 crate::graph::{self, DependencyGraph, DependencyGraphOptions}
@@ -52,7 +52,6 @@ crate::parser::visitor::ModuleVisitor
 crate::reference::GroupItem::Aliased
 crate::reference::GroupItem::Glob
 crate::reference::GroupItem::Simple
-crate::reference::PathPrefix
 crate::reference::TypeReference
 crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference}
 crate::reference::{GroupItem, PathPrefix, TypeReference}

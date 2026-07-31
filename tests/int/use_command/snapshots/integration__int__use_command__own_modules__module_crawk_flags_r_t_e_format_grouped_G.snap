@@ -51,7 +51,7 @@ analyzer
  - crate::graph::DependencyGraphOptions
  - crate::graph::Edge
  - crate::graph::build_edges
- - crate::graph::find_module_target
+ - crate::graph::resolve_reference_target
  - crate::graph::truncate_module_path
  - crate::model::AnalysisOptions
  - crate::model::AnalysisResult
@@ -102,7 +102,7 @@ graph
  - crate::graph::edges::AnnotatedEdges
  - crate::graph::edges::Edge
  - crate::graph::edges::build_edges
- - crate::graph::edges::find_module_target
+ - crate::graph::edges::resolve_reference_target
  - crate::graph::edges::truncate_module_path
  - crate::graph::orphans::find_orphans
  - crate::graph::paths::ShortestPaths
@@ -115,11 +115,13 @@ graph::cycles::tests
 graph::edges
  - crate::model::AnalysisResult
  - crate::reference::PathPrefix
+ - crate::reference::TypeReference
 graph::edges::tests
  - crate::graph::edges::AnnotatedEdges
  - crate::graph::edges::Edge
  - crate::graph::edges::build_edges
  - crate::graph::edges::find_module_target
+ - crate::graph::edges::resolve_reference_target
  - crate::graph::edges::truncate_module_path
 graph::orphans
  - crate::graph::edges::AnnotatedEdges
@@ -140,8 +142,8 @@ graph::tests
  - crate::graph::build_edges
  - crate::graph::compute_shortest_paths
  - crate::graph::detect_cycles
- - crate::graph::find_module_target
  - crate::graph::find_orphans
+ - crate::graph::resolve_reference_target
  - crate::graph::truncate_module_path
 model
  - crate::reference::TypeReference
