@@ -479,16 +479,42 @@ impl CrateInfo {
                 {
                     let mod_name = item_mod.ident.to_string();
                     let submodule_path = if current_module_path.is_empty() {
-                        mod_name
+                        mod_name.clone()
                     } else {
                         format!("{current_module_path}::{mod_name}")
                     };
-                    result.push(ModuleInfo::new(
-                        submodule_path,
-                        file_path.to_path_buf(),
-                        ModuleVisibility::from(&item_mod.vis),
-                        target.clone(),
-                    ));
+                    let submodule_visibility = ModuleVisibility::from(&item_mod.vis);
+
+                    if item_mod.content.is_some() {
+                        // Inline test module — its body lives in this file.
+                        result.push(ModuleInfo::new(
+                            submodule_path,
+                            file_path.to_path_buf(),
+                            submodule_visibility,
+                            target.clone(),
+                        ));
+                    } else if let Some(sub_mod_file) = Self::resolve_module_parts(
+                        // External `#[cfg(test)] mod tests;` — resolve to its own
+                        // file, extending the base dir by the inline ancestors so
+                        // a test module declared inside an inline module resolves
+                        // where rustc actually looks for it.
+                        &inline_scope
+                            .iter()
+                            .fold(Self::get_module_base_dir(file_path), |dir, segment| {
+                                dir.join(segment)
+                            }),
+                        &[&mod_name],
+                        None,
+                    )? {
+                        result.push(ModuleInfo::new(
+                            submodule_path,
+                            sub_mod_file,
+                            submodule_visibility,
+                            target.clone(),
+                        ));
+                    } else {
+                        debug!("Skipping unresolved external test module: '{submodule_path}'");
+                    }
                 }
             }
         }
