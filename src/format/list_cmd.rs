@@ -97,7 +97,7 @@ pub(crate) fn render_list_table(
 ) -> String {
     let mut table = Table::new();
     table
-        .load_preset(ASCII_FULL)
+        .load_style(ASCII_FULL)
         .set_content_arrangement(ContentArrangement::Dynamic);
 
     // Build header
