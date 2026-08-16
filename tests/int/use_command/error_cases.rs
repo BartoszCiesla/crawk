@@ -23,6 +23,54 @@ fn should_fail_with_parse_error_including_module_context() {
 }
 
 // ============================================================================
+// Parse error in a submodule — surfaced, not masked as "module not found"
+// ============================================================================
+
+/// A non-recursive query still builds a *recursive* module tree internally to
+/// populate `children_map` (so bare child paths resolve). When a submodule
+/// fails to parse, that discovery errors — and the integration-test-target
+/// fallback must not swallow it and report the generic "Module not found" for
+/// the healthy queried module instead.
+///
+/// `crawk use good -r` already reported the parse error correctly; without
+/// `-r` it did not, so the two forms contradicted each other on the same crate.
+#[test]
+fn should_report_submodule_parse_error_in_non_recursive_mode() {
+    use std::fs;
+    use tempfile::TempDir;
+
+    let root = TempDir::new().unwrap();
+    let src = root.path().join("src");
+    fs::create_dir(&src).unwrap();
+    fs::create_dir(src.join("good")).unwrap();
+    fs::write(
+        root.path().join("Cargo.toml"),
+        "[package]\nname = \"test-submodule-parse-error\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+    )
+    .unwrap();
+    fs::write(src.join("lib.rs"), "pub mod good;\npub mod dep;\n").unwrap();
+    fs::write(src.join("dep.rs"), "pub struct D;\n").unwrap();
+    fs::write(
+        src.join("good.rs"),
+        "pub mod broken;\npub use crate::dep::D;\n",
+    )
+    .unwrap();
+    fs::write(src.join("good/broken.rs"), "this is not valid rust !!!\n").unwrap();
+
+    let root_str = root.path().to_str().unwrap_or("");
+    let mut filters: Vec<(&str, &str)> = vec![(root_str, "[ROOT]")];
+    filters.extend(backtrace_filters());
+    with_settings!({
+        filters => filters,
+    }, {
+        assert_cmd_snapshot!(crawk()
+            .arg("-p").arg(root.path())
+            .arg("use")
+            .arg("good"));
+    });
+}
+
+// ============================================================================
 // Invalid depth values
 // ============================================================================
 

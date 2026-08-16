@@ -4,13 +4,13 @@ info:
   program: crawk
   args:
     - "-p"
-    - fixtures/broken_syntax
+    - /tmp/.tmp14TEfZ
     - use
-    - broken
+    - good
 ---
 success: false
 exit_code: 1
 ----- stdout -----
 
 ----- stderr -----
-Error: Failed to parse file '[MANIFEST_DIR]/fixtures/broken_syntax/src/broken.rs': expected `!`
+Error: Failed to parse file '[ROOT]/src/good/broken.rs': expected `!`

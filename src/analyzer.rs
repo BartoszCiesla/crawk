@@ -366,20 +366,30 @@ impl Analyzer {
         let mut children_map = if options.recursive {
             Self::build_children_map(&modules)
         } else {
-            let all_modules = self
-                .crate_info
-                .get_module_tree(
-                    &module_path,
-                    true,
-                    options.include_tests,
-                    &target,
-                    &mut self.parse_cache,
-                )
-                .or_else(|_| {
-                    // Fallback: for test targets the module tree is built from
-                    // the source file directly, not via path resolution.
-                    self.list_from_test_target(&module_path)
-                })?;
+            let all_modules = match self.crate_info.get_module_tree(
+                &module_path,
+                true,
+                options.include_tests,
+                &target,
+                &mut self.parse_cache,
+            ) {
+                Ok(mods) => mods,
+                // Fallback: for test targets the module tree is built from
+                // the source file directly, not via path resolution. Gated
+                // exactly like the discovery call above — a parse or I/O
+                // failure must surface as itself, not as "module not found".
+                Err(ref e) if options.include_tests && e.is_module_not_found() => {
+                    self.list_from_test_target(&module_path)?
+                }
+                // The queried module already resolved above, so a not-found
+                // here is about the recursive walk losing it. Report the
+                // fully-qualified query rather than the single segment the
+                // discovery error names.
+                Err(ref e) if e.is_module_not_found() => {
+                    return Err(AnalysisError::ModuleNotFound { module_path });
+                }
+                Err(e) => return Err(e.into()),
+            };
             Self::build_children_map(&all_modules)
         };
 
