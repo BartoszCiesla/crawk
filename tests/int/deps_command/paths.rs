@@ -1,4 +1,4 @@
-use crate::common::{backtrace_filters, crawk_cycles, crawk_paths};
+use crate::common::{backtrace_filters, crawk_cycles, crawk_modules, crawk_paths};
 use insta::with_settings;
 use insta_cmd::assert_cmd_snapshot;
 use test_case::test_case;
@@ -92,6 +92,37 @@ fn should_path_depth_1_dedup_for_paths_fixture() {
             .arg("leaf")
             .arg("-d")
             .arg("1")
+    );
+}
+
+// `--depth` must not truncate the module set the SOURCE/TARGET lookup runs
+// against — only the rendered nodes. `nesting::level1::level2::level3` exists
+// solely at full granularity.
+#[test]
+fn should_path_depth_1_with_nested_modules_for_modules_fixture() {
+    assert_cmd_snapshot!(
+        crawk_modules()
+            .arg("deps")
+            .arg("--path")
+            .arg("app")
+            .arg("nesting::level1::level2::level3")
+            .arg("-d")
+            .arg("1")
+    );
+}
+
+#[test]
+fn should_path_depth_1_dot_truncates_edges_for_modules_fixture() {
+    assert_cmd_snapshot!(
+        crawk_modules()
+            .arg("deps")
+            .arg("--path")
+            .arg("app")
+            .arg("nesting::level1::level2::level3")
+            .arg("-d")
+            .arg("1")
+            .arg("-f")
+            .arg("dot")
     );
 }
 

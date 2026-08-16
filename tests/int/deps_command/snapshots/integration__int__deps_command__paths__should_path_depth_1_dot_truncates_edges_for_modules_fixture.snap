@@ -1,0 +1,106 @@
+---
+source: tests/int/deps_command/paths.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/modules
+    - deps
+    - "--path"
+    - app
+    - "nesting::level1::level2::level3"
+    - "-d"
+    - "1"
+    - "-f"
+    - dot
+---
+success: true
+exit_code: 0
+----- stdout -----
+digraph dependencies {
+    rankdir=LR;
+    node [shape=box, style=rounded, fontname="monospace", fontsize=10];
+    edge [color="#444444"];
+
+    "advanced_globs";
+    "app";
+    "app_only";
+    "baz";
+    "crate_root_reexport";
+    "custom_path";
+    "dir_module";
+    "empty_module";
+    "file_module";
+    "foo";
+    "glob_patterns";
+    "glob_showcase";
+    "group_patterns";
+    "inline_modules";
+    "item_visibility";
+    "lib";
+    "main";
+    "mixed";
+    "nesting";
+    "no_pub_items";
+    "reexports";
+    "uses_empty_glob";
+    "visibility";
+
+    "advanced_globs" -> "dir_module";
+    "advanced_globs" -> "file_module";
+    "advanced_globs" -> "visibility";
+    "app" -> "advanced_globs";
+    "app" -> "app_only";
+    "app" -> "dir_module";
+    "app" -> "file_module";
+    "app" -> "glob_patterns";
+    "app" -> "glob_showcase";
+    "app" -> "inline_modules";
+    "app" -> "item_visibility";
+    "app" -> "mixed";
+    "app" -> "nesting" [color=red, style=bold, penwidth=2.0];
+    "app" -> "reexports";
+    "app" -> "visibility";
+    "baz" -> "foo";
+    "crate_root_reexport" -> "lib";
+    "custom_path" -> "item_visibility";
+    "custom_path" -> "lib";
+    "dir_module" -> "file_module";
+    "dir_module" -> "inline_modules";
+    "file_module" -> "nesting";
+    "glob_patterns" -> "dir_module";
+    "glob_patterns" -> "file_module";
+    "glob_showcase" -> "file_module";
+    "glob_showcase" -> "inline_modules";
+    "glob_showcase" -> "nesting";
+    "group_patterns" -> "file_module";
+    "group_patterns" -> "nesting";
+    "inline_modules" -> "dir_module";
+    "inline_modules" -> "file_module";
+    "inline_modules" -> "no_pub_items";
+    "item_visibility" -> "reexports";
+    "lib" -> "empty_module";
+    "main" -> "advanced_globs";
+    "main" -> "dir_module";
+    "main" -> "file_module";
+    "main" -> "glob_patterns";
+    "main" -> "glob_showcase";
+    "main" -> "inline_modules";
+    "main" -> "item_visibility";
+    "main" -> "mixed";
+    "main" -> "nesting";
+    "main" -> "reexports";
+    "main" -> "visibility";
+    "mixed" -> "custom_path";
+    "nesting" -> "inline_modules";
+    "reexports" -> "file_module";
+    "reexports" -> "item_visibility";
+    "reexports" -> "nesting";
+    "reexports" -> "visibility";
+    "uses_empty_glob" -> "no_pub_items";
+    "visibility" -> "dir_module";
+    "visibility" -> "file_module";
+    "visibility" -> "nesting";
+}
+
+----- stderr -----

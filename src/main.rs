@@ -116,7 +116,15 @@ fn handle_deps_command(crate_root: &Path, args: &DepsArgs) -> anyhow::Result<()>
 
     let mut graph_opts = DependencyGraphOptions::default();
     graph_opts.include_tests = args.include_tests;
-    graph_opts.depth = args.depth;
+    // `--path` resolves SOURCE/TARGET against the full-granularity module set;
+    // for that combination `--depth` is a render-time concern only, applied by
+    // `format::paths`. Truncating the graph first would reject valid module
+    // paths that survive only in their full form.
+    graph_opts.depth = if args.path.is_some() {
+        None
+    } else {
+        args.depth
+    };
     graph_opts.show_apis = args.show_apis;
     let graph = analyzer.dependency_graph(&graph_opts)?;
 

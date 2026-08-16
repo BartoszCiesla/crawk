@@ -1,0 +1,20 @@
+---
+source: tests/int/deps_command/paths.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/modules
+    - deps
+    - "--path"
+    - app
+    - "nesting::level1::level2::level3"
+    - "-d"
+    - "1"
+---
+success: true
+exit_code: 0
+----- stdout -----
+app -> nesting
+
+----- stderr -----

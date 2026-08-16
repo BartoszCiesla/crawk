@@ -74,11 +74,30 @@ pub(crate) fn render_paths_grouped(paths: &ShortestPaths, depth: Option<usize>) 
     out
 }
 
+/// Truncate every edge endpoint to `depth`, dropping self-loops produced by
+/// truncation.
+///
+/// Mirrors `graph::edges::build_edges`, which drops self-loops too — so with
+/// `depth = None` this is a plain deduplicating copy of the edge keys.
+fn truncate_edges(all_edges: &AnnotatedEdges, depth: Option<usize>) -> BTreeSet<(String, String)> {
+    all_edges
+        .keys()
+        .map(|(source, target)| {
+            (
+                truncate_segment(source, depth),
+                truncate_segment(target, depth),
+            )
+        })
+        .filter(|(source, target)| source != target)
+        .collect()
+}
+
 /// Render the full dependency graph in DOT with path edges highlighted in red.
 ///
-/// All edges from `all_edges` are drawn; edges that appear on any shortest path
-/// get `color=red, style=bold, penwidth=2.0`. Returns an empty string when
-/// `paths` is empty (no path found).
+/// All edges from `all_edges` are drawn, truncated to `depth` like the path
+/// nodes themselves; edges that appear on any shortest path get
+/// `color=red, style=bold, penwidth=2.0`. Returns an empty string when `paths`
+/// is empty (no path found).
 #[must_use]
 pub(crate) fn render_paths_dot(
     all_edges: &AnnotatedEdges,
@@ -104,9 +123,11 @@ pub(crate) fn render_paths_dot(
     out.push_str("    node [shape=box, style=rounded, fontname=\"monospace\", fontsize=10];\n");
     out.push_str("    edge [color=\"#444444\"];\n");
 
-    if !all_edges.is_empty() {
+    let edges = truncate_edges(all_edges, depth);
+
+    if !edges.is_empty() {
         let mut nodes: BTreeSet<&str> = BTreeSet::new();
-        for (source, target) in all_edges.keys() {
+        for (source, target) in &edges {
             nodes.insert(source.as_str());
             nodes.insert(target.as_str());
         }
@@ -117,8 +138,9 @@ pub(crate) fn render_paths_dot(
         }
 
         out.push('\n');
-        for (source, target) in all_edges.keys() {
-            let on_path = path_edge_set.contains(&(source.clone(), target.clone()));
+        for edge in &edges {
+            let on_path = path_edge_set.contains(edge);
+            let (source, target) = edge;
             let _ = write!(out, "    \"{source}\" -> \"{target}\"");
             if on_path {
                 out.push_str(" [color=red, style=bold, penwidth=2.0]");
