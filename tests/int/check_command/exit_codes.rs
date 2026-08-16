@@ -79,6 +79,19 @@ fn missing_config_is_two() {
     );
 }
 
+// The exit-2 contract covers the whole check path, not just the handler: an
+// operational error raised before dispatch must not surface as the violations
+// code 1, which CI would read as "rules broken".
+#[test]
+fn nonexistent_crate_root_is_two() {
+    let code = crawk()
+        .args(["-p", "/nonexistent/crawk-xyz", "check"])
+        .output()
+        .ok()
+        .and_then(|o| o.status.code());
+    assert_eq!(code, Some(2));
+}
+
 // `--init` against a crate with no existing config succeeds (exit 0), same as
 // any other clean run.
 #[test]

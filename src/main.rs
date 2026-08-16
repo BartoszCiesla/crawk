@@ -19,8 +19,34 @@ fn main() -> anyhow::Result<()> {
     // Parse command-line arguments
     let command = CrawkArgs::parse();
 
+    // The check command owns a distinct exit-code contract: 0 clean, 1
+    // violations, 2 operational error. Every failure on its path — including
+    // the setup steps before dispatch — maps to 2 rather than letting anyhow
+    // return the default exit code 1 from `main`.
+    let is_check = matches!(command.command, CrawkCommands::Check(_));
+
+    match run(&command) {
+        Ok(0) => Ok(()),
+        Ok(code) => exit_with(code),
+        Err(e) if is_check => {
+            eprintln!("Error: {e:#}");
+            exit_with(2)
+        }
+        Err(e) => Err(e),
+    }
+}
+
+/// Sole audited `process::exit`: the check command's distinct exit-code
+/// contract (0 clean / 1 violations / 2 operational).
+fn exit_with(code: i32) -> ! {
+    #[allow(clippy::exit)]
+    std::process::exit(code)
+}
+
+/// Run the requested command. Returns the intended process exit code.
+fn run(command: &CrawkArgs) -> anyhow::Result<i32> {
     // Configure logging based on command-line options
-    configure_tracing(&command)?;
+    configure_tracing(command)?;
 
     // Get crate root directory
     let crate_root = command.crate_root()?;
@@ -37,24 +63,10 @@ fn main() -> anyhow::Result<()> {
         CrawkCommands::List(ref args) => handle_list_command(&crate_root, args)?,
         CrawkCommands::Deps(ref args) => handle_deps_command(&crate_root, args)?,
         CrawkCommands::Why(ref args) => handle_why_command(&crate_root, args)?,
-        CrawkCommands::Check(ref args) => {
-            // Distinct exit-code contract: 0 clean, 1 violations, 2 operational
-            // error. Map handler errors to 2 here rather than letting anyhow
-            // return the default exit code 1 from `main`.
-            let code = handle_check_command(&crate_root, args).unwrap_or_else(|e| {
-                eprintln!("Error: {e:#}");
-                2
-            });
-            if code != 0 {
-                // Sole audited process::exit: the check command's distinct
-                // exit-code contract (0 clean / 1 violations / 2 operational).
-                #[allow(clippy::exit)]
-                std::process::exit(code);
-            }
-        }
+        CrawkCommands::Check(ref args) => return handle_check_command(&crate_root, args),
     }
 
-    Ok(())
+    Ok(0)
 }
 
 /// Handle the 'check' subcommand. Returns the intended process exit code:
