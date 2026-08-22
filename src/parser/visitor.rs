@@ -766,16 +766,13 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
 
     /// Visit type paths - captures type annotations like `let x: crate::Foo`
     fn visit_type_path(&mut self, node: &'ast syn::TypePath) {
-        if !self.in_test_module {
-            if let Some(r) = self.build_reference(&node.path, true) {
-                self.references.type_refs.push(r);
-            }
-
-            // Also check the qself if present (e.g., <crate::Foo as Trait>::Item)
-            if let Some(qself) = &node.qself {
-                syn::visit::visit_type(self, &qself.ty);
-            }
+        if !self.in_test_module
+            && let Some(r) = self.build_reference(&node.path, true)
+        {
+            self.references.type_refs.push(r);
         }
+        // The default visit descends into `node.qself` (e.g. the `crate::Foo`
+        // in `<crate::Foo as Trait>::Item`), so no manual qself visit is needed.
         syn::visit::visit_type_path(self, node);
     }
 }
@@ -914,6 +911,31 @@ mod tests {
         assert!(
             paths.is_empty(),
             "child submodule references leaked into parent 'foo::bar': {paths:?}"
+        );
+    }
+
+    #[test]
+    fn qself_type_is_recorded_exactly_once() {
+        // Regression: `<crate::foo::Bar as Trait>::Item` must push its qself
+        // type `crate::foo::Bar` into `type_refs` only once. The manual qself
+        // visit plus the default `visit_type_path` (which also descends the
+        // qself) previously recorded it twice in the raw Vec.
+        let code = r"
+            type Alias = <crate::foo::Bar as Trait>::Item;
+        ";
+        let syntax: syn::File = syn::parse_file(code).expect("parse");
+        let mut v = ModuleVisitor::new("", HashSet::new(), HashSet::new(), None);
+        v.visit_file(&syntax);
+
+        let count = v
+            .references
+            .type_refs
+            .iter()
+            .filter(|r| r.to_path_string() == "crate::foo::Bar")
+            .count();
+        assert_eq!(
+            count, 1,
+            "qself type recorded {count} times, expected exactly 1"
         );
     }
 
