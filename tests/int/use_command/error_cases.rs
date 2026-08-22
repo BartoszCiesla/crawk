@@ -71,6 +71,54 @@ fn should_report_submodule_parse_error_in_non_recursive_mode() {
 }
 
 // ============================================================================
+// File-size guard reachable on the discovery path
+// ============================================================================
+
+// Discovery runs first and populates the shared ParseCache, so the analyzer's
+// own guarded read only ever sees a cache hit. The size guard therefore has to
+// live on the discovery read too — otherwise an oversized module file is parsed
+// into memory and analyzed with no FileTooLarge at all. Asserted on exit code
+// + stderr (not a snapshot) to avoid pinning the exact byte counts, which track
+// the internal MAX_FILE_BYTES constant.
+#[test]
+fn should_reject_oversized_module_file_on_discovery() {
+    use std::fs;
+    use tempfile::TempDir;
+
+    // 10 MiB + 1 — one byte past the analyzer's limit. A sparse file (set_len)
+    // keeps this cheap; the guard rejects on metadata size before any read.
+    const OVERSIZED: u64 = 10 * 1024 * 1024 + 1;
+
+    let root = TempDir::new().unwrap();
+    let src = root.path().join("src");
+    fs::create_dir(&src).unwrap();
+    fs::write(
+        root.path().join("Cargo.toml"),
+        "[package]\nname = \"test-oversized-module\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+    )
+    .unwrap();
+    fs::write(src.join("lib.rs"), "pub mod big;\n").unwrap();
+    let big = fs::File::create(src.join("big.rs")).unwrap();
+    big.set_len(OVERSIZED).unwrap();
+    drop(big);
+
+    let output = crawk()
+        .arg("-p")
+        .arg(root.path())
+        .arg("use")
+        .arg("big")
+        .output()
+        .expect("run crawk");
+
+    assert_eq!(output.status.code(), Some(1), "oversized file must error");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("too large"),
+        "expected FileTooLarge on the discovery path, got stderr: {stderr}"
+    );
+}
+
+// ============================================================================
 // Invalid depth values
 // ============================================================================
 

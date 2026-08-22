@@ -149,6 +149,20 @@ pub enum CrateInfoError {
         source: std::io::Error,
     },
 
+    /// The source file exceeds the maximum allowed size and was not parsed.
+    ///
+    /// Mirrors the analyzer's own `FileTooLarge` so the discovery path enforces the
+    /// same limit; guards against excessive memory use on unexpectedly large files.
+    #[error("File too large '{path}': {size} bytes (limit {limit} bytes)")]
+    FileTooLarge {
+        /// Path to the oversized file.
+        path: PathBuf,
+        /// Actual file size in bytes.
+        size: u64,
+        /// Maximum allowed size in bytes.
+        limit: u64,
+    },
+
     /// Failed to parse source file.
     #[error("Failed to parse file '{path}': {message}")]
     ParseError {

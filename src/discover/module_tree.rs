@@ -16,6 +16,7 @@
 //! - **Tree collection**: recursively or shallowly enumerating submodules, with
 //!   optional inclusion of `#[cfg(test)]` modules
 
+#[cfg(test)]
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
@@ -26,7 +27,7 @@ use cargo_metadata::Package;
 use syn::Item;
 
 use crate::constants::{LIB_FILE_NAME, MAIN_FILE_NAME, MODULE_FILE_NAME};
-use crate::utils::has_cfg_test;
+use crate::utils::{ReadFileError, has_cfg_test, read_source_file};
 use tracing::{debug, info};
 
 use super::{CrateInfo, CrateInfoError, ModuleInfo, ModuleVisibility, Result, TargetInfo};
@@ -918,10 +919,22 @@ impl CrateInfo {
     }
 
     /// Reads and parses a Rust source file (no cache).
+    ///
+    /// Uses the size-guarded [`read_source_file`] so that files exceeding
+    /// [`MAX_FILE_BYTES`](crate::utils::MAX_FILE_BYTES) are rejected here, on the
+    /// discovery path — which runs first and populates the shared [`ParseCache`]
+    /// before the analyzer's own guarded read would ever see a cache miss.
     fn parse_source_file(path: &Path) -> Result<syn::File> {
-        let content = fs::read_to_string(path).map_err(|e| CrateInfoError::FileRead {
-            path: path.to_path_buf(),
-            source: e,
+        let content = read_source_file(path).map_err(|e| match e {
+            ReadFileError::Io(source) => CrateInfoError::FileRead {
+                path: path.to_path_buf(),
+                source,
+            },
+            ReadFileError::TooLarge { size, limit } => CrateInfoError::FileTooLarge {
+                path: path.to_path_buf(),
+                size,
+                limit,
+            },
         })?;
         syn::parse_file(&content).map_err(|e| CrateInfoError::ParseError {
             path: path.to_path_buf(),

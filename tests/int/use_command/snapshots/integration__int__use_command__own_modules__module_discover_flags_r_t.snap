@@ -15,6 +15,6 @@ crate::cache::ParseCache
 crate::constants::{LIB_FILE_NAME, MAIN_FILE_NAME, MODULE_FILE_NAME}
 crate::discover::module_tree::*
 crate::discover::{CrateInfo, CrateInfoError, ModuleInfo, ModuleVisibility, Result, TargetInfo}
-crate::utils::has_cfg_test
+crate::utils::{ReadFileError, has_cfg_test, read_source_file}
 
 ----- stderr -----
