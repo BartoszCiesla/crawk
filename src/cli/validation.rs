@@ -29,7 +29,11 @@ pub(super) fn validate_module_path(s: &str) -> Result<String, String> {
              (only a-z, A-Z, 0-9, _, - and :: are allowed)"
         ));
     }
-    if s.starts_with("::") || s.ends_with("::") || s.contains(":::") {
+    if s.starts_with("::")
+        || s.ends_with("::")
+        || s.contains(":::")
+        || s.split("::").any(|seg| seg.contains(':'))
+    {
         return Err(format!("module path '{s}' has malformed '::' separator"));
     }
     Ok(s.to_owned())
@@ -92,6 +96,13 @@ mod tests {
         assert!(validate_module_path("::foo").is_err());
         assert!(validate_module_path("foo::").is_err());
         assert!(validate_module_path("foo:::bar").is_err());
+    }
+
+    #[test]
+    fn test_validate_module_path_rejects_single_colon() {
+        assert!(validate_module_path("parser:visitor").is_err());
+        assert!(validate_module_path("foo:bar").is_err());
+        assert!(validate_module_path("foo::bar:baz").is_err());
     }
 
     #[test]
