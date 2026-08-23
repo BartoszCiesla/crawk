@@ -876,46 +876,60 @@ impl CrateInfo {
     }
 
     #[allow(clippy::doc_link_with_quotes)]
-    /// Computes the inline scope for a module path within a file.
+    /// Splits a module path into its file-backed root and the inline scope below it.
     ///
-    /// Returns the segments of the module path that represent inline modules
-    /// within the file. For example, if `module_path` is "foo::bar::tests" and
-    /// the file is lib.rs containing an inline module "foo" with an inline module "bar"
-    /// with an inline module "tests", returns ["foo", "bar", "tests"].
+    /// Returns `(file_root, inline_scope)`, where `file_root` is the prefix of
+    /// `module_path` that `file_path` backs on disk and `inline_scope` are the
+    /// remaining segments — the `mod` names to descend through inside the file.
+    /// A file-based module yields an empty scope; `"foo::bar::tests"` where both
+    /// `bar` and `tests` are inline in `foo.rs` yields `("foo", ["bar", "tests"])`.
     ///
-    /// Returns empty vector if the module is file-based (not inline).
-    pub(super) fn compute_inline_scope_for_path(
+    /// Prefixes are peeled **shortest-first**, which matters for doubly-nested
+    /// inline modules: an inline module resolves to its *containing* file, so for
+    /// `foo::bar::baz` with `bar` and `baz` both inline in `foo.rs` the prefix
+    /// `foo::bar` also resolves to `foo.rs`. Longest-first would stop there and
+    /// report only `["baz"]`, and the descent would look for a non-existent
+    /// top-level `mod baz`. Shortest-first stops at `foo` and correctly reports
+    /// `["bar", "baz"]`.
+    pub(crate) fn split_inline_scope(
         &self,
         module_path: &str,
         file_path: &Path,
-    ) -> Vec<String> {
+    ) -> (String, Vec<String>) {
         if module_path.is_empty() {
-            return vec![];
+            return (String::new(), vec![]);
         }
 
         let segments: Vec<&str> = module_path.split("::").collect();
+        let owned = |parts: &[&str]| parts.iter().map(ToString::to_string).collect();
 
-        // Try progressively shorter prefixes to find the file root
-        for len in (1..segments.len()).rev() {
+        // A target's own entry-point file (library root, binary root, or
+        // integration-test root) has no shorter file-backed prefix to find: the
+        // path either *is* that root, or every one of its segments is inline in
+        // the entry file. Checked before the peel loop because a prefix that is
+        // itself inline in the entry file would otherwise match and truncate the
+        // scope.
+        if self.is_target_entry_point(file_path) {
+            let stem = file_path.file_stem().and_then(|s| s.to_str());
+            if Some(module_path) == stem {
+                // bin/test root — module paths there are stem-prefixed.
+                return (module_path.to_owned(), vec![]);
+            }
+            return (String::new(), owned(&segments));
+        }
+
+        for len in 1..segments.len() {
             let prefix = segments[..len].join("::");
 
             if let Ok(resolved) = self.resolve_module_path_to_file(&prefix)
                 && resolved == *file_path
             {
-                // Found file root at this prefix
-                // The remaining segments are inline scope
-                return segments[len..].iter().map(ToString::to_string).collect();
+                return (prefix, owned(&segments[len..]));
             }
         }
 
-        // Check if the file is a compilation target's own entry point.
-        if self.is_target_entry_point(file_path) {
-            // The entire module path is inline scope within crate root
-            return segments.iter().map(ToString::to_string).collect();
-        }
-
-        // Not an inline module
-        vec![]
+        // No shorter prefix maps to this file — the module is file-based.
+        (module_path.to_owned(), vec![])
     }
 
     /// Reads and parses a Rust source file (no cache).
@@ -1348,6 +1362,89 @@ mod tests {
         assert_eq!(
             ModuleVisibility::from(&parse_vis("pub(in crate::foo::bar)")),
             ModuleVisibility::InPath("crate::foo::bar".to_owned()),
+        );
+    }
+
+    /// `CrateInfo` for the `fixtures/modules` crate, which carries every inline
+    /// module shape the splitter has to distinguish.
+    fn fixture_crate_info() -> CrateInfo {
+        CrateInfo::new(Path::new("fixtures/modules")).unwrap()
+    }
+
+    fn fixture_src(relative: &str) -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("fixtures/modules/src")
+            .join(relative)
+    }
+
+    #[test]
+    fn split_inline_scope_file_module_has_no_inline_scope() {
+        let info = fixture_crate_info();
+        assert_eq!(
+            info.split_inline_scope("inline_modules", &fixture_src("inline_modules.rs")),
+            ("inline_modules".to_owned(), vec![])
+        );
+    }
+
+    #[test]
+    fn split_inline_scope_single_inline_level() {
+        let info = fixture_crate_info();
+        assert_eq!(
+            info.split_inline_scope("inline_modules::inner", &fixture_src("inline_modules.rs")),
+            ("inline_modules".to_owned(), vec!["inner".to_owned()])
+        );
+    }
+
+    /// Regression: peeling longest-first stops at `inline_modules::nested`,
+    /// which resolves to the same file because `nested` is itself inline, and
+    /// yields the truncated scope `["deep"]` — no top-level `mod deep` exists,
+    /// so the module is reported not found.
+    #[test]
+    fn split_inline_scope_doubly_nested_inline_keeps_all_segments() {
+        let info = fixture_crate_info();
+        assert_eq!(
+            info.split_inline_scope(
+                "inline_modules::nested::deep",
+                &fixture_src("inline_modules.rs")
+            ),
+            (
+                "inline_modules".to_owned(),
+                vec!["nested".to_owned(), "deep".to_owned()]
+            )
+        );
+    }
+
+    /// A file-based `mod` declared inside an inline module lives in its own
+    /// file, so nothing is inline for it.
+    #[test]
+    fn split_inline_scope_file_module_under_inline_parent() {
+        let info = fixture_crate_info();
+        assert_eq!(
+            info.split_inline_scope(
+                "inline_modules::outer::file_child",
+                &fixture_src("inline_modules/outer/file_child.rs")
+            ),
+            ("inline_modules::outer::file_child".to_owned(), vec![])
+        );
+    }
+
+    /// The library entry point itself: an inline module there is addressed by a
+    /// path with no file-backed prefix at all, so the whole path is the scope.
+    #[test]
+    fn split_inline_scope_inline_module_in_entry_point() {
+        let info = fixture_crate_info();
+        assert_eq!(
+            info.split_inline_scope("tests", &fixture_src("lib.rs")),
+            (String::new(), vec!["tests".to_owned()])
+        );
+    }
+
+    #[test]
+    fn split_inline_scope_empty_path_is_crate_root() {
+        let info = fixture_crate_info();
+        assert_eq!(
+            info.split_inline_scope("", &fixture_src("lib.rs")),
+            (String::new(), vec![])
         );
     }
 }

@@ -10,9 +10,9 @@ info:
     - "-r"
     - "-e"
 ---
-success: false
-exit_code: 1
+success: true
+exit_code: 0
 ----- stdout -----
+crate::dir_module::greet
 
 ----- stderr -----
-Error: Module 'deep' not found

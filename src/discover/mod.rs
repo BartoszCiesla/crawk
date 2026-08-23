@@ -427,7 +427,7 @@ impl CrateInfo {
         );
 
         // Determine if this is an inline module and compute inline scope
-        let inline_scope = self.compute_inline_scope_for_path(&normalized_path, &file_path);
+        let (_, inline_scope) = self.split_inline_scope(&normalized_path, &file_path);
 
         let root_visibility =
             self.compute_root_visibility(&normalized_path, &file_path, &inline_scope, cache)?;

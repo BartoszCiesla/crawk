@@ -361,10 +361,12 @@ pub(crate) fn resolve_glob(
         }
     };
 
-    // Determine if the target is an inline module within the file.
-    // If resolving a shorter prefix yields the same file, the remaining
-    // segments are the inline module path.
-    let inline_path = detect_inline_path(reference, &file_path, crate_info);
+    // Determine if the target is an inline module within the file: whatever
+    // `split_inline_scope` reports below the file-backed prefix is the chain of
+    // `mod` names to descend through. `target_module` is used rather than the
+    // raw segments because a package-name-prefixed glob still carries the crate
+    // name, which is not a module inside the file.
+    let (_, inline_path) = crate_info.split_inline_scope(&target_module, &file_path);
     let inline_refs: Vec<&str> = inline_path.iter().map(String::as_str).collect();
 
     // `target_module` is the full crawk-internal path (including any inline
@@ -396,52 +398,6 @@ pub(crate) fn resolve_glob(
             TypeReference::new(segments).with_prefix(reference.prefix())
         })
         .collect()
-}
-
-/// Detect which trailing segments of a module path are inline modules
-/// within the resolved file.
-///
-/// Compares progressively longer prefixes of the module path against the
-/// resolved file. The *first* (shortest) prefix that resolves to the same
-/// file is the file-backed module boundary; every segment past it is an
-/// inline module.
-///
-/// Shortest-first matters for doubly-nested inline modules: for
-/// `crate::foo::bar::baz::*` with both `bar` and `baz` inline in `foo.rs`,
-/// prefix `foo::bar` *also* resolves to `foo.rs` (inline modules resolve to
-/// their containing file). Longest-first would stop there and report only
-/// `["baz"]`, so the descent looks for a non-existent top-level `mod baz`
-/// and the glob silently passes through unresolved. Shortest-first stops at
-/// `foo` and correctly reports `["bar", "baz"]`.
-fn detect_inline_path(
-    reference: &TypeReference,
-    resolved_file: &Path,
-    crate_info: &CrateInfo,
-) -> Vec<String> {
-    let segments = reference.segments();
-
-    // Walk from the shortest prefix upward. The first prefix that resolves to
-    // the same file is the file-backed module; everything past it is inline.
-    for split in 1..segments.len() {
-        let prefix_path = segments[..split].join("::");
-        match crate_info.resolve_module_path_to_file(&prefix_path) {
-            Ok(ref parent_file) if parent_file == resolved_file => {
-                // This prefix is the file-backed module, so segments[split..]
-                // are inline module names within it.
-                let inline = segments[split..].to_vec();
-                debug!("Inline path for {}: {inline:?}", reference.to_path_string());
-                return inline;
-            }
-            _ => {
-                // Different file or resolution failed — this prefix is
-                // a shallower module, keep extending.
-            }
-        }
-    }
-
-    // No inline path detected — the file directly corresponds to the module.
-    debug!("Inline path for {}: (none)", reference.to_path_string());
-    vec![]
 }
 
 #[cfg(test)]

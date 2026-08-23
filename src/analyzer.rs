@@ -712,7 +712,9 @@ impl Analyzer {
         let mut file_root: HashMap<PathBuf, String> = HashMap::new();
         for module in modules {
             let source_path = module.source().to_path_buf();
-            let actual_root = self.find_actual_file_root(module.path(), &source_path);
+            let (actual_root, _) = self
+                .crate_info
+                .split_inline_scope(module.path(), &source_path);
             debug!(
                 "File root: '{}' \u{2192} '{}' (file: {})",
                 module.path(),
@@ -737,74 +739,6 @@ impl Analyzer {
             modules.len()
         );
         file_root
-    }
-
-    /// Find the actual file-level module path for a given module.
-    ///
-    /// This detects if a module is actually an inline module by checking if
-    /// shorter prefixes (or empty path for crate root) resolve to the same file.
-    fn find_actual_file_root(&self, module_path: &str, source_file: &Path) -> String {
-        trace!(
-            "Finding file root for module '{}' in file '{}'",
-            module_path,
-            source_file.display()
-        );
-
-        if module_path.is_empty() {
-            return String::new();
-        }
-
-        // First check if this file is a compilation target's own entry point
-        // (library root, binary root, or integration-test root).
-        if self.crate_info.is_target_entry_point(source_file) {
-            // The entry file's own module resolves to an empty inline scope
-            // (whole file). It is addressed either by an empty path (library
-            // root — module paths are not target-prefixed) or by the file stem
-            // (bin/test root — e.g. `helpers` for `tests/helpers.rs`). Any
-            // other module here is inline in the entry file, addressed by a
-            // path already relative to that stripped root, so returning "" lets
-            // its whole path become the inline scope.
-            let stem = source_file.file_stem().and_then(|s| s.to_str());
-            if module_path.is_empty() || Some(module_path) == stem {
-                trace!(
-                    "Source file is target entry-point root for module '{}'",
-                    module_path
-                );
-                return module_path.to_owned();
-            }
-            trace!(
-                "Source file is target entry point; module '{}' is inline",
-                module_path
-            );
-            return String::new();
-        }
-
-        let segments: Vec<&str> = module_path.split("::").collect();
-
-        // Try progressively shorter prefixes
-        for len in (1..segments.len()).rev() {
-            let prefix = segments[..len].join("::");
-
-            trace!("Trying prefix: '{}'", prefix);
-
-            // Check if this prefix resolves to the same file
-            match self.crate_info.resolve_module_path_to_file(&prefix) {
-                Ok(ref resolved) => {
-                    trace!("Prefix '{}' resolved to '{}'", prefix, resolved.display());
-                    if resolved == source_file {
-                        trace!("Found file root: '{}' for module '{}'", prefix, module_path);
-                        return prefix;
-                    }
-                }
-                Err(e) => {
-                    trace!("Prefix '{}' failed to resolve: {}", prefix, e);
-                }
-            }
-        }
-
-        // Fallback to the original module path
-        trace!("No shorter prefix found, using original: '{}'", module_path);
-        module_path.to_owned()
     }
 
     /// Compute the inline scope for a module relative to its file root.
