@@ -416,7 +416,7 @@ impl CrateInfo {
         target: &TargetInfo,
         cache: &mut ParseCache,
     ) -> Result<Vec<ModuleInfo>> {
-        let file_path = self.resolve_module(module_path)?;
+        let file_path = self.resolve_module(module_path, cache)?;
 
         // Normalize the module path (remove crate name prefix if present)
         let normalized_path = self.normalize_module_path(module_path);
@@ -427,7 +427,7 @@ impl CrateInfo {
         );
 
         // Determine if this is an inline module and compute inline scope
-        let (_, inline_scope) = self.split_inline_scope(&normalized_path, &file_path);
+        let (_, inline_scope) = self.split_inline_scope(&normalized_path, &file_path, cache);
 
         let root_visibility =
             self.compute_root_visibility(&normalized_path, &file_path, &inline_scope, cache)?;
@@ -462,8 +462,12 @@ impl CrateInfo {
     /// # Errors
     ///
     /// Returns an error if the module cannot be found or the crate root is invalid.
-    pub(crate) fn resolve_module_path_to_file(&self, module_path: &str) -> Result<PathBuf> {
-        self.resolve_module(module_path)
+    pub(crate) fn resolve_module_path_to_file(
+        &self,
+        module_path: &str,
+        cache: &mut ParseCache,
+    ) -> Result<PathBuf> {
+        self.resolve_module(module_path, cache)
     }
 
     /// Collects the module tree rooted at a source file, without module path resolution.

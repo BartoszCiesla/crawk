@@ -708,13 +708,15 @@ impl Analyzer {
     ///
     /// When multiple modules share the same source file (inline modules),
     /// the one with the shortest path is the file-level owner.
-    fn build_file_root_map(&self, modules: &[ModuleInfo]) -> HashMap<PathBuf, String> {
+    fn build_file_root_map(&mut self, modules: &[ModuleInfo]) -> HashMap<PathBuf, String> {
         let mut file_root: HashMap<PathBuf, String> = HashMap::new();
         for module in modules {
             let source_path = module.source().to_path_buf();
-            let (actual_root, _) = self
-                .crate_info
-                .split_inline_scope(module.path(), &source_path);
+            let (actual_root, _) = self.crate_info.split_inline_scope(
+                module.path(),
+                &source_path,
+                &mut self.parse_cache,
+            );
             debug!(
                 "File root: '{}' \u{2192} '{}' (file: {})",
                 module.path(),

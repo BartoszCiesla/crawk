@@ -350,7 +350,7 @@ pub(crate) fn resolve_glob(
     };
 
     // Resolve module path to file
-    let file_path = match crate_info.resolve_module_path_to_file(&module_path) {
+    let file_path = match crate_info.resolve_module_path_to_file(&module_path, cache) {
         Ok(path) => path,
         Err(e) => {
             debug!(
@@ -366,7 +366,7 @@ pub(crate) fn resolve_glob(
     // `mod` names to descend through. `target_module` is used rather than the
     // raw segments because a package-name-prefixed glob still carries the crate
     // name, which is not a module inside the file.
-    let (_, inline_path) = crate_info.split_inline_scope(&target_module, &file_path);
+    let (_, inline_path) = crate_info.split_inline_scope(&target_module, &file_path, cache);
     let inline_refs: Vec<&str> = inline_path.iter().map(String::as_str).collect();
 
     // `target_module` is the full crawk-internal path (including any inline

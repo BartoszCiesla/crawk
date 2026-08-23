@@ -95,11 +95,15 @@ impl CrateInfo {
     /// - The module path is empty
     /// - The module cannot be found
     /// - The crate root cannot be determined
-    pub(super) fn resolve_module(&self, module_path: &str) -> Result<PathBuf> {
+    pub(super) fn resolve_module(
+        &self,
+        module_path: &str,
+        cache: &mut ParseCache,
+    ) -> Result<PathBuf> {
         info!("Resolving module: '{module_path}'");
         let package = self.root_package().ok_or(CrateInfoError::PackageNotFound)?;
 
-        self.resolve_module_path_with_crate(package, module_path)
+        self.resolve_module_path_with_crate(package, module_path, cache)
     }
 
     /// Resolves a module path within a specific package.
@@ -112,7 +116,11 @@ impl CrateInfo {
     /// # Errors
     ///
     /// Returns an error if the module path is empty or the module cannot be found.
-    fn resolve_module_path(package: &Package, module_path: &str) -> Result<PathBuf> {
+    fn resolve_module_path(
+        package: &Package,
+        module_path: &str,
+        cache: &mut ParseCache,
+    ) -> Result<PathBuf> {
         let parts: Vec<&str> = module_path.split("::").collect();
 
         if parts.is_empty() || module_path.is_empty() {
@@ -126,10 +134,11 @@ impl CrateInfo {
             .parent()
             .ok_or_else(|| CrateInfoError::NoCrateRoot(package.name.to_string()))?;
 
-        let resolved = Self::resolve_module_parts(crate_root_dir, &parts, Some(&crate_root))?
-            .ok_or_else(|| CrateInfoError::ModuleNotFound {
-                module_path: module_path.to_owned(),
-            })?;
+        let resolved =
+            Self::resolve_module_parts(crate_root_dir, &parts, Some(&crate_root), cache)?
+                .ok_or_else(|| CrateInfoError::ModuleNotFound {
+                    module_path: module_path.to_owned(),
+                })?;
         Self::check_within_root(&resolved, crate_root_dir)?;
         Ok(resolved)
     }
@@ -143,6 +152,7 @@ impl CrateInfo {
         &self,
         package: &Package,
         module_path: &str,
+        cache: &mut ParseCache,
     ) -> Result<PathBuf> {
         let parts: Vec<&str> = module_path.split("::").collect();
 
@@ -157,7 +167,7 @@ impl CrateInfo {
             // Skip the crate name/alias and resolve the rest
             let result = if parts.len() > 1 {
                 let remaining_path = parts[1..].join("::");
-                Self::resolve_module_path(package, &remaining_path)
+                Self::resolve_module_path(package, &remaining_path, cache)
             } else {
                 // Just the crate name/alias, return the crate root (library)
                 Self::find_crate_root(package)
@@ -171,7 +181,7 @@ impl CrateInfo {
         if Self::find_binary_by_file_stem(package, parts[0]).is_some() {
             let result = if parts.len() > 1 {
                 let remaining = parts[1..].join("::");
-                Self::resolve_module_path_from_binary(package, parts[0], &remaining)
+                Self::resolve_module_path_from_binary(package, parts[0], &remaining, cache)
             } else {
                 Self::find_binary_by_file_stem(package, parts[0])
                     .ok_or_else(|| CrateInfoError::NoCrateRoot(package.name.to_string()))
@@ -181,7 +191,7 @@ impl CrateInfo {
         }
 
         // Otherwise, resolve as-is
-        Self::resolve_module_path(package, module_path)
+        Self::resolve_module_path(package, module_path, cache)
     }
 
     /// Finds the crate root file (lib.rs, main.rs, or the first target's src_path).
@@ -233,6 +243,7 @@ impl CrateInfo {
         package: &Package,
         file_stem: &str,
         module_path: &str,
+        cache: &mut ParseCache,
     ) -> Result<PathBuf> {
         let parts: Vec<&str> = module_path.split("::").collect();
 
@@ -247,7 +258,7 @@ impl CrateInfo {
             .parent()
             .ok_or_else(|| CrateInfoError::NoCrateRoot(package.name.to_string()))?;
 
-        let resolved = Self::resolve_module_parts(bin_root_dir, &parts, Some(&bin_root))?
+        let resolved = Self::resolve_module_parts(bin_root_dir, &parts, Some(&bin_root), cache)?
             .ok_or_else(|| CrateInfoError::ModuleNotFound {
                 module_path: module_path.to_owned(),
             })?;
@@ -317,6 +328,7 @@ impl CrateInfo {
         base_dir: &Path,
         parts: &[&str],
         root_file: Option<&Path>,
+        cache: &mut ParseCache,
     ) -> Result<Option<PathBuf>> {
         if parts.is_empty() {
             return Ok(None);
@@ -351,7 +363,7 @@ impl CrateInfo {
                     "'{part}' no companion dir, checking inline in {}",
                     file_path.display()
                 );
-                return Self::check_inline_module(&part_dir, &file_path, &parts[idx + 1..]);
+                return Self::check_inline_module(&part_dir, &file_path, &parts[idx + 1..], cache);
             }
 
             // Check for `part/mod.rs` (older style)
@@ -373,7 +385,7 @@ impl CrateInfo {
                     "'{part}' not on disk, checking inline in {}",
                     parent_file.display()
                 );
-                return Self::check_inline_module(&current_dir, parent_file, &parts[idx..]);
+                return Self::check_inline_module(&current_dir, parent_file, &parts[idx..], cache);
             }
 
             debug!("'{part}' not found, no parent file to check inline");
@@ -394,13 +406,14 @@ impl CrateInfo {
         current_dir: &Path,
         file_path: &Path,
         module_parts: &[&str],
+        cache: &mut ParseCache,
     ) -> Result<Option<PathBuf>> {
         if module_parts.is_empty() {
             return Ok(Some(file_path.to_path_buf()));
         }
 
-        let syntax = Self::parse_source_file(file_path)?;
-        Self::find_nested_inline_module(current_dir, &syntax.items, module_parts, file_path)
+        let syntax = Self::parse_cached(file_path, cache)?;
+        Self::find_nested_inline_module(current_dir, &syntax.items, module_parts, file_path, cache)
     }
 
     /// Recursively checks for nested inline modules within a list of items.
@@ -413,6 +426,7 @@ impl CrateInfo {
         items: &[Item],
         module_parts: &[&str],
         file_path: &Path,
+        cache: &mut ParseCache,
     ) -> Result<Option<PathBuf>> {
         if module_parts.is_empty() {
             return Ok(Some(file_path.to_path_buf()));
@@ -432,8 +446,9 @@ impl CrateInfo {
                     nested_items,
                     &module_parts[1..],
                     file_path,
+                    cache,
                 ),
-                None => Self::resolve_module_parts(current_dir, module_parts, None),
+                None => Self::resolve_module_parts(current_dir, module_parts, None, cache),
             };
         }
 
@@ -506,6 +521,7 @@ impl CrateInfo {
                             }),
                         &[&mod_name],
                         None,
+                        cache,
                     )? {
                         result.push(ModuleInfo::new(
                             submodule_path,
@@ -686,7 +702,7 @@ impl CrateInfo {
                 } else {
                     // External module - find and parse its file
                     if let Some(sub_mod_file) =
-                        Self::resolve_module_parts(base_dir, &[&mod_name], None)?
+                        Self::resolve_module_parts(base_dir, &[&mod_name], None, cache)?
                     {
                         info!(
                             "Found submodule: '{submodule_path}' \u{2192} {}",
@@ -773,7 +789,7 @@ impl CrateInfo {
                         .iter()
                         .fold(base_dir.to_path_buf(), |dir, segment| dir.join(segment));
                     if let Some(sub_mod_file) =
-                        Self::resolve_module_parts(&inline_base_dir, &[&mod_name], None)?
+                        Self::resolve_module_parts(&inline_base_dir, &[&mod_name], None, cache)?
                     {
                         // File-based modules have empty inline scope
                         result.extend(Self::collect_submodules_recursive(
@@ -833,7 +849,7 @@ impl CrateInfo {
                 .ok_or_else(|| CrateInfoError::NoCrateRoot(self.root_package_name().to_owned()))?
         } else {
             let parent_path = segments[..segments.len() - 1].join("::");
-            self.resolve_module(&parent_path)?
+            self.resolve_module(&parent_path, cache)?
         };
 
         let parent_syntax = Self::parse_cached(&parent_file, cache)?;
@@ -895,6 +911,7 @@ impl CrateInfo {
         &self,
         module_path: &str,
         file_path: &Path,
+        cache: &mut ParseCache,
     ) -> (String, Vec<String>) {
         if module_path.is_empty() {
             return (String::new(), vec![]);
@@ -921,7 +938,7 @@ impl CrateInfo {
         for len in 1..segments.len() {
             let prefix = segments[..len].join("::");
 
-            if let Ok(resolved) = self.resolve_module_path_to_file(&prefix)
+            if let Ok(resolved) = self.resolve_module_path_to_file(&prefix, cache)
                 && resolved == *file_path
             {
                 return (prefix, owned(&segments[len..]));
@@ -1047,8 +1064,10 @@ mod tests {
     fn find_nested_inline_module_empty_parts_returns_file() {
         let items = items_from("pub fn foo() {}");
         let path = Path::new("/fake/file.rs");
+        let mut cache = ParseCache::new();
         assert_eq!(
-            CrateInfo::find_nested_inline_module(Path::new("/fake"), &items, &[], path).unwrap(),
+            CrateInfo::find_nested_inline_module(Path::new("/fake"), &items, &[], path, &mut cache)
+                .unwrap(),
             Some(path.to_path_buf())
         );
     }
@@ -1057,9 +1076,16 @@ mod tests {
     fn find_nested_inline_module_finds_existing_module() {
         let items = items_from("pub mod foo { pub fn inner() {} }");
         let path = Path::new("/fake/file.rs");
+        let mut cache = ParseCache::new();
         assert_eq!(
-            CrateInfo::find_nested_inline_module(Path::new("/fake"), &items, &["foo"], path)
-                .unwrap(),
+            CrateInfo::find_nested_inline_module(
+                Path::new("/fake"),
+                &items,
+                &["foo"],
+                path,
+                &mut cache
+            )
+            .unwrap(),
             Some(path.to_path_buf())
         );
     }
@@ -1067,12 +1093,14 @@ mod tests {
     #[test]
     fn find_nested_inline_module_returns_none_for_missing() {
         let items = items_from("pub fn foo() {}");
+        let mut cache = ParseCache::new();
         assert!(
             CrateInfo::find_nested_inline_module(
                 Path::new("/f"),
                 &items,
                 &["missing"],
-                Path::new("/f.rs")
+                Path::new("/f.rs"),
+                &mut cache
             )
             .unwrap()
             .is_none()
@@ -1083,12 +1111,14 @@ mod tests {
     fn find_nested_inline_module_finds_nested() {
         let items = items_from("pub mod outer { pub mod inner { pub fn f() {} } }");
         let path = Path::new("/fake/file.rs");
+        let mut cache = ParseCache::new();
         assert_eq!(
             CrateInfo::find_nested_inline_module(
                 Path::new("/fake"),
                 &items,
                 &["outer", "inner"],
-                path
+                path,
+                &mut cache
             )
             .unwrap(),
             Some(path.to_path_buf())
@@ -1098,12 +1128,14 @@ mod tests {
     #[test]
     fn find_nested_inline_module_returns_none_for_missing_nested() {
         let items = items_from("pub mod outer {}");
+        let mut cache = ParseCache::new();
         assert!(
             CrateInfo::find_nested_inline_module(
                 Path::new("/f"),
                 &items,
                 &["outer", "nonexistent"],
-                Path::new("/f.rs")
+                Path::new("/f.rs"),
+                &mut cache
             )
             .unwrap()
             .is_none()
@@ -1208,7 +1240,8 @@ mod tests {
     #[test]
     fn resolve_module_parts_empty_parts_returns_none() {
         let dir = tempfile::tempdir().unwrap();
-        let result = CrateInfo::resolve_module_parts(dir.path(), &[], None).unwrap();
+        let mut cache = ParseCache::new();
+        let result = CrateInfo::resolve_module_parts(dir.path(), &[], None, &mut cache).unwrap();
         assert!(result.is_none());
     }
 
@@ -1218,7 +1251,9 @@ mod tests {
         let file = dir.path().join("foo.rs");
         fs::write(&file, "").unwrap();
 
-        let result = CrateInfo::resolve_module_parts(dir.path(), &["foo"], None).unwrap();
+        let mut cache = ParseCache::new();
+        let result =
+            CrateInfo::resolve_module_parts(dir.path(), &["foo"], None, &mut cache).unwrap();
         assert_eq!(result, Some(file));
     }
 
@@ -1230,7 +1265,9 @@ mod tests {
         let file = mod_dir.join("mod.rs");
         fs::write(&file, "").unwrap();
 
-        let result = CrateInfo::resolve_module_parts(dir.path(), &["bar"], None).unwrap();
+        let mut cache = ParseCache::new();
+        let result =
+            CrateInfo::resolve_module_parts(dir.path(), &["bar"], None, &mut cache).unwrap();
         assert_eq!(result, Some(file));
     }
 
@@ -1244,7 +1281,9 @@ mod tests {
         let sub_file = sub_dir.join("sub.rs");
         fs::write(&sub_file, "").unwrap();
 
-        let result = CrateInfo::resolve_module_parts(dir.path(), &["foo", "sub"], None).unwrap();
+        let mut cache = ParseCache::new();
+        let result =
+            CrateInfo::resolve_module_parts(dir.path(), &["foo", "sub"], None, &mut cache).unwrap();
         assert_eq!(result, Some(sub_file));
     }
 
@@ -1258,7 +1297,9 @@ mod tests {
         let sub_file = bar_dir.join("sub.rs");
         fs::write(&sub_file, "").unwrap();
 
-        let result = CrateInfo::resolve_module_parts(dir.path(), &["bar", "sub"], None).unwrap();
+        let mut cache = ParseCache::new();
+        let result =
+            CrateInfo::resolve_module_parts(dir.path(), &["bar", "sub"], None, &mut cache).unwrap();
         assert_eq!(result, Some(sub_file));
     }
 
@@ -1269,7 +1310,10 @@ mod tests {
         let file = dir.path().join("foo.rs");
         fs::write(&file, "pub mod inner {}").unwrap();
 
-        let result = CrateInfo::resolve_module_parts(dir.path(), &["foo", "inner"], None).unwrap();
+        let mut cache = ParseCache::new();
+        let result =
+            CrateInfo::resolve_module_parts(dir.path(), &["foo", "inner"], None, &mut cache)
+                .unwrap();
         assert_eq!(result, Some(file));
     }
 
@@ -1280,22 +1324,28 @@ mod tests {
         let lib_rs = dir.path().join("lib.rs");
         fs::write(&lib_rs, "pub mod tests {}").unwrap();
 
+        let mut cache = ParseCache::new();
         let result =
-            CrateInfo::resolve_module_parts(dir.path(), &["tests"], Some(&lib_rs)).unwrap();
+            CrateInfo::resolve_module_parts(dir.path(), &["tests"], Some(&lib_rs), &mut cache)
+                .unwrap();
         assert_eq!(result, Some(lib_rs));
     }
 
     #[test]
     fn resolve_module_parts_returns_none_for_nonexistent() {
         let dir = tempfile::tempdir().unwrap();
-        let result = CrateInfo::resolve_module_parts(dir.path(), &["missing"], None).unwrap();
+        let mut cache = ParseCache::new();
+        let result =
+            CrateInfo::resolve_module_parts(dir.path(), &["missing"], None, &mut cache).unwrap();
         assert!(result.is_none());
     }
 
     #[test]
     fn resolve_module_parts_rejects_invalid_segment() {
         let dir = tempfile::tempdir().unwrap();
-        let err = CrateInfo::resolve_module_parts(dir.path(), &[".."], None).unwrap_err();
+        let mut cache = ParseCache::new();
+        let err =
+            CrateInfo::resolve_module_parts(dir.path(), &[".."], None, &mut cache).unwrap_err();
         assert!(matches!(err, CrateInfoError::InvalidModuleSegment { .. }));
     }
 
@@ -1306,8 +1356,10 @@ mod tests {
         let file = dir.path().join("foo.rs");
         fs::write(&file, "pub fn bar() {}").unwrap();
 
+        let mut cache = ParseCache::new();
         let result =
-            CrateInfo::resolve_module_parts(dir.path(), &["foo", "missing"], None).unwrap();
+            CrateInfo::resolve_module_parts(dir.path(), &["foo", "missing"], None, &mut cache)
+                .unwrap();
         assert!(result.is_none());
     }
 
@@ -1380,8 +1432,13 @@ mod tests {
     #[test]
     fn split_inline_scope_file_module_has_no_inline_scope() {
         let info = fixture_crate_info();
+        let mut cache = ParseCache::new();
         assert_eq!(
-            info.split_inline_scope("inline_modules", &fixture_src("inline_modules.rs")),
+            info.split_inline_scope(
+                "inline_modules",
+                &fixture_src("inline_modules.rs"),
+                &mut cache
+            ),
             ("inline_modules".to_owned(), vec![])
         );
     }
@@ -1389,8 +1446,13 @@ mod tests {
     #[test]
     fn split_inline_scope_single_inline_level() {
         let info = fixture_crate_info();
+        let mut cache = ParseCache::new();
         assert_eq!(
-            info.split_inline_scope("inline_modules::inner", &fixture_src("inline_modules.rs")),
+            info.split_inline_scope(
+                "inline_modules::inner",
+                &fixture_src("inline_modules.rs"),
+                &mut cache
+            ),
             ("inline_modules".to_owned(), vec!["inner".to_owned()])
         );
     }
@@ -1402,10 +1464,12 @@ mod tests {
     #[test]
     fn split_inline_scope_doubly_nested_inline_keeps_all_segments() {
         let info = fixture_crate_info();
+        let mut cache = ParseCache::new();
         assert_eq!(
             info.split_inline_scope(
                 "inline_modules::nested::deep",
-                &fixture_src("inline_modules.rs")
+                &fixture_src("inline_modules.rs"),
+                &mut cache
             ),
             (
                 "inline_modules".to_owned(),
@@ -1419,10 +1483,12 @@ mod tests {
     #[test]
     fn split_inline_scope_file_module_under_inline_parent() {
         let info = fixture_crate_info();
+        let mut cache = ParseCache::new();
         assert_eq!(
             info.split_inline_scope(
                 "inline_modules::outer::file_child",
-                &fixture_src("inline_modules/outer/file_child.rs")
+                &fixture_src("inline_modules/outer/file_child.rs"),
+                &mut cache
             ),
             ("inline_modules::outer::file_child".to_owned(), vec![])
         );
@@ -1433,8 +1499,9 @@ mod tests {
     #[test]
     fn split_inline_scope_inline_module_in_entry_point() {
         let info = fixture_crate_info();
+        let mut cache = ParseCache::new();
         assert_eq!(
-            info.split_inline_scope("tests", &fixture_src("lib.rs")),
+            info.split_inline_scope("tests", &fixture_src("lib.rs"), &mut cache),
             (String::new(), vec!["tests".to_owned()])
         );
     }
@@ -1442,9 +1509,31 @@ mod tests {
     #[test]
     fn split_inline_scope_empty_path_is_crate_root() {
         let info = fixture_crate_info();
+        let mut cache = ParseCache::new();
         assert_eq!(
-            info.split_inline_scope("", &fixture_src("lib.rs")),
+            info.split_inline_scope("", &fixture_src("lib.rs"), &mut cache),
             (String::new(), vec![])
+        );
+    }
+
+    /// Regression: resolving an inline module must reuse the shared
+    /// `ParseCache` instead of re-reading and re-parsing the containing file.
+    /// `inline_modules::outer` is itself inline (only `file_child` under it is
+    /// file-based), so resolving it always falls through to the
+    /// `check_inline_module` path that has to open `inline_modules.rs` to find
+    /// the `mod outer { ... }` declaration.
+    #[test]
+    fn resolve_module_path_to_file_reuses_parse_cache_for_inline_lookup() {
+        let info = fixture_crate_info();
+        let mut cache = ParseCache::new();
+
+        info.resolve_module_path_to_file("inline_modules::outer", &mut cache)
+            .unwrap();
+
+        assert_eq!(
+            cache.len(),
+            1,
+            "inline lookup through check_inline_module must populate the shared ParseCache"
         );
     }
 }
