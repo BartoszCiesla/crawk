@@ -757,8 +757,23 @@ impl Analyzer {
         // First check if this file is a compilation target's own entry point
         // (library root, binary root, or integration-test root).
         if self.crate_info.is_target_entry_point(source_file) {
+            // The entry file's own module resolves to an empty inline scope
+            // (whole file). It is addressed either by an empty path (library
+            // root — module paths are not target-prefixed) or by the file stem
+            // (bin/test root — e.g. `helpers` for `tests/helpers.rs`). Any
+            // other module here is inline in the entry file, addressed by a
+            // path already relative to that stripped root, so returning "" lets
+            // its whole path become the inline scope.
+            let stem = source_file.file_stem().and_then(|s| s.to_str());
+            if module_path.is_empty() || Some(module_path) == stem {
+                trace!(
+                    "Source file is target entry-point root for module '{}'",
+                    module_path
+                );
+                return module_path.to_owned();
+            }
             trace!(
-                "Source file is crate root, returning empty string for module '{}'",
+                "Source file is target entry point; module '{}' is inline",
                 module_path
             );
             return String::new();

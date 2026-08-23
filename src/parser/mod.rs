@@ -57,6 +57,20 @@ pub(crate) enum AnalyzerError {
         /// Description of the parse error from `syn`.
         message: String,
     },
+
+    /// An inline module path could not be located within the parsed file.
+    ///
+    /// The file parsed cleanly, but descending `scope` through its inline
+    /// `mod` items failed — the target inline module does not exist there
+    /// (missing `mod`, or a `mod name;` without an inline body). Distinguishes
+    /// a genuinely empty module from a scope that was never found.
+    #[error("Inline module {scope:?} not found in file '{path}'")]
+    InlineModuleNotFound {
+        /// Path to the file that was searched.
+        path: PathBuf,
+        /// The inline scope segments that could not be resolved.
+        scope: Vec<String>,
+    },
 }
 
 /// Result type for analyzer operations.
@@ -128,6 +142,11 @@ impl CrateAnalyzer {
             for item in items {
                 visitor.visit_item(item);
             }
+        } else {
+            return Err(AnalyzerError::InlineModuleNotFound {
+                path: path.to_path_buf(),
+                scope: inline_scope.to_vec(),
+            });
         }
 
         let result: Vec<TypeReference> = visitor.references.all().cloned().collect();
@@ -608,6 +627,29 @@ mod tests {
             )
             .unwrap_err();
         assert!(matches!(err, AnalyzerError::Parse { .. }));
+    }
+
+    #[test]
+    fn parse_file_returns_inline_module_not_found_for_missing_scope() {
+        let mut f = NamedTempFile::new().unwrap();
+        writeln!(f, "mod real {{ pub struct Real; }}").unwrap();
+        f.flush().unwrap();
+        let mut analyzer = CrateAnalyzer::new("test");
+        let mut cache = ParseCache::new();
+        let err = analyzer
+            .parse_file(
+                "test::missing",
+                f.path(),
+                &["missing".to_owned()],
+                HashSet::new(),
+                HashSet::new(),
+                &mut cache,
+            )
+            .unwrap_err();
+        assert!(matches!(
+            err,
+            AnalyzerError::InlineModuleNotFound { scope, .. } if scope == ["missing"]
+        ));
     }
 
     #[test]
