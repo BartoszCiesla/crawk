@@ -23,6 +23,7 @@ crate::discover::ModuleInfo
 crate::discover::ModuleVisibility
 crate::discover::Result
 crate::discover::TargetInfo
+crate::discover::TargetKind
 crate::utils::ReadFileError
 crate::utils::has_cfg_test
 crate::utils::read_source_file

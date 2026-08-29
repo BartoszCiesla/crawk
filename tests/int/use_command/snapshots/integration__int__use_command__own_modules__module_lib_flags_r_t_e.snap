@@ -25,6 +25,7 @@ crate::constants::MODULE_NAME_TEST
 crate::constants::PATH_QUALIFIER_CRATE
 crate::constants::PATH_QUALIFIER_SELF
 crate::constants::PATH_QUALIFIER_SUPER
+crate::discover::*
 crate::discover::CrateInfo
 crate::discover::CrateInfoError
 crate::discover::ModuleInfo

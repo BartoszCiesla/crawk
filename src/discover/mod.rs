@@ -289,6 +289,11 @@ pub(crate) struct CrateInfo {
 
     /// The name of the root package in the workspace.
     root_package_name: String,
+
+    /// Index of the root package within `metadata.packages`, resolved once at
+    /// construction. `metadata.packages` is never mutated after `new`, so this
+    /// stays valid for the lifetime of the `CrateInfo`.
+    root_package_index: usize,
 }
 
 impl CrateInfo {
@@ -312,9 +317,16 @@ impl CrateInfo {
             .name
             .to_string();
 
+        let root_package_index = metadata
+            .packages
+            .iter()
+            .position(|p| p.name == root_package_name)
+            .ok_or(CrateInfoError::WorkspaceRoot)?;
+
         Ok(Self {
             metadata,
             root_package_name,
+            root_package_index,
         })
     }
 
@@ -376,10 +388,7 @@ impl CrateInfo {
 
     /// Returns the root package from cargo metadata.
     fn root_package(&self) -> Option<&cargo_metadata::Package> {
-        self.metadata
-            .packages
-            .iter()
-            .find(|p| p.name == self.root_package_name)
+        self.metadata.packages.get(self.root_package_index)
     }
 
     /// Returns a list of the given module and all its submodules with their source files.
@@ -523,5 +532,23 @@ impl CrateInfo {
         }
 
         module_path.to_owned()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::Path;
+
+    /// The cached index must select the real root package that
+    /// `Metadata::root_package` identifies, not a namesake — a wrong or stale
+    /// index would silently return a different package.
+    #[test]
+    fn root_package_uses_cached_index_pointing_at_the_root_package() {
+        let info = CrateInfo::new(Path::new("fixtures/modules")).unwrap();
+        let cached = info.root_package().expect("cached root package");
+        let expected = info.metadata.root_package().expect("metadata root package");
+        assert_eq!(cached.id, expected.id);
+        assert_eq!(cached.name.to_string(), info.root_package_name());
     }
 }

@@ -32,6 +32,7 @@ discover::module_tree -> constants
 discover::module_tree -> discover
 discover::module_tree -> utils
 discover::module_tree::tests -> discover::module_tree
+discover::tests -> discover
 error -> discover
 format::check_cmd -> format
 format::check_cmd -> lib

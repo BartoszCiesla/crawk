@@ -16,6 +16,7 @@ crate::cache::ParseCache
 crate::constants::LIB_FILE_NAME
 crate::constants::MAIN_FILE_NAME
 crate::constants::MODULE_FILE_NAME
+crate::discover::*
 crate::discover::CrateInfo
 crate::discover::CrateInfoError
 crate::discover::ModuleInfo

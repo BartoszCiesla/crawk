@@ -11,5 +11,6 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::cache::ParseCache
+crate::discover::*
 
 ----- stderr -----
