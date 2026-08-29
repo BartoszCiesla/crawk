@@ -6,6 +6,8 @@
 
 mod module_tree;
 
+use std::cell::RefCell;
+use std::collections::HashMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
 
@@ -277,6 +279,23 @@ impl ModuleInfo {
     }
 }
 
+/// Memoized filesystem lookups, valid for the lifetime of one [`CrateInfo`].
+///
+/// Module resolution peels every path prefix of every module (see
+/// [`split_inline_scope`](CrateInfo::split_inline_scope)), so the same prefixes
+/// are resolved once per descendant without a memo, and every containment check
+/// re-canonicalizes the same crate root directory.
+#[derive(Debug, Clone, Default)]
+struct ResolveCache {
+    /// Module path → resolved source file. Successful resolutions only:
+    /// `CrateInfoError` is not `Clone`, and replaying a generic error would
+    /// lose the original diagnostic.
+    modules: HashMap<String, PathBuf>,
+
+    /// Directory → its canonicalized form.
+    canonical_dirs: HashMap<PathBuf, PathBuf>,
+}
+
 /// A struct that wraps cargo metadata and provides module path resolution.
 ///
 /// This struct holds the metadata for a Rust crate and provides methods to
@@ -294,6 +313,10 @@ pub(crate) struct CrateInfo {
     /// construction. `metadata.packages` is never mutated after `new`, so this
     /// stays valid for the lifetime of the `CrateInfo`.
     root_package_index: usize,
+
+    /// Memoized resolution results. Interior mutability keeps the resolution
+    /// API on `&self`; crawk is single-threaded, so `RefCell` suffices.
+    resolve_cache: RefCell<ResolveCache>,
 }
 
 impl CrateInfo {
@@ -327,7 +350,64 @@ impl CrateInfo {
             metadata,
             root_package_name,
             root_package_index,
+            resolve_cache: RefCell::default(),
         })
+    }
+
+    /// Returns the memoized file for `module_path`, if it was resolved before.
+    pub(super) fn cached_module(&self, module_path: &str) -> Option<PathBuf> {
+        self.resolve_cache
+            .borrow()
+            .modules
+            .get(module_path)
+            .cloned()
+    }
+
+    /// Records a successful module resolution in the memo.
+    pub(super) fn cache_module(&self, module_path: &str, resolved: &Path) {
+        self.resolve_cache
+            .borrow_mut()
+            .modules
+            .insert(module_path.to_owned(), resolved.to_path_buf());
+    }
+
+    /// Canonicalizes `dir`, reusing the result on later calls.
+    ///
+    /// Containment checks run once per resolved module and always against one
+    /// of a handful of target root directories, so the canonical form is worth
+    /// keeping instead of re-walking the directory's symlinks every time.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CrateInfoError::FileRead`] if canonicalization fails.
+    pub(super) fn canonical_dir(&self, dir: &Path) -> Result<PathBuf> {
+        if let Some(cached) = self.resolve_cache.borrow().canonical_dirs.get(dir) {
+            return Ok(cached.clone());
+        }
+
+        let canonical = dir
+            .canonicalize()
+            .map_err(|source| CrateInfoError::FileRead {
+                path: dir.to_path_buf(),
+                source,
+            })?;
+        self.resolve_cache
+            .borrow_mut()
+            .canonical_dirs
+            .insert(dir.to_path_buf(), canonical.clone());
+        Ok(canonical)
+    }
+
+    /// Number of memoized module resolutions (test observability).
+    #[cfg(test)]
+    pub(super) fn cached_module_count(&self) -> usize {
+        self.resolve_cache.borrow().modules.len()
+    }
+
+    /// Number of directories whose canonical form is memoized (test observability).
+    #[cfg(test)]
+    pub(super) fn canonical_dir_count(&self) -> usize {
+        self.resolve_cache.borrow().canonical_dirs.len()
     }
 
     /// Returns the name of the root package.

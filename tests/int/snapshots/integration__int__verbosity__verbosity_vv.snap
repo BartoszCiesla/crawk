@@ -18,8 +18,7 @@ exit_code: 0
 [34mDEBUG[39m 'file_module' found as [MODULES]/src/file_module.rs
 [32mINFO[39m Module tree: 'file_module' → [MODULES]/src/file_module.rs, recursive=false
 [34mDEBUG[39m Cache miss: [MODULES]/src/lib.rs
-[32mINFO[39m Resolving module: 'file_module'
-[34mDEBUG[39m 'file_module' found as [MODULES]/src/file_module.rs
+[34mDEBUG[39m Resolved module 'file_module' from memo
 [32mINFO[39m Module tree: 'file_module' → [MODULES]/src/file_module.rs, recursive=true
 [34mDEBUG[39m Cache hit: [MODULES]/src/lib.rs
 [34mDEBUG[39m Cache miss: [MODULES]/src/file_module.rs

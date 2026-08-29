@@ -21,10 +21,6 @@ exit_code: 0
 [32mINFO[39m Found submodule: 'nesting::level1' → [MODULES]/src/nesting/level1/mod.rs
 [32mINFO[39m Found submodule: 'nesting::level1::level2' → [MODULES]/src/nesting/level1/level2/mod.rs
 [32mINFO[39m Found submodule: 'nesting::level1::level2::level3' → [MODULES]/src/nesting/level1/level2/level3.rs
-[32mINFO[39m Resolving module: 'nesting'
-[32mINFO[39m Resolving module: 'nesting'
-[32mINFO[39m Resolving module: 'nesting::level1'
-[32mINFO[39m Resolving module: 'nesting'
 [32mINFO[39m Resolving module: 'nesting::level1'
 [32mINFO[39m Resolving module: 'nesting::level1::level2'
 [32mINFO[39m File root map: 4 files for 4 modules

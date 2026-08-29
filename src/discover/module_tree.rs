@@ -100,10 +100,17 @@ impl CrateInfo {
         module_path: &str,
         cache: &mut ParseCache,
     ) -> Result<PathBuf> {
+        if let Some(memoized) = self.cached_module(module_path) {
+            debug!("Resolved module '{module_path}' from memo");
+            return Ok(memoized);
+        }
+
         info!("Resolving module: '{module_path}'");
         let package = self.root_package().ok_or(CrateInfoError::PackageNotFound)?;
 
-        self.resolve_module_path_with_crate(package, module_path, cache)
+        let resolved = self.resolve_module_path_with_crate(package, module_path, cache)?;
+        self.cache_module(module_path, &resolved);
+        Ok(resolved)
     }
 
     /// Resolves a module path within a specific package.
@@ -117,6 +124,7 @@ impl CrateInfo {
     ///
     /// Returns an error if the module path is empty or the module cannot be found.
     fn resolve_module_path(
+        &self,
         package: &Package,
         module_path: &str,
         cache: &mut ParseCache,
@@ -139,7 +147,7 @@ impl CrateInfo {
                 .ok_or_else(|| CrateInfoError::ModuleNotFound {
                     module_path: module_path.to_owned(),
                 })?;
-        Self::check_within_root(&resolved, crate_root_dir)?;
+        Self::check_within_canonical_root(&resolved, &self.canonical_dir(crate_root_dir)?)?;
         Ok(resolved)
     }
 
@@ -167,7 +175,7 @@ impl CrateInfo {
             // Skip the crate name/alias and resolve the rest
             let result = if parts.len() > 1 {
                 let remaining_path = parts[1..].join("::");
-                Self::resolve_module_path(package, &remaining_path, cache)
+                self.resolve_module_path(package, &remaining_path, cache)
             } else {
                 // Just the crate name/alias, return the crate root (library)
                 Self::find_crate_root(package)
@@ -181,7 +189,7 @@ impl CrateInfo {
         if Self::find_binary_by_file_stem(package, parts[0]).is_some() {
             let result = if parts.len() > 1 {
                 let remaining = parts[1..].join("::");
-                Self::resolve_module_path_from_binary(package, parts[0], &remaining, cache)
+                self.resolve_module_path_from_binary(package, parts[0], &remaining, cache)
             } else {
                 Self::find_binary_by_file_stem(package, parts[0])
                     .ok_or_else(|| CrateInfoError::NoCrateRoot(package.name.to_string()))
@@ -191,7 +199,7 @@ impl CrateInfo {
         }
 
         // Otherwise, resolve as-is
-        Self::resolve_module_path(package, module_path, cache)
+        self.resolve_module_path(package, module_path, cache)
     }
 
     /// Finds the crate root file (lib.rs, main.rs, or the first target's src_path).
@@ -240,6 +248,7 @@ impl CrateInfo {
     ///
     /// Similar to `resolve_module_path`, but uses the specified binary as the root.
     fn resolve_module_path_from_binary(
+        &self,
         package: &Package,
         file_stem: &str,
         module_path: &str,
@@ -262,7 +271,7 @@ impl CrateInfo {
             .ok_or_else(|| CrateInfoError::ModuleNotFound {
                 module_path: module_path.to_owned(),
             })?;
-        Self::check_within_root(&resolved, bin_root_dir)?;
+        Self::check_within_canonical_root(&resolved, &self.canonical_dir(bin_root_dir)?)?;
         Ok(resolved)
     }
 
@@ -289,29 +298,26 @@ impl CrateInfo {
         Ok(())
     }
 
-    /// Verifies that `path` is contained within `root`.
+    /// Verifies that `path` is contained within the already-canonicalized `canonical_root`.
     ///
-    /// Uses [`fs::canonicalize`] to resolve symlinks before comparison,
-    /// acting as a safety net against traversal that bypasses segment validation.
+    /// Canonicalizes `path` to resolve symlinks before comparison, acting as a
+    /// safety net against traversal that bypasses segment validation. The root
+    /// is canonicalized by the caller through
+    /// [`canonical_dir`](CrateInfo::canonical_dir), which memoizes it — the same
+    /// target root is checked once per resolved module.
     ///
     /// # Errors
     ///
-    /// Returns [`CrateInfoError::PathTraversal`] if the resolved path escapes `root`,
+    /// Returns [`CrateInfoError::PathTraversal`] if the resolved path escapes the root,
     /// or [`CrateInfoError::FileRead`] if canonicalization fails.
-    fn check_within_root(path: &Path, root: &Path) -> Result<()> {
+    fn check_within_canonical_root(path: &Path, canonical_root: &Path) -> Result<()> {
         let canonical_path = path
             .canonicalize()
             .map_err(|source| CrateInfoError::FileRead {
                 path: path.to_path_buf(),
                 source,
             })?;
-        let canonical_root = root
-            .canonicalize()
-            .map_err(|source| CrateInfoError::FileRead {
-                path: root.to_path_buf(),
-                source,
-            })?;
-        if canonical_path.starts_with(&canonical_root) {
+        if canonical_path.starts_with(canonical_root) {
             Ok(())
         } else {
             Err(CrateInfoError::PathTraversal)
@@ -1225,7 +1231,8 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let child = dir.path().join("foo.rs");
         fs::write(&child, "").unwrap();
-        assert!(CrateInfo::check_within_root(&child, dir.path()).is_ok());
+        let root = dir.path().canonicalize().unwrap();
+        assert!(CrateInfo::check_within_canonical_root(&child, &root).is_ok());
     }
 
     #[test]
@@ -1233,7 +1240,8 @@ mod tests {
         let parent = tempfile::tempdir().unwrap();
         let child = tempfile::tempdir().unwrap();
         // child is outside parent
-        let err = CrateInfo::check_within_root(child.path(), parent.path()).unwrap_err();
+        let root = parent.path().canonicalize().unwrap();
+        let err = CrateInfo::check_within_canonical_root(child.path(), &root).unwrap_err();
         assert!(matches!(err, CrateInfoError::PathTraversal));
     }
 
@@ -1534,6 +1542,87 @@ mod tests {
             cache.len(),
             1,
             "inline lookup through check_inline_module must populate the shared ParseCache"
+        );
+    }
+
+    /// Regression: a module path resolved twice must hit the memo instead of
+    /// probing the filesystem again.
+    #[test]
+    fn resolve_module_memoizes_repeated_lookups() {
+        let info = fixture_crate_info();
+        let mut cache = ParseCache::new();
+
+        let first = info.resolve_module("inline_modules", &mut cache).unwrap();
+        let second = info.resolve_module("inline_modules", &mut cache).unwrap();
+
+        assert_eq!(first, second);
+        assert_eq!(
+            info.cached_module_count(),
+            1,
+            "the second lookup must be served from the memo, not re-inserted"
+        );
+    }
+
+    /// The memo is keyed per module path — distinct paths keep distinct files.
+    #[test]
+    fn resolve_module_cache_keeps_distinct_paths_separate() {
+        let info = fixture_crate_info();
+        let mut cache = ParseCache::new();
+
+        let parent = info.resolve_module("inline_modules", &mut cache).unwrap();
+        let inline_child = info
+            .resolve_module("inline_modules::outer", &mut cache)
+            .unwrap();
+        let file_child = info
+            .resolve_module("inline_modules::outer::file_child", &mut cache)
+            .unwrap();
+
+        // `outer` is inline in inline_modules.rs, `file_child` is a real file.
+        assert_eq!(parent, inline_child);
+        assert_ne!(parent, file_child);
+        assert_eq!(info.cached_module_count(), 3);
+    }
+
+    /// `split_inline_scope` peels prefixes shortest-first, resolving each one.
+    /// Every distinct prefix must be resolved at most once across repeated
+    /// splits of paths sharing that prefix.
+    #[test]
+    fn split_inline_scope_resolves_each_prefix_once() {
+        let info = fixture_crate_info();
+        let mut cache = ParseCache::new();
+        let src = fixture_src("inline_modules.rs");
+
+        info.split_inline_scope("inline_modules::outer", &src, &mut cache);
+        let after_first = info.cached_module_count();
+        info.split_inline_scope("inline_modules::outer", &src, &mut cache);
+
+        assert_eq!(
+            info.cached_module_count(),
+            after_first,
+            "re-splitting the same path must not resolve any prefix again"
+        );
+    }
+
+    /// The root directory is canonicalized once per directory, not once per
+    /// containment check.
+    #[test]
+    fn canonical_dir_caches_root_canonicalization() {
+        let info = fixture_crate_info();
+        let mut cache = ParseCache::new();
+
+        info.resolve_module("inline_modules", &mut cache).unwrap();
+        info.resolve_module("visibility", &mut cache).unwrap();
+
+        assert_eq!(
+            info.canonical_dir_count(),
+            1,
+            "both modules live under the same crate root dir"
+        );
+
+        let src_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures/modules/src");
+        assert_eq!(
+            info.canonical_dir(&src_dir).unwrap(),
+            src_dir.canonicalize().unwrap()
         );
     }
 }
