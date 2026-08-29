@@ -541,7 +541,7 @@ impl Analyzer {
                     });
                 }
                 Ok(type_list) => {
-                    for reference in &type_list {
+                    for reference in type_list {
                         debug!("Found reference: {}", reference.to_path_string());
                     }
                 }

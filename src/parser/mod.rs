@@ -105,6 +105,9 @@ impl CrateAnalyzer {
     /// inside the target inline module instead of visiting the entire file.
     /// For example, if parsing `glob_patterns::utilities` from `glob_patterns.rs`,
     /// `inline_scope` would be `["utilities"]`.
+    ///
+    /// On success returns a borrow of the references stored for `module`, so the
+    /// caller can inspect them without copying the collection.
     pub(crate) fn parse_file(
         &mut self,
         module: impl Into<String>,
@@ -113,7 +116,7 @@ impl CrateAnalyzer {
         children: HashSet<String>,
         root_children: HashSet<String>,
         cache: &mut ParseCache,
-    ) -> Result<Vec<TypeReference>> {
+    ) -> Result<&[TypeReference]> {
         let syntax: Rc<File> = cache.get_or_parse(path, |p| {
             let content = read_source_file(p).map_err(|e| match e {
                 ReadFileError::Io(source) => AnalyzerError::FileRead {
@@ -164,9 +167,8 @@ impl CrateAnalyzer {
         if !self.files.contains_key(&module) {
             self.file_order.push(module.clone());
         }
-        self.files.insert(module, result.clone());
 
-        Ok(result)
+        Ok(self.files.entry(module).insert_entry(result).into_mut())
     }
 
     /// Returns all collected crate internal references by module, in parse order.
@@ -650,6 +652,85 @@ mod tests {
             err,
             AnalyzerError::InlineModuleNotFound { scope, .. } if scope == ["missing"]
         ));
+    }
+
+    #[test]
+    fn parse_file_returns_collected_references() {
+        let mut f = NamedTempFile::new().unwrap();
+        writeln!(f, "use crate::a::B;\nuse crate::c::D;").unwrap();
+        f.flush().unwrap();
+        let mut analyzer = CrateAnalyzer::new("test");
+        let mut cache = ParseCache::new();
+        let refs = analyzer
+            .parse_file(
+                "mod",
+                f.path(),
+                &[],
+                HashSet::new(),
+                HashSet::new(),
+                &mut cache,
+            )
+            .unwrap();
+
+        let paths: Vec<String> = refs.iter().map(TypeReference::to_path_string).collect();
+        assert_eq!(paths, ["crate::a::B", "crate::c::D"]);
+    }
+
+    #[test]
+    fn parse_file_return_matches_stored_references() {
+        let mut f = NamedTempFile::new().unwrap();
+        writeln!(f, "use crate::a::B;\nuse crate::c::D;").unwrap();
+        f.flush().unwrap();
+        let mut analyzer = CrateAnalyzer::new("test");
+        let mut cache = ParseCache::new();
+        let returned: Vec<String> = analyzer
+            .parse_file(
+                "mod",
+                f.path(),
+                &[],
+                HashSet::new(),
+                HashSet::new(),
+                &mut cache,
+            )
+            .unwrap()
+            .iter()
+            .map(TypeReference::to_path_string)
+            .collect();
+
+        // The returned slice borrows the stored collection, so both views agree.
+        assert_eq!(analyzer.file_count(), 1);
+        assert_eq!(analyzer.total_references(), returned.len());
+        let stored: Vec<String> = analyzer.files["mod"]
+            .iter()
+            .map(TypeReference::to_path_string)
+            .collect();
+        assert_eq!(stored, returned);
+    }
+
+    #[test]
+    fn parse_file_reparse_replaces_stored_entry_without_duplicating_order() {
+        let mut f = NamedTempFile::new().unwrap();
+        writeln!(f, "use crate::a::B;").unwrap();
+        f.flush().unwrap();
+        let mut analyzer = CrateAnalyzer::new("test");
+        let mut cache = ParseCache::new();
+
+        for _ in 0..2 {
+            analyzer
+                .parse_file(
+                    "mod",
+                    f.path(),
+                    &[],
+                    HashSet::new(),
+                    HashSet::new(),
+                    &mut cache,
+                )
+                .unwrap();
+        }
+
+        assert_eq!(analyzer.file_count(), 1);
+        assert_eq!(analyzer.total_references(), 1);
+        assert_eq!(analyzer.file_order, ["mod"]);
     }
 
     #[test]
