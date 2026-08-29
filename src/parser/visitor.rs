@@ -107,13 +107,17 @@ impl CollectedReferences {
         }
     }
 
-    /// Iterates over all references in a consistent order.
-    pub(super) fn all(&self) -> impl Iterator<Item = &TypeReference> {
+    /// Consumes the collection, yielding all references in a consistent order.
+    ///
+    /// Takes `self` by value so the collected references are moved out rather
+    /// than cloned — the visitor is always discarded once its references have
+    /// been drained.
+    pub(super) fn into_all(self) -> impl Iterator<Item = TypeReference> {
         self.use_statements
-            .iter()
-            .chain(self.type_refs.iter())
-            .chain(self.value_refs.iter())
-            .chain(self.macro_calls.iter())
+            .into_iter()
+            .chain(self.type_refs)
+            .chain(self.value_refs)
+            .chain(self.macro_calls)
     }
 }
 
@@ -905,8 +909,8 @@ mod tests {
 
         let paths: Vec<String> = v
             .references
-            .all()
-            .map(TypeReference::to_path_string)
+            .into_all()
+            .map(|r| r.to_path_string())
             .collect();
         assert!(
             paths.is_empty(),

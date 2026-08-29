@@ -152,7 +152,7 @@ impl CrateAnalyzer {
             });
         }
 
-        let result: Vec<TypeReference> = visitor.references.all().cloned().collect();
+        let result: Vec<TypeReference> = visitor.references.into_all().collect();
         info!(
             "Parsed '{module}': {} references from {}{}",
             result.len(),
@@ -262,7 +262,7 @@ mod tests {
         let syntax: File = syn::parse_file(code).unwrap();
         let mut visitor = ModuleVisitor::new("", HashSet::new(), HashSet::new(), None);
         visitor.visit_file(&syntax);
-        visitor.references.all().cloned().collect()
+        visitor.references.into_all().collect()
     }
 
     #[test]
