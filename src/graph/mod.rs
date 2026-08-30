@@ -194,6 +194,42 @@ impl DependencyGraph {
         find_orphans(&self.edges, &self.modules)
     }
 
+    /// Every edge with both endpoints truncated to `depth`, self-loops dropped.
+    ///
+    /// Truncation can collapse two distinct modules onto one node; the
+    /// resulting `A -> A` edges are removed, matching how
+    /// [`DependencyGraphOptions::depth`] drops them when the graph is built
+    /// truncated up front. API annotations are not carried over — the result
+    /// is the bare edge set.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use crawk::{Analyzer, DependencyGraphOptions};
+    /// # use std::path::Path;
+    /// # fn main() -> Result<(), crawk::AnalysisError> {
+    /// # let mut a = Analyzer::new(Path::new("."))?;
+    /// # let g = a.dependency_graph(&DependencyGraphOptions::default())?;
+    /// for (source, target) in g.truncated_edges(Some(1)) {
+    ///     println!("{source} -> {target}");
+    /// }
+    /// # Ok(()) }
+    /// ```
+    #[must_use]
+    pub fn truncated_edges(&self, depth: Option<usize>) -> BTreeSet<Edge> {
+        self.edges
+            .keys()
+            .map(|(source, target)| {
+                (
+                    truncate_module_path(source, depth),
+                    truncate_module_path(target, depth),
+                )
+            })
+            .filter(|(source, target)| source != target)
+            .map(|(source, target)| (source.to_owned(), target.to_owned()))
+            .collect()
+    }
+
     /// Returns `true` if the graph has no edges.
     #[must_use]
     pub fn is_empty(&self) -> bool {
@@ -285,5 +321,40 @@ mod tests {
     fn no_cycles_in_dag() {
         let g = make_graph(&[("a", "b"), ("b", "c")], &["a", "b", "c"]);
         assert!(g.cycles().is_empty());
+    }
+
+    // ---- truncated_edges ----------------------------------------------------
+
+    #[test]
+    fn truncated_edges_none_returns_all() {
+        let g = make_graph(&[("a::x", "b::y"), ("b::y", "c")], &["a::x", "b::y", "c"]);
+        let edges = g.truncated_edges(None);
+        assert_eq!(edges.len(), 2);
+        assert!(edges.contains(&("a::x".to_owned(), "b::y".to_owned())));
+    }
+
+    #[test]
+    fn truncated_edges_drops_self_loops_after_collapse() {
+        // Both endpoints collapse to "a" at depth 1 — the edge disappears.
+        let g = make_graph(&[("a::x", "a::y"), ("a::x", "b::z")], &["a::x", "a::y"]);
+        let edges = g.truncated_edges(Some(1));
+        assert_eq!(
+            edges.into_iter().collect::<Vec<_>>(),
+            vec![("a".to_owned(), "b".to_owned())]
+        );
+    }
+
+    #[test]
+    fn truncated_edges_dedups_collapsed_pairs() {
+        // Three distinct edges collapse onto the single pair a -> b.
+        let g = make_graph(
+            &[("a::x", "b::y"), ("a::x", "b::z"), ("a::w", "b::y")],
+            &["a::x", "a::w", "b::y", "b::z"],
+        );
+        let edges = g.truncated_edges(Some(1));
+        assert_eq!(
+            edges.into_iter().collect::<Vec<_>>(),
+            vec![("a".to_owned(), "b".to_owned())]
+        );
     }
 }

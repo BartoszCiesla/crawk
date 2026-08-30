@@ -839,7 +839,7 @@ impl Analyzer {
 
         let truncated_modules: BTreeSet<String> = known_modules
             .iter()
-            .map(|m| graph::truncate_module_path(m, options.depth))
+            .map(|m| graph::truncate_module_path(m, options.depth).to_owned())
             .collect();
 
         Ok(DependencyGraph::new(all_edges, truncated_modules))

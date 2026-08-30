@@ -46,6 +46,7 @@ crate::graph::edges::build_edges
 crate::graph::edges::resolve_reference_target
 crate::graph::edges::truncate_module_path
 crate::graph::edges::{AnnotatedEdges, Edge}
+crate::graph::edges::{AnnotatedEdges, truncate_module_path}
 crate::graph::orphans::*
 crate::graph::orphans::find_orphans
 crate::graph::paths::*

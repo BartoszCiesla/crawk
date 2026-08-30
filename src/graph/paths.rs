@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
-use super::edges::AnnotatedEdges;
+use super::edges::{AnnotatedEdges, truncate_module_path};
 
 /// All shortest dependency paths between two modules.
 ///
@@ -38,6 +38,30 @@ impl ShortestPaths {
     #[must_use]
     pub fn length(&self) -> Option<usize> {
         self.paths.first().map(|p| p.len().saturating_sub(1))
+    }
+
+    /// Truncate every module on every path to `depth` segments, then dedup
+    /// and sort.
+    ///
+    /// Truncation can collapse distinct modules onto one node, which in turn
+    /// makes previously distinct paths identical; those duplicates are
+    /// removed. Returns a plain copy of [`Self::paths`] when `depth` is
+    /// `None`.
+    #[must_use]
+    pub fn truncated(&self, depth: Option<usize>) -> Vec<Vec<String>> {
+        let Some(d) = depth else {
+            return self.paths.clone();
+        };
+        self.paths
+            .iter()
+            .map(|path| {
+                path.iter()
+                    .map(|node| truncate_module_path(node, Some(d)).to_owned())
+                    .collect()
+            })
+            .collect::<BTreeSet<Vec<String>>>()
+            .into_iter()
+            .collect()
     }
 }
 
@@ -153,6 +177,38 @@ mod tests {
 
     fn nodes(names: &[&str]) -> BTreeSet<String> {
         names.iter().map(|s| (*s).to_owned()).collect()
+    }
+
+    fn shortest_paths(paths: Vec<Vec<&str>>) -> ShortestPaths {
+        let owned: Vec<Vec<String>> = paths
+            .into_iter()
+            .map(|p| p.into_iter().map(str::to_owned).collect())
+            .collect();
+        ShortestPaths::new("src".to_owned(), "tgt".to_owned(), owned)
+    }
+
+    // ---- ShortestPaths::truncated -------------------------------------------
+
+    #[test]
+    fn truncated_no_depth_clones() {
+        let sp = shortest_paths(vec![vec!["a::x", "b::y"]]);
+        assert_eq!(sp.truncated(None), sp.paths);
+    }
+
+    #[test]
+    fn truncated_depth_1_short_nodes_unchanged() {
+        let sp = shortest_paths(vec![vec!["lib", "a", "leaf"], vec!["lib", "b", "leaf"]]);
+        // All nodes already 1 segment — both paths survive distinct.
+        assert_eq!(sp.truncated(Some(1)).len(), 2);
+    }
+
+    #[test]
+    fn truncated_dedup_removes_duplicates() {
+        let sp = shortest_paths(vec![vec!["lib::x", "a::y"], vec!["lib::z", "a::w"]]);
+        let result = sp.truncated(Some(1));
+        // Both truncate to ["lib", "a"].
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0], vec!["lib", "a"]);
     }
 
     #[test]

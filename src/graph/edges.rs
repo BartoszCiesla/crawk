@@ -19,13 +19,24 @@ pub type AnnotatedEdges = BTreeMap<Edge, BTreeSet<String>>;
 /// Truncate a `::` separated module path to at most `depth` segments.
 ///
 /// Returns the path unchanged when `depth` is `None` or when the path already
-/// has fewer segments than `depth`.
+/// has fewer segments than `depth`. The result always borrows from `path`: a
+/// truncated module path is a prefix of the original.
+///
+/// This is the module-path counterpart of
+/// [`TypeReference::truncate_to_depth`], which counts **segments only** and
+/// ignores the `crate::`/`self::`/`super::` prefix. Module paths in the graph
+/// carry no prefix, so on that domain the two agree.
 #[must_use]
-pub(crate) fn truncate_module_path(path: &str, depth: Option<usize>) -> String {
-    depth.map_or_else(
-        || path.to_owned(),
-        |n| path.split("::").take(n).collect::<Vec<_>>().join("::"),
-    )
+pub(crate) fn truncate_module_path(path: &str, depth: Option<usize>) -> &str {
+    let Some(n) = depth else { return path };
+    if n == 0 {
+        return "";
+    }
+    // `idx` is the start of the nth `::`, so it is always a char boundary and
+    // `get` always yields `Some`; the fallback keeps the function total.
+    path.match_indices("::")
+        .nth(n - 1)
+        .map_or(path, |(idx, _)| path.get(..idx).unwrap_or(path))
 }
 
 /// Resolve a TypeReference's segments to the module that contains the referenced item.
@@ -191,7 +202,9 @@ pub(crate) fn build_edges(
                 continue;
             }
 
-            let apis = edges.entry((source.clone(), target)).or_default();
+            let apis = edges
+                .entry((source.to_owned(), target.to_owned()))
+                .or_default();
             if show_apis && !api_segments.is_empty() {
                 apis.insert(api_segments.join("::"));
             }
@@ -239,6 +252,36 @@ mod tests {
     #[test]
     fn truncate_module_path_depth_exceeds_length() {
         assert_eq!(truncate_module_path("parser", Some(5)), "parser");
+    }
+
+    #[test]
+    fn truncate_module_path_depth_zero_yields_empty() {
+        assert_eq!(truncate_module_path("parser::visitor", Some(0)), "");
+    }
+
+    #[test]
+    fn truncate_module_path_empty_input() {
+        assert_eq!(truncate_module_path("", Some(2)), "");
+        assert_eq!(truncate_module_path("", None), "");
+    }
+
+    // Guards the switch from `split("::").take(n).join("::")` to index-based
+    // slicing: both must treat a doubled separator the same way.
+    #[test]
+    fn truncate_module_path_repeated_separator_matches_split_semantics() {
+        for n in 0..=4 {
+            let expected = "a::::b".split("::").take(n).collect::<Vec<_>>().join("::");
+            assert_eq!(truncate_module_path("a::::b", Some(n)), expected, "n = {n}");
+        }
+    }
+
+    #[test]
+    fn truncate_module_path_returns_slice_of_input() {
+        let path = String::from("parser::visitor::inner");
+        let truncated = truncate_module_path(&path, Some(2));
+        assert_eq!(truncated, "parser::visitor");
+        // Borrowed, not rebuilt: the slice starts inside the original buffer.
+        assert!(std::ptr::eq(truncated.as_ptr(), path.as_ptr()));
     }
 
     // ---- find_module_target -------------------------------------------------

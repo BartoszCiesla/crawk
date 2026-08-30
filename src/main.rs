@@ -169,10 +169,15 @@ fn render_path_output(
         sp.paths.len(),
         sp.length().unwrap_or(0)
     );
+    // `--depth` is applied here, by the library: `format::paths` renders what
+    // it is given and has no truncation logic of its own.
+    let resolved = sp.truncated(args.depth);
     Ok(match args.format {
-        DepsOutputFormat::Plain => format::paths::render_paths_plain(&sp, args.depth),
-        DepsOutputFormat::Grouped => format::paths::render_paths_grouped(&sp, args.depth),
-        DepsOutputFormat::Dot => format::paths::render_paths_dot(graph.edges(), &sp, args.depth),
+        DepsOutputFormat::Plain => format::paths::render_paths_plain(&resolved),
+        DepsOutputFormat::Grouped => format::paths::render_paths_grouped(&resolved),
+        DepsOutputFormat::Dot => {
+            format::paths::render_paths_dot(&graph.truncated_edges(args.depth), &resolved)
+        }
     })
 }
 

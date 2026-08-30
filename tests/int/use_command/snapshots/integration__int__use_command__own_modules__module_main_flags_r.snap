@@ -38,6 +38,7 @@ crate::format::why_cmd::render_plain
 crate::logger::configure_tracing
 crawk::AnnotatedEdges
 crawk::CheckReport
+crawk::Edge
 crawk::ModuleInfo
 crawk::TypeReference
 crawk::version
@@ -47,6 +48,5 @@ crawk::version::VERSION
 crawk::{AnalysisOptions, Analyzer, AnnotatedEdges, CheckOptions, DependencyGraph, DependencyGraphOptions, version}
 crawk::{AnalysisResult, TypeReference}
 crawk::{AnnotatedEdges, Cycle}
-crawk::{AnnotatedEdges, ShortestPaths}
 
 ----- stderr -----

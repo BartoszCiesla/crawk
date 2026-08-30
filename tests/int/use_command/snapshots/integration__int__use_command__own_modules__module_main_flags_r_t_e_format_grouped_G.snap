@@ -98,14 +98,11 @@ format::orphans
 format::orphans::tests
  - crate::format::orphans::render_orphans
 format::paths
- - crawk::AnnotatedEdges
- - crawk::ShortestPaths
+ - crawk::Edge
 format::paths::tests
  - crate::format::paths::render_paths_dot
  - crate::format::paths::render_paths_grouped
  - crate::format::paths::render_paths_plain
- - crate::format::paths::truncate_paths_dedup
- - crawk::AnnotatedEdges
 format::use_cmd
  - crawk::AnalysisResult
  - crawk::TypeReference

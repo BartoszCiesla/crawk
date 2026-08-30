@@ -139,6 +139,7 @@ graph::orphans::tests
  - crate::graph::orphans::find_orphans
 graph::paths
  - crate::graph::edges::AnnotatedEdges
+ - crate::graph::edges::truncate_module_path
 graph::paths::tests
  - crate::graph::paths::ShortestPaths
  - crate::graph::paths::compute_shortest_paths

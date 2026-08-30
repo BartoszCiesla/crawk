@@ -65,8 +65,8 @@ crawk::CheckReport
 crawk::Cycle
 crawk::DependencyGraph
 crawk::DependencyGraphOptions
+crawk::Edge
 crawk::ModuleInfo
-crawk::ShortestPaths
 crawk::TypeReference
 crawk::version
 crawk::version::LONG_VERSION_MESSAGE
