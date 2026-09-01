@@ -27,7 +27,7 @@ const_format = "0.2.36"
 owo-colors = "4.3.0"
 proc-macro2 = "1.0.107"
 serde = { version = "1.0.229", features = ["derive"] }
-syn = { version = "3.0.3", features = ["full", "parsing", "visit", "proc-macro"] }
+syn = { version = "3.0.4", features = ["full", "parsing", "visit", "proc-macro"] }
 thiserror = "2.0.20"
 toml = "1.1.4"
 tracing = "0.1.44"
@@ -35,7 +35,7 @@ tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 
 [build-dependencies]
 anyhow = "1.0.104"
-vergen-git2 = { version = "10.0.2", features = ["build", "cargo", "rustc", "si"] }
+vergen-git2 = { version = "10.0.3", features = ["build", "cargo", "rustc", "si"] }
 
 [dev-dependencies]
 insta = { version = "1.48.0", features = ["filters"] }
