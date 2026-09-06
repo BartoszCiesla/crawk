@@ -51,34 +51,64 @@ const fn super_level(path_prefix: PathPrefix) -> usize {
     }
 }
 
+/// Splits the leading `crate::` / `self::` / `super::…` qualifier run off a path.
+///
+/// Returns the resulting [`PathPrefix`] and the index of the first ordinary
+/// segment. Only a *leading* run is consumed: Rust allows these keywords in start
+/// position only, so a `super` sitting deeper in the path is not a qualifier and
+/// stays an ordinary segment.
+///
+/// Sole implementation of the qualifier rule — every path entry point
+/// ([`ModuleVisitor::build_reference`] for `syn::Path`s,
+/// [`ModuleVisitor::build_reference_from_segments`] for token-stream paths, and
+/// [`resolve_path_segment`] for use-trees) classifies a given path identically.
+fn split_path_prefix(segments: &[String]) -> (PathPrefix, usize) {
+    match segments.first().map(String::as_str) {
+        Some(PATH_QUALIFIER_CRATE) => (PathPrefix::Crate, 1),
+        Some(PATH_QUALIFIER_SELF) => (PathPrefix::SelfModule, 1),
+        Some(PATH_QUALIFIER_SUPER) => {
+            let levels = segments
+                .iter()
+                .take_while(|s| s.as_str() == PATH_QUALIFIER_SUPER)
+                .count();
+            (PathPrefix::Super(levels), levels)
+        }
+        _ => (PathPrefix::None, 0),
+    }
+}
+
 /// Resolves a single path segment's contribution to the accumulated prefix and
 /// [`PathPrefix`] during use-tree traversal.
 ///
-/// Handles `crate::`, `self::`, `super::` (including chained) at the start of
-/// a path, and regular identifiers elsewhere.
+/// Incremental counterpart of [`split_path_prefix`]: a qualifier is consumed only
+/// while still inside the leading run — no ordinary segment seen yet (`prefix`
+/// empty) and, for `crate`/`self`, no qualifier taken yet. So chained
+/// `super::super::` accumulates, while a `super` behind `crate::`, `self::` or a
+/// real segment is an ordinary segment.
 fn resolve_path_segment(
     ident: &str,
     prefix: Vec<String>,
     path_prefix: PathPrefix,
 ) -> (Vec<String>, PathPrefix) {
-    if prefix.is_empty() {
-        match ident {
-            PATH_QUALIFIER_CRATE => (Vec::new(), PathPrefix::Crate),
-            PATH_QUALIFIER_SELF => (Vec::new(), PathPrefix::SelfModule),
-            PATH_QUALIFIER_SUPER => (Vec::new(), PathPrefix::Super(super_level(path_prefix))),
-            _ => {
-                let mut new_prefix = prefix;
-                new_prefix.push(ident.to_owned());
-                (new_prefix, path_prefix)
-            }
+    let at_start = prefix.is_empty();
+
+    match ident {
+        PATH_QUALIFIER_CRATE if at_start && path_prefix == PathPrefix::None => {
+            (prefix, PathPrefix::Crate)
         }
-    } else if ident == PATH_QUALIFIER_SUPER {
-        // Handle chained super:: in the middle of path
-        (prefix, PathPrefix::Super(super_level(path_prefix)))
-    } else {
-        let mut new_prefix = prefix;
-        new_prefix.push(ident.to_owned());
-        (new_prefix, path_prefix)
+        PATH_QUALIFIER_SELF if at_start && path_prefix == PathPrefix::None => {
+            (prefix, PathPrefix::SelfModule)
+        }
+        PATH_QUALIFIER_SUPER
+            if at_start && matches!(path_prefix, PathPrefix::None | PathPrefix::Super(_)) =>
+        {
+            (prefix, PathPrefix::Super(super_level(path_prefix)))
+        }
+        _ => {
+            let mut new_prefix = prefix;
+            new_prefix.push(ident.to_owned());
+            (new_prefix, path_prefix)
+        }
     }
 }
 
@@ -215,13 +245,26 @@ impl ModuleVisitor {
     /// a single segment can only name one legitimately.
     fn is_internal_path(&self, path: &syn::Path, include_root: bool) -> bool {
         path.segments.first().is_some_and(|first_segment| {
-            let ident = first_segment.ident.to_string();
-            matches!(
-                ident.as_str(),
-                PATH_QUALIFIER_CRATE | PATH_QUALIFIER_SELF | PATH_QUALIFIER_SUPER
-            ) || self.children.contains(&ident)
-                || (include_root && path.segments.len() > 1 && self.root_children.contains(&ident))
+            self.is_internal_head(
+                &first_segment.ident.to_string(),
+                path.segments.len(),
+                include_root,
+            )
         })
+    }
+
+    /// Internal-path test on a path's first segment and length.
+    ///
+    /// Kept separate from [`Self::is_internal_path`] so both the `syn::Path` and
+    /// the raw-segment entry points share one rule, and so the check stays cheap:
+    /// external paths (`std::fmt`, `tracing::info`) are rejected on the first
+    /// identifier alone, before any per-segment allocation.
+    fn is_internal_head(&self, first: &str, len: usize, include_root: bool) -> bool {
+        matches!(
+            first,
+            PATH_QUALIFIER_CRATE | PATH_QUALIFIER_SELF | PATH_QUALIFIER_SUPER
+        ) || self.children.contains(first)
+            || (include_root && len > 1 && self.root_children.contains(first))
     }
 
     /// Builds a TypeReference from a syn::Path if it's an internal crate reference.
@@ -234,48 +277,30 @@ impl ModuleVisitor {
             return None;
         }
 
-        let mut segments = Vec::new();
-        let mut path_prefix = PathPrefix::None;
+        let segments: Vec<String> = path
+            .segments
+            .iter()
+            .map(|segment| segment.ident.to_string())
+            .collect();
 
-        for (i, segment) in path.segments.iter().enumerate() {
-            let ident = segment.ident.to_string();
+        self.reference_from_segments(segments)
+    }
 
-            // Handle special prefixes at the start
-            if i == 0 {
-                match ident.as_str() {
-                    PATH_QUALIFIER_CRATE => {
-                        path_prefix = PathPrefix::Crate;
-                        continue;
-                    }
-                    PATH_QUALIFIER_SELF => {
-                        path_prefix = PathPrefix::SelfModule;
-                        continue;
-                    }
-                    PATH_QUALIFIER_SUPER => {
-                        path_prefix = PathPrefix::Super(1);
-                        continue;
-                    }
-                    _ => {}
-                }
-            } else if ident == PATH_QUALIFIER_SUPER {
-                // Handle chained super::
-                let levels = match path_prefix {
-                    PathPrefix::Super(n) => n + 1,
-                    _ => 1,
-                };
-                path_prefix = PathPrefix::Super(levels);
-                continue;
-            }
-
-            segments.push(ident);
-        }
+    /// Builds a resolved [`TypeReference`] from already-filtered path segments.
+    ///
+    /// Strips the leading qualifier run via [`split_path_prefix`] and resolves
+    /// the relative prefix against the current module path. Returns `None` for a
+    /// path made of qualifiers only (`super::super`), which names no item.
+    fn reference_from_segments(&self, mut segments: Vec<String>) -> Option<TypeReference> {
+        let (prefix, start) = split_path_prefix(&segments);
+        segments.drain(..start);
 
         if segments.is_empty() {
             return None;
         }
 
         Some(resolve_reference(
-            TypeReference::new(segments).with_prefix(path_prefix),
+            TypeReference::new(segments).with_prefix(prefix),
             &self.module_path,
         ))
     }
@@ -297,49 +322,14 @@ impl ModuleVisitor {
             return None;
         }
 
-        let first = &segments[0];
-        let is_internal = matches!(
-            first.as_str(),
-            PATH_QUALIFIER_CRATE | PATH_QUALIFIER_SELF | PATH_QUALIFIER_SUPER
-        ) || self.children.contains(first)
-            || self.root_children.contains(first);
-
-        if !is_internal {
+        if !segments
+            .first()
+            .is_some_and(|first| self.is_internal_head(first, segments.len(), true))
+        {
             return None;
         }
 
-        let mut prefix = PathPrefix::None;
-        let mut start = 0;
-
-        match segments[0].as_str() {
-            PATH_QUALIFIER_CRATE => {
-                prefix = PathPrefix::Crate;
-                start = 1;
-            }
-            PATH_QUALIFIER_SELF => {
-                prefix = PathPrefix::SelfModule;
-                start = 1;
-            }
-            PATH_QUALIFIER_SUPER => {
-                let levels = segments
-                    .iter()
-                    .take_while(|s| s.as_str() == PATH_QUALIFIER_SUPER)
-                    .count();
-                prefix = PathPrefix::Super(levels);
-                start = levels;
-            }
-            _ => {}
-        }
-
-        let real_segments: Vec<String> = segments[start..].to_vec();
-        if real_segments.is_empty() {
-            return None;
-        }
-
-        Some(resolve_reference(
-            TypeReference::new(real_segments).with_prefix(prefix),
-            &self.module_path,
-        ))
+        self.reference_from_segments(segments.to_vec())
     }
 
     /// Records an import in `imported_modules` if it originates from the current crate.
@@ -783,6 +773,8 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
 
 #[cfg(test)]
 mod tests {
+    use test_case::test_case;
+
     use super::*;
 
     #[test]
@@ -1254,6 +1246,139 @@ mod tests {
         assert!(
             v.references.value_refs.is_empty(),
             "Without package_name, should not resolve imported names"
+        );
+    }
+
+    // --- Path-prefix splitting ---
+
+    fn segments(path: &str) -> Vec<String> {
+        path.split("::").map(str::to_owned).collect()
+    }
+
+    #[test]
+    fn split_prefix_of_empty_path_consumes_nothing() {
+        assert_eq!(split_path_prefix(&[]), (PathPrefix::None, 0));
+    }
+
+    #[test]
+    fn split_prefix_of_unqualified_path_consumes_nothing() {
+        assert_eq!(
+            split_path_prefix(&segments("version::NAME")),
+            (PathPrefix::None, 0)
+        );
+    }
+
+    #[test]
+    fn split_prefix_consumes_crate_qualifier() {
+        assert_eq!(
+            split_path_prefix(&segments("crate::version::NAME")),
+            (PathPrefix::Crate, 1)
+        );
+    }
+
+    #[test]
+    fn split_prefix_consumes_self_qualifier() {
+        assert_eq!(
+            split_path_prefix(&segments("self::utils::helper")),
+            (PathPrefix::SelfModule, 1)
+        );
+    }
+
+    #[test]
+    fn split_prefix_consumes_single_super() {
+        assert_eq!(
+            split_path_prefix(&segments("super::sibling::Type")),
+            (PathPrefix::Super(1), 1)
+        );
+    }
+
+    #[test]
+    fn split_prefix_consumes_chained_super() {
+        assert_eq!(
+            split_path_prefix(&segments("super::super::super::ancestor::Type")),
+            (PathPrefix::Super(3), 3)
+        );
+    }
+
+    #[test]
+    fn split_prefix_stops_at_first_ordinary_segment() {
+        // `super` is a qualifier in start position only — the second one here
+        // sits behind `sibling`, so it is an ordinary segment.
+        assert_eq!(
+            split_path_prefix(&segments("super::sibling::super::Type")),
+            (PathPrefix::Super(1), 1)
+        );
+    }
+
+    #[test]
+    fn split_prefix_can_consume_the_whole_path() {
+        assert_eq!(
+            split_path_prefix(&segments("super::super")),
+            (PathPrefix::Super(2), 2)
+        );
+    }
+
+    // --- Entry-point agreement: syn::Path vs token stream vs use-tree ---
+
+    fn agreement_visitor() -> ModuleVisitor {
+        let children = ["utils", "child", "sibling", "version"]
+            .iter()
+            .map(|s| (*s).to_owned())
+            .collect();
+        ModuleVisitor::new("test_mod", children, HashSet::new(), None)
+    }
+
+    /// `syn::Path` entry point (type annotations, expressions, trait bounds).
+    fn via_syn_path(path: &str) -> Option<String> {
+        let parsed: syn::Path = syn::parse_str(path).expect("valid path");
+        agreement_visitor()
+            .build_reference(&parsed, true)
+            .map(|r| r.to_path_string())
+    }
+
+    /// Token-stream entry point (macro arguments, attribute values).
+    fn via_tokens(path: &str) -> Option<String> {
+        agreement_visitor()
+            .build_reference_from_segments(&segments(path))
+            .map(|r| r.to_path_string())
+    }
+
+    /// Use-tree entry point (`use` items).
+    fn via_use_tree(path: &str) -> Option<String> {
+        let file: syn::File = syn::parse_str(&format!("use {path};")).expect("valid use item");
+        let mut v = agreement_visitor();
+        v.visit_file(&file);
+        v.references
+            .use_statements
+            .first()
+            .map(TypeReference::to_path_string)
+    }
+
+    #[test_case("crate::version::NAME", "crate::version::NAME"; "crate qualifier")]
+    #[test_case("self::utils::helper", "crate::test_mod::utils::helper"; "self qualifier")]
+    #[test_case("super::sibling::Type", "crate::sibling::Type"; "single super")]
+    #[test_case("super::super::ancestor::Type", "super::super::ancestor::Type"; "chained super above crate root")]
+    #[test_case("self::super::x", "crate::test_mod::super::x"; "super after self is an ordinary segment")]
+    #[test_case("crate::super::x", "crate::super::x"; "super after crate is an ordinary segment")]
+    #[test_case("child::super::Bar", "child::super::Bar"; "super after a child module is an ordinary segment")]
+    fn all_entry_points_classify_path_identically(path: &str, expected: &str) {
+        let expected = Some(expected.to_owned());
+
+        assert_eq!(via_syn_path(path), expected, "syn::Path entry point");
+        assert_eq!(via_tokens(path), expected, "token-stream entry point");
+        assert_eq!(via_use_tree(path), expected, "use-tree entry point");
+    }
+
+    #[test]
+    fn qualifier_only_path_yields_no_reference() {
+        // `super::super` names no item — nothing is left after the prefix run.
+        let v = agreement_visitor();
+        let parsed: syn::Path = syn::parse_str("super::super").expect("valid path");
+
+        assert!(v.build_reference(&parsed, true).is_none());
+        assert!(
+            v.build_reference_from_segments(&segments("super::super"))
+                .is_none()
         );
     }
 }

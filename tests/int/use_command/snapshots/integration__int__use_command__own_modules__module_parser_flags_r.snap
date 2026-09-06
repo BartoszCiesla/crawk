@@ -17,6 +17,8 @@ crate::parser::visitor::ModuleVisitor
 crate::reference::GroupItem::Aliased
 crate::reference::GroupItem::Glob
 crate::reference::GroupItem::Simple
+crate::reference::PathPrefix::None
+crate::reference::PathPrefix::Super
 crate::reference::{GroupItem, PathPrefix, TypeReference}
 crate::reference::{PathPrefix, TypeReference}
 crate::utils::has_cfg_test

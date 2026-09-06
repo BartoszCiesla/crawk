@@ -57,6 +57,8 @@ crate::parser::visitor::ModuleVisitor
 crate::reference::GroupItem::Aliased
 crate::reference::GroupItem::Glob
 crate::reference::GroupItem::Simple
+crate::reference::PathPrefix::None
+crate::reference::PathPrefix::Super
 crate::reference::TypeReference
 crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference}
 crate::reference::{GroupItem, PathPrefix, TypeReference}

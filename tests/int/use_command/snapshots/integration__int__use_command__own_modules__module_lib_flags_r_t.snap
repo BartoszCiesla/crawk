@@ -77,6 +77,7 @@ crate::reference::GroupItem::Glob
 crate::reference::GroupItem::Simple
 crate::reference::PathPrefix
 crate::reference::PathPrefix::Crate
+crate::reference::PathPrefix::None
 crate::reference::PathPrefix::Super
 crate::reference::PathSuffix
 crate::reference::PathSuffix::Group

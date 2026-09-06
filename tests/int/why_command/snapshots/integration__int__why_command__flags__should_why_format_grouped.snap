@@ -23,6 +23,8 @@ parser::visitor
   crate::reference::GroupItem::Glob
   crate::reference::GroupItem::Simple
   crate::reference::PathPrefix
+  crate::reference::PathPrefix::None
+  crate::reference::PathPrefix::Super
   crate::reference::TypeReference
 
 ----- stderr -----
