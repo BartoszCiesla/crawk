@@ -3,6 +3,7 @@
 use std::collections::{BTreeSet, HashMap};
 
 use crate::graph::DependencyGraph;
+use crate::module_path::is_in_subtree;
 
 use super::{CheckReport, LayerPos, RuleSet, Violation, ViolationKind};
 
@@ -84,8 +85,7 @@ impl RuleSet {
             // they land on the same index. Such an edge (e.g. a `mod.rs`
             // re-exporting its own child) is a natural containment relation, not a
             // same-layer coupling — exempt it from the deny-same-layer check.
-            let related =
-                is_ancestor_or_self(source, target) || is_ancestor_or_self(target, source);
+            let related = is_in_subtree(target, source) || is_in_subtree(source, target);
             let same_layer = src_pos.index == tgt_pos.index && !related;
             let violates = upward || (same_layer && deny_same);
             if !violates {
@@ -108,17 +108,6 @@ impl RuleSet {
             });
         }
     }
-}
-
-/// Is `descendant` the same module as `ancestor`, or nested beneath it?
-///
-/// Matching is on `::` segment boundaries, so `parser` covers `parser::visitor`
-/// but never `parser_extra`.
-fn is_ancestor_or_self(ancestor: &str, descendant: &str) -> bool {
-    descendant == ancestor
-        || descendant
-            .strip_prefix(ancestor)
-            .is_some_and(|rest| rest.starts_with("::"))
 }
 
 /// Evaluate `rules` against `graph`, returning all violations (sorted).

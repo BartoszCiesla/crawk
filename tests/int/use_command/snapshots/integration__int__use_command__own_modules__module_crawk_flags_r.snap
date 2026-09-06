@@ -47,6 +47,10 @@ crate::graph::{AnnotatedEdges, Cycle, DependencyGraph, DependencyGraphOptions, E
 crate::graph::{self, DependencyGraph, DependencyGraphOptions}
 crate::model::AnalysisResult
 crate::model::{AnalysisOptions, AnalysisResult}
+crate::module_path::is_in_subtree
+crate::module_path::split_parent
+crate::module_path::{is_in_subtree, parent_module}
+crate::module_path::{is_in_subtree, split_parent}
 crate::parser::CrateAnalyzer
 crate::parser::visitor
 crate::parser::visitor::ModuleVisitor

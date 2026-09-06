@@ -22,6 +22,7 @@
 
 use crate::cache::ParseCache;
 use crate::discover::CrateInfo;
+use crate::module_path::{is_in_subtree, parent_module};
 use crate::reference::{PathPrefix, TypeReference};
 use crate::utils::{descend_inline_module, read_source_file};
 use std::path::Path;
@@ -217,27 +218,6 @@ fn normalize_in_path(path: &syn::Path, target_module: &str) -> String {
             }
         }
         None => String::new(),
-    }
-}
-
-/// Returns the parent module of `module` in crawk-internal path format.
-///
-/// - `"foo::bar"` → `"foo"`
-/// - `"foo"`      → `""` (crate root)
-/// - `""`         → `""` (root has no parent; `pub(super)` there is a Rust
-///   compile error, so we never need to answer meaningfully)
-fn parent_module(module: &str) -> &str {
-    module.rsplit_once("::").map_or("", |(parent, _)| parent)
-}
-
-/// Returns `true` if `module` lies in the subtree rooted at `ancestor`
-/// (including `ancestor` itself). Empty `ancestor` denotes the crate root,
-/// which contains every module.
-fn is_in_subtree(module: &str, ancestor: &str) -> bool {
-    if ancestor.is_empty() {
-        true
-    } else {
-        module == ancestor || module.starts_with(&format!("{ancestor}::"))
     }
 }
 
@@ -760,31 +740,5 @@ pub fn public_fn() {{}}
 
         let path: syn::Path = syn::parse_str("self::inner").unwrap();
         assert_eq!(normalize_in_path(&path, "foo::bar"), "foo::bar::inner");
-    }
-
-    #[test]
-    fn parent_module_handles_root_and_nested() {
-        assert_eq!(parent_module("foo::bar"), "foo");
-        assert_eq!(parent_module("foo::bar::baz"), "foo::bar");
-        assert_eq!(parent_module("foo"), "");
-        assert_eq!(parent_module(""), "");
-    }
-
-    #[test]
-    fn is_in_subtree_semantics() {
-        // Empty ancestor = crate root: every module is in its subtree.
-        assert!(is_in_subtree("", ""));
-        assert!(is_in_subtree("foo", ""));
-        assert!(is_in_subtree("foo::bar", ""));
-
-        // Exact match and descendants are in the subtree.
-        assert!(is_in_subtree("foo", "foo"));
-        assert!(is_in_subtree("foo::bar", "foo"));
-        assert!(is_in_subtree("foo::bar::baz", "foo"));
-
-        // Prefix-only matches are NOT enough (no `::` boundary).
-        assert!(!is_in_subtree("foobar", "foo"));
-        assert!(!is_in_subtree("baz", "foo"));
-        assert!(!is_in_subtree("", "foo"));
     }
 }

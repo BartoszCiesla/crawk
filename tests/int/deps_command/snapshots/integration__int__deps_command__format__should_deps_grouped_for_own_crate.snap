@@ -10,12 +10,13 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-analyzer (9)
+analyzer (10)
   -> cache
   -> discover
   -> error
   -> graph
   -> model
+  -> module_path
   -> parser
   -> reference
   -> resolve
@@ -32,10 +33,11 @@ cli::overview (1)
 discover (1)
   -> cache
 
-discover::module_tree (4)
+discover::module_tree (5)
   -> cache
   -> constants
   -> discover
+  -> module_path
   -> utils
 
 error (1)
@@ -129,19 +131,22 @@ parser::visitor (3)
 reference (1)
   -> constants
 
-resolve (4)
+resolve (5)
   -> cache
   -> discover
+  -> module_path
   -> reference
   -> utils
 
-rules (3)
+rules (4)
   -> graph
+  -> module_path
   -> rules::eval
   -> rules::load
 
-rules::eval (2)
+rules::eval (3)
   -> graph
+  -> module_path
   -> rules
 
 rules::load (2)

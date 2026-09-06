@@ -15,6 +15,7 @@ analyzer -> discover
 analyzer -> error
 analyzer -> graph
 analyzer -> model
+analyzer -> module_path
 analyzer -> parser
 analyzer -> reference
 analyzer -> resolve
@@ -27,6 +28,7 @@ discover -> cache
 discover::module_tree -> cache
 discover::module_tree -> constants
 discover::module_tree -> discover
+discover::module_tree -> module_path
 discover::module_tree -> utils
 error -> discover
 format::check_cmd -> format
@@ -81,12 +83,15 @@ parser::visitor -> utils
 reference -> constants
 resolve -> cache
 resolve -> discover
+resolve -> module_path
 resolve -> reference
 resolve -> utils
 rules -> graph
+rules -> module_path
 rules -> rules::eval
 rules -> rules::load
 rules::eval -> graph
+rules::eval -> module_path
 rules::eval -> rules
 rules::load -> error
 rules::load -> rules

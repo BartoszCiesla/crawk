@@ -21,6 +21,7 @@ exit_code: 0
 [lib]       graph::paths
 [lib]       lib
 [lib]       model
+[lib]       module_path
 [lib]       parser
 [lib]       parser::visitor
 [lib]       reference

@@ -15,6 +15,7 @@ analyzer -> discover
 analyzer -> error
 analyzer -> graph
 analyzer -> model
+analyzer -> module_path
 analyzer -> parser
 analyzer -> reference
 analyzer -> resolve
@@ -22,6 +23,7 @@ analyzer -> rules
 cli -> version
 discover -> cache
 discover -> constants
+discover -> module_path
 discover -> utils
 error -> discover
 format -> lib
@@ -49,10 +51,12 @@ parser -> utils
 reference -> constants
 resolve -> cache
 resolve -> discover
+resolve -> module_path
 resolve -> reference
 resolve -> utils
 rules -> error
 rules -> graph
+rules -> module_path
 utils -> constants
 
 ----- stderr -----

@@ -46,6 +46,7 @@ order = [
     "discover",
     "model",
     "reference",
+    "module_path",
     "utils",
     "cache",
     "constants",

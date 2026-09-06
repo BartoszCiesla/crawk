@@ -28,6 +28,7 @@ crate::discover::CrateInfo
 crate::discover::CrateInfoError
 crate::discover::ModuleInfo
 crate::discover::ModuleVisibility
+crate::discover::ModuleVisibility::Public
 crate::discover::Result
 crate::discover::TargetInfo
 crate::discover::TargetKind
@@ -61,6 +62,9 @@ crate::graph::resolve_reference_target
 crate::graph::truncate_module_path
 crate::model::AnalysisOptions
 crate::model::AnalysisResult
+crate::module_path::is_in_subtree
+crate::module_path::parent_module
+crate::module_path::split_parent
 crate::parser::AnalyzerError
 crate::parser::CrateAnalyzer
 crate::parser::Result

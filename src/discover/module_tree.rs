@@ -27,6 +27,7 @@ use cargo_metadata::Package;
 use syn::Item;
 
 use crate::constants::{LIB_FILE_NAME, MAIN_FILE_NAME, MODULE_FILE_NAME};
+use crate::module_path::split_parent;
 use crate::utils::{ReadFileError, has_cfg_test, read_source_file};
 use tracing::{debug, info};
 
@@ -842,20 +843,15 @@ impl CrateInfo {
         }
 
         // File-based module: locate the `mod name;` in the parent file.
-        let segments: Vec<&str> = normalized_path.split("::").collect();
-        let module_name = match segments.last() {
-            Some(s) => *s,
-            None => return Ok(ModuleVisibility::Inherited),
-        };
+        let (parent_path, module_name) = split_parent(normalized_path);
 
-        let parent_file = if segments.len() == 1 {
+        let parent_file = if parent_path.is_empty() {
             // Top-level module — parent is the crate root.
             let package = self.root_package().ok_or(CrateInfoError::PackageNotFound)?;
             Self::find_crate_root(package)
                 .ok_or_else(|| CrateInfoError::NoCrateRoot(self.root_package_name().to_owned()))?
         } else {
-            let parent_path = segments[..segments.len() - 1].join("::");
-            self.resolve_module(&parent_path, cache)?
+            self.resolve_module(parent_path, cache)?
         };
 
         let parent_syntax = Self::parse_cached(&parent_file, cache)?;

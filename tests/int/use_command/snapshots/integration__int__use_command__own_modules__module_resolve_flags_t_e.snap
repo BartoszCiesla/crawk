@@ -13,6 +13,8 @@ exit_code: 0
 ----- stdout -----
 crate::cache::ParseCache
 crate::discover::CrateInfo
+crate::module_path::is_in_subtree
+crate::module_path::parent_module
 crate::reference::PathPrefix
 crate::reference::TypeReference
 crate::resolve::*

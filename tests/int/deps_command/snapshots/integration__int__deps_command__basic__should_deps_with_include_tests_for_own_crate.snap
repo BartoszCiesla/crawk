@@ -14,11 +14,13 @@ analyzer -> discover
 analyzer -> error
 analyzer -> graph
 analyzer -> model
+analyzer -> module_path
 analyzer -> parser
 analyzer -> reference
 analyzer -> resolve
 analyzer -> rules
 analyzer::tests -> analyzer
+analyzer::tests -> discover
 analyzer::tests -> reference
 cache::tests -> cache
 cli -> cli::overview
@@ -30,6 +32,7 @@ discover -> cache
 discover::module_tree -> cache
 discover::module_tree -> constants
 discover::module_tree -> discover
+discover::module_tree -> module_path
 discover::module_tree -> utils
 discover::module_tree::tests -> discover::module_tree
 discover::tests -> discover
@@ -88,6 +91,7 @@ main -> version
 model -> reference
 model::tests -> model
 model::tests -> reference
+module_path::tests -> module_path
 parser -> cache
 parser -> parser::visitor
 parser -> reference
@@ -104,18 +108,22 @@ reference -> constants
 reference::tests -> reference
 resolve -> cache
 resolve -> discover
+resolve -> module_path
 resolve -> reference
 resolve -> utils
 resolve::tests -> resolve
 rules -> graph
+rules -> module_path
 rules -> rules::eval
 rules -> rules::load
 rules::eval -> graph
+rules::eval -> module_path
 rules::eval -> rules
 rules::eval::tests -> rules
 rules::load -> error
 rules::load -> rules
 rules::load::tests -> rules::load
+rules::tests -> rules
 utils -> constants
 utils::tests -> utils
 

@@ -25,6 +25,7 @@ use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::path::PathBuf;
 
 use crate::graph::DependencyGraphOptions;
+use crate::module_path::is_in_subtree;
 
 pub(crate) use eval::evaluate;
 pub(crate) use load::{resolve_config_path, scaffold_config};
@@ -102,17 +103,16 @@ impl ModulePattern {
     }
 
     /// Does `module` fall under this pattern?
+    ///
+    /// A subtree pattern delegates to [`is_in_subtree`] — including the empty
+    /// base (`*`), which denotes the crate root and therefore matches every
+    /// module. Both constructors guarantee an empty base implies `subtree`.
     pub(crate) fn matches(&self, module: &str) -> bool {
-        if self.base.is_empty() {
-            return self.subtree; // "*" matches everything
+        if self.subtree {
+            is_in_subtree(module, &self.base)
+        } else {
+            module == self.base
         }
-        if module == self.base {
-            return true;
-        }
-        self.subtree
-            && module
-                .strip_prefix(self.base.as_str())
-                .is_some_and(|rest| rest.starts_with("::"))
     }
 
     /// Is there at least one known module this pattern could refer to?
@@ -280,5 +280,53 @@ impl CheckReport {
     #[must_use]
     pub fn exit_code(&self) -> i32 {
         i32::from(!self.violations.is_empty())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn matches_exact_pattern_only() {
+        let pattern = ModulePattern::parse("format");
+        assert!(pattern.matches("format"));
+        assert!(!pattern.matches("format::use_cmd"));
+    }
+
+    #[test]
+    fn matches_subtree_covers_base_and_descendants() {
+        let pattern = ModulePattern::parse("format::*");
+        assert!(pattern.matches("format"));
+        assert!(pattern.matches("format::use_cmd"));
+        assert!(pattern.matches("format::use_cmd::inner"));
+    }
+
+    #[test]
+    fn matches_respects_segment_boundary() {
+        for pattern in [
+            ModulePattern::parse("format"),
+            ModulePattern::parse("format::*"),
+            ModulePattern::parse_subtree("format"),
+        ] {
+            assert!(!pattern.matches("format_helper"));
+        }
+    }
+
+    #[test]
+    fn parse_subtree_upgrades_a_bare_name() {
+        let pattern = ModulePattern::parse_subtree("format");
+        assert!(pattern.matches("format"));
+        assert!(pattern.matches("format::use_cmd"));
+    }
+
+    #[test]
+    fn star_matches_every_module_including_the_root() {
+        for text in ["*", "::*"] {
+            let pattern = ModulePattern::parse(text);
+            assert!(pattern.matches(""));
+            assert!(pattern.matches("format"));
+            assert!(pattern.matches("format::use_cmd"));
+        }
     }
 }

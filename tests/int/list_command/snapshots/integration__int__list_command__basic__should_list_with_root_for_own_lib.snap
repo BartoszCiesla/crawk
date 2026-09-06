@@ -22,6 +22,7 @@ graph::orphans
 graph::paths
 lib
 model
+module_path
 parser
 parser::visitor
 reference

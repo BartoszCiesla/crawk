@@ -77,6 +77,7 @@ mod discover;
 mod error;
 mod graph;
 mod model;
+mod module_path;
 mod parser;
 mod reference;
 mod resolve;

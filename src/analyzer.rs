@@ -3,6 +3,7 @@ use crate::discover::{CrateInfo, ModuleInfo, TargetInfo, TargetKind};
 use crate::error::{AnalysisError, Result};
 use crate::graph::{self, DependencyGraph, DependencyGraphOptions};
 use crate::model::{AnalysisOptions, AnalysisResult};
+use crate::module_path::{is_in_subtree, split_parent};
 use crate::parser::CrateAnalyzer;
 use crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference};
 use crate::resolve::resolve_glob;
@@ -200,7 +201,6 @@ impl Analyzer {
     /// returns the subtree rooted at `module_path` if found.
     fn list_from_test_target(&mut self, module_path: &str) -> Result<Vec<ModuleInfo>> {
         let targets = self.crate_info.all_targets(true);
-        let prefix_with_sep = format!("{module_path}::");
 
         for (target_info, src_path) in &targets {
             if *target_info.kind() != TargetKind::Test {
@@ -216,7 +216,7 @@ impl Analyzer {
 
             let matched: Vec<ModuleInfo> = modules
                 .into_iter()
-                .filter(|m| m.path() == module_path || m.path().starts_with(&prefix_with_sep))
+                .filter(|m| is_in_subtree(m.path(), module_path))
                 .collect();
 
             if !matched.is_empty() {
@@ -695,11 +695,10 @@ impl Analyzer {
             if path.is_empty() {
                 continue;
             }
-            let (parent, child) = match path.rsplit_once("::") {
-                Some((p, c)) => (p.to_owned(), c.to_owned()),
-                None => (String::new(), path.to_owned()),
-            };
-            map.entry(parent).or_default().insert(child);
+            let (parent, child) = split_parent(path);
+            map.entry(parent.to_owned())
+                .or_default()
+                .insert(child.to_owned());
         }
         map
     }
@@ -1235,5 +1234,52 @@ mod tests {
                 vec!["a", "b", "c", "f"],
             ]
         );
+    }
+
+    // --- build_children_map ---
+
+    fn module(path: &str) -> ModuleInfo {
+        ModuleInfo::new(
+            path,
+            PathBuf::from("src/lib.rs"),
+            crate::discover::ModuleVisibility::Public,
+            TargetInfo::new(TargetKind::Lib, "crawk"),
+        )
+    }
+
+    #[test]
+    fn build_children_map_roots_top_level_modules_at_the_empty_parent() {
+        let map = Analyzer::build_children_map(&[module("cli"), module("format")]);
+        assert_eq!(
+            map.get(""),
+            Some(&HashSet::from(["cli".to_owned(), "format".to_owned()]))
+        );
+    }
+
+    #[test]
+    fn build_children_map_groups_children_under_their_parent() {
+        let map = Analyzer::build_children_map(&[
+            module("cli"),
+            module("cli::overview"),
+            module("cli::validation"),
+            module("format::use_cmd::inner"),
+        ]);
+        assert_eq!(
+            map.get("cli"),
+            Some(&HashSet::from([
+                "overview".to_owned(),
+                "validation".to_owned()
+            ]))
+        );
+        assert_eq!(
+            map.get("format::use_cmd"),
+            Some(&HashSet::from(["inner".to_owned()]))
+        );
+    }
+
+    #[test]
+    fn build_children_map_skips_the_root_module() {
+        let map = Analyzer::build_children_map(&[module(""), module("cli")]);
+        assert_eq!(map.get(""), Some(&HashSet::from(["cli".to_owned()])));
     }
 }

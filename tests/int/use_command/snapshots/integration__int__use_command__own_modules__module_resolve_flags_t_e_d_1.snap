@@ -15,6 +15,7 @@ exit_code: 0
 ----- stdout -----
 crate::cache
 crate::discover
+crate::module_path
 crate::reference
 crate::resolve::*
 crate::utils

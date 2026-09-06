@@ -23,6 +23,7 @@ crate::constants::{PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUP
 crate::discover::*
 crate::discover::CrateInfo
 crate::discover::CrateInfoError
+crate::discover::ModuleVisibility::Public
 crate::discover::module_tree::*
 crate::discover::{CrateInfo, CrateInfoError, ModuleInfo, ModuleVisibility, Result, TargetInfo}
 crate::discover::{CrateInfo, ModuleInfo, TargetInfo, TargetKind}
@@ -59,6 +60,11 @@ crate::graph::{self, DependencyGraph, DependencyGraphOptions}
 crate::model::*
 crate::model::AnalysisResult
 crate::model::{AnalysisOptions, AnalysisResult}
+crate::module_path::*
+crate::module_path::is_in_subtree
+crate::module_path::split_parent
+crate::module_path::{is_in_subtree, parent_module}
+crate::module_path::{is_in_subtree, split_parent}
 crate::parser::*
 crate::parser::CrateAnalyzer
 crate::parser::visitor
@@ -80,6 +86,7 @@ crate::reference::{GroupItem, PathPrefix, TypeReference}
 crate::reference::{PathPrefix, TypeReference}
 crate::resolve::*
 crate::resolve::resolve_glob
+crate::rules::*
 crate::rules::ViolationKind::Deny
 crate::rules::ViolationKind::Layer
 crate::rules::eval::evaluate

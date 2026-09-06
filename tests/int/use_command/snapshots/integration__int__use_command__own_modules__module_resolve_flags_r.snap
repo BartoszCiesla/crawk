@@ -12,6 +12,7 @@ exit_code: 0
 ----- stdout -----
 crate::cache::ParseCache
 crate::discover::CrateInfo
+crate::module_path::{is_in_subtree, parent_module}
 crate::reference::{PathPrefix, TypeReference}
 crate::utils::{descend_inline_module, read_source_file}
 
