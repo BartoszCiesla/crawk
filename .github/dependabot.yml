@@ -28,7 +28,6 @@ updates:
       major:
         update-types:
           - "major"
-    versioning-strategy: increase
     cooldown:
       default-days: 7
       semver-patch-days: 3
