@@ -12,6 +12,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+crate::cli::*
 crate::cli::CheckArgs
 crate::cli::CheckOutputFormat
 crate::cli::CrawkArgs

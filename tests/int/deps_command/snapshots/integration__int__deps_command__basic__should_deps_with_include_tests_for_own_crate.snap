@@ -27,6 +27,7 @@ cli -> cli::overview
 cli -> cli::validation
 cli -> version
 cli::overview -> version
+cli::tests -> cli
 cli::validation::tests -> cli::validation
 discover -> cache
 discover::module_tree -> cache

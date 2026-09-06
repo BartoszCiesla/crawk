@@ -24,6 +24,22 @@ cli
  - crawk::version::VERSION
 cli::overview
  - crawk::version
+cli::tests
+ - crate::cli::CheckArgs
+ - crate::cli::CheckOutputFormat
+ - crate::cli::CrawkArgs
+ - crate::cli::CrawkCommands
+ - crate::cli::CrawkOptions
+ - crate::cli::CyclesMode
+ - crate::cli::DepsArgs
+ - crate::cli::DepsOutputFormat
+ - crate::cli::ListArgs
+ - crate::cli::ListDisplayArgs
+ - crate::cli::ListOutputFormat
+ - crate::cli::UseArgs
+ - crate::cli::UseOutputFormat
+ - crate::cli::WhyArgs
+ - crate::cli::WhyOutputFormat
 cli::validation
 cli::validation::tests
  - crate::cli::validation::validate_depth

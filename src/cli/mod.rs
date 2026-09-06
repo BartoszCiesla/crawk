@@ -653,3 +653,51 @@ pub(crate) struct CheckArgs {
     #[arg(short = 'f', long = "format", default_value_t = CheckOutputFormat::Plain)]
     pub format: CheckOutputFormat,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fmt::Debug;
+
+    /// Every `Display` string must equal the variant's `ValueEnum` name.
+    ///
+    /// clap renders `[default: …]` in `--help` through `Display` but parses
+    /// `--format` through `ValueEnum`, so a drift between the two makes the
+    /// help text advertise a value the parser rejects.
+    fn assert_display_matches_value_enum<T: ValueEnum + Display + Debug>() {
+        for variant in T::value_variants() {
+            assert_eq!(
+                variant
+                    .to_possible_value()
+                    .map(|value| value.get_name().to_owned()),
+                Some(variant.to_string()),
+                "Display for {variant:?} drifts from its ValueEnum name"
+            );
+        }
+    }
+
+    #[test]
+    fn test_use_output_format_display_matches_value_enum() {
+        assert_display_matches_value_enum::<UseOutputFormat>();
+    }
+
+    #[test]
+    fn test_list_output_format_display_matches_value_enum() {
+        assert_display_matches_value_enum::<ListOutputFormat>();
+    }
+
+    #[test]
+    fn test_deps_output_format_display_matches_value_enum() {
+        assert_display_matches_value_enum::<DepsOutputFormat>();
+    }
+
+    #[test]
+    fn test_why_output_format_display_matches_value_enum() {
+        assert_display_matches_value_enum::<WhyOutputFormat>();
+    }
+
+    #[test]
+    fn test_check_output_format_display_matches_value_enum() {
+        assert_display_matches_value_enum::<CheckOutputFormat>();
+    }
+}
