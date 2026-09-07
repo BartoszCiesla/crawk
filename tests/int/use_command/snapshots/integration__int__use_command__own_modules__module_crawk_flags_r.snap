@@ -25,7 +25,6 @@ crate::error::AnalysisError
 crate::error::AnalysisError::ModuleNotFound
 crate::error::Result
 crate::error::{AnalysisError, Result}
-crate::graph::DependencyGraph
 crate::graph::DependencyGraphOptions
 crate::graph::Edge
 crate::graph::build_edges
@@ -44,6 +43,7 @@ crate::graph::paths::compute_shortest_paths
 crate::graph::resolve_reference_target
 crate::graph::truncate_module_path
 crate::graph::{AnnotatedEdges, Cycle, DependencyGraph, DependencyGraphOptions, Edge, ShortestPaths}
+crate::graph::{Cycle, DependencyGraph}
 crate::graph::{self, DependencyGraph, DependencyGraphOptions}
 crate::model::AnalysisResult
 crate::model::{AnalysisOptions, AnalysisResult}
@@ -69,9 +69,9 @@ crate::rules::evaluate
 crate::rules::load::{resolve_config_path, scaffold_config}
 crate::rules::resolve_config_path
 crate::rules::scaffold_config
+crate::rules::{AllowedCycle, CheckReport, LayerPos, RuleSet, Violation, ViolationKind}
+crate::rules::{AllowedCycle, DenyRule, LayerRule, ModulePattern, RuleSet}
 crate::rules::{CheckOptions, CheckReport, Violation, ViolationKind}
-crate::rules::{CheckReport, LayerPos, RuleSet, Violation, ViolationKind}
-crate::rules::{DenyRule, LayerRule, ModulePattern, RuleSet}
 crate::rules::{self, CheckOptions, CheckReport, RuleSet}
 crate::utils::has_cfg_test
 crate::utils::{ReadFileError, descend_inline_module, read_source_file}

@@ -7,10 +7,12 @@
 //! malformed config, unknown module in a rule) surface as
 //! [`AnalysisError`](crate::AnalysisError).
 //!
-//! Two check categories are supported: `layers` (named layer groups, each an
+//! Three check categories are supported: `layers` (named layer groups, each an
 //! independent total order over a subtree of the module hierarchy; groups may
-//! overlap — a module that falls under several groups is checked in each) and
-//! `deny` (an explicit ban on edges matching a `from` -> `to` pattern pair).
+//! overlap — a module that falls under several groups is checked in each),
+//! `deny` (an explicit ban on edges matching a `from` -> `to` pattern pair), and
+//! `deny-cycles` (a ban on dependency loops, with an [`AllowedCycle`] list that
+//! grandfathers the loops a crate already has).
 //!
 //! The config is **required**: a *missing* file is an operational error (so a
 //! typo fails CI rather than passing silently), whereas an *empty* `[check]`
@@ -165,6 +167,41 @@ impl DenyRule {
     }
 }
 
+/// A grandfathered dependency loop: one cycle that `deny-cycles` lets through
+/// until it is untangled.
+///
+/// Entries name exact modules, never patterns — a `foo::*` would also wave
+/// through loops that do not exist yet, and the point of the list is to ratchet.
+#[derive(Debug, Clone)]
+pub(crate) struct AllowedCycle {
+    /// Modules of the known loop.
+    pub(crate) modules: BTreeSet<String>,
+    /// Why the loop is tolerated, quoted back when the entry goes stale.
+    pub(crate) reason: Option<String>,
+}
+
+impl AllowedCycle {
+    /// Human-readable citation for diagnostics: `allow-cycle [alpha, beta]`.
+    pub(crate) fn display(&self) -> String {
+        let list = self
+            .modules
+            .iter()
+            .map(String::as_str)
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!("allow-cycle [{list}]")
+    }
+
+    /// Does this entry cover a detected cycle?
+    ///
+    /// Subset, not equality: a loop that shrank after a partial fix stays
+    /// covered, while a module joining the loop escapes the entry and is
+    /// reported.
+    pub(crate) fn covers(&self, cycle: &BTreeSet<String>) -> bool {
+        cycle.is_subset(&self.modules)
+    }
+}
+
 /// A named layer group: an independent total order over a fragment of the
 /// module tree. `order[0]` is the highest layer.
 #[derive(Debug, Clone)]
@@ -186,12 +223,20 @@ pub(crate) struct LayerPos {
 
 /// A validated set of architectural rules, ready to evaluate.
 ///
-/// Construct via [`RuleSet::load`]. Holds `layers` groups and `deny` rules.
+/// Construct via [`RuleSet::load`]. Holds `layers` groups, `deny` rules, and the
+/// cycle policy (`deny_cycles` plus its allowlist).
 #[derive(Debug, Clone, Default)]
 pub(crate) struct RuleSet {
     layers: Vec<LayerRule>,
     deny: Vec<DenyRule>,
+    /// Loops that pass despite `deny_cycles`.
+    allow_cycles: Vec<AllowedCycle>,
     strict_layers: bool,
+    deny_cycles: bool,
+    /// Report loops between a module and its own descendants too. Off by
+    /// default: a parent re-exporting a submodule that reaches back with
+    /// `use super::…` is containment, not an architectural tangle.
+    deny_parent_child_cycles: bool,
 }
 
 impl RuleSet {
@@ -233,6 +278,10 @@ pub enum ViolationKind {
     Deny,
     /// A `layers` ordering was broken (dependency points "upward").
     Layer,
+    /// The edge takes part in a dependency cycle banned by `deny-cycles`.
+    ///
+    /// Declared last so `CYCLE` rows sort after `DENY` and `LAYER`.
+    Cycle,
 }
 
 impl Display for ViolationKind {
@@ -240,6 +289,7 @@ impl Display for ViolationKind {
         match self {
             Self::Deny => f.write_str("DENY"),
             Self::Layer => f.write_str("LAYER"),
+            Self::Cycle => f.write_str("CYCLE"),
         }
     }
 }
@@ -318,6 +368,37 @@ mod tests {
         let pattern = ModulePattern::parse_subtree("format");
         assert!(pattern.matches("format"));
         assert!(pattern.matches("format::use_cmd"));
+    }
+
+    fn allowed(modules: &[&str]) -> AllowedCycle {
+        AllowedCycle {
+            modules: modules.iter().map(ToString::to_string).collect(),
+            reason: None,
+        }
+    }
+
+    fn cycle_of(modules: &[&str]) -> BTreeSet<String> {
+        modules.iter().map(ToString::to_string).collect()
+    }
+
+    #[test]
+    fn allowed_cycle_covers_subset_and_exact_match() {
+        let entry = allowed(&["alpha", "beta", "gamma"]);
+        assert!(entry.covers(&cycle_of(&["alpha", "beta", "gamma"])));
+        assert!(entry.covers(&cycle_of(&["alpha", "beta"])));
+    }
+
+    #[test]
+    fn allowed_cycle_does_not_cover_a_grown_loop() {
+        let entry = allowed(&["alpha", "beta"]);
+        assert!(!entry.covers(&cycle_of(&["alpha", "beta", "gamma"])));
+        assert!(!entry.covers(&cycle_of(&["delta", "epsilon"])));
+    }
+
+    #[test]
+    fn allowed_cycle_display_lists_modules_alphabetically() {
+        let entry = allowed(&["gamma", "alpha"]);
+        assert_eq!(entry.display(), "allow-cycle [alpha, gamma]");
     }
 
     #[test]

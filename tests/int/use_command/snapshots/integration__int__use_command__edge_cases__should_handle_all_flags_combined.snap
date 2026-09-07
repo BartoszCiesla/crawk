@@ -212,14 +212,19 @@ rules
  - crate::rules::eval
  - crate::rules::load
 rules::eval
+ - crate::graph::Cycle
  - crate::graph::DependencyGraph
  - crate::module_path::is_in_subtree
+ - crate::rules::AllowedCycle
  - crate::rules::CheckReport
  - crate::rules::LayerPos
  - crate::rules::RuleSet
  - crate::rules::Violation
  - crate::rules::ViolationKind
 rules::eval::tests
+ - crate::graph::AnnotatedEdges
+ - crate::graph::Cycle
+ - crate::rules::AllowedCycle
  - crate::rules::DenyRule
  - crate::rules::LayerRule
  - crate::rules::ModulePattern
@@ -228,6 +233,7 @@ rules::eval::tests
 rules::load
  - crate::error::AnalysisError
  - crate::error::Result
+ - crate::rules::AllowedCycle
  - crate::rules::DenyRule
  - crate::rules::LayerRule
  - crate::rules::ModulePattern
@@ -235,6 +241,7 @@ rules::load
 rules::load::tests
  - crate::rules::load
 rules::tests
+ - crate::rules::AllowedCycle
  - crate::rules::CheckOptions
  - crate::rules::CheckReport
  - crate::rules::DenyRule

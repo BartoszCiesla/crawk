@@ -9,7 +9,7 @@ use tracing::warn;
 
 use crate::error::{AnalysisError, Result};
 
-use super::{DenyRule, LayerRule, ModulePattern, RuleSet};
+use super::{AllowedCycle, DenyRule, LayerRule, ModulePattern, RuleSet};
 
 /// Preferred config file name (searched first).
 const CONFIG_FILE: &str = "crawk.toml";
@@ -27,13 +27,29 @@ struct RawConfig {
 ///
 /// `deny_same_layer` here is the crate-wide *default*; each `[[check.layers]]`
 /// group may override it (see [`RawLayer`]).
+// A deserialization shape, not an API: the bools mirror independent TOML keys,
+// so folding them into enums would only distort the config surface.
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Default, Deserialize)]
 #[serde(default, rename_all = "kebab-case", deny_unknown_fields)]
 struct RawCheck {
     layers: Vec<RawLayer>,
     deny: Vec<RawDeny>,
+    allow_cycle: Vec<RawAllowCycle>,
     strict_layers: bool,
     deny_same_layer: bool,
+    deny_cycles: bool,
+    deny_parent_child_cycles: bool,
+}
+
+/// Serde shape of one `[[check.allow-cycle]]` entry: a loop that predates the
+/// rule and is tolerated until it is untangled.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RawAllowCycle {
+    modules: Vec<String>,
+    #[serde(default)]
+    reason: Option<String>,
 }
 
 /// Serde shape of one `[[check.deny]]` rule. Subtree matching requires an
@@ -205,7 +221,8 @@ impl RuleSet {
     /// # Errors
     ///
     /// - [`AnalysisError::RuleConfigError`] — file unreadable, malformed TOML,
-    ///   overlapping layer groups, or (under `strict-layers`) an uncovered module.
+    ///   a duplicate or one-module `allow-cycle` entry, or (under
+    ///   `strict-layers`) an uncovered module.
     /// - [`AnalysisError::UnknownRuleModule`] — a rule names a module that does
     ///   not exist in the crate.
     pub(crate) fn load(path: &Path, modules: &BTreeSet<String>) -> Result<Self> {
@@ -223,6 +240,9 @@ impl RuleSet {
         check_unique_names(path, &text, &raw.check.layers)?;
         let rules = Self::from_raw(raw.check);
         rules.validate(path, modules)?;
+        if !rules.deny_cycles && !rules.allow_cycles.is_empty() {
+            warn!("allow-cycle entries have no effect while deny-cycles is false");
+        }
         Ok(rules)
     }
 
@@ -252,10 +272,21 @@ impl RuleSet {
                 to: ModulePattern::parse(&raw_deny.to),
             })
             .collect();
+        let allow_cycles = raw
+            .allow_cycle
+            .into_iter()
+            .map(|raw_entry| AllowedCycle {
+                modules: raw_entry.modules.into_iter().collect(),
+                reason: raw_entry.reason,
+            })
+            .collect();
         Self {
             layers,
             deny,
+            allow_cycles,
             strict_layers: raw.strict_layers,
+            deny_cycles: raw.deny_cycles,
+            deny_parent_child_cycles: raw.deny_parent_child_cycles,
         }
     }
 
@@ -283,7 +314,32 @@ impl RuleSet {
                 }
             }
         }
-        // 3. Under strict mode, every module must be covered by some group.
+        // 3. Allowlist entries name exact modules and must be able to match at
+        //    all — a typo or a one-module entry would silently never fire.
+        let mut seen: BTreeSet<&BTreeSet<String>> = BTreeSet::new();
+        for entry in &self.allow_cycles {
+            if entry.modules.len() < 2 {
+                return Err(AnalysisError::RuleConfigError {
+                    path: path.to_path_buf(),
+                    reason: format!("{}: a cycle needs at least two modules", entry.display()),
+                });
+            }
+            for module in &entry.modules {
+                if !modules.contains(module) {
+                    return Err(AnalysisError::UnknownRuleModule {
+                        module: module.clone(),
+                        rule: entry.display(),
+                    });
+                }
+            }
+            if !seen.insert(&entry.modules) {
+                return Err(AnalysisError::RuleConfigError {
+                    path: path.to_path_buf(),
+                    reason: format!("duplicate {}", entry.display()),
+                });
+            }
+        }
+        // 4. Under strict mode, every module must be covered by some group.
         //    Groups may overlap, so coverage just means at least one membership.
         if self.strict_layers {
             for module in modules {
@@ -593,6 +649,107 @@ mod tests {
             rules.layers[0].deny_same_layer,
             "group inherits the default"
         );
+    }
+
+    #[test]
+    fn cycle_keys_default_to_off() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let cfg = write_config(dir.path(), "crawk.toml", "[check]\n");
+        let rules = RuleSet::load(&cfg, &module_set(&["cli"])).expect("load");
+        assert!(!rules.deny_cycles);
+        assert!(!rules.deny_parent_child_cycles);
+        assert!(rules.allow_cycles.is_empty());
+    }
+
+    #[test]
+    fn cycle_keys_parse() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let cfg = write_config(
+            dir.path(),
+            "crawk.toml",
+            "[check]\ndeny-cycles = true\ndeny-parent-child-cycles = true\n",
+        );
+        let rules = RuleSet::load(&cfg, &module_set(&["cli"])).expect("load");
+        assert!(rules.deny_cycles);
+        assert!(rules.deny_parent_child_cycles);
+    }
+
+    #[test]
+    fn allow_cycle_parses_with_reason() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let cfg = write_config(
+            dir.path(),
+            "crawk.toml",
+            "[check]\ndeny-cycles = true\n\
+             [[check.allow-cycle]]\nmodules = [\"alpha\", \"beta\"]\nreason = \"tracked in #1\"\n",
+        );
+        let modules = module_set(&["alpha", "beta"]);
+        let rules = RuleSet::load(&cfg, &modules).expect("load");
+        assert_eq!(rules.allow_cycles.len(), 1);
+        assert_eq!(
+            rules.allow_cycles[0].reason.as_deref(),
+            Some("tracked in #1")
+        );
+        assert_eq!(rules.allow_cycles[0].display(), "allow-cycle [alpha, beta]");
+    }
+
+    #[test]
+    fn unknown_module_in_allow_cycle_is_error() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let cfg = write_config(
+            dir.path(),
+            "crawk.toml",
+            "[check]\ndeny-cycles = true\n\
+             [[check.allow-cycle]]\nmodules = [\"alpha\", \"alfa\"]\n",
+        );
+        let modules = module_set(&["alpha", "beta"]);
+        let err = RuleSet::load(&cfg, &modules).expect_err("should reject unknown module");
+        assert!(matches!(
+            &err,
+            AnalysisError::UnknownRuleModule { module, rule }
+                if module == "alfa" && rule == "allow-cycle [alfa, alpha]"
+        ));
+    }
+
+    #[test]
+    fn single_module_allow_cycle_is_error() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        // A cycle needs two modules, so a one-element entry can never match.
+        let cfg = write_config(
+            dir.path(),
+            "crawk.toml",
+            "[check]\ndeny-cycles = true\n\
+             [[check.allow-cycle]]\nmodules = [\"alpha\"]\n",
+        );
+        let modules = module_set(&["alpha", "beta"]);
+        let err = RuleSet::load(&cfg, &modules).expect_err("should reject one-module entry");
+        assert!(matches!(err, AnalysisError::RuleConfigError { .. }));
+    }
+
+    #[test]
+    fn duplicate_allow_cycle_is_error() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let cfg = write_config(
+            dir.path(),
+            "crawk.toml",
+            "[check]\ndeny-cycles = true\n\
+             [[check.allow-cycle]]\nmodules = [\"alpha\", \"beta\"]\n\
+             [[check.allow-cycle]]\nmodules = [\"beta\", \"alpha\"]\n",
+        );
+        let modules = module_set(&["alpha", "beta"]);
+        let err = RuleSet::load(&cfg, &modules).expect_err("should reject duplicate entry");
+        assert!(matches!(err, AnalysisError::RuleConfigError { .. }));
+    }
+
+    #[test]
+    fn unknown_key_in_allow_cycle_is_rejected() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let cfg = write_config(
+            dir.path(),
+            "crawk.toml",
+            "[check]\n[[check.allow-cycle]]\nmodules = [\"alpha\", \"beta\"]\nwhy = \"x\"\n",
+        );
+        assert!(RuleSet::load(&cfg, &module_set(&["alpha", "beta"])).is_err());
     }
 
     #[test]

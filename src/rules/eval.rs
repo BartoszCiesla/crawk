@@ -2,10 +2,24 @@
 
 use std::collections::{BTreeSet, HashMap};
 
-use crate::graph::DependencyGraph;
+use tracing::warn;
+
+use crate::graph::{Cycle, DependencyGraph};
 use crate::module_path::is_in_subtree;
 
-use super::{CheckReport, LayerPos, RuleSet, Violation, ViolationKind};
+use super::{AllowedCycle, CheckReport, LayerPos, RuleSet, Violation, ViolationKind};
+
+/// Is this loop just a module tangled with its own descendants?
+///
+/// A parent that re-exports a submodule while the child reaches back with
+/// `use super::…` forms an SCC in nearly every Rust crate — containment, not an
+/// architectural tangle. Detected as "one module of the loop is an ancestor of
+/// all the others".
+fn is_parent_child_cycle(modules: &BTreeSet<String>) -> bool {
+    modules
+        .iter()
+        .any(|root| modules.iter().all(|module| is_in_subtree(module, root)))
+}
 
 impl RuleSet {
     /// Build `module -> [LayerPos]` via per-group longest-prefix match.
@@ -48,6 +62,55 @@ impl RuleSet {
                     rule: rule.display(),
                     apis: apis.clone(),
                 });
+            }
+        }
+    }
+
+    /// Report the detected cycles, one violation per edge of every banned loop.
+    ///
+    /// Callers gate on `deny_cycles` — detecting the cycles is not free — so
+    /// this assumes the rule is on. Allowlist matching runs **before** the
+    /// parent-child filter, so an entry aimed at a containment loop still counts
+    /// as used and does not warn as stale.
+    fn check_cycles(&self, cycles: &[Cycle], out: &mut Vec<Violation>) {
+        let mut used = vec![false; self.allow_cycles.len()];
+        for cycle in cycles {
+            let mut allowed = false;
+            for (entry, used) in self.allow_cycles.iter().zip(used.iter_mut()) {
+                if entry.covers(&cycle.modules) {
+                    *used = true;
+                    allowed = true;
+                }
+            }
+            let structural =
+                !self.deny_parent_child_cycles && is_parent_child_cycle(&cycle.modules);
+            if allowed || structural {
+                continue;
+            }
+
+            let names = cycle
+                .modules
+                .iter()
+                .map(String::as_str)
+                .collect::<Vec<_>>()
+                .join(", ");
+            // A comma list, not an arrow path: `modules` is alphabetical, not in
+            // traversal order, so an arrow would imply a direction that is not
+            // there. The actual edges are the rows themselves.
+            let rule = format!("cycle: {names}");
+            for ((source, target), apis) in &cycle.edges {
+                out.push(Violation {
+                    kind: ViolationKind::Cycle,
+                    source: source.clone(),
+                    target: target.clone(),
+                    rule: rule.clone(),
+                    apis: apis.clone(),
+                });
+            }
+        }
+        for (entry, used) in self.allow_cycles.iter().zip(used) {
+            if !used {
+                warn_stale(entry);
             }
         }
     }
@@ -110,6 +173,21 @@ impl RuleSet {
     }
 }
 
+/// Warn that an allowlist entry matched nothing, so it can be dropped.
+///
+/// A stale entry is config rot, not a failure: whoever untangled the loop must
+/// not have their build broken by the leftover.
+fn warn_stale(entry: &AllowedCycle) {
+    let because = entry
+        .reason
+        .as_deref()
+        .map_or_else(String::new, |reason| format!(" ({reason})"));
+    warn!(
+        "{}{because} matches no cycle; remove it from the config",
+        entry.display()
+    );
+}
+
 /// Evaluate `rules` against `graph`, returning all violations (sorted).
 pub(crate) fn evaluate(rules: &RuleSet, graph: &DependencyGraph) -> CheckReport {
     let mut violations = Vec::new();
@@ -120,13 +198,19 @@ pub(crate) fn evaluate(rules: &RuleSet, graph: &DependencyGraph) -> CheckReport 
         rules.check_layers(source, target, &layer_index, apis, &mut violations);
     }
 
+    // Gated here: `cycles()` runs Tarjan over the graph on every call.
+    if rules.deny_cycles {
+        rules.check_cycles(&graph.cycles(), &mut violations);
+    }
+
     violations.sort();
     CheckReport { violations }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::super::{DenyRule, LayerRule, ModulePattern, RuleSet, ViolationKind};
+    use super::super::{AllowedCycle, DenyRule, LayerRule, ModulePattern, RuleSet, ViolationKind};
+    use crate::graph::{AnnotatedEdges, Cycle};
     use std::collections::BTreeSet;
 
     fn layer(name: &str, order: &[&str]) -> LayerRule {
@@ -155,8 +239,7 @@ mod tests {
     fn app_rules() -> RuleSet {
         RuleSet {
             layers: vec![layer("app", &["cli", "analyzer", "parser", "discover"])],
-            deny: Vec::new(),
-            strict_layers: false,
+            ..RuleSet::default()
         }
     }
 
@@ -198,8 +281,7 @@ mod tests {
                 layer("app", &["cli", "core"]),
                 layer("web", &["web::api", "web::repo"]),
             ],
-            deny: Vec::new(),
-            strict_layers: false,
+            ..RuleSet::default()
         };
         let modules = module_set(&["cli", "web::repo"]);
         let index = rules.build_layer_index(&modules);
@@ -213,8 +295,7 @@ mod tests {
     fn same_layer_allowed_by_default() {
         let rules = RuleSet {
             layers: vec![layer("app", &["mid"])],
-            deny: Vec::new(),
-            strict_layers: false,
+            ..RuleSet::default()
         };
         let modules = module_set(&["mid::a", "mid::b"]);
         let index = rules.build_layer_index(&modules);
@@ -227,8 +308,7 @@ mod tests {
     fn same_layer_denied_when_flag_set() {
         let rules = RuleSet {
             layers: vec![layer_deny("app", &["mid"])],
-            deny: Vec::new(),
-            strict_layers: false,
+            ..RuleSet::default()
         };
         let modules = module_set(&["mid::a", "mid::b"]);
         let index = rules.build_layer_index(&modules);
@@ -244,8 +324,7 @@ mod tests {
         // is a natural edge — deny-same-layer must not flag it.
         let rules = RuleSet {
             layers: vec![layer_deny("app", &["parser"])],
-            deny: Vec::new(),
-            strict_layers: false,
+            ..RuleSet::default()
         };
         let modules = module_set(&["parser", "parser::visitor"]);
         let index = rules.build_layer_index(&modules);
@@ -266,8 +345,7 @@ mod tests {
         // submodules of the same layer are still same-layer under the flag.
         let rules = RuleSet {
             layers: vec![layer_deny("app", &["parser"])],
-            deny: Vec::new(),
-            strict_layers: false,
+            ..RuleSet::default()
         };
         let modules = module_set(&["parser::a", "parser::b"]);
         let index = rules.build_layer_index(&modules);
@@ -282,8 +360,7 @@ mod tests {
         // edge a -> b is same-layer in both, so only `strict` yields a violation.
         let rules = RuleSet {
             layers: vec![layer_deny("strict", &["mid"]), layer("lax", &["mid"])],
-            deny: Vec::new(),
-            strict_layers: false,
+            ..RuleSet::default()
         };
         let modules = module_set(&["mid::a", "mid::b"]);
         let index = rules.build_layer_index(&modules);
@@ -302,8 +379,7 @@ mod tests {
                 layer("left", &["top", "mid"]),
                 layer("right", &["top", "mid"]),
             ],
-            deny: Vec::new(),
-            strict_layers: false,
+            ..RuleSet::default()
         };
         let modules = module_set(&["top", "mid"]);
         let index = rules.build_layer_index(&modules);
@@ -321,8 +397,7 @@ mod tests {
                 layer("a", &["shared", "low_a"]),
                 layer("b", &["shared", "low_b"]),
             ],
-            deny: Vec::new(),
-            strict_layers: false,
+            ..RuleSet::default()
         };
         let modules = module_set(&["shared", "low_a", "low_b"]);
         let index = rules.build_layer_index(&modules);
@@ -341,9 +416,8 @@ mod tests {
 
     fn deny_rules(rules: Vec<DenyRule>) -> RuleSet {
         RuleSet {
-            layers: Vec::new(),
             deny: rules,
-            strict_layers: false,
+            ..RuleSet::default()
         }
     }
 
@@ -392,7 +466,7 @@ mod tests {
         let rules = RuleSet {
             layers: vec![layer("app", &["low", "high"])],
             deny: vec![deny("high", "low")],
-            strict_layers: false,
+            ..RuleSet::default()
         };
         let modules = module_set(&["high", "low"]);
         let index = rules.build_layer_index(&modules);
@@ -403,6 +477,161 @@ mod tests {
         assert_eq!(out.len(), 2);
         assert_eq!(out[0].kind, ViolationKind::Deny);
         assert_eq!(out[1].kind, ViolationKind::Layer);
+    }
+
+    // --- deny-cycles -------------------------------------------------------
+
+    fn cycle(modules: &[&str], edges: &[(&str, &str)]) -> Cycle {
+        let annotated: AnnotatedEdges = edges
+            .iter()
+            .map(|(source, target)| {
+                (
+                    ((*source).to_owned(), (*target).to_owned()),
+                    BTreeSet::new(),
+                )
+            })
+            .collect();
+        Cycle::new(module_set(modules), annotated)
+    }
+
+    fn allow(modules: &[&str]) -> AllowedCycle {
+        AllowedCycle {
+            modules: module_set(modules),
+            reason: None,
+        }
+    }
+
+    fn cycle_rules(allow_cycles: Vec<AllowedCycle>, deny_parent_child_cycles: bool) -> RuleSet {
+        RuleSet {
+            allow_cycles,
+            deny_cycles: true,
+            deny_parent_child_cycles,
+            ..RuleSet::default()
+        }
+    }
+
+    /// The `rules <-> rules::eval <-> rules::load` shape crawk itself has.
+    fn parent_child_cycle() -> Cycle {
+        cycle(
+            &["rules", "rules::eval", "rules::load"],
+            &[
+                ("rules", "rules::eval"),
+                ("rules", "rules::load"),
+                ("rules::eval", "rules"),
+                ("rules::load", "rules"),
+            ],
+        )
+    }
+
+    fn abc_cycle() -> Cycle {
+        cycle(
+            &["alpha", "beta", "gamma"],
+            &[("alpha", "beta"), ("beta", "gamma"), ("gamma", "alpha")],
+        )
+    }
+
+    #[test]
+    fn cycle_yields_one_violation_per_edge() {
+        let rules = cycle_rules(Vec::new(), false);
+        let mut out = Vec::new();
+        rules.check_cycles(&[abc_cycle()], &mut out);
+        assert_eq!(out.len(), 3);
+        assert!(out.iter().all(|v| v.kind == ViolationKind::Cycle));
+        assert!(
+            out.iter().all(|v| v.rule == "cycle: alpha, beta, gamma"),
+            "every row cites the whole loop"
+        );
+    }
+
+    #[test]
+    fn parent_child_cycle_is_skipped_by_default() {
+        let rules = cycle_rules(Vec::new(), false);
+        let mut out = Vec::new();
+        rules.check_cycles(&[parent_child_cycle()], &mut out);
+        assert!(
+            out.is_empty(),
+            "containment loop is structural, not a tangle"
+        );
+    }
+
+    #[test]
+    fn parent_child_cycle_is_reported_when_knob_set() {
+        let rules = cycle_rules(Vec::new(), true);
+        let mut out = Vec::new();
+        rules.check_cycles(&[parent_child_cycle()], &mut out);
+        assert_eq!(out.len(), 4, "the knob turns the filter off");
+    }
+
+    #[test]
+    fn cycle_across_unrelated_subtrees_is_reported() {
+        // Two of the three modules share a subtree, but no module is an ancestor
+        // of them all — a submodule tangled with a foreign subtree is real.
+        let rules = cycle_rules(Vec::new(), false);
+        let tangle = cycle(
+            &["graph", "rules", "rules::eval"],
+            &[
+                ("graph", "rules"),
+                ("rules", "rules::eval"),
+                ("rules::eval", "graph"),
+            ],
+        );
+        let mut out = Vec::new();
+        rules.check_cycles(&[tangle], &mut out);
+        assert_eq!(out.len(), 3);
+    }
+
+    #[test]
+    fn allowlist_covers_cycle_by_subset() {
+        // The entry names the loop as it was found; after a partial fix the loop
+        // is smaller, and a subset still passes.
+        let rules = cycle_rules(vec![allow(&["alpha", "beta", "gamma"])], false);
+        let shrunk = cycle(&["alpha", "beta"], &[("alpha", "beta"), ("beta", "alpha")]);
+        let mut out = Vec::new();
+        rules.check_cycles(&[shrunk], &mut out);
+        assert!(out.is_empty());
+    }
+
+    #[test]
+    fn allowlist_missing_a_module_still_reports() {
+        // A module joining the loop breaks the subset — that is the ratchet.
+        let rules = cycle_rules(vec![allow(&["alpha", "beta"])], false);
+        let mut out = Vec::new();
+        rules.check_cycles(&[abc_cycle()], &mut out);
+        assert_eq!(out.len(), 3);
+    }
+
+    #[test]
+    fn allowlist_entry_covers_a_parent_child_loop_too() {
+        // Matching runs before the structural filter, so an entry aimed at a
+        // containment loop is still marked used (it must not warn as stale).
+        let rules = cycle_rules(vec![allow(&["rules", "rules::eval", "rules::load"])], false);
+        let mut out = Vec::new();
+        rules.check_cycles(&[parent_child_cycle()], &mut out);
+        assert!(out.is_empty());
+    }
+
+    #[test]
+    fn cycles_sort_after_deny_and_layer_violations() {
+        let rules = RuleSet {
+            layers: vec![layer("app", &["low", "high"])],
+            deny: vec![deny("high", "low")],
+            deny_cycles: true,
+            ..RuleSet::default()
+        };
+        let modules = module_set(&["high", "low"]);
+        let index = rules.build_layer_index(&modules);
+        let mut out = Vec::new();
+        rules.check_layers("high", "low", &index, &BTreeSet::new(), &mut out);
+        rules.check_deny("high", "low", &BTreeSet::new(), &mut out);
+        rules.check_cycles(
+            &[cycle(&["high", "low"], &[("high", "low"), ("low", "high")])],
+            &mut out,
+        );
+        out.sort();
+        assert_eq!(out.len(), 4);
+        assert_eq!(out[0].kind, ViolationKind::Deny);
+        assert_eq!(out[1].kind, ViolationKind::Layer);
+        assert_eq!(out[2].kind, ViolationKind::Cycle);
     }
 
     #[test]
