@@ -1,0 +1,7 @@
+# The entry misses gamma, so the detected loop is not a subset of it: still
+# reported. That is the ratchet — a module joining a loop breaks the pass.
+[check]
+deny-cycles = true
+
+[[check.allow-cycle]]
+modules = ["alpha", "beta"]

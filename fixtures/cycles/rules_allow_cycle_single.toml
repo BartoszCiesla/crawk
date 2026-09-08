@@ -1,0 +1,6 @@
+# A cycle needs two modules, so a one-element entry can never match (exit 2).
+[check]
+deny-cycles = true
+
+[[check.allow-cycle]]
+modules = ["alpha"]

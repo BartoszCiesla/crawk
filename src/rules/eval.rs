@@ -183,7 +183,7 @@ fn warn_stale(entry: &AllowedCycle) {
         .as_deref()
         .map_or_else(String::new, |reason| format!(" ({reason})"));
     warn!(
-        "{}{because} matches no cycle; remove it from the config",
+        "{}{because} covers no detected cycle; remove or update it",
         entry.display()
     );
 }

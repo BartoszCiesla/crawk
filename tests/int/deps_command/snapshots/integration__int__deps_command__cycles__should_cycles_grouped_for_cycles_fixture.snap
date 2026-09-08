@@ -18,4 +18,8 @@ cycle 1 (3 modules): alpha, beta, gamma
   beta -> gamma
   gamma -> alpha
 
+cycle 2 (2 modules): nest, nest::inner
+  nest -> nest::inner
+  nest::inner -> nest
+
 ----- stderr -----

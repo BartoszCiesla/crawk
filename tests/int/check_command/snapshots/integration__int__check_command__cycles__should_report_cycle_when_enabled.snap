@@ -1,0 +1,21 @@
+---
+source: tests/int/check_command/cycles.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/cycles
+    - check
+    - "-c"
+    - fixtures/cycles/rules_deny_cycles.toml
+---
+success: false
+exit_code: 1
+----- stdout -----
+crawk check: 3 violations
+
+  CYCLE alpha -> beta   (rule: cycle: alpha, beta, gamma)
+  CYCLE beta -> gamma   (rule: cycle: alpha, beta, gamma)
+  CYCLE gamma -> alpha   (rule: cycle: alpha, beta, gamma)
+
+----- stderr -----

@@ -1,0 +1,4 @@
+# Cycles are banned. The alpha -> beta -> gamma loop is reported; the
+# nest <-> nest::inner loop is containment, so the default filter skips it.
+[check]
+deny-cycles = true

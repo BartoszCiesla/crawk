@@ -1,0 +1,5 @@
+# An allowlist without `deny-cycles` does nothing; the load warns about it.
+[check]
+
+[[check.allow-cycle]]
+modules = ["alpha", "beta", "gamma"]

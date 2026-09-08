@@ -1,0 +1,7 @@
+# The known loop is grandfathered, so the crate passes while it is untangled.
+[check]
+deny-cycles = true
+
+[[check.allow-cycle]]
+modules = ["alpha", "beta", "gamma"]
+reason = "legacy render loop, tracked in #1"

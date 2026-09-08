@@ -1,0 +1,3 @@
+# `deny-cycles` on an acyclic crate: the rule is on and nothing fires.
+[check]
+deny-cycles = true

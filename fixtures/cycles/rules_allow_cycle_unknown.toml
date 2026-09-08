@@ -1,0 +1,6 @@
+# Typo in an allowlist entry: `alfa` is not a module (exit 2).
+[check]
+deny-cycles = true
+
+[[check.allow-cycle]]
+modules = ["alpha", "alfa"]

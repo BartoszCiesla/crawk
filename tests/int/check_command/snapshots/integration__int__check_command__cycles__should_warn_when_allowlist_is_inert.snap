@@ -1,0 +1,17 @@
+---
+source: tests/int/check_command/cycles.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/cycles
+    - check
+    - "-c"
+    - fixtures/cycles/rules_allow_cycle_inert.toml
+---
+success: true
+exit_code: 0
+----- stdout -----
+[33mWARN[39m allow-cycle entries have no effect while deny-cycles is false
+
+----- stderr -----

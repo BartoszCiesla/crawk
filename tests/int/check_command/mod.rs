@@ -1,5 +1,6 @@
 mod basic;
 mod config;
+mod cycles;
 mod deny;
 mod error_cases;
 mod exit_codes;

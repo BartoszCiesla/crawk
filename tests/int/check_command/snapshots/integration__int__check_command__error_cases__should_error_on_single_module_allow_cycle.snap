@@ -1,0 +1,17 @@
+---
+source: tests/int/check_command/error_cases.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/cycles
+    - check
+    - "-c"
+    - fixtures/cycles/rules_allow_cycle_single.toml
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+Error: Invalid rule config (fixtures/cycles/rules_allow_cycle_single.toml): allow-cycle [alpha]: a cycle needs at least two modules

@@ -1,0 +1,8 @@
+# The structural filter is off, so the nest <-> nest::inner containment loop is
+# a violation too. The alpha loop is grandfathered to keep the report focused.
+[check]
+deny-cycles = true
+deny-parent-child-cycles = true
+
+[[check.allow-cycle]]
+modules = ["alpha", "beta", "gamma"]

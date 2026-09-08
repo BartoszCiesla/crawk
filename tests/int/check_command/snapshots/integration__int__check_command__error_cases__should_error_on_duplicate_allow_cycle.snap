@@ -1,0 +1,17 @@
+---
+source: tests/int/check_command/error_cases.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/cycles
+    - check
+    - "-c"
+    - fixtures/cycles/rules_allow_cycle_dup.toml
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+Error: Invalid rule config (fixtures/cycles/rules_allow_cycle_dup.toml): duplicate allow-cycle [alpha, beta, gamma]

@@ -1,0 +1,11 @@
+# The first entry covers the real loop; the second names modules that form no
+# cycle at all, so it warns as stale without changing the exit code.
+[check]
+deny-cycles = true
+
+[[check.allow-cycle]]
+modules = ["alpha", "beta", "gamma"]
+
+[[check.allow-cycle]]
+modules = ["delta", "standalone"]
+reason = "untangled in #2"

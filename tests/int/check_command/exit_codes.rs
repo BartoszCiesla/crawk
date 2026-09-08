@@ -1,10 +1,22 @@
 use super::temp_bare_crate;
-use crate::common::{crawk, crawk_check};
+use crate::common::{crawk, crawk_check, crawk_cycles};
 
 // The CI contract: clean = 0, violations = 1, operational error = 2. Asserted
 // explicitly (not via snapshot) because these codes are the command's promise.
 fn exit_code(args: &[&str]) -> Option<i32> {
     crawk_check().args(args).output().ok()?.status.code()
+}
+
+/// Same contract, run against the fixture that actually has cycles.
+fn cycles_exit_code(config: &str) -> Option<i32> {
+    crawk_cycles()
+        .arg("check")
+        .arg("-c")
+        .arg(format!("fixtures/cycles/{config}"))
+        .output()
+        .ok()?
+        .status
+        .code()
 }
 
 #[test]
@@ -69,6 +81,34 @@ fn overlapping_groups_clean_is_zero() {
         exit_code(&["-c", "fixtures/check/rules_overlapping_clean.toml"]),
         Some(0)
     );
+}
+
+#[test]
+fn cycle_detected_is_one() {
+    assert_eq!(cycles_exit_code("rules_deny_cycles.toml"), Some(1));
+}
+
+#[test]
+fn cycle_ignored_without_the_rule_is_zero() {
+    assert_eq!(cycles_exit_code("rules_no_cycle_check.toml"), Some(0));
+}
+
+#[test]
+fn allowlisted_cycle_is_zero() {
+    assert_eq!(cycles_exit_code("rules_allow_cycle.toml"), Some(0));
+}
+
+// A stale entry warns, but warnings are not violations: still clean.
+#[test]
+fn stale_allowlist_entry_is_zero() {
+    assert_eq!(cycles_exit_code("rules_allow_cycle_stale.toml"), Some(0));
+}
+
+#[test]
+fn malformed_allow_cycle_is_two() {
+    assert_eq!(cycles_exit_code("rules_allow_cycle_single.toml"), Some(2));
+    assert_eq!(cycles_exit_code("rules_allow_cycle_dup.toml"), Some(2));
+    assert_eq!(cycles_exit_code("rules_allow_cycle_unknown.toml"), Some(2));
 }
 
 #[test]

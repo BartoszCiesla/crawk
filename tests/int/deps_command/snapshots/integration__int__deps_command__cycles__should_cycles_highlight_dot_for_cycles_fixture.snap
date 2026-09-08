@@ -29,6 +29,15 @@ digraph dependencies {
         "gamma";
     }
 
+    subgraph cluster_cycle_2 {
+        label="cycle 2 (2 modules)";
+        style=dashed;
+        color="#e67700";
+        fontcolor="#e67700";
+        "nest";
+        "nest::inner";
+    }
+
     "delta";
     "standalone";
 
@@ -36,6 +45,8 @@ digraph dependencies {
     "beta" -> "gamma" [color="#e67700", style=bold, penwidth=2.0];
     "delta" -> "alpha";
     "gamma" -> "alpha" [color="#e67700", style=bold, penwidth=2.0];
+    "nest" -> "nest::inner" [color="#e67700", style=bold, penwidth=2.0];
+    "nest::inner" -> "nest" [color="#e67700", style=bold, penwidth=2.0];
     "standalone" -> "delta";
 }
 

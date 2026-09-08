@@ -1,0 +1,9 @@
+# The same loop listed twice, just reordered: duplicate entry (exit 2).
+[check]
+deny-cycles = true
+
+[[check.allow-cycle]]
+modules = ["alpha", "beta", "gamma"]
+
+[[check.allow-cycle]]
+modules = ["gamma", "beta", "alpha"]

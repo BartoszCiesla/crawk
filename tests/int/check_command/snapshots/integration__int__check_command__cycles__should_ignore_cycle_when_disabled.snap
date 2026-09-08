@@ -1,20 +1,16 @@
 ---
-source: tests/int/deps_command/orphans.rs
+source: tests/int/check_command/cycles.rs
 info:
   program: crawk
   args:
     - "-p"
     - fixtures/cycles
-    - deps
-    - "--orphans"
-    - "-d"
-    - "1"
+    - check
+    - "-c"
+    - fixtures/cycles/rules_no_cycle_check.toml
 ---
 success: true
 exit_code: 0
 ----- stdout -----
-lib
-nest
-standalone
 
 ----- stderr -----
