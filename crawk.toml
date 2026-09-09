@@ -9,6 +9,11 @@
 # deny-same-layer is the crate-wide default (each group may override it). Off
 # here: sibling submodules within one subtree are same-layer by design.
 #
+# deny-cycles bans dependency loops. The only loop crawk has is
+# rules <-> rules::eval <-> rules::load, which is a parent re-exporting its own
+# submodules — containment, skipped by default — so the gate starts empty and
+# catches the first real tangle. No allow-cycle entries needed.
+#
 # Note: the lib -> bin direction is not encoded anywhere on purpose — cargo's
 # target separation already guarantees the library cannot depend on the
 # binary's modules, so a rule for it would be dead. The layer groups below each
@@ -18,6 +23,7 @@
 [check]
 strict-layers = true
 deny-same-layer = false
+deny-cycles = true
 
 # Binary target (`crawk` bin) internal flow, entry point highest. Catches an
 # accidental back-edge, e.g. cli -> logger or format -> main.

@@ -3,13 +3,14 @@
 ## Overview
 
 `crawk check` enforces an **architectural contract** on a crate's internal
-module dependencies. The contract is declared in a config file using two rule
+module dependencies. The contract is declared in a config file using three rule
 kinds — named *layer groups* (`[[check.layers]]`: ordered stacks of modules
-where a lower layer must not depend on a higher one) and *deny rules*
-(`[[check.deny]]`: explicit bans on a specific `from -> to` edge) — and `check`
-verifies every inter-module dependency edge against all of them in one pass. It
-is built for CI: a clean crate exits `0`, a contract breach exits `1`, and an
-operational problem exits `2`.
+where a lower layer must not depend on a higher one), *deny rules*
+(`[[check.deny]]`: explicit bans on a specific `from -> to` edge), and the
+*cycle ban* (`deny-cycles`: no dependency loops, with an allowlist for the ones
+a crate already has) — and `check` verifies every inter-module dependency edge
+against all of them in one pass. It is built for CI: a clean crate exits `0`, a
+contract breach exits `1`, and an operational problem exits `2`.
 
 The config file is **required**, by design. A linter without a contract has
 nothing to enforce, so a *missing* config is an operational error (exit `2`),
@@ -67,12 +68,15 @@ The config is a single `[check]` table. All keys are **kebab-case**, and unknown
 keys are rejected (so `layerz` or a misspelling fails loudly instead of being
 ignored).
 
-| Key               | Type                  | Default | Meaning                                                                   |
-|-------------------|-----------------------|---------|---------------------------------------------------------------------------|
-| `layers`          | array of layer groups | `[]`    | The `[[check.layers]]` groups to enforce (see below).                     |
-| `deny`            | array of deny rules   | `[]`    | The `[[check.deny]]` edge bans to enforce (see below).                    |
-| `strict-layers`   | bool                  | `false` | Require every module in the crate to belong to at least one group.        |
-| `deny-same-layer` | bool                  | `false` | **Default** same-layer policy for all groups; each group may override it. |
+| Key                        | Type                     | Default | Meaning                                                                   |
+|----------------------------|--------------------------|---------|---------------------------------------------------------------------------|
+| `layers`                   | array of layer groups    | `[]`    | The `[[check.layers]]` groups to enforce (see below).                     |
+| `deny`                     | array of deny rules      | `[]`    | The `[[check.deny]]` edge bans to enforce (see below).                    |
+| `allow-cycle`              | array of cycle allowlist | `[]`    | Loops that pass despite `deny-cycles` (see below).                        |
+| `strict-layers`            | bool                     | `false` | Require every module in the crate to belong to at least one group.        |
+| `deny-same-layer`          | bool                     | `false` | **Default** same-layer policy for all groups; each group may override it. |
+| `deny-cycles`              | bool                     | `false` | Report dependency loops between modules.                                  |
+| `deny-parent-child-cycles` | bool                     | `false` | Also report loops between a module and its own submodules.                |
 
 An empty `[check]` table (no keys at all) is valid and yields zero rules — a
 clean pass.
@@ -108,6 +112,18 @@ Each `[[check.deny]]` entry bans one dependency edge:
 
 Both keys are required; any other key is rejected. Pattern semantics differ
 from `layers` — see [Deny Rules](#deny-rules--checkdeny) below.
+
+### `[[check.allow-cycle]]` sub-table
+
+Each `[[check.allow-cycle]]` entry grandfathers one known dependency loop:
+
+| Key       | Type               | Meaning                                                                    |
+|-----------|--------------------|------------------------------------------------------------------------------|
+| `modules` | array of strings   | Exact module paths of the tolerated loop. **No patterns** — `::*` is not one. |
+| `reason`  | string (optional)  | Why the loop is tolerated. Quoted back when the entry goes stale.            |
+
+Entries only matter with `deny-cycles = true`; loading an allowlist without it
+warns that it has no effect. See [Cycle Rules](#cycle-rules--deny-cycles).
 
 ## How Layering Works
 
@@ -279,6 +295,98 @@ symbols, same as for layer violations:
   DENY cli -> web::repo [RepoType]   (rule: deny cli -> web::*)
 ```
 
+## Cycle Rules — `deny-cycles`
+
+`deny-cycles = true` bans **dependency loops**: groups of modules that reach
+each other in a circle, the same strongly connected components `deps --cycles`
+reports. Where `deps --cycles` describes, `deny-cycles` enforces.
+
+Each banned loop yields **one violation per edge** of the loop, and every row
+cites the whole loop, so a three-module cycle costs three lines:
+
+```
+crawk check: 3 violations
+
+  CYCLE alpha -> beta   (rule: cycle: alpha, beta, gamma)
+  CYCLE beta -> gamma   (rule: cycle: alpha, beta, gamma)
+  CYCLE gamma -> alpha   (rule: cycle: alpha, beta, gamma)
+```
+
+The rule text is a **comma list, not an arrow path**: the modules are listed
+alphabetically, not in traversal order, so an arrow would imply a direction the
+list does not carry. The concrete edges are the rows themselves — each one names
+a place the loop could be cut. `CYCLE` rows sort **after** `DENY` and `LAYER`.
+
+A cycle edge can break a layer order or a deny rule at the same time; those are
+separate violations of different kinds, and all of them are reported.
+
+### Parent-child loops are skipped
+
+A parent module that re-exports a submodule while the child reaches back with
+`use super::…` forms a loop in the graph:
+
+```rust
+// src/rules/mod.rs
+mod eval;
+pub(crate) use eval::evaluate;      // edge: rules -> rules::eval
+
+// src/rules/eval.rs
+use super::RuleSet;                 // edge: rules::eval -> rules
+```
+
+This is containment, not an architectural tangle, and it appears in nearly every
+Rust crate. `deny-cycles` therefore **skips** any loop in which one module is an
+ancestor of all the others:
+
+| Loop                                  | Reported? | Why                                                |
+|---------------------------------------|-----------|----------------------------------------------------|
+| `rules`, `rules::eval`, `rules::load` | no        | `rules` is an ancestor of the rest                 |
+| `parser`, `parser::visitor`           | no        | same shape, two modules                            |
+| `alpha`, `beta`, `gamma`              | **yes**   | no common ancestor — a real tangle                 |
+| `rules`, `rules::eval`, `graph`       | **yes**   | `rules` is not an ancestor of `graph`              |
+
+Set `deny-parent-child-cycles = true` to turn the filter off and have those
+loops reported too.
+
+### Grandfathering known loops — `[[check.allow-cycle]]`
+
+Turning the rule on in a crate that already has loops would fail from day one.
+An allowlist entry tolerates a specific loop while it is being untangled:
+
+```toml
+[check]
+deny-cycles = true
+
+[[check.allow-cycle]]
+modules = ["alpha", "beta", "gamma"]
+reason = "legacy render loop, tracked in #1"
+```
+
+Matching is by **subset**: a detected loop passes when every one of its modules
+appears in the entry. That makes the list a ratchet in both directions —
+
+- a loop that **shrank** after a partial fix is still covered, so progress never
+  breaks the build;
+- a module **joining** the loop escapes the entry, and the loop is reported
+  again — new coupling is caught even inside a tolerated cycle.
+
+An entry that covers no detected loop is **config rot**, not a failure. It warns
+on stderr and leaves the exit code alone, so untangling a cycle never breaks the
+build of whoever fixed it:
+
+```
+WARN allow-cycle [delta, standalone] (untangled in #2) covers no detected cycle; remove or update it
+```
+
+Entries are validated at load time (exit `2`): every module must exist, an entry
+needs at least two modules (a loop cannot be shorter), and the same set must not
+be listed twice. Because entries hold exact names rather than patterns, a typo is
+always a mistake, never "a pattern that happens to match nothing".
+
+One gotcha: `-t` / `--include-tests` puts test modules in the graph, which can
+make a loop **bigger** than the entry that covers it. Either list the test module
+in the entry too, or keep the flag out of the CI invocation that gates on cycles.
+
 ## Worked Example
 
 A complete, copy-pasteable `crawk.toml`:
@@ -313,6 +421,17 @@ from = "cli"
 to = "cache::*"
 ```
 
+Add the cycle ban on top, with the one loop the crate has not untangled yet:
+
+```toml
+[check]
+deny-cycles = true
+
+[[check.allow-cycle]]
+modules = ["analyzer", "graph"]
+reason = "analyzer builds the graph and reads it back; split in #42"
+```
+
 A sample violation line (default `plain` format):
 
 ```
@@ -332,8 +451,8 @@ With `-a` / `--show-apis`, each line also lists the API symbols on the edge:
   LAYER  parser -> cli [CrawkArgs]   (rule: layer 'arch' forbids upward dependency (parser -> cli))
 ```
 
-When both rule kinds fire in one run, all `DENY` rows are listed before all
-`LAYER` rows.
+When several rule kinds fire in one run, the report is grouped by kind: all
+`DENY` rows first, then `LAYER`, then `CYCLE`.
 
 ## Exit Codes
 
@@ -341,7 +460,7 @@ When both rule kinds fire in one run, all `DENY` rows are listed before all
 |------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `0`  | Clean — all rules satisfied (including an empty `[check]` table).                                                                                                    |
 | `1`  | One or more violations found (printed to stdout).                                                                                                                    |
-| `2`  | Operational error — missing/invalid config, a rule (layer or deny) naming an unknown module, a duplicate group name, or (under `strict-layers`) an uncovered module. |
+| `2`  | Operational error — missing/invalid config, a rule naming an unknown module, a duplicate group name or allowlist entry, a one-module `allow-cycle`, or (under `strict-layers`) an uncovered module. |
 
 ## CLI Flags
 
