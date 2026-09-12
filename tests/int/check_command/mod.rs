@@ -16,6 +16,32 @@ mod overview;
 ///
 /// Not itself a `#[test]` fn, so clippy's `allow-expect-in-tests` doesn't
 /// cover it; it's test-support scaffolding, so `expect` is fine here.
+/// Same idea as [`temp_bare_crate`], but with a real `alpha <-> beta` loop, so
+/// `--init` has an existing cycle to freeze. Two top-level modules that
+/// reference each other's types — not a containment loop, so `deny-cycles`
+/// would report it.
+#[allow(clippy::expect_used)]
+pub(super) fn temp_cycle_crate() -> tempfile::TempDir {
+    let dir = temp_bare_crate();
+    let src = dir.path().join("src");
+    std::fs::write(
+        src.join("lib.rs"),
+        "#![allow(dead_code)]\n\nmod alpha;\nmod beta;\n",
+    )
+    .expect("write lib.rs");
+    std::fs::write(
+        src.join("alpha.rs"),
+        "use crate::beta::BetaType;\n\npub struct AlphaType;\n\nfn _use_beta(_b: BetaType) {}\n",
+    )
+    .expect("write alpha.rs");
+    std::fs::write(
+        src.join("beta.rs"),
+        "use crate::alpha::AlphaType;\n\npub struct BetaType;\n\nfn _use_alpha(_a: AlphaType) {}\n",
+    )
+    .expect("write beta.rs");
+    dir
+}
+
 #[allow(clippy::expect_used)]
 pub(super) fn temp_bare_crate() -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("tempdir");

@@ -56,6 +56,20 @@ impl CheckOptions {
     }
 }
 
+/// What `crawk check --init` wrote.
+///
+/// This type is marked `#[non_exhaustive]`; new fields may be added without a
+/// breaking change.
+#[derive(Debug, Clone)]
+#[non_exhaustive]
+pub struct InitOutcome {
+    /// Path of the config file that was created.
+    pub path: PathBuf,
+    /// How many existing dependency loops were frozen as `[[check.allow-cycle]]`
+    /// entries, so `deny-cycles` starts green.
+    pub frozen_cycles: usize,
+}
+
 /// A module match pattern: an exact module, or a subtree (`foo::*`).
 ///
 /// Matching is always on `::` segment boundaries — `format` never matches
@@ -165,6 +179,19 @@ impl DenyRule {
             self.to.pattern_display()
         )
     }
+}
+
+/// Is this loop just a module tangled with its own descendants?
+///
+/// A parent that re-exports a submodule while the child reaches back with
+/// `use super::…` forms an SCC in nearly every Rust crate — containment, not an
+/// architectural tangle. Detected as "one module of the loop is an ancestor of
+/// all the others". Evaluation skips such loops by default, and scaffolding
+/// leaves them out of the generated allowlist for the same reason.
+fn is_parent_child_cycle(modules: &BTreeSet<String>) -> bool {
+    modules
+        .iter()
+        .any(|root| modules.iter().all(|module| is_in_subtree(module, root)))
 }
 
 /// A grandfathered dependency loop: one cycle that `deny-cycles` lets through

@@ -93,4 +93,4 @@ pub use crate::graph::{
 };
 pub use crate::model::{AnalysisOptions, AnalysisResult};
 pub use crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference};
-pub use crate::rules::{CheckOptions, CheckReport, Violation, ViolationKind};
+pub use crate::rules::{CheckOptions, CheckReport, InitOutcome, Violation, ViolationKind};

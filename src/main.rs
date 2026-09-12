@@ -81,17 +81,28 @@ fn handle_check_command(crate_root: &Path, args: &CheckArgs) -> anyhow::Result<i
     };
 
     if args.init {
-        let path = analyzer.init_check_config(crate_root, &opts)?;
+        let outcome = analyzer.init_check_config(crate_root, &opts)?;
         // A custom `-c` path is not auto-discovered, so the re-run hint must
         // carry it; the default crawk.toml is found by a plain `crawk check`.
         let rerun = args.config.as_ref().map_or_else(
             || "crawk check".to_owned(),
             |cfg| format!("crawk check -c {}", cfg.display()),
         );
-        eprintln!("Scaffolded {}.", path.display());
+        eprintln!("Scaffolded {}.", outcome.path.display());
         eprintln!();
         eprintln!("  Reorder the modules: highest-level layer first, lowest last.");
         eprintln!("  A lower layer must never depend on a higher one.");
+        if outcome.frozen_cycles > 0 {
+            let (noun, tail) = if outcome.frozen_cycles == 1 {
+                ("loop", "untangle it and delete the entry")
+            } else {
+                ("loops", "untangle them and delete the entries")
+            };
+            eprintln!(
+                "  Froze {} existing dependency {noun} as `allow-cycle`; {tail}.",
+                outcome.frozen_cycles
+            );
+        }
         eprintln!("  Then run `{rerun}`.");
         return Ok(0);
     }

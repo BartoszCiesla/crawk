@@ -198,18 +198,39 @@ pub(crate) enum CrawkCommands {
     ///   exit 1   one or more violations (printed to stdout)
     ///   exit 2   operational error (missing/invalid config, unknown module)
     ///
-    /// Check category `layers`: named groups, each an ordered stack where a
-    /// lower layer must not depend on a higher one. Each entry covers its whole
+    /// Category `layers`: named groups, each an ordered stack where a lower
+    /// layer must not depend on a higher one. Each entry covers its whole
     /// module subtree; groups are independent and may overlap (a shared module
     /// is checked in each group it belongs to).
     ///
-    /// Example:
     ///   [[check.layers]]
     ///   name = "arch"
     ///   order = ["api", "service", "infra"]
     ///
     /// `api` may depend on `service`/`infra`, but `infra` must not depend on
     /// `service` or `api`.
+    ///
+    /// Category `deny`: one banned edge. Subtree matching is opt-in — a bare
+    /// name is exact, an explicit `::*` covers the subtree.
+    ///
+    ///   [[check.deny]]
+    ///   from = "api"
+    ///   to = "infra::*"
+    ///
+    /// Category `deny-cycles`: bans dependency loops, reporting one violation
+    /// per edge of each loop. A loop between a module and its own submodules is
+    /// containment, not a tangle, and stays exempt unless you also set
+    /// `deny-parent-child-cycles = true`. Loops a crate already has can be
+    /// grandfathered; a loop passes when its modules are a subset of an entry,
+    /// so a module joining the loop is reported again.
+    ///
+    ///   [check]
+    ///   deny-cycles = true
+    ///
+    ///   [[check.allow-cycle]]
+    ///   modules = ["alpha", "beta"]
+    ///
+    /// `--init` writes that baseline for you, so the rule starts green.
     ///
     /// Note: global options (-p, -v, -l) must appear before the subcommand.
     // The `order = ["api", ...]` TOML example reads as an intra-doc link to
@@ -621,7 +642,9 @@ pub(crate) struct CheckArgs {
     /// Generate a starter `crawk.toml` in the crate root and exit
     ///
     /// Lists the crate's top-level modules as a single `layers` group for you
-    /// to order (highest layer first). Refuses to overwrite an existing
+    /// to order (highest layer first), turns `deny-cycles` on, and freezes the
+    /// loops the crate already has as `allow-cycle` entries — so the cycle rule
+    /// starts green and catches the next one. Refuses to overwrite an existing
     /// `crawk.toml` or `.crawk.toml`.
     #[clap(verbatim_doc_comment)]
     #[arg(long = "init", default_value_t = false)]

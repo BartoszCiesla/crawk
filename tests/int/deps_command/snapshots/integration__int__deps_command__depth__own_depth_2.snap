@@ -94,6 +94,7 @@ rules::eval -> graph
 rules::eval -> module_path
 rules::eval -> rules
 rules::load -> error
+rules::load -> graph
 rules::load -> rules
 utils -> constants
 

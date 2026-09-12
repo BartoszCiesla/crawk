@@ -149,8 +149,9 @@ rules::eval (3)
   -> module_path
   -> rules
 
-rules::load (2)
+rules::load (3)
   -> error
+  -> graph
   -> rules
 
 utils (1)

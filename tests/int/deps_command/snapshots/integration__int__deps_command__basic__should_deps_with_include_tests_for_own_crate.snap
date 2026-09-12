@@ -123,7 +123,9 @@ rules::eval -> rules
 rules::eval::tests -> graph
 rules::eval::tests -> rules
 rules::load -> error
+rules::load -> graph
 rules::load -> rules
+rules::load::tests -> graph
 rules::load::tests -> rules::load
 rules::tests -> rules
 utils -> constants

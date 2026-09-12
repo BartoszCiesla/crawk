@@ -33,6 +33,8 @@ crate::error::AnalysisError::ModuleNotFound
 crate::error::Result
 crate::error::{AnalysisError, Result}
 crate::graph::*
+crate::graph::AnnotatedEdges
+crate::graph::Cycle
 crate::graph::DependencyGraphOptions
 crate::graph::Edge
 crate::graph::build_edges
@@ -98,11 +100,11 @@ crate::rules::load::*
 crate::rules::load::{resolve_config_path, scaffold_config}
 crate::rules::resolve_config_path
 crate::rules::scaffold_config
-crate::rules::{AllowedCycle, CheckReport, LayerPos, RuleSet, Violation, ViolationKind}
+crate::rules::{AllowedCycle, CheckReport, LayerPos, RuleSet, Violation, ViolationKind, is_parent_child_cycle}
+crate::rules::{AllowedCycle, DenyRule, InitOutcome, LayerRule, ModulePattern, RuleSet, is_parent_child_cycle}
 crate::rules::{AllowedCycle, DenyRule, LayerRule, ModulePattern, RuleSet, ViolationKind}
-crate::rules::{AllowedCycle, DenyRule, LayerRule, ModulePattern, RuleSet}
-crate::rules::{CheckOptions, CheckReport, Violation, ViolationKind}
-crate::rules::{self, CheckOptions, CheckReport, RuleSet}
+crate::rules::{CheckOptions, CheckReport, InitOutcome, Violation, ViolationKind}
+crate::rules::{self, CheckOptions, CheckReport, InitOutcome, RuleSet}
 crate::utils::*
 crate::utils::ReadFileError::TooLarge
 crate::utils::has_cfg_test

@@ -46,16 +46,25 @@ config, a rule that names a module that does not exist, an uncovered module unde
 exits. It writes a single `[[check.layers]]` group named after the crate, listing
 the crate's top-level modules alphabetically, with a comment reminding you to
 reorder them (highest layer first). It deliberately does **not** guess the
-hierarchy — layer ordering encodes design intent the source cannot reveal. The
-next steps are spelled out on completion:
+hierarchy — layer ordering encodes design intent the source cannot reveal.
+
+Cycles are the opposite case, and `--init` does fill them in: it sets
+`deny-cycles = true` and freezes every loop the crate already has as an
+`[[check.allow-cycle]]` entry (containment loops excluded — they are exempt
+anyway). The cycle rule therefore starts **green** and ratchets from the first
+run, instead of burying a new adopter under pre-existing tangles. The next steps
+are spelled out on completion:
 
 ```
 Scaffolded <crate root>/crawk.toml.
 
   Reorder the modules: highest-level layer first, lowest last.
   A lower layer must never depend on a higher one.
+  Froze 2 existing dependency loops as `allow-cycle`; untangle them and delete the entries.
   Then run `crawk check`.
 ```
+
+(The `Froze …` line appears only when there was something to freeze.)
 
 `--init` refuses to clobber an existing config: if a `crawk.toml` or
 `.crawk.toml` is already present (or, with `--config`, the explicit target
@@ -351,7 +360,8 @@ loops reported too.
 ### Grandfathering known loops — `[[check.allow-cycle]]`
 
 Turning the rule on in a crate that already has loops would fail from day one.
-An allowlist entry tolerates a specific loop while it is being untangled:
+An allowlist entry tolerates a specific loop while it is being untangled (on a
+fresh crate, `crawk check --init` writes these entries for you):
 
 ```toml
 [check]
@@ -470,7 +480,7 @@ crawk check [OPTIONS]
 
 | Flag                  | Description                                                                                    |
 |-----------------------|------------------------------------------------------------------------------------------------|
-| `--init`              | Scaffold a starter `crawk.toml` from discovered modules, then exit (refuses to overwrite).     |
+| `--init`              | Scaffold a starter `crawk.toml` — layer skeleton plus a cycle baseline — then exit (refuses to overwrite). |
 | `-c, --config <FILE>` | Rule config path. When omitted, search the crate root for `crawk.toml`, then `.crawk.toml`.    |
 | `-t, --include-tests` | Include `#[cfg(test)]` modules and test targets in the dependency graph (excluded by default). |
 | `-a, --show-apis`     | Annotate each violation with the API symbols that create the offending edge.                   |

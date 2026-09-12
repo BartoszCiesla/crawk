@@ -7,7 +7,7 @@ use crate::module_path::{is_in_subtree, split_parent};
 use crate::parser::CrateAnalyzer;
 use crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference};
 use crate::resolve::resolve_glob;
-use crate::rules::{self, CheckOptions, CheckReport, RuleSet};
+use crate::rules::{self, CheckOptions, CheckReport, InitOutcome, RuleSet};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt::{Debug, Formatter, Result as FmtResult};
 use std::path::{Path, PathBuf};
@@ -867,12 +867,14 @@ impl Analyzer {
         Ok(rules::evaluate(&rule_set, &graph))
     }
 
-    /// Scaffold a starter config from discovered modules. Returns the path written.
+    /// Scaffold a starter config from the crate's modules and cycles.
     ///
     /// Builds the dependency graph to enumerate modules, then writes a single
-    /// `layers` group skeleton for the user to order. Writes to
-    /// [`CheckOptions::config`] when set (`--config`), otherwise `crawk.toml` in
-    /// `crate_root`. Refuses to overwrite an existing config.
+    /// `layers` group skeleton for the user to order, plus a cycle baseline:
+    /// `deny-cycles` on, with every existing loop frozen as an
+    /// `[[check.allow-cycle]]` entry. Writes to [`CheckOptions::config`] when set
+    /// (`--config`), otherwise `crawk.toml` in `crate_root`. Refuses to overwrite
+    /// an existing config.
     ///
     /// # Arguments
     ///
@@ -884,7 +886,11 @@ impl Analyzer {
     ///
     /// Returns an error if the graph cannot be built, a config already exists,
     /// or the file cannot be written.
-    pub fn init_check_config(&mut self, crate_root: &Path, opts: &CheckOptions) -> Result<PathBuf> {
+    pub fn init_check_config(
+        &mut self,
+        crate_root: &Path,
+        opts: &CheckOptions,
+    ) -> Result<InitOutcome> {
         let graph = self.dependency_graph(&opts.graph_opts())?;
         let crate_name = self.crate_info.root_package_name();
         rules::scaffold_config(
@@ -892,6 +898,7 @@ impl Analyzer {
             opts.config.as_deref(),
             crate_name,
             graph.modules(),
+            &graph.cycles(),
         )
     }
 

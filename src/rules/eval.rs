@@ -7,19 +7,9 @@ use tracing::warn;
 use crate::graph::{Cycle, DependencyGraph};
 use crate::module_path::is_in_subtree;
 
-use super::{AllowedCycle, CheckReport, LayerPos, RuleSet, Violation, ViolationKind};
-
-/// Is this loop just a module tangled with its own descendants?
-///
-/// A parent that re-exports a submodule while the child reaches back with
-/// `use super::…` forms an SCC in nearly every Rust crate — containment, not an
-/// architectural tangle. Detected as "one module of the loop is an ancestor of
-/// all the others".
-fn is_parent_child_cycle(modules: &BTreeSet<String>) -> bool {
-    modules
-        .iter()
-        .any(|root| modules.iter().all(|module| is_in_subtree(module, root)))
-}
+use super::{
+    AllowedCycle, CheckReport, LayerPos, RuleSet, Violation, ViolationKind, is_parent_child_cycle,
+};
 
 impl RuleSet {
     /// Build `module -> [LayerPos]` via per-group longest-prefix match.
