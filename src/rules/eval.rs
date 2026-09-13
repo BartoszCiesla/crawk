@@ -56,6 +56,43 @@ impl RuleSet {
         }
     }
 
+    /// Check a single edge against the restrict rules, pushing any violation.
+    ///
+    /// Every matching rule is evaluated independently, so overlapping rules
+    /// intersect their allowances rather than the narrower one overriding.
+    fn check_restrict(
+        &self,
+        source: &str,
+        target: &str,
+        apis: &BTreeSet<String>,
+        out: &mut Vec<Violation>,
+    ) {
+        // A module and its own descendant are one unit, not a cross-boundary
+        // dependency — exempt before any allowance is consulted. Needed for
+        // exact `from` patterns (`cli`), which cannot match their own children.
+        if is_in_subtree(target, source) || is_in_subtree(source, target) {
+            return;
+        }
+        for rule in &self.restrict {
+            // An edge whose target still matches `from` stays inside the
+            // rule's own scope (sibling modules of one subsystem). Restrict
+            // guards the boundary, not the internal structure — that is
+            // layers/deny work.
+            if rule.from.matches(source)
+                && !rule.from.matches(target)
+                && !rule.to.iter().any(|pattern| pattern.matches(target))
+            {
+                out.push(Violation {
+                    kind: ViolationKind::Restrict,
+                    source: source.to_owned(),
+                    target: target.to_owned(),
+                    rule: rule.display(),
+                    apis: apis.clone(),
+                });
+            }
+        }
+    }
+
     /// Report the detected cycles, one violation per edge of every banned loop.
     ///
     /// Callers gate on `deny_cycles` — detecting the cycles is not free — so
@@ -185,6 +222,7 @@ pub(crate) fn evaluate(rules: &RuleSet, graph: &DependencyGraph) -> CheckReport 
 
     for ((source, target), apis) in graph.edges() {
         rules.check_deny(source, target, apis, &mut violations);
+        rules.check_restrict(source, target, apis, &mut violations);
         rules.check_layers(source, target, &layer_index, apis, &mut violations);
     }
 
@@ -199,7 +237,9 @@ pub(crate) fn evaluate(rules: &RuleSet, graph: &DependencyGraph) -> CheckReport 
 
 #[cfg(test)]
 mod tests {
-    use super::super::{AllowedCycle, DenyRule, LayerRule, ModulePattern, RuleSet, ViolationKind};
+    use super::super::{
+        AllowedCycle, DenyRule, LayerRule, ModulePattern, RestrictRule, RuleSet, ViolationKind,
+    };
     use crate::graph::{AnnotatedEdges, Cycle};
     use std::collections::BTreeSet;
 
@@ -467,6 +507,128 @@ mod tests {
         assert_eq!(out.len(), 2);
         assert_eq!(out[0].kind, ViolationKind::Deny);
         assert_eq!(out[1].kind, ViolationKind::Layer);
+    }
+
+    // --- restrict ----------------------------------------------------------
+
+    fn restrict(from: &str, to: &[&str]) -> RestrictRule {
+        RestrictRule {
+            from: ModulePattern::parse(from),
+            to: to
+                .iter()
+                .map(|target| ModulePattern::parse(target))
+                .collect(),
+        }
+    }
+
+    fn restrict_rules(rules: Vec<RestrictRule>) -> RuleSet {
+        RuleSet {
+            restrict: rules,
+            ..RuleSet::default()
+        }
+    }
+
+    #[test]
+    fn restrict_allows_listed_targets() {
+        let rules = restrict_rules(vec![restrict("cli", &["analyzer", "web::*"])]);
+        let mut out = Vec::new();
+        rules.check_restrict("cli", "analyzer", &BTreeSet::new(), &mut out);
+        rules.check_restrict("cli", "web::repo", &BTreeSet::new(), &mut out);
+        assert!(out.is_empty());
+    }
+
+    #[test]
+    fn restrict_flags_a_target_outside_the_allowance() {
+        let rules = restrict_rules(vec![restrict("cli", &["analyzer"])]);
+        let mut out = Vec::new();
+        rules.check_restrict("cli", "web::repo", &BTreeSet::new(), &mut out);
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].kind, ViolationKind::Restrict);
+        assert_eq!(out[0].rule, "restrict cli -> [analyzer]");
+    }
+
+    #[test]
+    fn restrict_empty_allowance_blocks_every_outbound_edge() {
+        let rules = restrict_rules(vec![restrict("web::*", &[])]);
+        let mut out = Vec::new();
+        rules.check_restrict("web::api", "analyzer", &BTreeSet::new(), &mut out);
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].rule, "restrict web::* -> []");
+    }
+
+    #[test]
+    fn restrict_exempts_parent_child_edges_both_ways() {
+        // An exact `from` cannot match its own children, so the global
+        // containment filter must exempt these edges before any rule fires.
+        let rules = restrict_rules(vec![restrict("cli", &[])]);
+        let mut out = Vec::new();
+        rules.check_restrict("cli", "cli::validation", &BTreeSet::new(), &mut out);
+        rules.check_restrict("cli::validation", "cli", &BTreeSet::new(), &mut out);
+        assert!(out.is_empty(), "parent <-> own child is one unit");
+    }
+
+    #[test]
+    fn restrict_exempts_siblings_inside_the_scope() {
+        // Neither endpoint is the other's ancestor, but both fall under the
+        // rule's `from` — the edge never leaves the restricted subsystem.
+        let rules = restrict_rules(vec![restrict("web::*", &[])]);
+        let mut out = Vec::new();
+        rules.check_restrict("web::api", "web::service", &BTreeSet::new(), &mut out);
+        assert!(out.is_empty(), "sibling edge inside the scope is internal");
+    }
+
+    #[test]
+    fn restrict_overlapping_rules_intersect_allowances() {
+        // The edge satisfies the broad rule but not the narrow one — the
+        // narrow rule still fires (intersection, not override).
+        let rules = restrict_rules(vec![
+            restrict("cli", &["analyzer", "web::*"]),
+            restrict("cli", &["analyzer"]),
+        ]);
+        let mut out = Vec::new();
+        rules.check_restrict("cli", "web::repo", &BTreeSet::new(), &mut out);
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].rule, "restrict cli -> [analyzer]");
+    }
+
+    #[test]
+    fn restrict_edge_breaking_several_rules_reports_each() {
+        let rules = restrict_rules(vec![
+            restrict("cli", &["analyzer"]),
+            restrict("cli", &["parser"]),
+        ]);
+        let mut out = Vec::new();
+        rules.check_restrict("cli", "web::repo", &BTreeSet::new(), &mut out);
+        assert_eq!(out.len(), 2, "one violation per matching rule");
+    }
+
+    #[test]
+    fn restrict_ignores_an_uncovered_module() {
+        let rules = restrict_rules(vec![restrict("cli", &["analyzer"])]);
+        let mut out = Vec::new();
+        rules.check_restrict("analyzer", "parser", &BTreeSet::new(), &mut out);
+        assert!(out.is_empty(), "module outside every rule is unrestricted");
+    }
+
+    #[test]
+    fn restrict_sorts_after_deny_and_before_layer() {
+        let rules = RuleSet {
+            layers: vec![layer("app", &["low", "high"])],
+            deny: vec![deny("high", "low")],
+            restrict: vec![restrict("high", &[])],
+            ..RuleSet::default()
+        };
+        let modules = module_set(&["high", "low"]);
+        let index = rules.build_layer_index(&modules);
+        let mut out = Vec::new();
+        rules.check_layers("high", "low", &index, &BTreeSet::new(), &mut out);
+        rules.check_deny("high", "low", &BTreeSet::new(), &mut out);
+        rules.check_restrict("high", "low", &BTreeSet::new(), &mut out);
+        out.sort();
+        assert_eq!(out.len(), 3);
+        assert_eq!(out[0].kind, ViolationKind::Deny);
+        assert_eq!(out[1].kind, ViolationKind::Restrict);
+        assert_eq!(out[2].kind, ViolationKind::Layer);
     }
 
     // --- deny-cycles -------------------------------------------------------

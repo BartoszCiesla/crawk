@@ -95,12 +95,14 @@ crate::rules::InitOutcome
 crate::rules::LayerPos
 crate::rules::LayerRule
 crate::rules::ModulePattern
+crate::rules::RestrictRule
 crate::rules::RuleSet
 crate::rules::Violation
 crate::rules::ViolationKind
 crate::rules::ViolationKind::Cycle
 crate::rules::ViolationKind::Deny
 crate::rules::ViolationKind::Layer
+crate::rules::ViolationKind::Restrict
 crate::rules::eval::evaluate
 crate::rules::evaluate
 crate::rules::is_parent_child_cycle

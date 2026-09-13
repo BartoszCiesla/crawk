@@ -12,7 +12,8 @@ use crate::error::{AnalysisError, Result};
 use crate::graph::Cycle;
 
 use super::{
-    AllowedCycle, DenyRule, InitOutcome, LayerRule, ModulePattern, RuleSet, is_parent_child_cycle,
+    AllowedCycle, DenyRule, InitOutcome, LayerRule, ModulePattern, RestrictRule, RuleSet,
+    is_parent_child_cycle,
 };
 
 /// Preferred config file name (searched first).
@@ -39,6 +40,7 @@ struct RawConfig {
 struct RawCheck {
     layers: Vec<RawLayer>,
     deny: Vec<RawDeny>,
+    restrict: Vec<RawRestrict>,
     allow_cycle: Vec<RawAllowCycle>,
     strict_layers: bool,
     deny_same_layer: bool,
@@ -63,6 +65,19 @@ struct RawAllowCycle {
 struct RawDeny {
     from: String,
     to: String,
+}
+
+/// Serde shape of one `[[check.restrict]]` rule. Subtree matching requires an
+/// explicit `::*` suffix on the pattern.
+///
+/// `to` has no default on purpose: an empty allowance must be spelled
+/// `to = []` explicitly, so a forgotten key is a parse error instead of
+/// silently becoming the strictest possible rule.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RawRestrict {
+    from: String,
+    to: Vec<String>,
 }
 
 /// Serde shape of one `[[check.layers]]` group.
@@ -326,6 +341,18 @@ impl RuleSet {
                 to: ModulePattern::parse(&raw_deny.to),
             })
             .collect();
+        let restrict = raw
+            .restrict
+            .into_iter()
+            .map(|raw_restrict| RestrictRule {
+                from: ModulePattern::parse(&raw_restrict.from),
+                to: raw_restrict
+                    .to
+                    .iter()
+                    .map(|target| ModulePattern::parse(target))
+                    .collect(),
+            })
+            .collect();
         let allow_cycles = raw
             .allow_cycle
             .into_iter()
@@ -337,6 +364,7 @@ impl RuleSet {
         Self {
             layers,
             deny,
+            restrict,
             allow_cycles,
             strict_layers: raw.strict_layers,
             deny_cycles: raw.deny_cycles,
@@ -368,7 +396,20 @@ impl RuleSet {
                 }
             }
         }
-        // 3. Allowlist entries name exact modules and must be able to match at
+        // 3. Every restrict pattern (`from` and each `to`) must reference a
+        //    real module. An empty `to` list is valid: it reads "nothing
+        //    beyond my own scope", not a typo.
+        for rule in &self.restrict {
+            for pattern in std::iter::once(&rule.from).chain(rule.to.iter()) {
+                if !pattern.references_known(modules) {
+                    return Err(AnalysisError::UnknownRuleModule {
+                        module: pattern.pattern_display(),
+                        rule: rule.display(),
+                    });
+                }
+            }
+        }
+        // 4. Allowlist entries name exact modules and must be able to match at
         //    all — a typo or a one-module entry would silently never fire.
         let mut seen: BTreeSet<&BTreeSet<String>> = BTreeSet::new();
         for entry in &self.allow_cycles {
@@ -393,7 +434,7 @@ impl RuleSet {
                 });
             }
         }
-        // 4. Under strict mode, every module must be covered by some group.
+        // 5. Under strict mode, every module must be covered by some group.
         //    Groups may overlap, so coverage just means at least one membership.
         if self.strict_layers {
             for module in modules {
@@ -714,6 +755,124 @@ mod tests {
         );
         let modules = module_set(&["cli", "web"]);
         assert!(RuleSet::load(&cfg, &modules).is_err());
+    }
+
+    #[test]
+    fn restrict_rules_parse_with_explicit_subtree() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let cfg = write_config(
+            dir.path(),
+            "crawk.toml",
+            "[[check.restrict]]\nfrom = \"format::*\"\nto = [\"lib\", \"graph::*\"]\n",
+        );
+        let modules = module_set(&["format", "format::use_cmd", "lib", "graph", "graph::edges"]);
+        let rules = RuleSet::load(&cfg, &modules).expect("load");
+        assert_eq!(rules.restrict.len(), 1);
+        assert!(
+            rules.restrict[0].from.subtree,
+            "explicit ::* marks the subtree"
+        );
+        assert!(!rules.restrict[0].to[0].subtree, "bare name stays exact");
+        assert!(
+            rules.restrict[0].to[1].subtree,
+            "explicit ::* marks the subtree"
+        );
+        assert_eq!(
+            rules.restrict[0].display(),
+            "restrict format::* -> [lib, graph::*]"
+        );
+    }
+
+    #[test]
+    fn unknown_module_in_restrict_from_is_error() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let cfg = write_config(
+            dir.path(),
+            "crawk.toml",
+            "[[check.restrict]]\nfrom = \"clii\"\nto = [\"web\"]\n",
+        );
+        let modules = module_set(&["cli", "web"]);
+        let err = RuleSet::load(&cfg, &modules).expect_err("should reject unknown module");
+        assert!(matches!(
+            &err,
+            AnalysisError::UnknownRuleModule { module, rule }
+                if module == "clii" && rule == "restrict clii -> [web]"
+        ));
+    }
+
+    #[test]
+    fn unknown_module_in_restrict_to_is_error() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let cfg = write_config(
+            dir.path(),
+            "crawk.toml",
+            "[[check.restrict]]\nfrom = \"cli\"\nto = [\"webb\"]\n",
+        );
+        let modules = module_set(&["cli", "web"]);
+        let err = RuleSet::load(&cfg, &modules).expect_err("should reject unknown module");
+        assert!(matches!(
+            &err,
+            AnalysisError::UnknownRuleModule { module, rule }
+                if module == "webb" && rule == "restrict cli -> [webb]"
+        ));
+    }
+
+    #[test]
+    fn unknown_key_in_restrict_is_rejected() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let cfg = write_config(
+            dir.path(),
+            "crawk.toml",
+            "[[check.restrict]]\nfrom = \"cli\"\nto = [\"web\"]\nvia = \"x\"\n",
+        );
+        let modules = module_set(&["cli", "web"]);
+        assert!(RuleSet::load(&cfg, &modules).is_err());
+    }
+
+    #[test]
+    fn empty_restrict_allowance_is_valid() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        // "Nothing beyond my own scope" — a deliberate rule, not a typo (D6).
+        let cfg = write_config(
+            dir.path(),
+            "crawk.toml",
+            "[[check.restrict]]\nfrom = \"web::*\"\nto = []\n",
+        );
+        let modules = module_set(&["web", "web::api"]);
+        let rules = RuleSet::load(&cfg, &modules).expect("load");
+        assert_eq!(rules.restrict.len(), 1);
+        assert!(rules.restrict[0].to.is_empty());
+    }
+
+    #[test]
+    fn missing_restrict_to_key_is_parse_error() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        // `to` has no serde default: an empty allowance must be an explicit
+        // `to = []`, so a forgotten key cannot become the strictest rule.
+        let cfg = write_config(
+            dir.path(),
+            "crawk.toml",
+            "[[check.restrict]]\nfrom = \"cli\"\n",
+        );
+        let modules = module_set(&["cli"]);
+        assert!(RuleSet::load(&cfg, &modules).is_err());
+    }
+
+    #[test]
+    fn restrict_coexists_with_deny_and_layers() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let cfg = write_config(
+            dir.path(),
+            "crawk.toml",
+            "[[check.layers]]\nname = \"app\"\norder = [\"cli\", \"analyzer\"]\n\
+             [[check.deny]]\nfrom = \"cli\"\nto = \"analyzer\"\n\
+             [[check.restrict]]\nfrom = \"cli\"\nto = [\"analyzer\"]\n",
+        );
+        let modules = module_set(&["cli", "analyzer"]);
+        let rules = RuleSet::load(&cfg, &modules).expect("load");
+        assert_eq!(rules.layers.len(), 1);
+        assert_eq!(rules.deny.len(), 1);
+        assert_eq!(rules.restrict.len(), 1);
     }
 
     #[test]

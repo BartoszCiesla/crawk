@@ -231,6 +231,7 @@ rules::eval::tests
  - crate::rules::DenyRule
  - crate::rules::LayerRule
  - crate::rules::ModulePattern
+ - crate::rules::RestrictRule
  - crate::rules::RuleSet
  - crate::rules::ViolationKind
 rules::load
@@ -242,6 +243,7 @@ rules::load
  - crate::rules::InitOutcome
  - crate::rules::LayerRule
  - crate::rules::ModulePattern
+ - crate::rules::RestrictRule
  - crate::rules::RuleSet
  - crate::rules::is_parent_child_cycle
 rules::load::tests
@@ -256,6 +258,7 @@ rules::tests
  - crate::rules::LayerPos
  - crate::rules::LayerRule
  - crate::rules::ModulePattern
+ - crate::rules::RestrictRule
  - crate::rules::RuleSet
  - crate::rules::Violation
  - crate::rules::ViolationKind

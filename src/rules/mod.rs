@@ -7,12 +7,18 @@
 //! malformed config, unknown module in a rule) surface as
 //! [`AnalysisError`](crate::AnalysisError).
 //!
-//! Three check categories are supported: `layers` (named layer groups, each an
+//! Four check categories are supported: `layers` (named layer groups, each an
 //! independent total order over a subtree of the module hierarchy; groups may
 //! overlap — a module that falls under several groups is checked in each),
-//! `deny` (an explicit ban on edges matching a `from` -> `to` pattern pair), and
+//! `deny` (an explicit ban on edges matching a `from` -> `to` pattern pair),
+//! `restrict` (an allow-list of dependency targets for a module scope), and
 //! `deny-cycles` (a ban on dependency loops, with an [`AllowedCycle`] list that
 //! grandfathers the loops a crate already has).
+//!
+//! `restrict` is the complement of `deny`: deny blacklists specific edges,
+//! restrict whitelists everything an edge leaving its scope may point at. Both
+//! only *add* violations — neither can wave an edge through the other's check —
+//! so they compose without any precedence rules.
 //!
 //! The config is **required**: a *missing* file is an operational error (so a
 //! typo fails CI rather than passing silently), whereas an *empty* `[check]`
@@ -181,6 +187,32 @@ impl DenyRule {
     }
 }
 
+/// An allow-list of dependency targets: a module matching `from` may depend
+/// only on modules matching one of `to`. Patterns match the subtree only with
+/// an explicit `::*`. Edges staying inside the rule's own scope — the target
+/// also matches `from`, or one endpoint is the other's ancestor — are exempt.
+#[derive(Debug, Clone)]
+pub(crate) struct RestrictRule {
+    pub(crate) from: ModulePattern,
+    pub(crate) to: Vec<ModulePattern>,
+}
+
+impl RestrictRule {
+    /// Human-readable rule citation for diagnostics and violation reports.
+    ///
+    /// Quotes the full allowance — `restrict format::* -> [lib, graph::*]` — so
+    /// a CI log says what *was* allowed without a trip to the config file.
+    pub(crate) fn display(&self) -> String {
+        let targets = self
+            .to
+            .iter()
+            .map(ModulePattern::pattern_display)
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!("restrict {} -> [{targets}]", self.from.pattern_display())
+    }
+}
+
 /// Is this loop just a module tangled with its own descendants?
 ///
 /// A parent that re-exports a submodule while the child reaches back with
@@ -250,12 +282,13 @@ pub(crate) struct LayerPos {
 
 /// A validated set of architectural rules, ready to evaluate.
 ///
-/// Construct via [`RuleSet::load`]. Holds `layers` groups, `deny` rules, and the
-/// cycle policy (`deny_cycles` plus its allowlist).
+/// Construct via [`RuleSet::load`]. Holds `layers` groups, `deny` rules,
+/// `restrict` rules, and the cycle policy (`deny_cycles` plus its allowlist).
 #[derive(Debug, Clone, Default)]
 pub(crate) struct RuleSet {
     layers: Vec<LayerRule>,
     deny: Vec<DenyRule>,
+    restrict: Vec<RestrictRule>,
     /// Loops that pass despite `deny_cycles`.
     allow_cycles: Vec<AllowedCycle>,
     strict_layers: bool,
@@ -303,21 +336,30 @@ pub enum ViolationKind {
     /// Declared before `Layer` so `DENY` rows sort first in reports (the
     /// derived `Ord` on [`Violation`] compares `kind` first).
     Deny,
+    /// A `restrict` rule matched the edge (target outside the allow-list).
+    ///
+    /// Declared between `Deny` and `Layer`: both bans on a concrete edge sort
+    /// together, the more specific one (a single `from` -> `to` pair) first.
+    Restrict,
     /// A `layers` ordering was broken (dependency points "upward").
     Layer,
     /// The edge takes part in a dependency cycle banned by `deny-cycles`.
     ///
-    /// Declared last so `CYCLE` rows sort after `DENY` and `LAYER`.
+    /// Declared last so `CYCLE` rows sort after `DENY`, `RESTRICT` and `LAYER`.
     Cycle,
 }
 
 impl Display for ViolationKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        match self {
-            Self::Deny => f.write_str("DENY"),
-            Self::Layer => f.write_str("LAYER"),
-            Self::Cycle => f.write_str("CYCLE"),
-        }
+        // `pad`, not `write_str`: report rendering aligns the kind column with
+        // a width spec (`{:<8}`), which only `pad` honors.
+        let name = match self {
+            Self::Deny => "DENY",
+            Self::Restrict => "RESTRICT",
+            Self::Layer => "LAYER",
+            Self::Cycle => "CYCLE",
+        };
+        f.pad(name)
     }
 }
 
@@ -426,6 +468,37 @@ mod tests {
     fn allowed_cycle_display_lists_modules_alphabetically() {
         let entry = allowed(&["gamma", "alpha"]);
         assert_eq!(entry.display(), "allow-cycle [alpha, gamma]");
+    }
+
+    fn restrict(from: &str, to: &[&str]) -> RestrictRule {
+        RestrictRule {
+            from: ModulePattern::parse(from),
+            to: to
+                .iter()
+                .map(|target| ModulePattern::parse(target))
+                .collect(),
+        }
+    }
+
+    #[test]
+    fn restrict_display_cites_a_single_target() {
+        assert_eq!(
+            restrict("format::*", &["lib"]).display(),
+            "restrict format::* -> [lib]"
+        );
+    }
+
+    #[test]
+    fn restrict_display_cites_the_full_allowance() {
+        assert_eq!(
+            restrict("format::*", &["lib", "graph::*"]).display(),
+            "restrict format::* -> [lib, graph::*]"
+        );
+    }
+
+    #[test]
+    fn restrict_display_with_empty_allowance() {
+        assert_eq!(restrict("web::*", &[]).display(), "restrict web::* -> []");
     }
 
     #[test]

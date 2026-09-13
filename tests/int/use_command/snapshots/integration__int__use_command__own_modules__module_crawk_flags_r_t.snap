@@ -94,6 +94,7 @@ crate::rules::*
 crate::rules::ViolationKind::Cycle
 crate::rules::ViolationKind::Deny
 crate::rules::ViolationKind::Layer
+crate::rules::ViolationKind::Restrict
 crate::rules::eval::evaluate
 crate::rules::evaluate
 crate::rules::load::*
@@ -101,8 +102,8 @@ crate::rules::load::{resolve_config_path, scaffold_config}
 crate::rules::resolve_config_path
 crate::rules::scaffold_config
 crate::rules::{AllowedCycle, CheckReport, LayerPos, RuleSet, Violation, ViolationKind, is_parent_child_cycle}
-crate::rules::{AllowedCycle, DenyRule, InitOutcome, LayerRule, ModulePattern, RuleSet, is_parent_child_cycle}
-crate::rules::{AllowedCycle, DenyRule, LayerRule, ModulePattern, RuleSet, ViolationKind}
+crate::rules::{AllowedCycle, DenyRule, InitOutcome, LayerRule, ModulePattern, RestrictRule, RuleSet, is_parent_child_cycle}
+crate::rules::{AllowedCycle, DenyRule, LayerRule, ModulePattern, RestrictRule, RuleSet, ViolationKind}
 crate::rules::{CheckOptions, CheckReport, InitOutcome, Violation, ViolationKind}
 crate::rules::{self, CheckOptions, CheckReport, InitOutcome, RuleSet}
 crate::utils::*
