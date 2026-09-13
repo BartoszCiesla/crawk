@@ -1,0 +1,7 @@
+# A restrict allowance covering every outbound edge of `cli` (cli -> analyzer
+# directly, cli -> web::repo via the `web::*` subtree pattern), so the run is
+# clean (exit 0).
+
+[[check.restrict]]
+from = "cli"
+to = ["analyzer", "web::*"]

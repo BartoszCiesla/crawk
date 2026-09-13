@@ -1,0 +1,19 @@
+---
+source: tests/int/check_command/restrict.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/check
+    - check
+    - "-c"
+    - fixtures/check/rules_restrict_intersect.toml
+---
+success: false
+exit_code: 1
+----- stdout -----
+crawk check: 1 violation
+
+  RESTRICT cli -> web::repo   (rule: restrict cli -> [analyzer])
+
+----- stderr -----

@@ -1,0 +1,7 @@
+# A restrict allowance missing one real edge: cli -> web::repo falls outside
+# `to = ["analyzer"]` → one RESTRICT violation citing the full allowance
+# (exit 1).
+
+[[check.restrict]]
+from = "cli"
+to = ["analyzer"]

@@ -1,0 +1,8 @@
+# An empty allowance closes `web` off from the rest of the crate. Every real
+# web edge (web::api -> web::service, web::service -> web::repo) stays inside
+# the `from` scope — siblings included, not just parent/child — so nothing is
+# reported (exit 0).
+
+[[check.restrict]]
+from = "web::*"
+to = []

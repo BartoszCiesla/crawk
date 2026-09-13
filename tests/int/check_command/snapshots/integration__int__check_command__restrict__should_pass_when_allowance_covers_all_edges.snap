@@ -1,0 +1,16 @@
+---
+source: tests/int/check_command/restrict.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/check
+    - check
+    - "-c"
+    - fixtures/check/rules_restrict_clean.toml
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+----- stderr -----

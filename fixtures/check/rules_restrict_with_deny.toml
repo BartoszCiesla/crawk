@@ -1,0 +1,12 @@
+# Restrict and deny compose by adding violations: the restrict allowance
+# permits the whole `web::*` subtree, the deny rule carves web::repo back out
+# of it. The edge cli -> web::repo passes restrict but breaks deny → one DENY
+# row, zero RESTRICT rows (exit 1).
+
+[[check.restrict]]
+from = "cli"
+to = ["analyzer", "web::*"]
+
+[[check.deny]]
+from = "cli"
+to = "web::repo"

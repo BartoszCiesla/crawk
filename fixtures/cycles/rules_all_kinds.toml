@@ -1,0 +1,20 @@
+# All four violation kinds from a single run: the edge alpha -> beta breaks a
+# deny rule, an empty restrict allowance, and a deliberately inverted layer
+# order, while the alpha -> beta -> gamma loop adds three CYCLE rows. Pins the
+# full report order (DENY, RESTRICT, LAYER, CYCLE) and the kind-column
+# alignment of a mixed report (exit 1).
+
+[check]
+deny-cycles = true
+
+[[check.layers]]
+name = "loop"
+order = ["beta", "alpha"]
+
+[[check.deny]]
+from = "alpha"
+to = "beta"
+
+[[check.restrict]]
+from = "alpha"
+to = []

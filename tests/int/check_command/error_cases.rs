@@ -22,6 +22,29 @@ fn should_error_on_unknown_module_in_deny() {
     );
 }
 
+// A restrict rule whose `from` names a non-existent module → UnknownRuleModule
+// (exit 2).
+#[test]
+fn should_error_on_unknown_module_in_restrict_from() {
+    assert_cmd_snapshot!(
+        crawk_check()
+            .arg("-c")
+            .arg("fixtures/check/rules_restrict_bad_from.toml")
+    );
+}
+
+// A restrict rule whose `to` names a non-existent module → UnknownRuleModule
+// (exit 2). A separate config from the bad-`from` case: validation stops at
+// the first error, so one file cannot exercise both paths.
+#[test]
+fn should_error_on_unknown_module_in_restrict_to() {
+    assert_cmd_snapshot!(
+        crawk_check()
+            .arg("-c")
+            .arg("fixtures/check/rules_restrict_bad_to.toml")
+    );
+}
+
 // An allowlist entry naming a non-existent module → UnknownRuleModule (exit 2).
 // Entries hold exact module names, so the typo cannot be a "pattern that matches
 // nothing" — it is always a mistake.

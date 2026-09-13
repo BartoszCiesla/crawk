@@ -57,6 +57,34 @@ fn satisfied_deny_is_zero() {
 }
 
 #[test]
+fn restricted_edge_is_one() {
+    assert_eq!(
+        exit_code(&["-c", "fixtures/check/rules_restrict_violated.toml"]),
+        Some(1)
+    );
+}
+
+#[test]
+fn satisfied_restrict_is_zero() {
+    assert_eq!(
+        exit_code(&["-c", "fixtures/check/rules_restrict_clean.toml"]),
+        Some(0)
+    );
+}
+
+#[test]
+fn unknown_module_in_restrict_is_two() {
+    assert_eq!(
+        exit_code(&["-c", "fixtures/check/rules_restrict_bad_from.toml"]),
+        Some(2)
+    );
+    assert_eq!(
+        exit_code(&["-c", "fixtures/check/rules_restrict_bad_to.toml"]),
+        Some(2)
+    );
+}
+
+#[test]
 fn unknown_module_in_deny_is_two() {
     assert_eq!(
         exit_code(&["-c", "fixtures/check/rules_deny_bad_module.toml"]),

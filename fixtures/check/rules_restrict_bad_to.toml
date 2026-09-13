@@ -1,0 +1,7 @@
+# A restrict rule whose `to` names a non-existent module → UnknownRuleModule
+# (exit 2). A separate config from the bad-`from` case: validation stops at
+# the first error, so one file cannot exercise both paths.
+
+[[check.restrict]]
+from = "cli"
+to = ["webb"]

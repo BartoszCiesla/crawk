@@ -21,6 +21,7 @@ int::check_command::exit_codes
 int::check_command::init
 int::check_command::layers
 int::check_command::overview
+int::check_command::restrict
 int::command
 int::deps_command
 int::deps_command::basic

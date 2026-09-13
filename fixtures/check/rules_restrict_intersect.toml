@@ -1,0 +1,11 @@
+# Two rules on the same `from` intersect their allowances rather than the
+# narrower one overriding: cli -> web::repo satisfies the broad rule but
+# breaks the narrow one → exactly one RESTRICT violation (exit 1).
+
+[[check.restrict]]
+from = "cli"
+to = ["analyzer", "web::*"]
+
+[[check.restrict]]
+from = "cli"
+to = ["analyzer"]

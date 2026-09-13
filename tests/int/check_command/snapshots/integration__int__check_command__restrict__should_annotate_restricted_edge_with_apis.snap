@@ -1,0 +1,20 @@
+---
+source: tests/int/check_command/restrict.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/check
+    - check
+    - "-c"
+    - fixtures/check/rules_restrict_violated.toml
+    - "--show-apis"
+---
+success: false
+exit_code: 1
+----- stdout -----
+crawk check: 1 violation
+
+  RESTRICT cli -> web::repo [RepoType]   (rule: restrict cli -> [analyzer])
+
+----- stderr -----

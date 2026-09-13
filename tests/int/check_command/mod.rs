@@ -7,6 +7,7 @@ mod exit_codes;
 mod init;
 mod layers;
 mod overview;
+mod restrict;
 
 /// Build a throwaway crate with no `crawk.toml`/`.crawk.toml`, so `--init` can
 /// succeed. A single `src/lib.rs` (no submodules) keeps the scaffolded
