@@ -3,13 +3,14 @@
 ## Overview
 
 `crawk check` enforces an **architectural contract** on a crate's internal
-module dependencies. The contract is declared in a config file using three rule
+module dependencies. The contract is declared in a config file using four rule
 kinds — named *layer groups* (`[[check.layers]]`: ordered stacks of modules
 where a lower layer must not depend on a higher one), *deny rules*
-(`[[check.deny]]`: explicit bans on a specific `from -> to` edge), and the
-*cycle ban* (`deny-cycles`: no dependency loops, with an allowlist for the ones
-a crate already has) — and `check` verifies every inter-module dependency edge
-against all of them in one pass. It is built for CI: a clean crate exits `0`, a
+(`[[check.deny]]`: explicit bans on a specific `from -> to` edge), *restrict
+rules* (`[[check.restrict]]`: allow-lists that close a module scope down to a
+named set of targets), and the *cycle ban* (`deny-cycles`: no dependency loops,
+with an allowlist for the ones a crate already has) — and `check` verifies
+every inter-module dependency edge against all of them in one pass. It is built for CI: a clean crate exits `0`, a
 contract breach exits `1`, and an operational problem exits `2`.
 
 The config file is **required**, by design. A linter without a contract has
@@ -81,6 +82,7 @@ ignored).
 |----------------------------|--------------------------|---------|---------------------------------------------------------------------------|
 | `layers`                   | array of layer groups    | `[]`    | The `[[check.layers]]` groups to enforce (see below).                     |
 | `deny`                     | array of deny rules      | `[]`    | The `[[check.deny]]` edge bans to enforce (see below).                    |
+| `restrict`                 | array of restrict rules  | `[]`    | The `[[check.restrict]]` target allow-lists to enforce (see below).       |
 | `allow-cycle`              | array of cycle allowlist | `[]`    | Loops that pass despite `deny-cycles` (see below).                        |
 | `strict-layers`            | bool                     | `false` | Require every module in the crate to belong to at least one group.        |
 | `deny-same-layer`          | bool                     | `false` | **Default** same-layer policy for all groups; each group may override it. |
@@ -121,6 +123,21 @@ Each `[[check.deny]]` entry bans one dependency edge:
 
 Both keys are required; any other key is rejected. Pattern semantics differ
 from `layers` — see [Deny Rules](#deny-rules--checkdeny) below.
+
+### `[[check.restrict]]` sub-table
+
+Each `[[check.restrict]]` entry allow-lists the dependency targets of one
+module scope:
+
+| Key    | Type             | Meaning                                                         |
+|--------|------------------|------------------------------------------------------------------|
+| `from` | string           | Pattern for the scope whose outbound edges are restricted.      |
+| `to`   | array of strings | Patterns for the allowed targets. **May be empty** (`to = []`). |
+
+Both keys are required — an empty allowance must be spelled `to = []`
+explicitly; a missing `to` is a parse error, so a forgotten key cannot silently
+become the strictest possible rule. Pattern semantics match `deny`; see
+[Restrict Rules](#restrict-rules--checkrestrict) below.
 
 ### `[[check.allow-cycle]]` sub-table
 
@@ -246,8 +263,8 @@ fit a stack, like "the CLI must never touch the web subsystem".
 
 Deny rules are evaluated **independently of layers** (and of each other): every
 dependency edge is tested against every deny rule, and each rule that matches
-yields its own violation. In the report, `DENY` rows sort **before** `LAYER`
-rows.
+yields its own violation. In the report, `DENY` rows sort first — before
+`RESTRICT` and `LAYER` rows.
 
 ### Pattern semantics
 
@@ -304,6 +321,114 @@ symbols, same as for layer violations:
   DENY cli -> web::repo [RepoType]   (rule: deny cli -> web::*)
 ```
 
+## Restrict Rules — `[[check.restrict]]`
+
+A restrict rule is an **allow-list of dependency targets**: a module matching
+`from` may depend only on modules matching one of the `to` patterns. It is the
+complement of `deny` — deny blacklists specific edges and leaves everything
+else open; restrict closes everything and opens only what is listed. Use it
+where a blacklist cannot keep up: a scope whose legal targets are few and
+stable while the rest of the crate keeps growing. A module added tomorrow is
+outside the allowance **by default** — the same ratchet direction as the cycle
+allowlist.
+
+Restrict rules are evaluated independently of every other rule kind: each
+dependency edge is tested against each restrict rule whose `from` matches the
+edge's source, and every rule whose allowance misses the target yields its own
+violation. In the report, `RESTRICT` rows sort after `DENY` and before `LAYER`.
+
+### Pattern semantics
+
+Same as `deny` — subtree matching is **opt-in** via an explicit `::*` suffix,
+a bare path matches exactly one module, and a lone `"*"` matches every module.
+
+**Mind the exact-match trap in `to`.** `to = ["graph"]` allows exactly the
+module `graph` and nothing under it — the day `graph` is split into
+submodules, an edge to `graph::edges` starts failing the gate even though
+nothing architecturally changed. A target that should survive such a split
+belongs in the list as `"graph::*"`. Bare names in `to` are for genuine
+single-module targets (a facade like `lib`, a leaf like `version`).
+
+### Edges inside the scope are exempt
+
+A restrict rule guards the **boundary** of its scope, not its inside. Two kinds
+of edges are exempt from every restrict rule:
+
+- an edge whose target also matches the rule's `from` — sibling modules of one
+  subsystem talking to each other (`web::api -> web::service` under
+  `from = "web::*"`);
+- an edge between a module and its own descendant, in either direction
+  (`cli -> cli::validation` under the exact `from = "cli"`).
+
+So a rule never has to list its own subtree in `to`. If the *internal*
+structure of the scope needs policing, that is a job for a `layers` group or a
+`deny` rule over the same modules, not for restrict.
+
+### The empty allowance — `to = []`
+
+An empty list is legal and means "**nothing beyond my own scope**": every
+outbound edge is a violation, while the scope-internal edges above stay
+exempt. It is the strongest form of the rule — a subsystem sealed off from the
+rest of the crate — and deliberately explicit: `to = []` must be written out,
+a missing `to` key is a parse error.
+
+### Overlapping rules intersect
+
+Two restrict rules covering the same module **intersect** their allowances —
+an edge must satisfy every rule that matches its source, and each rule it
+breaks reports its own row. The narrower rule does not override the broader
+one. (The "most specific pattern wins" behavior exists only *inside* a single
+layer group's `order`; it does not apply here.)
+
+### Composing with `deny` — carving a hole
+
+Restrict and deny only ever **add** violations; neither can wave an edge
+through the other's check. That means a deny rule can carve a hole in a
+restrict allowance without any precedence rules:
+
+```toml
+[[check.restrict]]
+from = "rules::*"
+to   = ["graph::*", "module_path", "error"]
+
+[[check.deny]]
+from = "rules::*"
+to   = "graph::edges"
+```
+
+Restrict says "nothing beyond these three targets"; deny adds "and not
+`graph::edges` either". The effective allowance is `graph::*` minus
+`graph::edges` — an edge into `graph::edges` passes restrict but is reported
+by deny.
+
+### Validation
+
+As with `deny`, the `from` pattern and every `to` pattern must reference a
+**real module** in the crate — a pattern matching nothing fails the load with
+exit `2` (`UnknownRuleModule`), catching typos before they silently allow or
+guard nothing. An empty `to` list is not a typo and passes validation.
+
+### Example
+
+```toml
+# cli may depend on analyzer and nothing else outside its own subtree.
+[[check.restrict]]
+from = "cli"
+to = ["analyzer"]
+```
+
+If `cli` also depends on `web::repo`, the run exits `1` and reports:
+
+```
+crawk check: 1 violation
+
+  RESTRICT cli -> web::repo   (rule: restrict cli -> [analyzer])
+```
+
+The violation quotes the **full allowance**, so a CI log says what *was*
+allowed without a trip back to the config file. `-a` / `--show-apis` annotates
+the offending symbols, same as for the other rule kinds.
+
 ## Cycle Rules — `deny-cycles`
 
 `deny-cycles = true` bans **dependency loops**: groups of modules that reach
@@ -324,7 +449,8 @@ crawk check: 3 violations
 The rule text is a **comma list, not an arrow path**: the modules are listed
 alphabetically, not in traversal order, so an arrow would imply a direction the
 list does not carry. The concrete edges are the rows themselves — each one names
-a place the loop could be cut. `CYCLE` rows sort **after** `DENY` and `LAYER`.
+a place the loop could be cut. `CYCLE` rows sort **after** `DENY`, `RESTRICT`
+and `LAYER`.
 
 A cycle edge can break a layer order or a deny rule at the same time; those are
 separate violations of different kinds, and all of them are reported.
@@ -462,7 +588,9 @@ With `-a` / `--show-apis`, each line also lists the API symbols on the edge:
 ```
 
 When several rule kinds fire in one run, the report is grouped by kind: all
-`DENY` rows first, then `LAYER`, then `CYCLE`.
+`DENY` rows first, then `RESTRICT`, then `LAYER`, then `CYCLE`. The kind
+column is padded to the widest kind present in the report, so a mixed report
+stays aligned while a single-kind report keeps a plain single space.
 
 ## Exit Codes
 
