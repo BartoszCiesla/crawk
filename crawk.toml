@@ -17,8 +17,8 @@
 # Note: the lib -> bin direction is not encoded anywhere on purpose — cargo's
 # target separation already guarantees the library cannot depend on the
 # binary's modules, so a rule for it would be dead. The layer groups below each
-# scope to a single target; the bin -> lib direction is covered selectively by
-# the deny rules at the bottom (facade discipline), not by a layer order.
+# scope to a single target; the bin -> lib direction is covered by the restrict
+# allowances at the bottom (facade discipline), not by a layer order.
 
 [check]
 strict-layers = true
@@ -72,36 +72,64 @@ order = [
     "graph::edges",
 ]
 
-# Deny rules pin responsibilities the layer orders cannot express: layers are a
-# total order (any downward edge inside a group passes), and cross-target
-# bin -> lib edges are invisible to the single-target groups above. Subtree
-# matching in deny is opt-in — `foo::*` covers foo AND its submodules, bare
+# The rules below split the work: `restrict` draws the outbound boundary of
+# each bin-target scope (an allow-list — a new lib module is out of a bin
+# scope's reach until somebody lists it), while `deny` pins the point bans on
+# the lib side, where the default deliberately stays open (a new legal
+# internal dependency must not become a config edit on review). Subtree
+# matching is opt-in in both — `foo::*` covers foo AND its submodules, bare
 # `foo` only that exact module — so targets use `::*` to stay covered when a
 # module is later split into submodules. All rules pass on the current graph:
 # they prevent regressions, they do not fix anything.
 
-# -- bin target ---------------------------------------------------------------
-# The bin layer order (main > logger > cli > format) permits these downward
-# edges; responsibilities forbid them.
+# -- bin target: restrict allowances (facade discipline) ----------------------
+# Each bin scope carries its full allowance instead of a deny matrix. A facade
+# import (crawk::Analyzer, re-exported from lib.rs) yields an edge to the
+# synthetic `lib` node — allowed below; a full-path import (crawk::parser::X)
+# yields an edge to the concrete module, which no allowance lists — the facade
+# bypass is caught by default. Edges inside a scope's own subtree are exempt
+# and never listed.
 
-# cli defines and validates arguments (clap derive). Rendering results is
-# format's job, orchestrated by main — cli knowing the output format would
-# invert the main -> (cli | format) flow.
-[[check.deny]]
+# The rendering layer consumes finished results (AnalysisResult,
+# DependencyGraph, CheckReport) through the lib facade — and nothing else.
+# Result types flow through `lib` re-exports, so the facade is the only
+# lib-side contact format needs; the engine (parser / discover / resolve) and
+# the orchestrator (analyzer) are out of reach by omission.
+[[check.restrict]]
+from = "format::*"
+to = ["lib"]
+
+# main orchestrates: parse args (cli), configure logging (logger), call the
+# facade (lib -> Analyzer), render (format), print version metadata. Reaching
+# past the facade would open a second, parallel orchestration path in the
+# binary — the most likely spot for a future shortcut. (Bare `main` is exact
+# by design: children of the bin root are flat top-level modules, so a
+# `main::x` module can never exist.)
+[[check.restrict]]
+from = "main"
+to = ["cli", "format::*", "lib", "logger", "version"]
+
+# cli is pure interface definition (clap derive); its only legal lib-target
+# contact is `version` (--version/help text). Rendering results is format's
+# job, orchestrated by main — even the facade and orchestrator are out of
+# bounds: semantic validation that needs the engine belongs to main.
+[[check.restrict]]
 from = "cli::*"
-to = "format::*"
+to = ["version"]
 
-# logger configures tracing from verbosity flags (hence the legal
-# logger -> cli edge). It must not leak presentation logic into logging
-# infrastructure.
-[[check.deny]]
+# logger configures tracing from verbosity flags — hence the legal
+# logger -> cli edge, and nothing else. It must not leak presentation logic
+# into logging infrastructure.
+[[check.restrict]]
 from = "logger::*"
-to = "format::*"
+to = ["cli"]
 
-# -- lib target ---------------------------------------------------------------
+# -- lib target: deny point bans ----------------------------------------------
 # The lib layer order puts rules and graph above the source engine
 # (parser / discover / resolve), so layers would let them reach down into it.
-# Both must stay pure over already-collected data.
+# Both must stay pure over already-collected data. Deny (not restrict) is
+# deliberate here: lib modules keep the open default, so only the named
+# reaches are banned.
 
 # graph is a pure structure (edges, Tarjan SCC, fan-in, shortest paths) over
 # collected references — no source I/O. Reaching into the engine would end
@@ -140,65 +168,3 @@ to = "resolve::*"
 [[check.deny]]
 from = "parser::*"
 to = "discover::*"
-
-# -- cross-target bin -> lib: facade discipline -------------------------------
-# A facade import (crawk::Analyzer, re-exported from lib.rs) yields an edge to
-# the `lib` node (allowed); a full-path import (crawk::parser::X) yields an
-# edge to the concrete module — exactly the facade bypass these rules catch.
-# Result types (model / reference / error / graph) legally flow through the
-# facade and are deliberately not banned (deny has no allow-list semantics; a
-# full bin x lib matrix would be unmaintainable noise).
-
-# The rendering layer consumes finished results (AnalysisResult,
-# DependencyGraph, CheckReport) through the lib facade, never the source
-# engine directly — resolve reached from format would mean I/O mid-rendering.
-# analyzer is banned too: it is the orchestrator the facade hides, not a
-# result type — a full-path import would weld the bin to lib's internal
-# layout instead of its public contract.
-[[check.deny]]
-from = "format::*"
-to = "analyzer::*"
-
-[[check.deny]]
-from = "format::*"
-to = "discover::*"
-
-[[check.deny]]
-from = "format::*"
-to = "parser::*"
-
-[[check.deny]]
-from = "format::*"
-to = "resolve::*"
-
-# main orchestrates: parse args (cli), call the facade (lib -> Analyzer),
-# render (format). Reaching past Analyzer would open a second, parallel
-# orchestration path in the binary — the most likely spot for a future
-# shortcut. (Bare `main` is exact by design: children of the bin root are flat
-# top-level modules, so a `main::x` module can never exist.)
-[[check.deny]]
-from = "main"
-to = "analyzer::*"
-
-[[check.deny]]
-from = "main"
-to = "parser::*"
-
-[[check.deny]]
-from = "main"
-to = "discover::*"
-
-[[check.deny]]
-from = "main"
-to = "resolve::*"
-
-# cli is pure interface definition; its only legal lib-target contact is
-# `version` (--version/help text). Even the facade and orchestrator are out of
-# bounds — semantic validation that needs the engine belongs to main.
-[[check.deny]]
-from = "cli::*"
-to = "lib"
-
-[[check.deny]]
-from = "cli::*"
-to = "analyzer::*"
