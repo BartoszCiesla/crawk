@@ -14,6 +14,12 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+crate::inline_modules
+crate::nesting::depth
+crate::nesting::level1::depth
+crate::nesting::level1::level2::depth
+
+----- stderr -----
 [32mINFO[39m Running crawk version
 [32mINFO[39m Crate root: fixtures/modules
 [32mINFO[39m Resolving module: 'nesting'
@@ -33,9 +39,3 @@ exit_code: 0
 [32mINFO[39m Analyzing module: nesting::level1::level2::level3 (file: [MODULES]/src/nesting/level1/level2/level3.rs)
 [32mINFO[39m Parsed 'nesting::level1::level2::level3': 3 references from [MODULES]/src/nesting/level1/level2/level3.rs
 [32mINFO[39m Module file: [MODULES]/src/nesting/mod.rs
-crate::inline_modules
-crate::nesting::depth
-crate::nesting::level1::depth
-crate::nesting::level1::level2::depth
-
------ stderr -----

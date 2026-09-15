@@ -12,6 +12,6 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-[33mWARN[39m allow-cycle entries have no effect while deny-cycles is false
 
 ----- stderr -----
+[33mWARN[39m allow-cycle entries have no effect while deny-cycles is false

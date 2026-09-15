@@ -70,6 +70,7 @@ pub(crate) fn configure_tracing(command: &CrawkArgs) -> anyhow::Result<()> {
             .from_env_lossy();
         tracing_subscriber::fmt()
             .with_env_filter(filter)
+            .with_writer(std::io::stderr)
             .event_format(MinimalFormat)
             .init();
     }

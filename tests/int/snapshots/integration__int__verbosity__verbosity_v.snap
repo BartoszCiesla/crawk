@@ -12,6 +12,9 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+crate::nesting
+
+----- stderr -----
 [32mINFO[39m Running crawk version
 [32mINFO[39m Crate root: fixtures/modules
 [32mINFO[39m Resolving module: 'file_module'
@@ -21,6 +24,3 @@ exit_code: 0
 [32mINFO[39m Analyzing module: file_module (file: [MODULES]/src/file_module.rs)
 [32mINFO[39m Parsed 'file_module': 1 references from [MODULES]/src/file_module.rs
 [32mINFO[39m Module file: [MODULES]/src/file_module.rs
-crate::nesting
-
------ stderr -----

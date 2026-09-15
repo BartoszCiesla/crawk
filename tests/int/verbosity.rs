@@ -86,6 +86,32 @@ fn should_run_with_verbosity_recursive() {
     });
 }
 
+// Pins the stream contract directly (not via snapshot): data belongs to
+// stdout, diagnostics — including everything routed through `tracing` — to
+// stderr. Guards against the fmt subscriber's stdout default sneaking back in.
+#[test]
+fn logs_go_to_stderr_not_stdout() {
+    let output = crawk_modules()
+        .arg("-v")
+        .arg("use")
+        .arg("nesting")
+        .output()
+        .expect("process should run");
+
+    assert!(output.status.success(), "crawk should succeed with -v");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        !stdout.contains("INFO"),
+        "log lines must not pollute stdout, got: {stdout}"
+    );
+    assert!(
+        stderr.contains("INFO"),
+        "log lines should land on stderr, got: {stderr}"
+    );
+}
+
 // ============================================================================
 // Log file (--log-file / -l)
 // ============================================================================
