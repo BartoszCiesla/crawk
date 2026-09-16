@@ -19,4 +19,4 @@ crawk check: 3 violations
   CYCLE gamma -> alpha   (rule: cycle: alpha, beta, gamma)
 
 ----- stderr -----
-[33mWARN[39m allow-cycle [alpha, beta] covers no detected cycle; remove or update it
+WARN allow-cycle [alpha, beta] covers no detected cycle; remove or update it

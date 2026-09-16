@@ -14,4 +14,4 @@ exit_code: 0
 ----- stdout -----
 
 ----- stderr -----
-[33mWARN[39m allow-cycle entries have no effect while deny-cycles is false
+WARN allow-cycle entries have no effect while deny-cycles is false

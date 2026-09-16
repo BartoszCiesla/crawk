@@ -17,5 +17,7 @@ exit_code: 0
 ----- stdout -----
 logger
  - crate::cli::CrawkArgs
+logger::tests
+ - crate::logger::use_ansi_colors
 
 ----- stderr -----

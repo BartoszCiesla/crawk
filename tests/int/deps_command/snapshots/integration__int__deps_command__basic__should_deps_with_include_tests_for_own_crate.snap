@@ -76,6 +76,7 @@ lib -> model
 lib -> reference
 lib -> rules
 logger -> cli
+logger::tests -> logger
 main -> cli
 main -> format
 main -> format::check_cmd

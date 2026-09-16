@@ -4,7 +4,7 @@ info:
   program: crawk
   args:
     - "-p"
-    - /tmp/.tmprgy1I3
+    - /tmp/.tmpZ1ReY1
     - use
     - "main::tool::sub"
     - "-t"
@@ -14,4 +14,4 @@ exit_code: 0
 ----- stdout -----
 
 ----- stderr -----
-[33mWARN[39m crate-root module discovery failed during bare-path top-up for 'tool::sub': Failed to parse file '[ROOT]/src/lib.rs': cannot parse string into token stream
+WARN crate-root module discovery failed during bare-path top-up for 'tool::sub': Failed to parse file '[ROOT]/src/lib.rs': cannot parse string into token stream

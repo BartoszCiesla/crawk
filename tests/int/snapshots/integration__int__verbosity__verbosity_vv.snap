@@ -15,23 +15,23 @@ exit_code: 0
 crate::nesting
 
 ----- stderr -----
-[32mINFO[39m Running crawk version
-[32mINFO[39m Crate root: fixtures/modules
-[32mINFO[39m Resolving module: 'file_module'
-[34mDEBUG[39m 'file_module' found as [MODULES]/src/file_module.rs
-[32mINFO[39m Module tree: 'file_module' → [MODULES]/src/file_module.rs, recursive=false
-[34mDEBUG[39m Cache miss: [MODULES]/src/lib.rs
-[34mDEBUG[39m Resolved module 'file_module' from memo
-[32mINFO[39m Module tree: 'file_module' → [MODULES]/src/file_module.rs, recursive=true
-[34mDEBUG[39m Cache hit: [MODULES]/src/lib.rs
-[34mDEBUG[39m Cache miss: [MODULES]/src/file_module.rs
-[34mDEBUG[39m File root: 'file_module' → 'file_module' (file: [MODULES]/src/file_module.rs)
-[32mINFO[39m File root map: 1 files for 1 modules
-[32mINFO[39m Analyzing module: file_module (file: [MODULES]/src/file_module.rs)
-[34mDEBUG[39m Cache hit: [MODULES]/src/file_module.rs
-[32mINFO[39m Parsed 'file_module': 1 references from [MODULES]/src/file_module.rs
-[34mDEBUG[39m Found reference: crate::nesting
-[34mDEBUG[39m Processing module: file_module
-[34mDEBUG[39m Found crate reference: crate::nesting
-[34mDEBUG[39m Processing module: file_module complete, found 0 dependencies
-[32mINFO[39m Module file: [MODULES]/src/file_module.rs
+INFO Running crawk version
+INFO Crate root: fixtures/modules
+INFO Resolving module: 'file_module'
+DEBUG 'file_module' found as [MODULES]/src/file_module.rs
+INFO Module tree: 'file_module' → [MODULES]/src/file_module.rs, recursive=false
+DEBUG Cache miss: [MODULES]/src/lib.rs
+DEBUG Resolved module 'file_module' from memo
+INFO Module tree: 'file_module' → [MODULES]/src/file_module.rs, recursive=true
+DEBUG Cache hit: [MODULES]/src/lib.rs
+DEBUG Cache miss: [MODULES]/src/file_module.rs
+DEBUG File root: 'file_module' → 'file_module' (file: [MODULES]/src/file_module.rs)
+INFO File root map: 1 files for 1 modules
+INFO Analyzing module: file_module (file: [MODULES]/src/file_module.rs)
+DEBUG Cache hit: [MODULES]/src/file_module.rs
+INFO Parsed 'file_module': 1 references from [MODULES]/src/file_module.rs
+DEBUG Found reference: crate::nesting
+DEBUG Processing module: file_module
+DEBUG Found crate reference: crate::nesting
+DEBUG Processing module: file_module complete, found 0 dependencies
+INFO Module file: [MODULES]/src/file_module.rs

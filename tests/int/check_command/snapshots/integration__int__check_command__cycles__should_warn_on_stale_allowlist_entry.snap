@@ -14,4 +14,4 @@ exit_code: 0
 ----- stdout -----
 
 ----- stderr -----
-[33mWARN[39m allow-cycle [delta, standalone] (untangled in #2) covers no detected cycle; remove or update it
+WARN allow-cycle [delta, standalone] (untangled in #2) covers no detected cycle; remove or update it

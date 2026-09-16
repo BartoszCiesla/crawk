@@ -112,6 +112,31 @@ fn logs_go_to_stderr_not_stdout() {
     );
 }
 
+// Pins the colour contract: captured stderr is not a terminal, so console
+// log output must be free of ANSI escapes. Guards the TTY/NO_COLOR gate
+// against unconditional colouring sneaking back in.
+#[test]
+fn piped_logs_carry_no_ansi_escapes() {
+    let output = crawk_modules()
+        .arg("-v")
+        .arg("use")
+        .arg("nesting")
+        .output()
+        .expect("process should run");
+
+    assert!(output.status.success(), "crawk should succeed with -v");
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("INFO"),
+        "expected log lines on stderr, got: {stderr}"
+    );
+    assert!(
+        !stderr.contains('\u{1b}'),
+        "piped stderr must not contain ANSI escapes, got: {stderr:?}"
+    );
+}
+
 // ============================================================================
 // Log file (--log-file / -l)
 // ============================================================================

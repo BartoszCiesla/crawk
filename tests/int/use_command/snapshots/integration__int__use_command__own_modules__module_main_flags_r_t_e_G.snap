@@ -53,6 +53,7 @@ crate::format::use_cmd::render_grouped
 crate::format::why_cmd::render_grouped
 crate::format::why_cmd::render_plain
 crate::logger::configure_tracing
+crate::logger::use_ansi_colors
 crawk::AnalysisOptions
 crawk::AnalysisResult
 crawk::Analyzer

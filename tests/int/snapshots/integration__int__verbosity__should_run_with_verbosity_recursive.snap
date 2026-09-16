@@ -20,22 +20,22 @@ crate::nesting::level1::depth
 crate::nesting::level1::level2::depth
 
 ----- stderr -----
-[32mINFO[39m Running crawk version
-[32mINFO[39m Crate root: fixtures/modules
-[32mINFO[39m Resolving module: 'nesting'
-[32mINFO[39m Module tree: 'nesting' → [MODULES]/src/nesting/mod.rs, recursive=true
-[32mINFO[39m Found submodule: 'nesting::level1' → [MODULES]/src/nesting/level1/mod.rs
-[32mINFO[39m Found submodule: 'nesting::level1::level2' → [MODULES]/src/nesting/level1/level2/mod.rs
-[32mINFO[39m Found submodule: 'nesting::level1::level2::level3' → [MODULES]/src/nesting/level1/level2/level3.rs
-[32mINFO[39m Resolving module: 'nesting::level1'
-[32mINFO[39m Resolving module: 'nesting::level1::level2'
-[32mINFO[39m File root map: 4 files for 4 modules
-[32mINFO[39m Analyzing module: nesting (file: [MODULES]/src/nesting/mod.rs)
-[32mINFO[39m Parsed 'nesting': 1 references from [MODULES]/src/nesting/mod.rs
-[32mINFO[39m Analyzing module: nesting::level1 (file: [MODULES]/src/nesting/level1/mod.rs)
-[32mINFO[39m Parsed 'nesting::level1': 1 references from [MODULES]/src/nesting/level1/mod.rs
-[32mINFO[39m Analyzing module: nesting::level1::level2 (file: [MODULES]/src/nesting/level1/level2/mod.rs)
-[32mINFO[39m Parsed 'nesting::level1::level2': 1 references from [MODULES]/src/nesting/level1/level2/mod.rs
-[32mINFO[39m Analyzing module: nesting::level1::level2::level3 (file: [MODULES]/src/nesting/level1/level2/level3.rs)
-[32mINFO[39m Parsed 'nesting::level1::level2::level3': 3 references from [MODULES]/src/nesting/level1/level2/level3.rs
-[32mINFO[39m Module file: [MODULES]/src/nesting/mod.rs
+INFO Running crawk version
+INFO Crate root: fixtures/modules
+INFO Resolving module: 'nesting'
+INFO Module tree: 'nesting' → [MODULES]/src/nesting/mod.rs, recursive=true
+INFO Found submodule: 'nesting::level1' → [MODULES]/src/nesting/level1/mod.rs
+INFO Found submodule: 'nesting::level1::level2' → [MODULES]/src/nesting/level1/level2/mod.rs
+INFO Found submodule: 'nesting::level1::level2::level3' → [MODULES]/src/nesting/level1/level2/level3.rs
+INFO Resolving module: 'nesting::level1'
+INFO Resolving module: 'nesting::level1::level2'
+INFO File root map: 4 files for 4 modules
+INFO Analyzing module: nesting (file: [MODULES]/src/nesting/mod.rs)
+INFO Parsed 'nesting': 1 references from [MODULES]/src/nesting/mod.rs
+INFO Analyzing module: nesting::level1 (file: [MODULES]/src/nesting/level1/mod.rs)
+INFO Parsed 'nesting::level1': 1 references from [MODULES]/src/nesting/level1/mod.rs
+INFO Analyzing module: nesting::level1::level2 (file: [MODULES]/src/nesting/level1/level2/mod.rs)
+INFO Parsed 'nesting::level1::level2': 1 references from [MODULES]/src/nesting/level1/level2/mod.rs
+INFO Analyzing module: nesting::level1::level2::level3 (file: [MODULES]/src/nesting/level1/level2/level3.rs)
+INFO Parsed 'nesting::level1::level2::level3': 3 references from [MODULES]/src/nesting/level1/level2/level3.rs
+INFO Module file: [MODULES]/src/nesting/mod.rs
