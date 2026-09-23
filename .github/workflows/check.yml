@@ -24,11 +24,11 @@ jobs:
           persist-credentials: false
           fetch-depth: 0 # Full history needed for base..head diff.
       - name: Install Rust toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
         with:
           components: clippy, rustfmt
       - name: Install cargo tools
-        uses: taiki-e/install-action@1ed6d7be6168f6c9046541087ff549b6bc581fdf # v2.87.2
+        uses: taiki-e/install-action@26e9283f268b880168bdbd2c545dfcd60ec2c6ab # v2.87.13
         with:
           tool: cargo-sort, cargo-machete, cargo-sort, cargo-nextest, cargo-deny, cargo-llvm-cov, cargo-crap
       - name: Run pre-commit checks
@@ -54,11 +54,11 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Rust toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
         with:
           components: clippy, rustfmt
       - name: Install cargo tools
-        uses: taiki-e/install-action@1ed6d7be6168f6c9046541087ff549b6bc581fdf # v2.87.2
+        uses: taiki-e/install-action@26e9283f268b880168bdbd2c545dfcd60ec2c6ab # v2.87.13
         with:
           tool: cargo-sort, cargo-machete, cargo-sort, cargo-nextest, cargo-deny, cargo-llvm-cov, cargo-crap
       - name: Run pre-commit checks
@@ -88,7 +88,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Rust toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
         with:
           target: ${{ matrix.target }}
       - name: Install musl tools
