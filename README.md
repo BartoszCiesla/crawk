@@ -16,6 +16,10 @@ Dependency crawler for Rust. It crawls so you don't have to untangle
 - **Dependency explanation**: See why one module depends on another — lists concrete references that create the dependency edge.
 - **Architectural checks**: Enforce a layered-architecture contract (and banned edges) on internal module dependencies, CI-friendly with dedicated exit codes.
 
+All analysis is syntactic: crawk reads source, it does not compile or expand
+macros. See [docs/dependency-model.md](docs/dependency-model.md) for what
+counts as a dependency, how paths map to modules, and what crawk cannot see.
+
 ## Installation
 
 ### Cargo
