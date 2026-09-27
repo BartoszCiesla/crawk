@@ -108,7 +108,8 @@ pub(crate) enum CrawkCommands {
     /// MODULE_PATH: use `::` separated segments without `crate::` prefix.
     ///   e.g. "utils", "parser::visitor"
     ///
-    /// Valid root targets: "lib" (library), "main" or binary name (e.g. "crawk").
+    /// Valid root targets: "lib" (library) or a binary target's source file
+    /// stem (e.g. "main" for src/main.rs) — not the binary's name.
     /// Any submodule path within those targets is also accepted.
     /// Note: references from binary targets use the package name as prefix
     /// (e.g. "crawk::") rather than "crate::".
