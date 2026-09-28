@@ -22,13 +22,13 @@ pkg-fmt = "tgz"
 anyhow = "1.0.104"
 cargo_metadata = "0.23.1"
 clap = { version = "4.6.7", features = ["derive", "cargo"] }
-comfy-table = "8.0.0"
+comfy-table = "8.0.1"
 const_format = "0.2.36"
 owo-colors = "4.4.0"
 proc-macro2 = "1.0.107"
 serde = { version = "1.0.229", features = ["derive"] }
 syn = { version = "3.0.6", features = ["full", "parsing", "visit", "proc-macro"] }
-thiserror = "2.0.20"
+thiserror = "2.0.21"
 toml = "1.1.6"
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
@@ -41,7 +41,7 @@ vergen-git2 = { version = "10.0.3", features = ["build", "cargo", "rustc", "si"]
 insta = { version = "1.48.0", features = ["filters"] }
 insta-cmd = "0.7.0"
 tempfile = "3.27.0"
-test-case = "3.3.1"
+test-case = "3.4.0"
 
 [[test]]
 # Add an integration test to make sure the snapshot files are generated with the correct names and paths.
