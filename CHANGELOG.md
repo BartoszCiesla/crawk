@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.7.1](https://github.com/BartoszCiesla/crawk/compare/v0.7.0...v0.7.1)
+
+### ⚙️ Miscellaneous Tasks
+
+
+- Scope fixture/check build hook and cover bin_only, workspace - ([b5f4664](https://github.com/BartoszCiesla/crawk/commit/b5f4664591d68d29fd4757602a0cc2e74ca90e84))
+- Refresh crate description and keywords - ([0b4ac55](https://github.com/BartoszCiesla/crawk/commit/0b4ac55df501d41db85ea65378c9212bbf421ae5))
+- Bump CI actions and crate dependencies - ([67a5384](https://github.com/BartoszCiesla/crawk/commit/67a53847eed038de7fab2450f4170d86eb3fe2f5))
+
+
 ## [0.7.0](https://github.com/BartoszCiesla/crawk/compare/v0.6.0...v0.7.0)
 
 ### ⛰️ Features
