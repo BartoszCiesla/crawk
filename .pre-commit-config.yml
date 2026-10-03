@@ -149,7 +149,23 @@ repos:
         entry: cargo
         language: system
         args: ["build", "--manifest-path", "fixtures/check/Cargo.toml"]
-        files: '^fixtures/paths/'
+        files: '^fixtures/check/'
+        pass_filenames: false
+        stages: [pre-push]
+      - id: cargo-build-fixture-bin-only
+        name: cargo build fixture/bin_only
+        entry: cargo
+        language: system
+        args: ["build", "--manifest-path", "fixtures/bin_only/Cargo.toml"]
+        files: '^fixtures/bin_only/'
+        pass_filenames: false
+        stages: [pre-push]
+      - id: cargo-build-fixture-workspace
+        name: cargo build fixture/workspace
+        entry: cargo
+        language: system
+        args: ["build", "--manifest-path", "fixtures/workspace/Cargo.toml"]
+        files: '^fixtures/workspace/'
         pass_filenames: false
         stages: [pre-push]
       - id: cargo-crap
