@@ -6,11 +6,11 @@ rust-version = "1.88.0"
 authors = ["Bartosz Cieśla <bartosz.ciesla@gmail.com>"]
 repository = "https://github.com/BartoszCiesla/crawk"
 homepage = "https://github.com/BartoszCiesla/crawk"
-description = "Dependency crawler for Rust. It crawls so you don't have to untangle"
+description = "Module dependency graph and architecture linter for Rust crates: layers, cycles, forbidden imports"
 license = "Apache-2.0"
 readme = "README.md"
 exclude = ["fixtures/", "tests/", ".github/", ".envrc", "justfile"]
-keywords = ["rust", "modules", "dependencies", "ast", "analysis"]
+keywords = ["modules", "dependencies", "architecture", "static-analysis", "linter"]
 categories = ["command-line-utilities", "development-tools"]
 
 [package.metadata.binstall]
