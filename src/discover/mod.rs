@@ -334,16 +334,17 @@ impl CrateInfo {
     pub(crate) fn new(crate_path: &Path) -> Result<Self> {
         let metadata = MetadataCommand::new().current_dir(crate_path).exec()?;
 
-        let root_package_name = metadata
+        let root_package = metadata
             .root_package()
-            .ok_or(CrateInfoError::WorkspaceRoot)?
-            .name
-            .to_string();
+            .ok_or(CrateInfoError::WorkspaceRoot)?;
+        let root_package_name = root_package.name.to_string();
 
+        // By id, not by name: `metadata.packages` lists the whole dependency
+        // graph, which may hold another package of the same name.
         let root_package_index = metadata
             .packages
             .iter()
-            .position(|p| p.name == root_package_name)
+            .position(|p| p.id == root_package.id)
             .ok_or(CrateInfoError::WorkspaceRoot)?;
 
         Ok(Self {
@@ -618,7 +619,23 @@ impl CrateInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
     use std::path::Path;
+
+    /// Writes a library package named `scratch` into `dir`: an empty
+    /// `src/lib.rs` and a manifest, with `manifest_tail` appended after the
+    /// `[package]` table.
+    fn write_scratch_package(dir: &Path, version: &str, manifest_tail: &str) {
+        fs::create_dir_all(dir.join("src")).unwrap();
+        fs::write(dir.join("src/lib.rs"), "").unwrap();
+        fs::write(
+            dir.join("Cargo.toml"),
+            format!(
+                "[package]\nname = \"scratch\"\nversion = \"{version}\"\nedition = \"2024\"\n\n{manifest_tail}"
+            ),
+        )
+        .unwrap();
+    }
 
     /// The cached index must select the real root package that
     /// `Metadata::root_package` identifies, not a namesake — a wrong or stale
@@ -630,5 +647,28 @@ mod tests {
         let expected = info.metadata.root_package().expect("metadata root package");
         assert_eq!(cached.id, expected.id);
         assert_eq!(cached.name.to_string(), info.root_package_name());
+    }
+
+    /// A dependency graph can hold another package with the root's name — a
+    /// crate whose dev-dependencies pull in a released version of itself, as
+    /// `syn`, `quote` and `proc-macro2` do — and `metadata.packages` lists the
+    /// whole graph, so the root is told apart by its id, never by its name.
+    #[test]
+    fn root_package_is_not_a_namesake_from_the_dependency_graph() {
+        let dir = tempfile::tempdir().unwrap();
+        write_scratch_package(
+            dir.path(),
+            "0.2.0",
+            "[dependencies]\nolder = { package = \"scratch\", path = \"older\" }\n",
+        );
+        write_scratch_package(&dir.path().join("older"), "0.1.0", "");
+
+        let info = CrateInfo::new(dir.path()).unwrap();
+
+        // `cargo metadata` sorts packages by name, then version: the fixture
+        // only bites while the namesake is listed ahead of the root.
+        assert_eq!(info.metadata.packages[0].version.to_string(), "0.1.0");
+        let root = info.root_package().expect("cached root package");
+        assert_eq!(root.version.to_string(), "0.2.0");
     }
 }
