@@ -29,7 +29,7 @@ proc-macro2 = "1.0.107"
 serde = { version = "1.0.229", features = ["derive"] }
 syn = { version = "3.0.6", features = ["full", "parsing", "visit", "proc-macro"] }
 thiserror = "2.0.21"
-toml = "1.1.6"
+toml = "1.1.7"
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 
@@ -38,7 +38,7 @@ anyhow = "1.0.104"
 vergen-git2 = { version = "10.0.3", features = ["build", "cargo", "rustc", "si"] }
 
 [dev-dependencies]
-insta = { version = "1.48.0", features = ["filters"] }
+insta = { version = "1.49.0", features = ["filters"] }
 insta-cmd = "0.7.0"
 tempfile = "3.27.0"
 test-case = "3.4.0"
