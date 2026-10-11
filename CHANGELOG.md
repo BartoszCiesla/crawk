@@ -2,6 +2,28 @@
 
 ## [Unreleased]
 
+## [0.7.1](https://github.com/BartoszCiesla/crawk/compare/v0.7.0...v0.7.1)
+
+### 🐛 Bug Fixes
+
+
+- *(build)* Set git describe when building without a repository - ([31500c6](https://github.com/BartoszCiesla/crawk/commit/31500c6f2b68387a755786b3adad46d917db118a))
+- *(discover)* Match library paths by crate name, not package name - ([6125101](https://github.com/BartoszCiesla/crawk/commit/6125101837d06ee1a72fcdc6ac513ef0f9b9200f))
+- *(discover)* Select the root package by id, not by name - ([314fdef](https://github.com/BartoszCiesla/crawk/commit/314fdef848c5c8fe3d1b74474ea3a794c5df7974))
+
+### 🚜 Refactor
+
+
+- Tell crate name and package name apart in identifiers - ([612f0c4](https://github.com/BartoszCiesla/crawk/commit/612f0c4a199d2c22331b507e76b10b1af99ca770))
+
+### ⚙️ Miscellaneous Tasks
+
+
+- Bump CI actions and crate dependencies - ([2dc2362](https://github.com/BartoszCiesla/crawk/commit/2dc236266bd3a1eb193b21eb56cded8c06c45f71))
+- Scope fixture/check build hook and cover bin_only, workspace - ([b5f4664](https://github.com/BartoszCiesla/crawk/commit/b5f4664591d68d29fd4757602a0cc2e74ca90e84))
+- Refresh crate description and keywords - ([0b4ac55](https://github.com/BartoszCiesla/crawk/commit/0b4ac55df501d41db85ea65378c9212bbf421ae5))
+
+
 ## [0.7.0](https://github.com/BartoszCiesla/crawk/compare/v0.6.0...v0.7.0)
 
 ### ⛰️ Features
