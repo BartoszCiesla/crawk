@@ -100,8 +100,10 @@ first segment is:
   two segments (`sibling::Item`, the 2015-edition form, which is common under
   `use super::*;` in test modules). A lone identifier is never treated this
   way, because it is almost always a local variable;
-- the **package name**, in a binary or test target that reaches into the
-  library (`use crawk::Analyzer`).
+- the **crate name of the library**, in a binary or test target that reaches
+  into the library (`use crawk::Analyzer`). That is the name of the lib target,
+  not of the package: `my-crate` is written `my_crate`, and a `[lib] name`
+  setting replaces it.
 
 Everything else — `std::`, `serde::`, other workspace crates — is dropped.
 

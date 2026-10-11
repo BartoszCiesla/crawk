@@ -10,6 +10,7 @@
 /fixtures/bin_only/target
 /fixtures/paths/target
 /fixtures/check/target
+/fixtures/hyphenated/target
 /result
 # Alternative cache directory for IDE's and other tools
 /.ide/

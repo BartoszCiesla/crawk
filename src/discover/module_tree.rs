@@ -169,8 +169,8 @@ impl CrateInfo {
             return Err(CrateInfoError::EmptyModulePath);
         }
 
-        // Check if the first part is the crate name itself or "lib" alias
-        let is_lib_root = parts[0] == self.root_package_name() || parts[0] == "lib";
+        // Check if the first part is the crate name, the package name or "lib" alias
+        let is_lib_root = self.is_lib_root_alias(parts[0]);
 
         if is_lib_root {
             // Skip the crate name/alias and resolve the rest

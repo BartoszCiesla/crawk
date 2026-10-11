@@ -298,7 +298,7 @@ pub(crate) fn resolve_glob(
         && reference
             .segments()
             .first()
-            .is_some_and(|s| s == crate_info.root_package_name());
+            .is_some_and(|s| s == crate_info.lib_crate_name());
 
     if !is_crate_prefix && !is_crate_name_prefix {
         return vec![reference.clone()];

@@ -306,8 +306,12 @@ pub(crate) struct CrateInfo {
     /// The cargo metadata for the crate.
     metadata: Metadata,
 
-    /// The name of the root package in the workspace.
+    /// The name of the root package, as `Cargo.toml` spells it.
     root_package_name: String,
+
+    /// The name Rust paths use for the root package's library; see
+    /// [`lib_crate_name`](Self::lib_crate_name).
+    lib_crate_name: String,
 
     /// Index of the root package within `metadata.packages`, resolved once at
     /// construction. `metadata.packages` is never mutated after `new`, so this
@@ -332,12 +336,20 @@ impl CrateInfo {
     /// - The cargo metadata command fails to execute
     /// - No root package is found in the workspace
     pub(crate) fn new(crate_path: &Path) -> Result<Self> {
-        let metadata = MetadataCommand::new().current_dir(crate_path).exec()?;
+        Self::from_metadata(MetadataCommand::new().current_dir(crate_path).exec()?)
+    }
 
+    /// Builds a `CrateInfo` from metadata that `cargo metadata` already produced.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CrateInfoError::WorkspaceRoot`] if the metadata has no root package.
+    fn from_metadata(metadata: Metadata) -> Result<Self> {
         let root_package = metadata
             .root_package()
             .ok_or(CrateInfoError::WorkspaceRoot)?;
         let root_package_name = root_package.name.to_string();
+        let lib_crate_name = Self::lib_crate_name_of(root_package);
 
         // By id, not by name: `metadata.packages` lists the whole dependency
         // graph, which may hold another package of the same name.
@@ -350,6 +362,7 @@ impl CrateInfo {
         Ok(Self {
             metadata,
             root_package_name,
+            lib_crate_name,
             root_package_index,
             resolve_cache: RefCell::default(),
         })
@@ -411,10 +424,47 @@ impl CrateInfo {
         self.resolve_cache.borrow().canonical_dirs.len()
     }
 
-    /// Returns the name of the root package.
+    /// Returns the name of the root package, as `Cargo.toml` spells it.
+    ///
+    /// A label for people: it may hold hyphens, so it is never what Rust
+    /// source calls the crate. Paths are matched against
+    /// [`lib_crate_name`](Self::lib_crate_name) instead.
     #[must_use]
     pub(crate) fn root_package_name(&self) -> &str {
         &self.root_package_name
+    }
+
+    /// Returns the name Rust paths use for the root package's library.
+    ///
+    /// This is what a binary or test target writes to reach the library
+    /// (`use my_crate::foo`), and it differs from the package name whenever
+    /// that holds a hyphen (`my-crate`) or `[lib] name` overrides it.
+    #[must_use]
+    pub(crate) fn lib_crate_name(&self) -> &str {
+        &self.lib_crate_name
+    }
+
+    /// Derives [`lib_crate_name`](Self::lib_crate_name) from cargo metadata.
+    ///
+    /// The lib target's name already carries a `[lib] name` override; a
+    /// package without a library falls back to its own name. Hyphens are
+    /// swapped either way: a crate name cannot hold one, the package name is
+    /// never normalised, and cargo reports the lib target normalised only
+    /// since 1.79.
+    fn lib_crate_name_of(package: &cargo_metadata::Package) -> String {
+        package
+            .targets
+            .iter()
+            .find(|target| target.is_lib())
+            .map_or(package.name.as_str(), |target| target.name.as_str())
+            .replace('-', "_")
+    }
+
+    /// Returns `true` if `segment`, leading a module path, names the library
+    /// root: the `lib` alias, the crate name Rust source uses, or the package
+    /// name as `Cargo.toml` spells it.
+    pub(super) fn is_lib_root_alias(&self, segment: &str) -> bool {
+        segment == "lib" || segment == self.lib_crate_name || segment == self.root_package_name
     }
 
     /// Returns all compilation targets in the crate.
@@ -430,8 +480,10 @@ impl CrateInfo {
         for target in &package.targets {
             let src_path = target.src_path.as_std_path().to_path_buf();
             if target.is_lib() {
+                // Under the crate name, which is what paths in source are
+                // matched against; `target.name` may still hold hyphens.
                 result.push((
-                    TargetInfo::new(TargetKind::Lib, target.name.as_str()),
+                    TargetInfo::new(TargetKind::Lib, self.lib_crate_name()),
                     src_path,
                 ));
             } else if target.is_bin() {
@@ -589,8 +641,8 @@ impl CrateInfo {
 
         let first_part = parts[0];
 
-        // Check if first part is the crate name or "lib" alias
-        if first_part == self.root_package_name() || first_part == "lib" {
+        // Check if first part is the crate name, the package name or "lib" alias
+        if self.is_lib_root_alias(first_part) {
             return if parts.len() == 1 {
                 // Just the crate name/lib - return empty (analyzing crate root)
                 String::new()
@@ -622,19 +674,28 @@ mod tests {
     use std::fs;
     use std::path::Path;
 
-    /// Writes a library package named `scratch` into `dir`: an empty
+    /// Writes a library package named `name` into `dir`: an empty
     /// `src/lib.rs` and a manifest, with `manifest_tail` appended after the
     /// `[package]` table.
-    fn write_scratch_package(dir: &Path, version: &str, manifest_tail: &str) {
+    fn write_scratch_package(dir: &Path, name: &str, version: &str, manifest_tail: &str) {
         fs::create_dir_all(dir.join("src")).unwrap();
         fs::write(dir.join("src/lib.rs"), "").unwrap();
         fs::write(
             dir.join("Cargo.toml"),
             format!(
-                "[package]\nname = \"scratch\"\nversion = \"{version}\"\nedition = \"2024\"\n\n{manifest_tail}"
+                "[package]\nname = \"{name}\"\nversion = \"{version}\"\nedition = \"2024\"\n\n{manifest_tail}"
             ),
         )
         .unwrap();
+    }
+
+    /// A scratch package named `name` whose library declares one module, `foo`.
+    fn scratch_package_with_foo(name: &str, manifest_tail: &str) -> tempfile::TempDir {
+        let dir = tempfile::tempdir().unwrap();
+        write_scratch_package(dir.path(), name, "0.1.0", manifest_tail);
+        fs::write(dir.path().join("src/lib.rs"), "pub mod foo;\n").unwrap();
+        fs::write(dir.path().join("src/foo.rs"), "").unwrap();
+        dir
     }
 
     /// The cached index must select the real root package that
@@ -658,10 +719,11 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         write_scratch_package(
             dir.path(),
+            "scratch",
             "0.2.0",
             "[dependencies]\nolder = { package = \"scratch\", path = \"older\" }\n",
         );
-        write_scratch_package(&dir.path().join("older"), "0.1.0", "");
+        write_scratch_package(&dir.path().join("older"), "scratch", "0.1.0", "");
 
         let info = CrateInfo::new(dir.path()).unwrap();
 
@@ -670,5 +732,110 @@ mod tests {
         assert_eq!(info.metadata.packages[0].version.to_string(), "0.1.0");
         let root = info.root_package().expect("cached root package");
         assert_eq!(root.version.to_string(), "0.2.0");
+    }
+
+    /// Rust source never sees the package name: it calls the library by the
+    /// name of its lib target, where the hyphens of `my-crate` are underscores.
+    #[test]
+    fn lib_crate_name_swaps_the_hyphens_of_the_package_name() {
+        let dir = scratch_package_with_foo("my-crate", "");
+
+        let info = CrateInfo::new(dir.path()).unwrap();
+
+        assert_eq!(info.lib_crate_name(), "my_crate");
+        assert_eq!(info.root_package_name(), "my-crate");
+    }
+
+    /// `[lib] name` renames the library and leaves the package name alone.
+    #[test]
+    fn lib_crate_name_follows_a_lib_name_override() {
+        let dir = scratch_package_with_foo("my-crate", "[lib]\nname = \"renamed_lib\"\n");
+
+        let info = CrateInfo::new(dir.path()).unwrap();
+
+        assert_eq!(info.lib_crate_name(), "renamed_lib");
+        assert_eq!(info.root_package_name(), "my-crate");
+    }
+
+    /// A package without a library has no lib target to ask, so its own name
+    /// stands in — spelled the way rustc names the crate of its binary.
+    #[test]
+    fn lib_crate_name_of_a_bin_only_package_is_its_normalised_name() {
+        let dir = tempfile::tempdir().unwrap();
+        write_scratch_package(dir.path(), "my-tool", "0.1.0", "");
+        fs::rename(
+            dir.path().join("src/lib.rs"),
+            dir.path().join("src/main.rs"),
+        )
+        .unwrap();
+
+        let info = CrateInfo::new(dir.path()).unwrap();
+
+        assert_eq!(info.lib_crate_name(), "my_tool");
+    }
+
+    /// Cargo before 1.79 reported the lib target under the package's own,
+    /// hyphenated name, and `cargo metadata` runs on whatever toolchain the
+    /// analysed project pins — so the hyphens are swapped here, not trusted
+    /// to be gone.
+    #[test]
+    fn lib_crate_name_normalises_a_lib_target_reported_with_hyphens() {
+        let dir = scratch_package_with_foo("my-crate", "");
+        let mut metadata = MetadataCommand::new()
+            .current_dir(dir.path())
+            .exec()
+            .unwrap();
+        let lib = metadata
+            .packages
+            .iter_mut()
+            .flat_map(|package| &mut package.targets)
+            .find(|target| target.is_lib())
+            .expect("lib target");
+        lib.name = String::from("my-crate");
+
+        let info = CrateInfo::from_metadata(metadata).unwrap();
+
+        assert_eq!(info.lib_crate_name(), "my_crate");
+        let targets = info.all_targets(false);
+        assert_eq!(targets[0].0, TargetInfo::new(TargetKind::Lib, "my_crate"));
+    }
+
+    /// A module path may lead with either spelling of a hyphenated package:
+    /// the crate name Rust source uses, or the package name of `Cargo.toml`.
+    #[test]
+    fn module_path_reaches_the_library_by_crate_name_and_by_package_name() {
+        let dir = scratch_package_with_foo("my-crate", "");
+        let info = CrateInfo::new(dir.path()).unwrap();
+        let mut cache = ParseCache::new();
+
+        for root in ["my_crate", "my-crate", "lib"] {
+            let nested = format!("{root}::foo");
+
+            assert_eq!(info.normalize_module_path(root), "", "{root}");
+            assert_eq!(info.normalize_module_path(&nested), "foo", "{nested}");
+            let lib_file = info.resolve_module_path_to_file(root, &mut cache).unwrap();
+            assert!(lib_file.ends_with("src/lib.rs"), "{root}: {lib_file:?}");
+            let foo_file = info
+                .resolve_module_path_to_file(&nested, &mut cache)
+                .unwrap();
+            assert!(foo_file.ends_with("src/foo.rs"), "{nested}: {foo_file:?}");
+        }
+    }
+
+    /// Under `[lib] name` the default crate name `my_crate` names nothing:
+    /// only the override and the package name lead to the library.
+    #[test]
+    fn module_path_does_not_reach_a_renamed_library_by_its_default_crate_name() {
+        let dir = scratch_package_with_foo("my-crate", "[lib]\nname = \"renamed_lib\"\n");
+        let info = CrateInfo::new(dir.path()).unwrap();
+        let mut cache = ParseCache::new();
+
+        assert_eq!(info.normalize_module_path("renamed_lib::foo"), "foo");
+        assert_eq!(info.normalize_module_path("my-crate::foo"), "foo");
+        assert_eq!(info.normalize_module_path("my_crate::foo"), "my_crate::foo");
+        assert!(
+            info.resolve_module_path_to_file("my_crate::foo", &mut cache)
+                .is_err()
+        );
     }
 }

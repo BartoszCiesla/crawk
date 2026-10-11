@@ -7,6 +7,7 @@ mod edge_cases;
 mod empty_and_glob;
 mod error_cases;
 mod flags;
+mod hyphenated;
 mod include_tests;
 mod inline;
 mod nesting;

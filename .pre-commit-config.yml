@@ -168,6 +168,14 @@ repos:
         files: '^fixtures/workspace/'
         pass_filenames: false
         stages: [pre-push]
+      - id: cargo-build-fixture-hyphenated
+        name: cargo build fixture/hyphenated
+        entry: cargo
+        language: system
+        args: ["build", "--all-targets", "--manifest-path", "fixtures/hyphenated/Cargo.toml"]
+        files: '^fixtures/hyphenated/'
+        pass_filenames: false
+        stages: [pre-push]
       - id: cargo-crap
         name: cargo crap (complexity and coverage)
         entry: bash -c "cargo llvm-cov --lcov --output-path lcov.info && cargo crap --lcov lcov.info"

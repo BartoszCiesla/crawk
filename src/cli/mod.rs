@@ -111,8 +111,8 @@ pub(crate) enum CrawkCommands {
     /// Valid root targets: "lib" (library) or a binary target's source file
     /// stem (e.g. "main" for src/main.rs) — not the binary's name.
     /// Any submodule path within those targets is also accepted.
-    /// Note: references from binary targets use the package name as prefix
-    /// (e.g. "crawk::") rather than "crate::".
+    /// Note: references from binary targets use the library's crate name as
+    /// prefix (e.g. "crawk::") rather than "crate::".
     ///
     /// Empty output (exit 0) means no internal crate dependencies were found.
     ///
@@ -150,7 +150,7 @@ pub(crate) enum CrawkCommands {
     ///
     /// Both `source` and `target` are `::` separated module paths. The graph
     /// covers intra-target dependencies: references that cross target boundaries
-    /// (e.g. a binary importing from the lib via the package name) are tracked
+    /// (e.g. a binary importing from the lib via its crate name) are tracked
     /// as `crate::` qualified paths and therefore included automatically.
     ///
     /// The graph is built from every internal `crate::` reference found — not

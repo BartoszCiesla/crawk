@@ -43,12 +43,17 @@ pub(super) fn temp_cycle_crate() -> tempfile::TempDir {
     dir
 }
 
-#[allow(clippy::expect_used)]
 pub(super) fn temp_bare_crate() -> tempfile::TempDir {
+    temp_bare_crate_named("init_fixture")
+}
+
+/// [`temp_bare_crate`] for a package called `name`.
+#[allow(clippy::expect_used)]
+pub(super) fn temp_bare_crate_named(name: &str) -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("tempdir");
     std::fs::write(
         dir.path().join("Cargo.toml"),
-        "[package]\nname = \"init_fixture\"\nversion = \"0.1.0\"\nedition = \"2024\"\n",
+        format!("[package]\nname = \"{name}\"\nversion = \"0.1.0\"\nedition = \"2024\"\n"),
     )
     .expect("write Cargo.toml");
     std::fs::create_dir(dir.path().join("src")).expect("create src");

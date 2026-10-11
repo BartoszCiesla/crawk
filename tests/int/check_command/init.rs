@@ -1,4 +1,4 @@
-use super::{temp_bare_crate, temp_cycle_crate};
+use super::{temp_bare_crate, temp_bare_crate_named, temp_cycle_crate};
 use crate::common::crawk;
 use insta::with_settings;
 use insta_cmd::assert_cmd_snapshot;
@@ -27,6 +27,25 @@ fn init_writes_config_and_prints_next_steps() {
     let written = std::fs::read_to_string(dir.path().join("crawk.toml")).expect("read crawk.toml");
     assert!(written.contains("[[check.layers]]"));
     assert!(written.contains("name = \"init_fixture\""));
+}
+
+// The layer group's name is a label for people, so it stays the package name
+// as `Cargo.toml` spells it — not the crate name Rust paths use for the library.
+#[test]
+fn init_names_the_layer_group_after_the_package() {
+    let dir = temp_bare_crate_named("init-fixture");
+
+    let status = crawk()
+        .arg("-p")
+        .arg(dir.path())
+        .arg("check")
+        .arg("--init")
+        .status()
+        .expect("run crawk check --init");
+    assert!(status.success());
+
+    let written = std::fs::read_to_string(dir.path().join("crawk.toml")).expect("read crawk.toml");
+    assert!(written.contains("name = \"init-fixture\""), "{written}");
 }
 
 // `--init` on a crate that already has a loop freezes it: the scaffold turns

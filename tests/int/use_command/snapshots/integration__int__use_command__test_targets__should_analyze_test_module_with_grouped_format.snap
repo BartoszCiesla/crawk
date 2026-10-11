@@ -24,6 +24,8 @@ int::list_command::filter
  - crate::common::crawk_modules
 int::list_command::flags
  - crate::common::crawk_modules
+int::list_command::hyphenated
+ - crate::common::crawk_hyphenated
 int::list_command::multi_target
  - crate::common::{crawk, crawk_modules}
 int::list_command::overview

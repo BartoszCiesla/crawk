@@ -3,6 +3,7 @@ mod bin_only;
 mod error_cases;
 mod filter;
 mod flags;
+mod hyphenated;
 mod multi_target;
 mod overview;
 mod test_targets;

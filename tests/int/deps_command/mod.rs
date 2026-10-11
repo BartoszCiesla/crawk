@@ -4,6 +4,7 @@ mod cycles;
 mod depth;
 mod error_cases;
 mod format;
+mod hyphenated;
 mod orphans;
 mod overview;
 mod paths;

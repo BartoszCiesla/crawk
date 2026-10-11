@@ -1,0 +1,18 @@
+---
+source: tests/int/list_command/hyphenated.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/hyphenated
+    - list
+---
+success: true
+exit_code: 0
+----- stdout -----
+[lib]                lib
+[lib]                render
+[lib]                shapes
+[bin:hyphenated-pkg] main
+
+----- stderr -----

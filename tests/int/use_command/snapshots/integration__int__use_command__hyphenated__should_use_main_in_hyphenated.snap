@@ -1,0 +1,19 @@
+---
+source: tests/int/use_command/hyphenated.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/hyphenated
+    - use
+    - main
+---
+success: true
+exit_code: 0
+----- stdout -----
+hyphenated_pkg::Circle
+hyphenated_pkg::render
+hyphenated_pkg::render::LABEL
+hyphenated_pkg::shapes::*
+
+----- stderr -----

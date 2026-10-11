@@ -31,6 +31,7 @@ int::deps_command::cycles
 int::deps_command::depth
 int::deps_command::error_cases
 int::deps_command::format
+int::deps_command::hyphenated
 int::deps_command::orphans
 int::deps_command::overview
 int::deps_command::paths
@@ -40,6 +41,7 @@ int::list_command::bin_only
 int::list_command::error_cases
 int::list_command::filter
 int::list_command::flags
+int::list_command::hyphenated
 int::list_command::multi_target
 int::list_command::overview
 int::list_command::test_targets
@@ -53,6 +55,7 @@ int::use_command::edge_cases
 int::use_command::empty_and_glob
 int::use_command::error_cases
 int::use_command::flags
+int::use_command::hyphenated
 int::use_command::include_tests
 int::use_command::inline
 int::use_command::nesting
@@ -68,6 +71,7 @@ int::why_command::basic
 int::why_command::bin_only
 int::why_command::error_cases
 int::why_command::flags
+int::why_command::hyphenated
 int::why_command::overview
 
 ----- stderr -----

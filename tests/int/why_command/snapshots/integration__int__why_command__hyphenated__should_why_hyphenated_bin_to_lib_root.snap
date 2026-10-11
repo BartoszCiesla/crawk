@@ -1,0 +1,17 @@
+---
+source: tests/int/why_command/hyphenated.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/hyphenated
+    - why
+    - main
+    - lib
+---
+success: true
+exit_code: 0
+----- stdout -----
+hyphenated_pkg::Circle
+
+----- stderr -----

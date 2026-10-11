@@ -136,8 +136,7 @@ impl Analyzer {
     /// ```
     pub fn new(crate_root: impl AsRef<Path>) -> Result<Self> {
         let crate_info = CrateInfo::new(crate_root.as_ref())?;
-        let name = crate_info.root_package_name();
-        let parser = CrateAnalyzer::new(name);
+        let parser = CrateAnalyzer::new(crate_info.lib_crate_name());
 
         Ok(Self {
             crate_info,
@@ -467,7 +466,7 @@ impl Analyzer {
 
     /// Returns a default `TargetInfo` for the library target.
     fn default_lib_target(&self) -> TargetInfo {
-        TargetInfo::new(TargetKind::Lib, self.crate_info.root_package_name())
+        TargetInfo::new(TargetKind::Lib, self.crate_info.lib_crate_name())
     }
 
     /// Computes the module path string to pass to `get_module_tree` for a target.

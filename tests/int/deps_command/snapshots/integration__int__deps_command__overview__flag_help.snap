@@ -19,7 +19,7 @@ which other modules. Each line is one directed dependency edge:
 
 Both `source` and `target` are `::` separated module paths. The graph
 covers intra-target dependencies: references that cross target boundaries
-(e.g. a binary importing from the lib via the package name) are tracked
+(e.g. a binary importing from the lib via its crate name) are tracked
 as `crate::` qualified paths and therefore included automatically.
 
 The graph is built from every internal `crate::` reference found — not

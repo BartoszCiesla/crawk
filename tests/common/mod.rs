@@ -57,3 +57,9 @@ pub(crate) fn crawk_paths() -> Command {
     cmd.arg("-p").arg("fixtures/paths");
     cmd
 }
+
+pub(crate) fn crawk_hyphenated() -> Command {
+    let mut cmd = crawk();
+    cmd.arg("-p").arg("fixtures/hyphenated");
+    cmd
+}

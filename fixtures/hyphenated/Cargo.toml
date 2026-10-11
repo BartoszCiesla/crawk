@@ -1,0 +1,6 @@
+# No `[lib]` table on purpose: the library target takes its name from the
+# package, which is where cargo turns `hyphenated-pkg` into `hyphenated_pkg`.
+[package]
+name = "hyphenated-pkg"
+version = "0.1.0"
+edition = "2024"
