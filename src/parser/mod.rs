@@ -136,8 +136,8 @@ impl CrateAnalyzer {
         })?;
 
         let module = module.into();
-        let package_name = Some(self.crate_name.clone());
-        let mut visitor = ModuleVisitor::new(module.clone(), children, root_children, package_name);
+        let crate_name = Some(self.crate_name.clone());
+        let mut visitor = ModuleVisitor::new(module.clone(), children, root_children, crate_name);
 
         if inline_scope.is_empty() {
             visitor.visit_file(&syntax);

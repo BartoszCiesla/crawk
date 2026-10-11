@@ -73,17 +73,17 @@ pub(crate) fn find_module_target<'a>(
 ///
 /// - `crate::` prefixed — intra-target refs resolved via `known_modules`,
 ///   falling back to `"lib"` for crate-root re-exports
-/// - `<package>::` prefixed — cross-target refs from a binary/test to the lib
-///   target; the package-name prefix is stripped and the rest resolved,
+/// - `<lib crate>::` prefixed — cross-target refs from a binary/test to the lib
+///   target; the crate-name prefix is stripped and the rest resolved,
 ///   falling back to `"lib"`
 ///
 /// Returns `(module_path, api_segments)` where `api_segments` are the trailing
 /// segments after the module path, or `None` when the reference is neither an
-/// intra-crate nor a matching package-name dependency.
+/// intra-crate nor a matching crate-name dependency.
 pub(crate) fn resolve_reference_target<'a>(
     reference: &'a TypeReference,
     known_modules: &'a HashSet<String>,
-    package_name: Option<&str>,
+    lib_crate_name: Option<&str>,
 ) -> Option<(&'a str, &'a [String])> {
     let segments = reference.segments();
     if segments.is_empty() {
@@ -100,11 +100,11 @@ pub(crate) fn resolve_reference_target<'a>(
             }),
         ),
 
-        // Cross-target: <package>::Foo references from binaries/tests to lib.
+        // Cross-target: <lib crate>::Foo references from binaries/tests to lib.
         PathPrefix::None => {
-            let is_pkg_ref =
-                package_name.is_some_and(|pkg| segments.first().map(String::as_str) == Some(pkg));
-            if !is_pkg_ref {
+            let is_lib_ref = lib_crate_name
+                .is_some_and(|name| segments.first().map(String::as_str) == Some(name));
+            if !is_lib_ref {
                 return None;
             }
             let rest = &segments[1..];
@@ -124,8 +124,8 @@ pub(crate) fn resolve_reference_target<'a>(
 /// is `B`. Two kinds of references are tracked:
 ///
 /// - `crate::` prefixed — intra-target references resolved via `known_modules`
-/// - `<package>::` prefixed — cross-target references from a binary/test to the
-///   lib target; the package-name prefix is stripped and the rest is resolved
+/// - `<lib crate>::` prefixed — cross-target references from a binary/test to
+///   the lib target; the crate-name prefix is stripped and the rest is resolved
 ///   against `known_modules`
 ///
 /// Both kinds fall back to `"lib"` when no specific module matches (e.g.
@@ -161,14 +161,14 @@ pub(crate) fn resolve_reference_target<'a>(
 /// - `depth` — optional segment limit applied to both sides
 /// - `known_modules` — set of all module paths in the crate; used to resolve
 ///   type references to their owning module
-/// - `package_name` — crate package name (e.g. `"crawk"`); when set, refs
-///   prefixed with this name are treated as cross-target lib dependencies
+/// - `lib_crate_name` — crate name of the library (e.g. `"crawk"`); when set,
+///   refs prefixed with this name are treated as cross-target lib dependencies
 /// - `show_apis` — collect API symbol names per edge
 pub(crate) fn build_edges(
     result: &AnalysisResult,
     depth: Option<usize>,
     known_modules: &HashSet<String>,
-    package_name: Option<&str>,
+    lib_crate_name: Option<&str>,
     show_apis: bool,
 ) -> AnnotatedEdges {
     let mut edges: AnnotatedEdges = BTreeMap::new();
@@ -188,7 +188,7 @@ pub(crate) fn build_edges(
 
         for reference in refs {
             let Some((module_path, api_segments)) =
-                resolve_reference_target(reference, known_modules, package_name)
+                resolve_reference_target(reference, known_modules, lib_crate_name)
             else {
                 continue;
             };

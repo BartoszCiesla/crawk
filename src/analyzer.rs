@@ -411,11 +411,11 @@ impl Analyzer {
         // "lib" (the same walk that supplies the root children below — no
         // extra discovery cost). A bin/test target is a *separate* compilation
         // unit from the lib, so its own bare paths can only reach lib modules
-        // via an explicit `use <package>::module;` (already handled via
+        // via an explicit `use <lib crate>::module;` (already handled via
         // `imported_modules`/`resolve_via_import`) — merging in the lib's root
         // children for one of ITS modules would misclassify those as
         // same-target `crate::` refs instead of the correct cross-target
-        // `<package>::` form. A file-path/target-tag heuristic can't safely
+        // `<lib crate>::` form. A file-path/target-tag heuristic can't safely
         // tell these apart (crawk's own module resolution is filesystem-shape
         // based, not `mod`-declaration verified, so e.g. `cli::overview` —
         // owned only by crawk's own bin target's `mod cli;`, absent from
@@ -811,7 +811,7 @@ impl Analyzer {
         let known_modules: HashSet<String> =
             all_modules.iter().map(|m| m.path().to_owned()).collect();
 
-        let package_name: Option<String> = all_modules
+        let lib_crate_name: Option<String> = all_modules
             .iter()
             .find(|m| m.target().kind() == &TargetKind::Lib)
             .map(|m| m.target().name().to_owned());
@@ -825,7 +825,7 @@ impl Analyzer {
                         &result,
                         options.depth,
                         &known_modules,
-                        package_name.as_deref(),
+                        lib_crate_name.as_deref(),
                         options.show_apis,
                     ) {
                         all_edges.entry(edge).or_default().extend(apis);
@@ -891,11 +891,12 @@ impl Analyzer {
         opts: &CheckOptions,
     ) -> Result<InitOutcome> {
         let graph = self.dependency_graph(&opts.graph_opts())?;
-        let crate_name = self.crate_info.root_package_name();
+        // The package name, hyphens and all: it only labels the layer group.
+        let package_name = self.crate_info.root_package_name();
         rules::scaffold_config(
             crate_root,
             opts.config.as_deref(),
-            crate_name,
+            package_name,
             graph.modules(),
             &graph.cycles(),
         )
@@ -931,7 +932,7 @@ impl Analyzer {
         let known_modules: HashSet<String> =
             all_modules.iter().map(|m| m.path().to_owned()).collect();
 
-        let package_name: Option<String> = all_modules
+        let lib_crate_name: Option<String> = all_modules
             .iter()
             .find(|m| m.target().kind() == &TargetKind::Lib)
             .map(|m| m.target().name().to_owned());
@@ -963,7 +964,7 @@ impl Analyzer {
                 if let Some((module_path, _)) = graph::resolve_reference_target(
                     reference,
                     &known_modules,
-                    package_name.as_deref(),
+                    lib_crate_name.as_deref(),
                 ) && module_path == target
                 {
                     filtered

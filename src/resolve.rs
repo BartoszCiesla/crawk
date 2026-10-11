@@ -312,7 +312,7 @@ pub(crate) fn resolve_glob(
     // The visibility target must be a crawk-internal module path: bare `::`-joined
     // segments, no `crate::` and no crate-name prefix (see `extract_public_items`
     // docs), so `mycrate::foo` must become `foo`. A `crate::foo::*` glob already
-    // yields internal segments (`["foo"]`), but a package-name-prefixed glob
+    // yields internal segments (`["foo"]`), but a crate-name-prefixed glob
     // (`mycrate::foo::*`) keeps the crate name in `segments` (`["mycrate","foo"]`).
     // Left unstripped, `parent_module("mycrate::foo")` is `"mycrate"` instead of
     // the crate root `""`, so every `pub(super)`/`pub(in ...)` item is wrongly
@@ -344,7 +344,7 @@ pub(crate) fn resolve_glob(
     // Determine if the target is an inline module within the file: whatever
     // `split_inline_scope` reports below the file-backed prefix is the chain of
     // `mod` names to descend through. `target_module` is used rather than the
-    // raw segments because a package-name-prefixed glob still carries the crate
+    // raw segments because a crate-name-prefixed glob still carries the crate
     // name, which is not a module inside the file.
     let (_, inline_path) = crate_info.split_inline_scope(&target_module, &file_path, cache);
     let inline_refs: Vec<&str> = inline_path.iter().map(String::as_str).collect();

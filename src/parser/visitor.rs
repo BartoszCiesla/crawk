@@ -183,9 +183,9 @@ pub(super) struct ModuleVisitor {
     /// Updated as we traverse nested modules to filter test-only references.
     in_test_module: bool,
 
-    /// Package name for recognising same-crate imports with bare package prefix.
-    /// E.g., `use crawk::version` where `crawk` is the package name.
-    package_name: Option<String>,
+    /// Crate name of the package's library, for recognising imports that reach
+    /// it from another target. E.g., `use crawk::version`.
+    crate_name: Option<String>,
 
     /// Maps imported short names to `(prefix, path_segments)`.
     /// Built on-the-fly from `use` statements during traversal.
@@ -205,14 +205,14 @@ impl ModuleVisitor {
     /// this module. Bare paths whose first segment matches a child are recognised
     /// as internal references (e.g. `format::deps_cmd::build_edges()`).
     ///
-    /// `package_name` enables resolution of imports via the package name prefix
-    /// (e.g., `use crawk::version` when `crawk` is the package). Pass `None`
+    /// `crate_name` enables resolution of imports via the library's crate name
+    /// (e.g., `use crawk::version` when the library is `crawk`). Pass `None`
     /// to disable import-aware token resolution.
     pub(super) fn new(
         module_name: impl Into<String>,
         children: HashSet<String>,
         root_children: HashSet<String>,
-        package_name: Option<String>,
+        crate_name: Option<String>,
     ) -> Self {
         let module_name = module_name.into();
         let module_path: Vec<String> = if module_name.is_empty() {
@@ -228,7 +228,7 @@ impl ModuleVisitor {
             root_children,
             references: CollectedReferences::new(),
             in_test_module: false,
-            package_name,
+            crate_name,
             imported_modules: HashMap::new(),
         }
     }
@@ -334,8 +334,9 @@ impl ModuleVisitor {
 
     /// Records an import in `imported_modules` if it originates from the current crate.
     ///
-    /// Recognises imports via `crate::`, `self::`, `super::`, and bare package name
-    /// (e.g., `use crawk::version` where `crawk` is `self.package_name`).
+    /// Recognises imports via `crate::`, `self::`, `super::`, and the bare crate
+    /// name of the library (e.g., `use crawk::version` where `crawk` is
+    /// `self.crate_name`).
     /// Stores `(prefix, segments)` so that `resolve_via_import` can reconstruct
     /// the reference with the correct prefix:
     /// - `use crate::version` → `(Crate, ["version"])` → `crate::version::NAME`
@@ -362,9 +363,9 @@ impl ModuleVisitor {
                     None
                 }
             }
-            PathPrefix::None => self.package_name.as_ref().and_then(|pkg| {
-                if segments.first().is_some_and(|s| s == pkg) {
-                    // Keep full path including package name for cross-target display
+            PathPrefix::None => self.crate_name.as_ref().and_then(|name| {
+                if segments.first().is_some_and(|s| s == name) {
+                    // Keep full path including crate name for cross-target display
                     Some((PathPrefix::None, segments.to_vec()))
                 } else {
                     None
@@ -382,7 +383,7 @@ impl ModuleVisitor {
     /// Resolves a path found in tokens via the import alias map.
     ///
     /// If the first segment matches an imported name, replaces it with the stored
-    /// path and prefix. Cross-target imports (via package name) keep `PathPrefix::None`
+    /// path and prefix. Cross-target imports (via crate name) keep `PathPrefix::None`
     /// so they display as `crawk::version::NAME`; same-target imports use `PathPrefix::Crate`
     /// so they display as `crate::version::NAME`.
     fn resolve_via_import(&self, segments: &[String]) -> Option<TypeReference> {
@@ -1097,17 +1098,17 @@ mod tests {
 
     // --- Import-aware token resolution tests ---
 
-    fn visitor_with_package(package: &str) -> ModuleVisitor {
+    fn visitor_with_crate_name(crate_name: &str) -> ModuleVisitor {
         ModuleVisitor::new(
             "test_mod",
             HashSet::new(),
             HashSet::new(),
-            Some(package.to_owned()),
+            Some(crate_name.to_owned()),
         )
     }
 
     #[test]
-    fn test_import_resolution_via_package_name() {
+    fn test_import_resolution_via_crate_name() {
         let code = r#"
             use myapp::version;
             fn foo() {
@@ -1115,7 +1116,7 @@ mod tests {
             }
         "#;
         let syntax: syn::File = syn::parse_file(code).expect("parse");
-        let mut v = visitor_with_package("myapp");
+        let mut v = visitor_with_crate_name("myapp");
         v.visit_file(&syntax);
 
         let value_paths: Vec<String> = v
@@ -1139,7 +1140,7 @@ mod tests {
             }
         "#;
         let syntax: syn::File = syn::parse_file(code).expect("parse");
-        let mut v = visitor_with_package("myapp");
+        let mut v = visitor_with_crate_name("myapp");
         v.visit_file(&syntax);
 
         let value_paths: Vec<String> = v
@@ -1163,7 +1164,7 @@ mod tests {
             }
         "#;
         let syntax: syn::File = syn::parse_file(code).expect("parse");
-        let mut v = visitor_with_package("myapp");
+        let mut v = visitor_with_crate_name("myapp");
         v.visit_file(&syntax);
 
         let value_paths: Vec<String> = v
@@ -1188,7 +1189,7 @@ mod tests {
             }
         "#;
         let syntax: syn::File = syn::parse_file(code).expect("parse");
-        let mut v = visitor_with_package("myapp");
+        let mut v = visitor_with_crate_name("myapp");
         v.visit_file(&syntax);
 
         let value_paths: Vec<String> = v
@@ -1216,7 +1217,7 @@ mod tests {
             }
         "#;
         let syntax: syn::File = syn::parse_file(code).expect("parse");
-        let mut v = visitor_with_package("myapp");
+        let mut v = visitor_with_crate_name("myapp");
         v.visit_file(&syntax);
 
         assert!(
@@ -1231,7 +1232,7 @@ mod tests {
     }
 
     #[test]
-    fn test_import_resolution_no_package_name() {
+    fn test_import_resolution_no_crate_name() {
         let code = r#"
             use myapp::version;
             fn foo() {
@@ -1242,10 +1243,10 @@ mod tests {
         let mut v = ModuleVisitor::new("test_mod", HashSet::new(), HashSet::new(), None);
         v.visit_file(&syntax);
 
-        // Without package_name, version::NAME should not resolve
+        // Without crate_name, version::NAME should not resolve
         assert!(
             v.references.value_refs.is_empty(),
-            "Without package_name, should not resolve imported names"
+            "Without crate_name, should not resolve imported names"
         );
     }
 

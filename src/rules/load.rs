@@ -155,7 +155,7 @@ fn freezable_cycles(cycles: &[Cycle]) -> Vec<&BTreeSet<String>> {
 
 /// Render a starter `crawk.toml` body from the crate's modules and cycles.
 ///
-/// Emits a single `[[check.layers]]` group named after the crate, listing its
+/// Emits a single `[[check.layers]]` group named after the package, listing its
 /// top-level modules alphabetically, with a comment telling the user to order
 /// them. crawk deliberately does not guess the hierarchy — layer ordering
 /// encodes intent the source cannot reveal.
@@ -164,7 +164,7 @@ fn freezable_cycles(cycles: &[Cycle]) -> Vec<&BTreeSet<String>> {
 /// turns `deny-cycles` on and freezes every existing loop as an
 /// `[[check.allow-cycle]]` entry. The rule therefore starts green and ratchets
 /// from day one instead of drowning a new adopter in pre-existing tangles.
-pub(crate) fn scaffold(crate_name: &str, modules: &BTreeSet<String>, cycles: &[Cycle]) -> String {
+pub(crate) fn scaffold(package_name: &str, modules: &BTreeSet<String>, cycles: &[Cycle]) -> String {
     // Collapse to top-level segments; the BTreeSet dedups and sorts them.
     let top: BTreeSet<&str> = modules
         .iter()
@@ -187,7 +187,7 @@ pub(crate) fn scaffold(crate_name: &str, modules: &BTreeSet<String>, cycles: &[C
          deny-cycles = true\n\
          \n\
          [[check.layers]]\n\
-         name = \"{crate_name}\"\n\
+         name = \"{package_name}\"\n\
          order = [{order}]\n"
     );
 
@@ -221,7 +221,7 @@ pub(crate) fn scaffold(crate_name: &str, modules: &BTreeSet<String>, cycles: &[C
 pub(crate) fn scaffold_config(
     crate_root: &Path,
     explicit: Option<&Path>,
-    crate_name: &str,
+    package_name: &str,
     modules: &BTreeSet<String>,
     cycles: &[Cycle],
 ) -> Result<InitOutcome> {
@@ -242,7 +242,7 @@ pub(crate) fn scaffold_config(
         }
         crate_root.join(CONFIG_FILE)
     };
-    std::fs::write(&path, scaffold(crate_name, modules, cycles)).map_err(|e| {
+    std::fs::write(&path, scaffold(package_name, modules, cycles)).map_err(|e| {
         AnalysisError::RuleConfigError {
             path: path.clone(),
             reason: e.to_string(),

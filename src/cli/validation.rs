@@ -67,7 +67,7 @@ mod tests {
         assert!(validate_module_path("foo::bar").is_ok());
         assert!(validate_module_path("foo::bar::baz").is_ok());
         assert!(validate_module_path("my_mod::SomeType").is_ok());
-        assert!(validate_module_path("my-crate::module").is_ok()); // hyphenated crate names
+        assert!(validate_module_path("my-crate::module").is_ok()); // hyphenated package names
     }
 
     #[test]
