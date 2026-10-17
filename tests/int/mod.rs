@@ -3,6 +3,7 @@ mod command;
 mod deps_command;
 mod error_cases;
 mod list_command;
+mod non_lib_library;
 mod use_command;
 mod verbosity;
 mod version;

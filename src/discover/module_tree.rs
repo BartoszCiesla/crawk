@@ -31,7 +31,9 @@ use crate::module_path::split_parent;
 use crate::utils::{ReadFileError, has_cfg_test, read_source_file};
 use tracing::{debug, info};
 
-use super::{CrateInfo, CrateInfoError, ModuleInfo, ModuleVisibility, Result, TargetInfo};
+use super::{
+    CrateInfo, CrateInfoError, ModuleInfo, ModuleVisibility, Result, TargetInfo, is_library_target,
+};
 
 impl From<&syn::Visibility> for ModuleVisibility {
     fn from(vis: &syn::Visibility) -> Self {
@@ -203,20 +205,20 @@ impl CrateInfo {
         self.resolve_module_path(package, module_path, cache)
     }
 
-    /// Finds the crate root file (lib.rs, main.rs, or the first target's src_path).
+    /// Finds the crate root file: the `src_path` of the first target that
+    /// matches, in this preference order:
     ///
-    /// Preference order:
-    /// 1. Library target (lib.rs)
-    /// 2. Binary target (main.rs)
-    /// 3. First target's source path
+    /// 1. The library target, whatever its crate type (see [`is_library_target`])
+    /// 2. A binary target
+    /// 3. The first target of any kind
     fn find_crate_root(package: &Package) -> Option<PathBuf> {
-        // Prefer lib.rs
+        // Prefer the library
         for target in &package.targets {
-            if target.is_lib() {
+            if is_library_target(target) {
                 return Some(target.src_path.as_std_path().to_path_buf());
             }
         }
-        // Then main.rs
+        // Then a binary
         for target in &package.targets {
             if target.is_bin() {
                 return Some(target.src_path.as_std_path().to_path_buf());

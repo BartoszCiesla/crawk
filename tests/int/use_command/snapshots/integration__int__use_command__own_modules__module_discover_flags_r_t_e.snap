@@ -23,6 +23,7 @@ crate::discover::ModuleInfo
 crate::discover::ModuleVisibility
 crate::discover::Result
 crate::discover::TargetInfo
+crate::discover::is_library_target
 crate::discover::module_tree::*
 crate::module_path::split_parent
 crate::utils::ReadFileError

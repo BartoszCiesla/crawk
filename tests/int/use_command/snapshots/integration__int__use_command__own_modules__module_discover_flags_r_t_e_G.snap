@@ -24,6 +24,7 @@ crate::discover::ModuleVisibility
 crate::discover::Result
 crate::discover::TargetInfo
 crate::discover::TargetKind
+crate::discover::is_library_target
 crate::module_path::split_parent
 crate::utils::ReadFileError
 crate::utils::has_cfg_test

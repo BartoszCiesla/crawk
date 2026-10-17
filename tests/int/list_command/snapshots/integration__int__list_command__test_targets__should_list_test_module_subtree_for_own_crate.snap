@@ -45,6 +45,7 @@ int::list_command::hyphenated
 int::list_command::multi_target
 int::list_command::overview
 int::list_command::test_targets
+int::non_lib_library
 int::use_command
 int::use_command::basic_output
 int::use_command::bin_only

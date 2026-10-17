@@ -25,10 +25,17 @@ default: cwd), using `cargo metadata` to find its targets:
 
 | Target kind                  | Included       | Root module name                     |
 |------------------------------|----------------|--------------------------------------|
-| library                      | always         | `lib`                                |
+| library (any crate type)     | always         | `lib`                                |
 | binary                       | always         | file stem of the target's `src_path` |
 | integration test             | only with `-t` | file stem of the target's `src_path` |
 | example, bench, build script | never          | —                                    |
+
+A package has at most one library, and it counts whatever its crate type:
+`cargo metadata` reports a plain library as `lib`, but a proc-macro crate
+(`[lib] proc-macro = true`) as `proc-macro` and an explicit `crate-type` as
+`rlib`, `dylib`, `cdylib` or `staticlib` (possibly several, as in
+`["cdylib", "rlib"]`). All of them are analyzed the same way, and a
+`[lib] name` override renames the crate in paths either way.
 
 The source path comes from `cargo metadata`, so it follows the manifest, not a
 fixed layout. With Cargo's default layout, `src/main.rs` becomes `main`,

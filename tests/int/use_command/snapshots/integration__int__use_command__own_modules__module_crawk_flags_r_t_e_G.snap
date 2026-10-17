@@ -32,6 +32,7 @@ crate::discover::ModuleVisibility::Public
 crate::discover::Result
 crate::discover::TargetInfo
 crate::discover::TargetKind
+crate::discover::is_library_target
 crate::error::AnalysisError
 crate::error::AnalysisError::ModuleNotFound
 crate::error::Result

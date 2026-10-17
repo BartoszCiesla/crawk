@@ -25,7 +25,7 @@ crate::discover::CrateInfo
 crate::discover::CrateInfoError
 crate::discover::ModuleVisibility::Public
 crate::discover::module_tree::*
-crate::discover::{CrateInfo, CrateInfoError, ModuleInfo, ModuleVisibility, Result, TargetInfo}
+crate::discover::{CrateInfo, CrateInfoError, ModuleInfo, ModuleVisibility, Result, TargetInfo, is_library_target}
 crate::discover::{CrateInfo, ModuleInfo, TargetInfo, TargetKind}
 crate::discover::{ModuleInfo, ModuleVisibility, TargetInfo, TargetKind}
 crate::error::AnalysisError

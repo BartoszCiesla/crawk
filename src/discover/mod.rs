@@ -279,6 +279,24 @@ impl ModuleInfo {
     }
 }
 
+/// Returns `true` if `target` is the package's library, whatever its crate type.
+///
+/// `lib` is only the default kind: `proc-macro = true` or an explicit
+/// `crate-type` makes `cargo metadata` report `proc-macro`, `cdylib`, `rlib`,
+/// `dylib` or `staticlib` instead (several at once for `["cdylib", "rlib"]`).
+/// A package has at most one library target, so this is the one notion of
+/// "the library" — never ask `Target::is_lib()`, which knows `lib` alone.
+fn is_library_target(target: &cargo_metadata::Target) -> bool {
+    use cargo_metadata::TargetKind as Kind;
+
+    target.kind.iter().any(|kind| {
+        matches!(
+            kind,
+            Kind::Lib | Kind::RLib | Kind::DyLib | Kind::CDyLib | Kind::StaticLib | Kind::ProcMacro
+        )
+    })
+}
+
 /// Memoized filesystem lookups, valid for the lifetime of one [`CrateInfo`].
 ///
 /// Module resolution peels every path prefix of every module (see
@@ -455,7 +473,7 @@ impl CrateInfo {
         package
             .targets
             .iter()
-            .find(|target| target.is_lib())
+            .find(|target| is_library_target(target))
             .map_or(package.name.as_str(), |target| target.name.as_str())
             .replace('-', "_")
     }
@@ -479,7 +497,7 @@ impl CrateInfo {
         let mut result = Vec::new();
         for target in &package.targets {
             let src_path = target.src_path.as_std_path().to_path_buf();
-            if target.is_lib() {
+            if is_library_target(target) {
                 // Under the crate name, which is what paths in source are
                 // matched against; `target.name` may still hold hyphens.
                 result.push((
@@ -789,7 +807,7 @@ mod tests {
             .packages
             .iter_mut()
             .flat_map(|package| &mut package.targets)
-            .find(|target| target.is_lib())
+            .find(|target| is_library_target(target))
             .expect("lib target");
         lib.name = String::from("my-crate");
 
@@ -837,5 +855,108 @@ mod tests {
             info.resolve_module_path_to_file("my_crate::foo", &mut cache)
                 .is_err()
         );
+    }
+
+    /// `[lib]` sections that leave cargo's plain `lib` kind out of the
+    /// target's `kind`: `cargo metadata` reports `proc-macro`, `cdylib`, ...
+    /// for them, yet each is still the package's one library.
+    const NON_LIB_KIND_MANIFESTS: [&str; 6] = [
+        "[lib]\nproc-macro = true\n",
+        "[lib]\ncrate-type = [\"cdylib\"]\n",
+        "[lib]\ncrate-type = [\"cdylib\", \"rlib\"]\n",
+        "[lib]\ncrate-type = [\"rlib\"]\n",
+        "[lib]\ncrate-type = [\"dylib\"]\n",
+        "[lib]\ncrate-type = [\"staticlib\"]\n",
+    ];
+
+    /// A library whose kind is not `lib` is still the library target:
+    /// without it `list`, `deps` and `check` see no module at all.
+    #[test]
+    fn all_targets_lists_a_library_of_any_crate_type() {
+        for manifest_tail in NON_LIB_KIND_MANIFESTS {
+            let dir = scratch_package_with_foo("my-macros", manifest_tail);
+            let info = CrateInfo::new(dir.path()).unwrap();
+
+            let targets = info.all_targets(false);
+
+            assert_eq!(targets.len(), 1, "{manifest_tail:?}");
+            assert_eq!(
+                targets[0].0,
+                TargetInfo::new(TargetKind::Lib, "my_macros"),
+                "{manifest_tail:?}"
+            );
+            assert!(
+                targets[0].1.ends_with("src/lib.rs"),
+                "{manifest_tail:?}: {:?}",
+                targets[0].1
+            );
+        }
+    }
+
+    /// The crate name comes from the library target, so a `[lib] name`
+    /// override must be found on a library of any crate type, too — not
+    /// replaced by the package name.
+    #[test]
+    fn lib_crate_name_follows_a_lib_name_override_on_a_library_of_any_crate_type() {
+        for manifest_tail in NON_LIB_KIND_MANIFESTS {
+            let tail = manifest_tail.replacen("[lib]\n", "[lib]\nname = \"renamed_lib\"\n", 1);
+            let dir = scratch_package_with_foo("my-macros", &tail);
+
+            let info = CrateInfo::new(dir.path()).unwrap();
+
+            assert_eq!(info.lib_crate_name(), "renamed_lib", "{tail:?}");
+            assert_eq!(info.root_package_name(), "my-macros", "{tail:?}");
+            assert_eq!(
+                info.all_targets(false)[0].0,
+                TargetInfo::new(TargetKind::Lib, "renamed_lib"),
+                "{tail:?}"
+            );
+        }
+    }
+
+    /// The bare crate name names the library root even when a binary sits
+    /// beside a library that is not of kind `lib`: the binary is only the
+    /// fallback when no library exists.
+    #[test]
+    fn crate_root_is_the_library_of_any_crate_type_not_the_binary() {
+        for manifest_tail in NON_LIB_KIND_MANIFESTS {
+            let dir = scratch_package_with_foo("my-macros", manifest_tail);
+            fs::write(dir.path().join("src/main.rs"), "fn main() {}\n").unwrap();
+            let info = CrateInfo::new(dir.path()).unwrap();
+            let mut cache = ParseCache::new();
+
+            let root = info
+                .resolve_module_path_to_file("my_macros", &mut cache)
+                .unwrap();
+
+            assert!(root.ends_with("src/lib.rs"), "{manifest_tail:?}: {root:?}");
+        }
+    }
+
+    /// Integration tests reach a non-`lib` library through its crate name, so
+    /// the module list has to carry the library under that name.
+    #[test]
+    fn all_targets_with_tests_keeps_the_library_of_any_crate_type_first() {
+        for manifest_tail in NON_LIB_KIND_MANIFESTS {
+            let dir = scratch_package_with_foo("my-macros", manifest_tail);
+            fs::create_dir_all(dir.path().join("tests")).unwrap();
+            fs::write(dir.path().join("tests/it.rs"), "").unwrap();
+            let info = CrateInfo::new(dir.path()).unwrap();
+
+            let kinds: Vec<_> = info
+                .all_targets(true)
+                .into_iter()
+                .map(|(target, _)| target)
+                .collect();
+
+            assert_eq!(
+                kinds,
+                [
+                    TargetInfo::new(TargetKind::Lib, "my_macros"),
+                    TargetInfo::new(TargetKind::Test, "it"),
+                ],
+                "{manifest_tail:?}"
+            );
+        }
     }
 }

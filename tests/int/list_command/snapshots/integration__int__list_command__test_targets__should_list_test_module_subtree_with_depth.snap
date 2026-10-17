@@ -18,6 +18,7 @@ int::command
 int::deps_command
 int::error_cases
 int::list_command
+int::non_lib_library
 int::use_command
 int::verbosity
 int::version
