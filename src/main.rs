@@ -1,3 +1,6 @@
+//! crawk command-line entry point: parses arguments, dispatches to a
+//! subcommand, renders its output and maps the outcome to an exit code.
+
 mod cli;
 mod format;
 mod logger;

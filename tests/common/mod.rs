@@ -1,3 +1,6 @@
+//! Shared helpers for the integration tests: crawk command builders and
+//! insta filters.
+
 use insta_cmd::get_cargo_bin;
 use std::process::Command;
 

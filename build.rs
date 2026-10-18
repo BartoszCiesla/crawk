@@ -1,7 +1,10 @@
+//! Build script: emits the vergen build metadata (and its overrides) that
+//! `src/version.rs` reads through `env!`.
+
 use anyhow::Result;
 use vergen_git2::{Build, Cargo, Emitter, Git2, Rustc};
 
-pub fn main() -> Result<()> {
+fn main() -> Result<()> {
     Emitter::default()
         .add_instructions(&Build::all_build())?
         .add_instructions(&Cargo::all_cargo())?

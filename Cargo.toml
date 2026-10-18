@@ -54,6 +54,7 @@ path = "tests/mod.rs"
 unsafe_code = "deny"
 unused_must_use = "deny"
 unreachable_pub = "warn"
+missing_docs = "warn"
 
 [lints.clippy]
 unwrap_used = "deny"

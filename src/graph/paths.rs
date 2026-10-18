@@ -19,6 +19,8 @@ pub struct ShortestPaths {
 }
 
 impl ShortestPaths {
+    /// Creates a result from its parts. `paths` is stored as given, so pass it
+    /// already sorted as documented on [`Self::paths`].
     #[must_use]
     pub const fn new(source: String, target: String, paths: Vec<Vec<String>>) -> Self {
         Self {

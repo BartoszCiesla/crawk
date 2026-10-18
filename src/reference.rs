@@ -122,17 +122,29 @@ pub enum GroupItem {
     Simple(String),
 
     /// Aliased: `HashMap as Map`
-    Aliased { name: String, alias: String },
+    Aliased {
+        /// Original item name (`HashMap`).
+        name: String,
+        /// Local name introduced by `as` (`Map`).
+        alias: String,
+    },
 
     /// Self reference: `self` or `self as Alias`
-    SelfItem { alias: Option<String> },
+    SelfItem {
+        /// Name introduced by `self as Alias`; `None` for a bare `self`.
+        alias: Option<String>,
+    },
 
     /// Glob in group: `*`
     Glob,
 
     /// Nested group: `io::{Read, Write}`
     Nested {
+        /// Path segments before the inner item(s), flattened (`io` in
+        /// `io::{Read, Write}`, `a::b` in `a::b::C`); empty for a bare `{A, B}`.
         prefix: Vec<String>,
+        /// What follows the prefix: the inner group's items, or the single
+        /// trailing item of a plain path (`C` in `a::b::C`).
         items: Vec<Self>,
     },
 }
