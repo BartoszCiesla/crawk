@@ -2,6 +2,7 @@
 
 use std::collections::BTreeSet;
 use std::fmt::Write as _;
+use std::io::Write as _;
 use std::path::{Path, PathBuf};
 
 use serde::Deserialize;
@@ -226,32 +227,69 @@ pub(crate) fn scaffold_config(
     cycles: &[Cycle],
 ) -> Result<InitOutcome> {
     let path = if let Some(target) = explicit {
-        if target.exists() {
-            return Err(AnalysisError::RuleConfigError {
-                path: target.to_path_buf(),
-                reason: "config already exists; edit it directly or remove it first".to_owned(),
-            });
-        }
         target.to_path_buf()
     } else {
+        // Discovery also catches `.crawk.toml`: a `crawk.toml` written beside
+        // it would silently shadow it. `write_new_file` guards the file itself.
         if let Ok(existing) = resolve_config_path(crate_root, None) {
-            return Err(AnalysisError::RuleConfigError {
-                path: existing,
-                reason: "config already exists; edit it directly or remove it first".to_owned(),
-            });
+            return Err(config_exists(existing));
         }
         crate_root.join(CONFIG_FILE)
     };
-    std::fs::write(&path, scaffold(package_name, modules, cycles)).map_err(|e| {
-        AnalysisError::RuleConfigError {
-            path: path.clone(),
-            reason: e.to_string(),
-        }
-    })?;
+    let body = scaffold(package_name, modules, cycles);
+    write_new_file(&path, |file| file.write_all(body.as_bytes()))?;
     Ok(InitOutcome {
         path,
         frozen_cycles: freezable_cycles(cycles).len(),
     })
+}
+
+/// Creates `path` and fills it with `body`, refusing if anything is there.
+///
+/// `create_new` makes the existence check and the creation one atomic step: a
+/// file that appears between a separate check and the write is not clobbered,
+/// and a dangling symlink — absent to `exists()` — is refused, not followed.
+///
+/// A failed `body` removes the file again. `create_new` guarantees it is the
+/// one just made here, so nothing else is lost; left behind, a truncated config
+/// would block the next `--init` and could still load with rules missing.
+fn write_new_file(
+    path: &Path,
+    body: impl FnOnce(&mut std::fs::File) -> std::io::Result<()>,
+) -> Result<()> {
+    let io_error = |e: std::io::Error| AnalysisError::RuleConfigError {
+        path: path.to_path_buf(),
+        reason: e.to_string(),
+    };
+    let mut file = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path)
+        .map_err(|e| match e.kind() {
+            std::io::ErrorKind::AlreadyExists => config_exists(path.to_path_buf()),
+            _ => io_error(e),
+        })?;
+    let written = body(&mut file);
+    // Closed before a possible removal, so no handle outlives the file.
+    drop(file);
+    if let Err(e) = written {
+        if let Err(cleanup) = std::fs::remove_file(path) {
+            warn!(
+                "could not remove partially written {}: {cleanup}",
+                path.display()
+            );
+        }
+        return Err(io_error(e));
+    }
+    Ok(())
+}
+
+/// The `--init` refusal for a config that is already in place at `path`.
+fn config_exists(path: PathBuf) -> AnalysisError {
+    AnalysisError::RuleConfigError {
+        path,
+        reason: "config already exists; edit it directly or remove it first".to_owned(),
+    }
 }
 
 /// 1-based line number of byte `offset` within `text`.
@@ -710,6 +748,56 @@ mod tests {
         let modules = module_set(&["cli"]);
         // Reuses discovery, so the hidden name blocks scaffolding too.
         assert!(scaffold_config(dir.path(), None, "my_crate", &modules, &[]).is_err());
+    }
+
+    /// A dangling symlink is "absent" to `exists()` / `is_file()`, so a
+    /// check-then-write would follow it and create its target elsewhere.
+    #[cfg(unix)]
+    #[test]
+    fn scaffold_config_refuses_dangling_symlink_at_explicit_path() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let elsewhere = dir.path().join("elsewhere.toml");
+        let target = dir.path().join("custom.toml");
+        std::os::unix::fs::symlink(&elsewhere, &target).expect("symlink");
+        let modules = module_set(&["cli"]);
+
+        let err = scaffold_config(dir.path(), Some(&target), "my_crate", &modules, &[])
+            .expect_err("dangling symlink must be refused");
+
+        assert!(err.to_string().contains("already exists"), "{err}");
+        assert!(!elsewhere.exists(), "must not write through the symlink");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn scaffold_config_refuses_dangling_symlink_at_default_path() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let elsewhere = dir.path().join("elsewhere.toml");
+        std::os::unix::fs::symlink(&elsewhere, dir.path().join("crawk.toml")).expect("symlink");
+        let modules = module_set(&["cli"]);
+
+        let err = scaffold_config(dir.path(), None, "my_crate", &modules, &[])
+            .expect_err("dangling symlink must be refused");
+
+        assert!(err.to_string().contains("already exists"), "{err}");
+        assert!(!elsewhere.exists(), "must not write through the symlink");
+    }
+
+    /// A truncated config left behind would block the next `--init` and could
+    /// still load — cut after `[check]`, as a valid config with no rules.
+    #[test]
+    fn write_new_file_removes_the_file_when_the_write_fails() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("crawk.toml");
+
+        let err = write_new_file(&path, |file| {
+            file.write_all(b"[check]\n")?;
+            Err(std::io::Error::other("disk full"))
+        })
+        .expect_err("write failure must be reported");
+
+        assert!(err.to_string().contains("disk full"), "{err}");
+        assert!(!path.exists(), "partial file must be removed");
     }
 
     #[test]
