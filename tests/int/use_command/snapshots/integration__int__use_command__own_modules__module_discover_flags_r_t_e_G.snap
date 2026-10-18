@@ -19,6 +19,7 @@ crate::constants::MAIN_FILE_NAME
 crate::constants::MODULE_FILE_NAME
 crate::discover::CrateInfo
 crate::discover::CrateInfoError
+crate::discover::MetadataError
 crate::discover::ModuleInfo
 crate::discover::ModuleVisibility
 crate::discover::Result

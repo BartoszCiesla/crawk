@@ -12,6 +12,8 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::analyzer::Analyzer
+crate::discover::CrateInfoError
+crate::discover::MetadataError
 crate::discover::ModuleInfo
 crate::discover::ModuleVisibility
 crate::discover::TargetInfo

@@ -22,7 +22,7 @@ pub enum AnalysisError {
         reason: String,
     },
 
-    /// Errors related to crate metadata retrieval and validation.
+    /// Errors related to crate metadata retrieval and validation; see [`CrateInfoError`].
     #[error(transparent)]
     CrateInfoError(#[from] CrateInfoError),
 

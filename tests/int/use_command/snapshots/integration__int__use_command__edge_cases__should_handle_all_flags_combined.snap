@@ -19,6 +19,8 @@ exit_code: 0
 ----- stdout -----
 lib
  - crate::analyzer::Analyzer
+ - crate::discover::CrateInfoError
+ - crate::discover::MetadataError
  - crate::discover::ModuleInfo
  - crate::discover::ModuleVisibility
  - crate::discover::TargetInfo
@@ -105,6 +107,7 @@ discover::module_tree::tests
 discover::tests
  - crate::discover::CrateInfo
  - crate::discover::CrateInfoError
+ - crate::discover::MetadataError
  - crate::discover::ModuleInfo
  - crate::discover::ModuleVisibility
  - crate::discover::Result

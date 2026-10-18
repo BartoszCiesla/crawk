@@ -55,6 +55,7 @@ unsafe_code = "deny"
 unused_must_use = "deny"
 unreachable_pub = "warn"
 missing_docs = "warn"
+unnameable_types = "warn"
 
 [lints.clippy]
 unwrap_used = "deny"

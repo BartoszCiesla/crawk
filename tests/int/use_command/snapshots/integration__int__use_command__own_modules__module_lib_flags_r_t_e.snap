@@ -28,6 +28,7 @@ crate::constants::PATH_QUALIFIER_SUPER
 crate::discover::*
 crate::discover::CrateInfo
 crate::discover::CrateInfoError
+crate::discover::MetadataError
 crate::discover::ModuleInfo
 crate::discover::ModuleVisibility
 crate::discover::ModuleVisibility::Public

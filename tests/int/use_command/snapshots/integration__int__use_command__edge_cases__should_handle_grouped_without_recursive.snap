@@ -13,7 +13,7 @@ exit_code: 0
 ----- stdout -----
 lib
  - crate::analyzer::Analyzer
- - crate::discover::{ModuleInfo, ModuleVisibility, TargetInfo, TargetKind}
+ - crate::discover::{CrateInfoError, MetadataError, ModuleInfo, ModuleVisibility, TargetInfo, TargetKind}
  - crate::error::AnalysisError
  - crate::graph::{AnnotatedEdges, Cycle, DependencyGraph, DependencyGraphOptions, Edge, ShortestPaths}
  - crate::model::{AnalysisOptions, AnalysisResult}

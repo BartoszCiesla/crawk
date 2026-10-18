@@ -113,11 +113,33 @@ impl fmt::Display for TargetInfo {
 }
 
 /// Errors that can occur during crate info operations.
+///
+/// Reaches library callers wrapped in
+/// [`AnalysisError::CrateInfoError`](crate::AnalysisError::CrateInfoError).
+///
+/// # Examples
+///
+/// ```no_run
+/// use crawk::{AnalysisError, AnalysisOptions, Analyzer, CrateInfoError};
+/// # use std::path::Path;
+/// # fn main() -> Result<(), AnalysisError> {
+/// let mut analyzer = Analyzer::new(Path::new("/path/to/crate"))?;
+/// match analyzer.analyze_module("utils::parser", &AnalysisOptions::default()) {
+///     Ok(result) => println!("analysed {}", result.module_path()),
+///     Err(AnalysisError::CrateInfoError(CrateInfoError::ModuleNotFound { module_path })) => {
+///         eprintln!("no module named '{module_path}'");
+///     }
+///     Err(other) => return Err(other),
+/// }
+/// # Ok(())
+/// # }
+/// ```
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum CrateInfoError {
-    /// Failed to execute cargo metadata command.
+    /// Failed to execute cargo metadata command; see [`MetadataError`] for why.
     #[error("Failed to execute cargo metadata: {0}")]
-    MetadataExecution(#[from] cargo_metadata::Error),
+    MetadataExecution(#[from] MetadataError),
 
     /// Path points to a workspace root rather than a single crate.
     #[error("workspace support is not yet implemented")]
@@ -191,6 +213,59 @@ impl CrateInfoError {
     #[must_use]
     pub const fn is_module_not_found(&self) -> bool {
         matches!(self, Self::ModuleNotFound { .. })
+    }
+}
+
+/// Why `cargo metadata` could not describe the crate.
+///
+/// crawk's own summary of `cargo_metadata::Error`, so that crate's error type
+/// (and its version) stays out of crawk's public API. Arrives wrapped in
+/// [`CrateInfoError::MetadataExecution`].
+#[derive(Debug, Error)]
+#[non_exhaustive]
+pub enum MetadataError {
+    /// `cargo metadata` ran, but its exit status reported failure (no
+    /// `Cargo.toml`, a broken manifest, ...).
+    #[error("`cargo metadata` exited with an error: {stderr}")]
+    ExitFailure {
+        /// What `cargo metadata` printed on stderr.
+        stderr: String,
+    },
+
+    /// `cargo metadata` could not be started (no `cargo` on `PATH`, a crate
+    /// path that is not a directory, ...).
+    #[error("failed to start `cargo metadata`: {source}")]
+    Spawn {
+        /// The underlying IO error.
+        source: std::io::Error,
+    },
+
+    /// `cargo metadata` ran, but its output was not valid UTF-8 or JSON.
+    #[error("{message}")]
+    InvalidOutput {
+        /// The original description of what was wrong with the output.
+        message: String,
+    },
+}
+
+impl MetadataError {
+    /// Maps the `cargo_metadata` error onto crawk's own cases.
+    ///
+    /// A plain function rather than `From`: a trait impl naming
+    /// `cargo_metadata::Error` would put that type back into the public API.
+    /// The match has no catch-all, so a variant added by a `cargo_metadata`
+    /// upgrade fails the build here instead of being mapped blindly.
+    fn from_cargo(error: cargo_metadata::Error) -> Self {
+        use cargo_metadata::Error as Cargo;
+        match error {
+            Cargo::CargoMetadata { stderr } => Self::ExitFailure { stderr },
+            Cargo::Io(source) => Self::Spawn { source },
+            unreadable @ (Cargo::Utf8(_) | Cargo::ErrUtf8(_) | Cargo::Json(_) | Cargo::NoJson) => {
+                Self::InvalidOutput {
+                    message: unreadable.to_string(),
+                }
+            }
+        }
     }
 }
 
@@ -354,7 +429,11 @@ impl CrateInfo {
     /// - The cargo metadata command fails to execute
     /// - No root package is found in the workspace
     pub(crate) fn new(crate_path: &Path) -> Result<Self> {
-        Self::from_metadata(MetadataCommand::new().current_dir(crate_path).exec()?)
+        let metadata = MetadataCommand::new()
+            .current_dir(crate_path)
+            .exec()
+            .map_err(MetadataError::from_cargo)?;
+        Self::from_metadata(metadata)
     }
 
     /// Builds a `CrateInfo` from metadata that `cargo metadata` already produced.
@@ -691,6 +770,7 @@ mod tests {
     use super::*;
     use std::fs;
     use std::path::Path;
+    use test_case::test_case;
 
     /// Writes a library package named `name` into `dir`: an empty
     /// `src/lib.rs` and a manifest, with `manifest_tail` appended after the
@@ -705,6 +785,58 @@ mod tests {
             ),
         )
         .unwrap();
+    }
+
+    /// `cargo metadata` failing on its own terms keeps its stderr, the one part
+    /// a caller can act on.
+    #[test]
+    fn metadata_error_maps_a_failed_run_to_exit_failure() {
+        let error = MetadataError::from_cargo(cargo_metadata::Error::CargoMetadata {
+            stderr: String::from("error: could not find `Cargo.toml`"),
+        });
+
+        assert!(
+            matches!(&error, MetadataError::ExitFailure { stderr } if stderr == "error: could not find `Cargo.toml`"),
+            "{error:?}"
+        );
+    }
+
+    /// A failed spawn keeps the IO error as its source, so the `Caused by:`
+    /// chain and `kind()` survive the mapping.
+    #[test]
+    fn metadata_error_maps_a_failed_spawn_to_spawn_keeping_the_source() {
+        let error = MetadataError::from_cargo(cargo_metadata::Error::Io(std::io::Error::from(
+            std::io::ErrorKind::NotFound,
+        )));
+
+        assert!(
+            matches!(&error, MetadataError::Spawn { source } if source.kind() == std::io::ErrorKind::NotFound),
+            "{error:?}"
+        );
+        assert!(std::error::Error::source(&error).is_some());
+    }
+
+    /// Every unreadable-output variant collapses into one case that keeps the
+    /// original message word for word.
+    #[test_case(cargo_metadata::Error::NoJson ; "no json")]
+    #[test_case(
+        cargo_metadata::Error::Utf8(String::from_utf8(vec![0xff]).unwrap_err().utf8_error())
+        ; "stdout not utf8"
+    )]
+    #[test_case(
+        cargo_metadata::Error::ErrUtf8(String::from_utf8(vec![0xff]).unwrap_err())
+        ; "stderr not utf8"
+    )]
+    fn metadata_error_maps_unreadable_output_to_invalid_output(cargo_error: cargo_metadata::Error) {
+        let expected = cargo_error.to_string();
+
+        let error = MetadataError::from_cargo(cargo_error);
+
+        assert!(
+            matches!(&error, MetadataError::InvalidOutput { .. }),
+            "{error:?}"
+        );
+        assert_eq!(error.to_string(), expected);
     }
 
     /// A scratch package named `name` whose library declares one module, `foo`.
