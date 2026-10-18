@@ -1,6 +1,5 @@
 allow-unwrap-in-tests = true
 allow-expect-in-tests = true
-msrv = "1.88"
 cognitive-complexity-threshold = 30
 disallowed-methods = [
     { path = "cargo_metadata::Target::is_lib", reason = "knows the plain `lib` kind only; use `discover::is_library_target`" },

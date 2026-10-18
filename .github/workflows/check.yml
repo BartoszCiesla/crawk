@@ -139,6 +139,41 @@ jobs:
         run: |
           commit="$(git rev-parse HEAD | cut -c1-7)"
           "${RUNNER_TEMP}/package/target/debug/crawk" --version | grep -F "(${commit})"
+  # Every other job builds with rust-toolchain.toml, so nothing else would notice a
+  # dependency bump or a newer API pushing the real minimum past `rust-version`.
+  msrv-checks:
+    name: MSRV Checks
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    concurrency:
+      group: msrv-checks-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Read MSRV from Cargo.toml
+        id: msrv
+        run: |
+          msrv="$(sed -n 's/^rust-version = "\(.*\)"$/\1/p' Cargo.toml)"
+          test -n "${msrv}"
+          echo "version=${msrv}" >> "$GITHUB_OUTPUT"
+      - name: Install MSRV toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
+        with:
+          toolchain: ${{ steps.msrv.outputs.version }}
+      # Library and binaries only: what `cargo install` and dependents build, build.rs
+      # included. Dev-dependencies never reach users, so they do not bound the MSRV.
+      - name: Check on MSRV
+        run: cargo +"${MSRV}" check --locked
+        env:
+          MSRV: ${{ steps.msrv.outputs.version }}
+      - name: Crate docs state the MSRV
+        run: grep -F "Requires Rust **${MSRV}**" src/lib.rs
+        env:
+          MSRV: ${{ steps.msrv.outputs.version }}
   nix-checks:
     name: Nix Checks
     permissions:
@@ -169,6 +204,7 @@ jobs:
       - prek-checks-push
       - build-checks
       - package-checks
+      - msrv-checks
       - nix-checks
     if: always()
     steps:

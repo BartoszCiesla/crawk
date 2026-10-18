@@ -59,7 +59,7 @@
 //!
 //! # MSRV
 //!
-//! Requires Rust **1.88** or later (`edition = "2024"`).
+//! Requires Rust **1.96.0** or later (`edition = "2024"`).
 //!
 //! # Features
 //!
