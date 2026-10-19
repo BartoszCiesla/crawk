@@ -214,8 +214,8 @@ Things that follow from this table:
 - **`use -r` and `deps` can disagree.** `use` prints references (`crate::graph::Cycle`),
   `deps` prints edges (`rules::eval -> graph`). `use` without `-e` also shows a
   grouped import as one line. And `use` analyzes the library target unless you
-  name a binary root by its file stem (`main`, not the binary's name), while `deps` always covers
-  all targets.
+  name a binary root by its file stem (`main`, not the binary's name), or with
+  `-t` a test root (`integration`), while `deps` always covers all targets.
 - **`-G` exists only on `use`.** It reads the glob target's source and lists
   the items visible to the importing module: `pub`, `pub(crate)`, and
   `pub(super)` / `pub(in path)` when the importer is inside the allowed scope.
