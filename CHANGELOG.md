@@ -2,6 +2,36 @@
 
 ## [Unreleased]
 
+## [0.7.2](https://github.com/BartoszCiesla/crawk/compare/v0.7.1...v0.7.2)
+
+### 🐛 Bug Fixes
+
+
+- *(analyzer)* Honour a non-recursive use of a test module - ([4fb8549](https://github.com/BartoszCiesla/crawk/commit/4fb8549bf8fa4f07edca4fa44a6907b83075f374))
+- *(analyzer)* Address a test target by its root name - ([44247d6](https://github.com/BartoszCiesla/crawk/commit/44247d6518d2dafc97b749247324d56b050a7a1a))
+- *(analyzer)* Take target roots from cargo metadata - ([531975e](https://github.com/BartoszCiesla/crawk/commit/531975e1e80fab73d178642dc175465cab81b8bb))
+- *(build)* Declare the real MSRV and verify it in CI - ([98a8968](https://github.com/BartoszCiesla/crawk/commit/98a896847397ffd1dbd603260b4c406aba49abf8))
+- *(check)* Create the --init config atomically - ([50664bc](https://github.com/BartoszCiesla/crawk/commit/50664bcb5d29e4ed404fc9c693efa5e3dc70c558))
+- *(discover)* Export CrateInfoError from the library root - ([5fe3c5e](https://github.com/BartoszCiesla/crawk/commit/5fe3c5eed43c9d01c0758fc7b6224e1fd9d06d96))
+- *(discover)* Treat a library of any crate type as the library - ([d0fa938](https://github.com/BartoszCiesla/crawk/commit/d0fa93885318b73df4f568a2bb4102f4db39b2aa))
+
+### 🚜 Refactor
+
+
+- *(discover)* Drop unreachable empty-split guards - ([4d5cafe](https://github.com/BartoszCiesla/crawk/commit/4d5cafed5523c2f5fa389c6056a5111300819e69))
+
+### 📚 Documentation
+
+
+- Name integration test roots as valid use targets - ([b8bbff5](https://github.com/BartoszCiesla/crawk/commit/b8bbff5964b129ffc184f054bb19b6e11b8b9455))
+- Enforce missing_docs and document remaining gaps - ([0be305c](https://github.com/BartoszCiesla/crawk/commit/0be305c7b4c53843c7d98e4d5e53d62217771997))
+
+### ⚙️ Miscellaneous Tasks
+
+
+- Bump toolchain, CI actions and crate dependencies - ([f427baa](https://github.com/BartoszCiesla/crawk/commit/f427baabf149751147eeb7dc30983ab9991425cd))
+
+
 ## [0.7.1](https://github.com/BartoszCiesla/crawk/compare/v0.7.0...v0.7.1)
 
 ### 🐛 Bug Fixes
