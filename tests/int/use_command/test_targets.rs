@@ -9,6 +9,13 @@ fn should_analyze_test_module_for_own_crate() {
     assert_cmd_snapshot!(crawk().arg("use").arg("int::command").arg("-t"));
 }
 
+// Without -r only the module's own file counts: `tests/int/mod.rs` declares
+// submodules and references nothing.
+#[test]
+fn should_analyze_test_module_without_its_submodules() {
+    assert_cmd_snapshot!(crawk().arg("use").arg("int").arg("-t"));
+}
+
 #[test]
 fn should_analyze_test_module_subtree_recursive() {
     assert_cmd_snapshot!(

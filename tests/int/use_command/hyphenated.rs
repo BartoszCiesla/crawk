@@ -50,3 +50,10 @@ fn should_use_path_led_by_test_root_in_hyphenated(module: &str, case: &str) {
         crawk_hyphenated().args(["use", module, "-t", "-r"])
     );
 }
+
+// Without `-r` only the module itself is analysed, as for a library module:
+// the root's own reference, not its submodule's.
+#[test]
+fn should_use_test_root_without_recursion_in_hyphenated() {
+    assert_cmd_snapshot!(crawk_hyphenated().args(["use", "smoke", "-t"]));
+}

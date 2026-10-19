@@ -173,7 +173,7 @@ impl Analyzer {
         ) {
             Ok(mods) => mods,
             Err(ref e) if include_tests && e.is_module_not_found() => {
-                self.list_from_test_target(module_path)?
+                self.list_from_test_target(module_path, true)?
             }
             Err(e) => return Err(e.into()),
         };
@@ -200,9 +200,14 @@ impl Analyzer {
     /// [`list_all_modules`](Self::list_all_modules) gives the root — addresses
     /// that target: `smoke` is its root, `smoke::support` one of its modules.
     /// Failing that, the path is looked up bare in every test target, the way
-    /// their modules are listed. Returns the subtree rooted at the module found,
-    /// with paths relative to the target root (the root itself is `""`).
-    fn list_from_test_target(&mut self, module_path: &str) -> Result<Vec<ModuleInfo>> {
+    /// their modules are listed. Returns the module found — with its whole
+    /// subtree when `recursive` — with paths relative to the target root (the
+    /// root itself is `""`).
+    fn list_from_test_target(
+        &mut self,
+        module_path: &str,
+        recursive: bool,
+    ) -> Result<Vec<ModuleInfo>> {
         let test_targets: Vec<(TargetInfo, PathBuf)> = self
             .crate_info
             .all_targets(true)
@@ -228,7 +233,13 @@ impl Analyzer {
 
             let matched: Vec<ModuleInfo> = modules
                 .into_iter()
-                .filter(|m| is_in_subtree(m.path(), relative))
+                .filter(|m| {
+                    if recursive {
+                        is_in_subtree(m.path(), relative)
+                    } else {
+                        m.path() == relative
+                    }
+                })
                 .collect();
 
             if !matched.is_empty() {
@@ -371,7 +382,7 @@ impl Analyzer {
         ) {
             Ok(mods) => mods,
             Err(ref e) if options.include_tests && e.is_module_not_found() => {
-                self.list_from_test_target(&module_path)?
+                self.list_from_test_target(&module_path, options.recursive)?
             }
             Err(e) => return Err(e.into()),
         };
@@ -402,7 +413,7 @@ impl Analyzer {
                 // exactly like the discovery call above — a parse or I/O
                 // failure must surface as itself, not as "module not found".
                 Err(ref e) if options.include_tests && e.is_module_not_found() => {
-                    self.list_from_test_target(&module_path)?
+                    self.list_from_test_target(&module_path, true)?
                 }
                 // The queried module already resolved above, so a not-found
                 // here is about the recursive walk losing it. Report the
