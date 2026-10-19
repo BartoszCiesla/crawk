@@ -25,3 +25,14 @@ fn should_list_path_led_by_library_name_in_hyphenated(module: &str, case: &str) 
         crawk_hyphenated().args(["list", module])
     );
 }
+
+// The integration test's root is listed under its file stem; that name, alone
+// or leading a path, must address the test target.
+#[test_case("smoke", "root" ; "root")]
+#[test_case("smoke::support", "root_and_module" ; "root and module")]
+fn should_list_path_led_by_test_root_in_hyphenated(module: &str, case: &str) {
+    assert_cmd_snapshot!(
+        format!("hyphenated_list_test_{case}"),
+        crawk_hyphenated().args(["list", module, "-t"])
+    );
+}

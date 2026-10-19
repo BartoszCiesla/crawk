@@ -59,6 +59,7 @@ analyzer
  - crate::model::AnalysisOptions
  - crate::model::AnalysisResult
  - crate::module_path::is_in_subtree
+ - crate::module_path::path_below
  - crate::module_path::split_parent
  - crate::parser::CrateAnalyzer
  - crate::reference::GroupItem
@@ -176,6 +177,7 @@ module_path
 module_path::tests
  - crate::module_path::is_in_subtree
  - crate::module_path::parent_module
+ - crate::module_path::path_below
  - crate::module_path::split_parent
 parser
  - crate::cache::ParseCache

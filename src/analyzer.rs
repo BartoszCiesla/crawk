@@ -3,7 +3,7 @@ use crate::discover::{CrateInfo, ModuleInfo, TargetInfo, TargetKind};
 use crate::error::{AnalysisError, Result};
 use crate::graph::{self, DependencyGraph, DependencyGraphOptions};
 use crate::model::{AnalysisOptions, AnalysisResult};
-use crate::module_path::{is_in_subtree, split_parent};
+use crate::module_path::{is_in_subtree, path_below, split_parent};
 use crate::parser::CrateAnalyzer;
 use crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference};
 use crate::resolve::resolve_glob;
@@ -196,16 +196,29 @@ impl Analyzer {
 
     /// Searches integration test targets for the given module path.
     ///
-    /// Discovers all test targets, collects their full module trees, and
-    /// returns the subtree rooted at `module_path` if found.
+    /// A path led by a test target's root name — its file stem, the name
+    /// [`list_all_modules`](Self::list_all_modules) gives the root — addresses
+    /// that target: `smoke` is its root, `smoke::support` one of its modules.
+    /// Failing that, the path is looked up bare in every test target, the way
+    /// their modules are listed. Returns the subtree rooted at the module found,
+    /// with paths relative to the target root (the root itself is `""`).
     fn list_from_test_target(&mut self, module_path: &str) -> Result<Vec<ModuleInfo>> {
-        let targets = self.crate_info.all_targets(true);
+        let test_targets: Vec<(TargetInfo, PathBuf)> = self
+            .crate_info
+            .all_targets(true)
+            .into_iter()
+            .filter(|(target, _)| *target.kind() == TargetKind::Test)
+            .collect();
 
-        for (target_info, src_path) in &targets {
-            if *target_info.kind() != TargetKind::Test {
-                continue;
-            }
+        let led_by_root = test_targets.iter().filter_map(|(target, src_path)| {
+            let root = Self::target_module_path(target, src_path);
+            path_below(module_path, &root).map(|relative| (target, src_path, relative))
+        });
+        let bare = test_targets
+            .iter()
+            .map(|(target, src_path)| (target, src_path, module_path));
 
+        for (target_info, src_path, relative) in led_by_root.chain(bare) {
             let modules = CrateInfo::get_module_tree_for_file(
                 src_path,
                 target_info,
@@ -215,7 +228,7 @@ impl Analyzer {
 
             let matched: Vec<ModuleInfo> = modules
                 .into_iter()
-                .filter(|m| is_in_subtree(m.path(), module_path))
+                .filter(|m| is_in_subtree(m.path(), relative))
                 .collect();
 
             if !matched.is_empty() {

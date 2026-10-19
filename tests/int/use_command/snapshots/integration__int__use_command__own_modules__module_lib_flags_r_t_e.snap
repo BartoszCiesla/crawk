@@ -72,6 +72,7 @@ crate::model::AnalysisResult
 crate::module_path::*
 crate::module_path::is_in_subtree
 crate::module_path::parent_module
+crate::module_path::path_below
 crate::module_path::split_parent
 crate::parser::*
 crate::parser::CrateAnalyzer

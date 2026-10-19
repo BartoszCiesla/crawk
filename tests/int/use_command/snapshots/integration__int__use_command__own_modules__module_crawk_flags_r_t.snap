@@ -67,7 +67,7 @@ crate::module_path::*
 crate::module_path::is_in_subtree
 crate::module_path::split_parent
 crate::module_path::{is_in_subtree, parent_module}
-crate::module_path::{is_in_subtree, split_parent}
+crate::module_path::{is_in_subtree, path_below, split_parent}
 crate::parser::*
 crate::parser::CrateAnalyzer
 crate::parser::visitor

@@ -1,0 +1,18 @@
+---
+source: tests/int/why_command/hyphenated.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/hyphenated
+    - why
+    - smoke
+    - support
+    - "-t"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::support::square
+
+----- stderr -----

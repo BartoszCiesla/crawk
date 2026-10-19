@@ -37,6 +37,13 @@ fn should_analyze_test_module_for_fixture() {
     assert_cmd_snapshot!(crawk_modules().arg("use").arg("helpers").arg("-t"));
 }
 
+// `list -t` names a test target's root after its file stem: `use` must
+// accept that name too.
+#[test]
+fn should_analyze_test_target_root_for_fixture() {
+    assert_cmd_snapshot!(crawk_modules().arg("use").arg("integration").arg("-t"));
+}
+
 // === Without -t flag: must fail ===
 
 #[test]

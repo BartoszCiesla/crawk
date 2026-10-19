@@ -1,0 +1,17 @@
+---
+source: tests/int/list_command/hyphenated.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/hyphenated
+    - list
+    - "smoke::support"
+    - "-t"
+---
+success: true
+exit_code: 0
+----- stdout -----
+support
+
+----- stderr -----

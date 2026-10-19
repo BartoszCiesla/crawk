@@ -1,0 +1,17 @@
+---
+source: tests/int/use_command/test_targets.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/modules
+    - use
+    - integration
+    - "-t"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::helpers::fixture_helper
+
+----- stderr -----

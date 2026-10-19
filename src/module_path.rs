@@ -28,11 +28,27 @@
 /// - `("foo::bar", "")`    → `true`
 /// - `("", "foo")`         → `false`
 pub(crate) fn is_in_subtree(module: &str, ancestor: &str) -> bool {
-    ancestor.is_empty()
-        || module == ancestor
-        || module
-            .strip_prefix(ancestor)
-            .is_some_and(|rest| rest.starts_with("::"))
+    path_below(module, ancestor).is_some()
+}
+
+/// The path of `module` relative to `ancestor`, or `None` when `module` lies
+/// outside the subtree rooted at `ancestor` (see [`is_in_subtree`]).
+///
+/// `ancestor` itself comes back as the empty path, and an empty `ancestor`
+/// (the crate root) leaves `module` unchanged.
+///
+/// - `("foo::bar", "foo")` → `Some("bar")`
+/// - `("foo", "foo")`      → `Some("")`
+/// - `("foo", "")`         → `Some("foo")`
+/// - `("foobar", "foo")`   → `None`
+pub(crate) fn path_below<'a>(module: &'a str, ancestor: &str) -> Option<&'a str> {
+    if ancestor.is_empty() {
+        return Some(module);
+    }
+    match module.strip_prefix(ancestor)? {
+        "" => Some(""),
+        rest => rest.strip_prefix("::"),
+    }
 }
 
 /// Splits `module` into its parent path and its own name.
@@ -90,6 +106,34 @@ mod tests {
     fn is_in_subtree_is_not_symmetric() {
         assert!(is_in_subtree("foo::bar", "foo"));
         assert!(!is_in_subtree("foo", "foo::bar"));
+    }
+
+    // --- path_below ---
+
+    #[test]
+    fn path_below_strips_the_ancestor() {
+        assert_eq!(path_below("foo::bar", "foo"), Some("bar"));
+        assert_eq!(path_below("foo::bar::baz", "foo"), Some("bar::baz"));
+        assert_eq!(path_below("foo::bar::baz", "foo::bar"), Some("baz"));
+    }
+
+    #[test]
+    fn path_below_ancestor_itself_is_empty() {
+        assert_eq!(path_below("foo", "foo"), Some(""));
+        assert_eq!(path_below("", ""), Some(""));
+    }
+
+    #[test]
+    fn path_below_crate_root_keeps_the_path() {
+        assert_eq!(path_below("foo::bar", ""), Some("foo::bar"));
+    }
+
+    #[test]
+    fn path_below_outside_the_subtree_is_none() {
+        assert_eq!(path_below("foobar", "foo"), None);
+        assert_eq!(path_below("foo::barbaz", "foo::bar"), None);
+        assert_eq!(path_below("foo", "foo::bar"), None);
+        assert_eq!(path_below("", "foo"), None);
     }
 
     // --- split_parent / parent_module ---

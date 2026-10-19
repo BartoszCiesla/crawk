@@ -38,3 +38,15 @@ fn should_use_path_led_by_library_name_in_hyphenated(module: &str, case: &str) {
         crawk_hyphenated().args(["use", module])
     );
 }
+
+// The integration test's root is named after its file stem, as `list -t`
+// shows it, and a path led by that name reaches the root's modules — the way
+// `main::cli` reaches a binary's.
+#[test_case("smoke", "root" ; "root")]
+#[test_case("smoke::support", "root_and_module" ; "root and module")]
+fn should_use_path_led_by_test_root_in_hyphenated(module: &str, case: &str) {
+    assert_cmd_snapshot!(
+        format!("hyphenated_use_test_{case}"),
+        crawk_hyphenated().args(["use", module, "-t", "-r"])
+    );
+}

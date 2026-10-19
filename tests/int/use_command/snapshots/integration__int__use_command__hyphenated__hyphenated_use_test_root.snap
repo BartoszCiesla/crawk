@@ -1,0 +1,19 @@
+---
+source: tests/int/use_command/hyphenated.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/hyphenated
+    - use
+    - smoke
+    - "-t"
+    - "-r"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::support::square
+hyphenated_pkg::shapes::Square
+
+----- stderr -----
