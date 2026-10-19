@@ -732,10 +732,7 @@ impl CrateInfo {
     /// If the module path is just the crate name/lib/binary, returns empty string.
     fn normalize_module_path(&self, module_path: &str) -> String {
         let parts: Vec<&str> = module_path.split("::").collect();
-        if parts.is_empty() {
-            return module_path.to_owned();
-        }
-
+        // `split` yields at least one segment (`""` for an empty path).
         let first_part = parts[0];
 
         // Check if first part is the crate name, the package name or "lib" alias

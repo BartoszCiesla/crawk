@@ -132,11 +132,11 @@ impl CrateInfo {
         module_path: &str,
         cache: &mut ParseCache,
     ) -> Result<PathBuf> {
-        let parts: Vec<&str> = module_path.split("::").collect();
-
-        if parts.is_empty() || module_path.is_empty() {
+        if module_path.is_empty() {
             return Err(CrateInfoError::EmptyModulePath);
         }
+
+        let parts: Vec<&str> = module_path.split("::").collect();
 
         let crate_root = Self::find_crate_root(package)
             .ok_or_else(|| CrateInfoError::NoCrateRoot(package.name.to_string()))?;
@@ -165,11 +165,11 @@ impl CrateInfo {
         module_path: &str,
         cache: &mut ParseCache,
     ) -> Result<PathBuf> {
-        let parts: Vec<&str> = module_path.split("::").collect();
-
-        if parts.is_empty() || module_path.is_empty() {
+        if module_path.is_empty() {
             return Err(CrateInfoError::EmptyModulePath);
         }
+
+        let parts: Vec<&str> = module_path.split("::").collect();
 
         // Check if the first part is the crate name, the package name or "lib" alias
         let is_lib_root = self.is_lib_root_alias(parts[0]);
@@ -257,11 +257,11 @@ impl CrateInfo {
         module_path: &str,
         cache: &mut ParseCache,
     ) -> Result<PathBuf> {
-        let parts: Vec<&str> = module_path.split("::").collect();
-
-        if parts.is_empty() || module_path.is_empty() {
+        if module_path.is_empty() {
             return Err(CrateInfoError::EmptyModulePath);
         }
+
+        let parts: Vec<&str> = module_path.split("::").collect();
 
         let bin_root = Self::find_binary_by_file_stem(package, file_stem)
             .ok_or_else(|| CrateInfoError::NoCrateRoot(package.name.to_string()))?;
@@ -1027,6 +1027,7 @@ impl CrateInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use test_case::test_case;
 
     fn items_from(code: &str) -> Vec<Item> {
         syn::parse_file(code).unwrap().items
@@ -1540,6 +1541,24 @@ mod tests {
             cache.len(),
             1,
             "inline lookup through check_inline_module must populate the shared ParseCache"
+        );
+    }
+
+    /// Each input reaches the empty-path guard of a different resolver: the
+    /// entry point itself, the library-root branch with nothing after `lib::`,
+    /// and the binary-root branch with nothing after `main::`.
+    #[test_case("" ; "entry point")]
+    #[test_case("lib::" ; "library root remainder")]
+    #[test_case("main::" ; "binary root remainder")]
+    fn resolve_module_rejects_empty_path(module_path: &str) {
+        let info = fixture_crate_info();
+        let mut cache = ParseCache::new();
+
+        let err = info.resolve_module(module_path, &mut cache).unwrap_err();
+
+        assert!(
+            matches!(err, CrateInfoError::EmptyModulePath),
+            "{module_path:?}: {err:?}"
         );
     }
 
