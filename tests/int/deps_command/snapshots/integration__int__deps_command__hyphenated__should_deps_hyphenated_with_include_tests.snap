@@ -1,0 +1,22 @@
+---
+source: tests/int/deps_command/hyphenated.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/hyphenated
+    - deps
+    - "-t"
+---
+success: true
+exit_code: 0
+----- stdout -----
+lib -> shapes
+main -> lib
+main -> render
+main -> shapes
+render -> shapes
+smoke -> support
+support -> shapes
+
+----- stderr -----

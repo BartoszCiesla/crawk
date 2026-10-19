@@ -249,21 +249,7 @@ impl Analyzer {
 
         for (target_info, src_path) in &targets {
             let canonical_name = Self::target_module_path(target_info, src_path);
-            let modules = match target_info.kind() {
-                TargetKind::Lib | TargetKind::Bin => self.crate_info.get_module_tree(
-                    &canonical_name,
-                    true,
-                    include_tests,
-                    target_info,
-                    &mut self.parse_cache,
-                )?,
-                TargetKind::Test => CrateInfo::get_module_tree_for_file(
-                    src_path,
-                    target_info,
-                    include_tests,
-                    &mut self.parse_cache,
-                )?,
-            };
+            let modules = self.target_modules(target_info, src_path, include_tests)?;
             // Rename root entry from "" to canonical name (e.g. "lib", "main")
             let modules = modules.into_iter().map(|m| {
                 if m.path().is_empty() {
@@ -291,6 +277,36 @@ impl Analyzer {
             targets.len()
         );
         Ok(all_modules)
+    }
+
+    /// Discovers the whole module tree of one compilation target.
+    ///
+    /// The target's root module comes back under the empty path. Library and
+    /// binary roots are resolved through their root name; an integration test
+    /// is read straight from `src_path`, its entry point, since no module path
+    /// leads to it.
+    fn target_modules(
+        &mut self,
+        target: &TargetInfo,
+        src_path: &Path,
+        include_tests: bool,
+    ) -> Result<Vec<ModuleInfo>> {
+        let modules = match target.kind() {
+            TargetKind::Lib | TargetKind::Bin => self.crate_info.get_module_tree(
+                &Self::target_module_path(target, src_path),
+                true,
+                include_tests,
+                target,
+                &mut self.parse_cache,
+            )?,
+            TargetKind::Test => CrateInfo::get_module_tree_for_file(
+                src_path,
+                target,
+                include_tests,
+                &mut self.parse_cache,
+            )?,
+        };
+        Ok(modules)
     }
 
     /// Analyze dependencies for a specific module.
@@ -346,11 +362,6 @@ impl Analyzer {
             }
             Err(e) => return Err(e.into()),
         };
-
-        let source_file = modules
-            .first()
-            .map(|m| m.source().to_path_buf())
-            .unwrap_or_default();
 
         // Use the target from the already-discovered modules so further
         // discovery below hits the same target (lib, bin, or test).
@@ -452,14 +463,55 @@ impl Analyzer {
             }
         }
 
+        self.analyze_discovered(module_path, modules, &children_map, options)
+    }
+
+    /// Analyze one whole compilation target, from the entry point cargo
+    /// reports for it.
+    ///
+    /// The target's tree comes from the same per-target discovery as
+    /// [`list_all_modules`](Self::list_all_modules), not from looking the root
+    /// up again by name: through [`analyze_module`](Self::analyze_module), an
+    /// integration test named like a library module (`tests/foo.rs` beside
+    /// `src/foo.rs`) would resolve to that module and the test target would be
+    /// lost. The analysis is always recursive.
+    fn analyze_target(
+        &mut self,
+        target: &TargetInfo,
+        src_path: &Path,
+        options: &AnalysisOptions,
+    ) -> Result<AnalysisResult> {
+        let root = Self::target_module_path(target, src_path);
+        let modules = self.target_modules(target, src_path, options.include_tests)?;
+        let children_map = Self::build_children_map(&modules);
+        self.analyze_discovered(root, modules, &children_map, options)
+    }
+
+    /// Parse already-discovered `modules` and collect their references into an
+    /// [`AnalysisResult`] for `module_path`.
+    ///
+    /// The first module is the analysed root; its file becomes the result's
+    /// source file.
+    fn analyze_discovered(
+        &mut self,
+        module_path: String,
+        modules: Vec<ModuleInfo>,
+        children_map: &HashMap<String, HashSet<String>>,
+        options: &AnalysisOptions,
+    ) -> Result<AnalysisResult> {
+        let source_file = modules
+            .first()
+            .map(|m| m.source().to_path_buf())
+            .unwrap_or_default();
+
         let file_root = self.build_file_root_map(&modules);
         // Capture module names BEFORE consuming `modules`. The filter prevents
         // refs parsed for an earlier `analyze_module` call (e.g. lib) from
         // leaking into the result of a later call (e.g. a test target with
         // overlapping or differently-rooted module paths).
         let module_filter: HashSet<String> = modules.iter().map(|m| m.path().to_owned()).collect();
-        self.parse_all_modules(modules, &file_root, &children_map)?;
-        let dependencies = self.collect_references(options, &children_map, &module_filter);
+        self.parse_all_modules(modules, &file_root, children_map)?;
+        let dependencies = self.collect_references(options, children_map, &module_filter);
 
         Ok(AnalysisResult::new(module_path, dependencies, source_file))
     }
@@ -805,8 +857,11 @@ impl Analyzer {
         };
 
         let all_modules = self.list_all_modules(options.include_tests)?;
-        let roots = Self::collect_target_roots(&all_modules);
-        info!("Building dependency graph across {} target(s)", roots.len());
+        let targets = self.crate_info.all_targets(options.include_tests);
+        info!(
+            "Building dependency graph across {} target(s)",
+            targets.len()
+        );
 
         let known_modules: HashSet<String> =
             all_modules.iter().map(|m| m.path().to_owned()).collect();
@@ -816,10 +871,14 @@ impl Analyzer {
             .find(|m| m.target().kind() == &TargetKind::Lib)
             .map(|m| m.target().name().to_owned());
 
+        // Each target is analysed from its cargo entry point, never from a root
+        // guessed out of module paths. Edges are built before the next target
+        // runs: a same-named module of a later target replaces the parsed refs.
         let mut all_edges: BTreeMap<graph::Edge, BTreeSet<String>> = BTreeMap::new();
-        for root in &roots {
+        for (target, src_path) in &targets {
+            let root = Self::target_module_path(target, src_path);
             info!("Analysing target root '{root}'");
-            match self.analyze_module(root.as_str(), &analysis_options) {
+            match self.analyze_target(target, src_path, &analysis_options) {
                 Ok(result) => {
                     for (edge, apis) in graph::build_edges(
                         &result,
@@ -976,61 +1035,6 @@ impl Analyzer {
         }
 
         Ok(filtered)
-    }
-
-    /// Determine the root module path for each unique compilation target.
-    ///
-    /// For lib targets the root is always `"lib"`. For binary and test targets
-    /// the root is identified from the module's source file path.
-    fn collect_target_roots(modules: &[ModuleInfo]) -> Vec<String> {
-        let mut groups: HashMap<(TargetKind, String), Vec<&ModuleInfo>> = HashMap::new();
-        for m in modules {
-            let key = (m.target().kind().clone(), m.target().name().to_owned());
-            groups.entry(key).or_default().push(m);
-        }
-
-        let mut keys: Vec<_> = groups.keys().cloned().collect();
-        keys.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)));
-
-        let mut roots = Vec::new();
-        for (kind, name) in &keys {
-            let group = &groups[&(kind.clone(), name.clone())];
-            let root = match kind {
-                TargetKind::Lib => "lib".to_owned(),
-                TargetKind::Bin | TargetKind::Test => {
-                    Self::find_bin_or_test_root(group).unwrap_or_else(|| name.clone())
-                }
-            };
-            roots.push(root);
-        }
-        roots
-    }
-
-    /// Identify the root module path for a binary or integration-test target.
-    ///
-    /// Looks for a top-level module whose source file matches known cargo
-    /// entry-point patterns (`src/main.rs`, `src/bin/`, `tests/`). Falls back
-    /// to the lexicographically smallest top-level module.
-    fn find_bin_or_test_root(modules: &[&ModuleInfo]) -> Option<String> {
-        let top_level: Vec<_> = modules
-            .iter()
-            .filter(|m| !m.path().contains("::"))
-            .collect();
-
-        let preferred = top_level.iter().find(|m| {
-            let src = m.source();
-            src.file_name().is_some_and(|n| n == "main.rs")
-                || src.components().any(|c| {
-                    matches!(
-                        c,
-                        std::path::Component::Normal(n) if n == "bin" || n == "tests"
-                    )
-                })
-        });
-
-        preferred
-            .or_else(|| top_level.iter().min_by_key(|m| m.path()))
-            .map(|m| m.path().to_owned())
     }
 }
 

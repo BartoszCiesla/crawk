@@ -17,3 +17,10 @@ fn should_deps_hyphenated() {
 fn should_deps_hyphenated_with_apis() {
     assert_cmd_snapshot!(crawk_hyphenated().args(["deps", "-a"]));
 }
+
+// The integration test is analysed from its own root, `tests/smoke.rs`: the
+// submodule it declares reaches the library through the crate name.
+#[test]
+fn should_deps_hyphenated_with_include_tests() {
+    assert_cmd_snapshot!(crawk_hyphenated().args(["deps", "-t"]));
+}

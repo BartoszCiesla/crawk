@@ -8,3 +8,4 @@ mod hyphenated;
 mod orphans;
 mod overview;
 mod paths;
+mod target_roots;

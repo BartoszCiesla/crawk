@@ -34,6 +34,7 @@ int::deps_command::hyphenated
 int::deps_command::orphans
 int::deps_command::overview
 int::deps_command::paths
+int::deps_command::target_roots
 int::error_cases
 int::list_command
 int::list_command::basic

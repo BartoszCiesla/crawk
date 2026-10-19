@@ -2,6 +2,7 @@
 //! insta filters.
 
 use insta_cmd::get_cargo_bin;
+use std::path::Path;
 use std::process::Command;
 
 /// Returns insta filters that strip anyhow's "Stack backtrace:" block from snapshot output.
@@ -65,4 +66,29 @@ pub(crate) fn crawk_hyphenated() -> Command {
     let mut cmd = crawk();
     cmd.arg("-p").arg("fixtures/hyphenated");
     cmd
+}
+
+/// Runs crawk on the crate at `root` and returns its stdout, asserting it
+/// exited with `code`.
+///
+/// For crates written into a tempdir: their path would leak into the header of
+/// an `insta` snapshot, so such tests assert on stdout directly.
+///
+/// Not itself a `#[test]` fn, so clippy's `allow-expect-in-tests` doesn't
+/// cover it; it's test-support scaffolding, so `expect` is fine here.
+#[allow(clippy::expect_used)]
+pub(crate) fn crawk_stdout(root: &Path, code: i32, args: &[&str]) -> String {
+    let output = crawk()
+        .arg("-p")
+        .arg(root)
+        .args(args)
+        .output()
+        .expect("run crawk");
+    assert_eq!(
+        output.status.code(),
+        Some(code),
+        "crawk {args:?}: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8(output.stdout).expect("stdout is utf-8")
 }

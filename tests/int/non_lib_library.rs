@@ -14,7 +14,7 @@ use std::fs;
 use tempfile::TempDir;
 use test_case::test_case;
 
-use crate::common::crawk;
+use crate::common::crawk_stdout;
 
 /// Package `my-macros` with `lib_section` as its `[lib]` table.
 ///
@@ -56,24 +56,9 @@ fn scratch_crate(lib_section: &str) -> TempDir {
     dir
 }
 
-/// Runs crawk on `dir` and returns its stdout, asserting it exited with `code`.
-///
-/// Test-support scaffolding like [`scratch_crate`], hence the `expect`s.
-#[allow(clippy::expect_used)]
+/// Runs crawk on `dir`; see [`crawk_stdout`].
 fn run(dir: &TempDir, code: i32, args: &[&str]) -> String {
-    let output = crawk()
-        .arg("-p")
-        .arg(dir.path())
-        .args(args)
-        .output()
-        .expect("run crawk");
-    assert_eq!(
-        output.status.code(),
-        Some(code),
-        "crawk {args:?}: {}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    String::from_utf8(output.stdout).expect("stdout is utf-8")
+    crawk_stdout(dir.path(), code, args)
 }
 
 #[test_case("[lib]\nproc-macro = true\n"; "proc-macro")]
