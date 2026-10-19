@@ -262,6 +262,7 @@ rules::eval::tests
  - crate::rules::ModulePattern
  - crate::rules::RestrictRule
  - crate::rules::RuleSet
+ - crate::rules::Violation
  - crate::rules::ViolationKind
  - crate::rules::ViolationKind::Cycle
  - crate::rules::ViolationKind::Deny

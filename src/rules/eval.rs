@@ -238,7 +238,8 @@ pub(crate) fn evaluate(rules: &RuleSet, graph: &DependencyGraph) -> CheckReport 
 #[cfg(test)]
 mod tests {
     use super::super::{
-        AllowedCycle, DenyRule, LayerRule, ModulePattern, RestrictRule, RuleSet, ViolationKind,
+        AllowedCycle, DenyRule, LayerRule, ModulePattern, RestrictRule, RuleSet, Violation,
+        ViolationKind,
     };
     use crate::graph::{AnnotatedEdges, Cycle};
     use std::collections::BTreeSet;
@@ -280,7 +281,7 @@ mod tests {
         let index = rules.build_layer_index(&modules);
         let mut out = Vec::new();
         rules.check_layers("cli", "analyzer", &index, &BTreeSet::new(), &mut out);
-        assert!(out.is_empty());
+        assert_eq!(out, Vec::<Violation>::new());
     }
 
     #[test]
@@ -318,7 +319,7 @@ mod tests {
         let mut out = Vec::new();
         // cli (app) -> web::repo (web): cross-group, even though indices differ.
         rules.check_layers("cli", "web::repo", &index, &BTreeSet::new(), &mut out);
-        assert!(out.is_empty());
+        assert_eq!(out, Vec::<Violation>::new());
     }
 
     #[test]
@@ -331,7 +332,7 @@ mod tests {
         let index = rules.build_layer_index(&modules);
         let mut out = Vec::new();
         rules.check_layers("mid::a", "mid::b", &index, &BTreeSet::new(), &mut out);
-        assert!(out.is_empty());
+        assert_eq!(out, Vec::<Violation>::new());
     }
 
     #[test]
@@ -434,7 +435,7 @@ mod tests {
         let mut out = Vec::new();
         rules.check_layers("shared", "low_a", &index, &BTreeSet::new(), &mut out);
         rules.check_layers("shared", "low_b", &index, &BTreeSet::new(), &mut out);
-        assert!(out.is_empty());
+        assert_eq!(out, Vec::<Violation>::new());
     }
 
     fn deny(from: &str, to: &str) -> DenyRule {
@@ -469,7 +470,7 @@ mod tests {
         rules.check_deny("cli::args", "web::repo", &BTreeSet::new(), &mut out);
         rules.check_deny("cli", "webs", &BTreeSet::new(), &mut out);
         rules.check_deny("analyzer", "web::repo", &BTreeSet::new(), &mut out);
-        assert!(out.is_empty());
+        assert_eq!(out, Vec::<Violation>::new());
     }
 
     #[test]
@@ -534,7 +535,7 @@ mod tests {
         let mut out = Vec::new();
         rules.check_restrict("cli", "analyzer", &BTreeSet::new(), &mut out);
         rules.check_restrict("cli", "web::repo", &BTreeSet::new(), &mut out);
-        assert!(out.is_empty());
+        assert_eq!(out, Vec::<Violation>::new());
     }
 
     #[test]
@@ -740,7 +741,7 @@ mod tests {
         let shrunk = cycle(&["alpha", "beta"], &[("alpha", "beta"), ("beta", "alpha")]);
         let mut out = Vec::new();
         rules.check_cycles(&[shrunk], &mut out);
-        assert!(out.is_empty());
+        assert_eq!(out, Vec::<Violation>::new());
     }
 
     #[test]
@@ -759,7 +760,7 @@ mod tests {
         let rules = cycle_rules(vec![allow(&["rules", "rules::eval", "rules::load"])], false);
         let mut out = Vec::new();
         rules.check_cycles(&[parent_child_cycle()], &mut out);
-        assert!(out.is_empty());
+        assert_eq!(out, Vec::<Violation>::new());
     }
 
     #[test]
@@ -795,6 +796,6 @@ mod tests {
         // "stray" is not in any layer → no constraint.
         rules.check_layers("stray", "cli", &index, &BTreeSet::new(), &mut out);
         rules.check_layers("cli", "stray", &index, &BTreeSet::new(), &mut out);
-        assert!(out.is_empty());
+        assert_eq!(out, Vec::<Violation>::new());
     }
 }

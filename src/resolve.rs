@@ -537,7 +537,7 @@ fn helper() {{}}
         .unwrap();
 
         let items = extract(f.path(), &[]).unwrap();
-        assert!(items.is_empty());
+        assert_eq!(items, Vec::<String>::new());
     }
 
     #[test]

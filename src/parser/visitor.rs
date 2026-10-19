@@ -978,7 +978,7 @@ mod tests {
         let mut v = visitor_with_children(&["version"]);
         v.extract_paths_from_tokens(&tokens("std::fmt::Display, tracing::info"));
 
-        assert!(v.references.value_refs.is_empty());
+        assert_eq!(v.references.value_refs, Vec::<TypeReference>::new());
     }
 
     #[test]
@@ -986,7 +986,7 @@ mod tests {
         let mut v = visitor_with_children(&["version"]);
         v.extract_paths_from_tokens(&tokens("version"));
 
-        assert!(v.references.value_refs.is_empty());
+        assert_eq!(v.references.value_refs, Vec::<TypeReference>::new());
     }
 
     #[test]
@@ -997,7 +997,7 @@ mod tests {
         let mut v = visitor_with_children(&["qux"]);
         v.extract_paths_from_tokens(&tokens("qux:=Z2"));
 
-        assert!(v.references.value_refs.is_empty());
+        assert_eq!(v.references.value_refs, Vec::<TypeReference>::new());
     }
 
     // --- root_children collision guard tests ---

@@ -288,8 +288,8 @@ mod tests {
     fn empty_graph() {
         let g = DependencyGraph::new(BTreeMap::new(), BTreeSet::new());
         assert!(g.is_empty());
-        assert!(g.cycles().is_empty());
-        assert!(g.orphans().is_empty());
+        assert_eq!(g.cycles(), Vec::<Cycle>::new());
+        assert_eq!(g.orphans(), Vec::<String>::new());
         assert!(g.modules().is_empty());
     }
 
@@ -320,7 +320,7 @@ mod tests {
     #[test]
     fn no_cycles_in_dag() {
         let g = make_graph(&[("a", "b"), ("b", "c")], &["a", "b", "c"]);
-        assert!(g.cycles().is_empty());
+        assert_eq!(g.cycles(), Vec::<Cycle>::new());
     }
 
     // ---- truncated_edges ----------------------------------------------------

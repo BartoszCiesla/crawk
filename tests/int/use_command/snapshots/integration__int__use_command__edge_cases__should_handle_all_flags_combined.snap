@@ -237,6 +237,7 @@ rules::eval::tests
  - crate::rules::ModulePattern
  - crate::rules::RestrictRule
  - crate::rules::RuleSet
+ - crate::rules::Violation
  - crate::rules::ViolationKind
 rules::load
  - crate::error::AnalysisError

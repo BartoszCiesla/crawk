@@ -100,6 +100,6 @@ mod tests {
     #[test]
     fn empty_input_returns_empty() {
         let result = truncate_and_dedup(std::iter::empty::<&TypeReference>(), None);
-        assert!(result.is_empty());
+        assert_eq!(result, Vec::<String>::new());
     }
 }

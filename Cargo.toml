@@ -27,9 +27,9 @@ const_format = "0.2.36"
 owo-colors = "4.4.0"
 proc-macro2 = "1.0.107"
 serde = { version = "1.0.229", features = ["derive"] }
-syn = { version = "3.0.6", features = ["full", "parsing", "visit", "proc-macro"] }
+syn = { version = "3.0.9", features = ["full", "parsing", "visit", "proc-macro"] }
 thiserror = "2.0.21"
-toml = "1.1.7"
+toml = "1.1.8"
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 

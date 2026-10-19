@@ -49,14 +49,14 @@ mod tests {
     #[test]
     fn empty_graph_no_orphans() {
         let result = find_orphans(&BTreeMap::new(), &BTreeSet::new());
-        assert!(result.is_empty());
+        assert_eq!(result, Vec::<String>::new());
     }
 
     #[test]
     fn all_connected_no_orphans() {
         let edges = make_edges(&[("a", "b"), ("b", "a")]);
         let result = find_orphans(&edges, &modules(&["a", "b"]));
-        assert!(result.is_empty());
+        assert_eq!(result, Vec::<String>::new());
     }
 
     #[test]

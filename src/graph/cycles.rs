@@ -215,13 +215,13 @@ mod tests {
     #[test]
     fn detect_cycles_empty_graph() {
         let edges = make_edges(&[]);
-        assert!(detect_cycles(&edges).is_empty());
+        assert_eq!(detect_cycles(&edges), Vec::<Cycle>::new());
     }
 
     #[test]
     fn detect_cycles_dag() {
         let edges = make_edges(&[("a", "b"), ("b", "c"), ("a", "c")]);
-        assert!(detect_cycles(&edges).is_empty());
+        assert_eq!(detect_cycles(&edges), Vec::<Cycle>::new());
     }
 
     #[test]
