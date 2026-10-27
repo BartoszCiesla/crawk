@@ -541,6 +541,18 @@ impl CrateInfo {
         &self.lib_crate_name
     }
 
+    /// Returns `true` if the root package has a library, of any crate type
+    /// (see [`is_library_target`]).
+    ///
+    /// Without one, [`lib_crate_name`](Self::lib_crate_name) is only the
+    /// package's fallback name, and a path led by it reaches nothing in the
+    /// package.
+    #[must_use]
+    pub(crate) fn has_library(&self) -> bool {
+        self.root_package()
+            .is_some_and(|package| package.targets.iter().any(is_library_target))
+    }
+
     /// Derives [`lib_crate_name`](Self::lib_crate_name) from cargo metadata.
     ///
     /// The lib target's name already carries a `[lib] name` override; a
@@ -919,6 +931,23 @@ mod tests {
         let info = CrateInfo::new(dir.path()).unwrap();
 
         assert_eq!(info.lib_crate_name(), "my_tool");
+    }
+
+    /// The fallback name above stands in for a library that is not there, so
+    /// whether paths may lead with it is asked separately.
+    #[test]
+    fn has_library_tells_a_library_package_from_a_bin_only_one() {
+        let lib = scratch_package_with_foo("my-crate", "");
+        let bin_only = tempfile::tempdir().unwrap();
+        write_scratch_package(bin_only.path(), "my-tool", "0.1.0", "");
+        fs::rename(
+            bin_only.path().join("src/lib.rs"),
+            bin_only.path().join("src/main.rs"),
+        )
+        .unwrap();
+
+        assert!(CrateInfo::new(lib.path()).unwrap().has_library());
+        assert!(!CrateInfo::new(bin_only.path()).unwrap().has_library());
     }
 
     /// Cargo before 1.79 reported the lib target under the package's own,

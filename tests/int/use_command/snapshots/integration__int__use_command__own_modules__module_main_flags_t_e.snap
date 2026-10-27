@@ -51,6 +51,7 @@ crawk::AnnotatedEdges
 crawk::CheckOptions
 crawk::DependencyGraph
 crawk::DependencyGraphOptions
+crawk::ModuleInfo::target
 crawk::version
 crawk::version::NAME
 crawk::version::VERSION

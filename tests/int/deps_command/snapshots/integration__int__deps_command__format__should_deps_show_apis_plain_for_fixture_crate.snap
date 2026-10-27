@@ -28,8 +28,10 @@ advanced_globs -> visibility::pub_mod [greet]
 advanced_globs::layer1 -> advanced_globs::layer1::layer2
 advanced_globs::layer1::layer2 -> advanced_globs::layer1::layer2::layer3
 advanced_globs::prelude -> advanced_globs [Consumer, MultiImpl, Provider, Transformer, deep_function, layer1_function, layer2_function]
-app -> advanced_globs
+app -> advanced_globs [demonstrate_traits]
+app -> advanced_globs::prelude [layer1_function]
 app -> app_only [helper_only]
+app -> custom_path [greet]
 app -> dir_module [greet]
 app -> dir_module::child_dir [greet]
 app -> dir_module::child_file [greet]
@@ -39,17 +41,19 @@ app -> glob_patterns::constants
 app -> glob_patterns::traits
 app -> glob_patterns::types
 app -> glob_patterns::utilities
-app -> glob_showcase
+app -> glob_showcase [API_ENDPOINT, HOST, LOG_LEVEL, NotFoundError, PI, PORT, Post, User, add, connect, count, demonstrate_all, demonstrate_api, demonstrate_config, demonstrate_database, demonstrate_models, demonstrate_traits, demonstrate_utils, execute, get_data, uppercase]
+app -> glob_showcase::prelude [get_data]
 app -> inline_modules
 app -> inline_modules::inner [greet]
 app -> inline_modules::nested::deep [value]
-app -> item_visibility [PUB_CONST, PUB_STATIC, PubEnum, PubStruct, PubTrait]
+app -> item_visibility [PUB_CONST, PUB_STATIC, PubEnum, PubStruct, PubTrait, exercise_all]
+app -> lib [aliased::greet]
 app -> mixed [greet]
 app -> mixed::file_child [greet]
 app -> mixed::inline_child [greet]
 app -> nesting
 app -> nesting::level1::level2::level3 [deepest, depth]
-app -> reexports
+app -> reexports [file_module_greet, nesting_depth, secret_data]
 app -> visibility
 app -> visibility::pub_mod [greet]
 baz -> foo::bar
@@ -115,7 +119,9 @@ inline_modules::outer -> inline_modules::outer::file_child [greet]
 inline_modules::outer::file_child -> no_pub_items [exercise_private]
 item_visibility -> reexports [Foo]
 lib -> empty_module [Standalone]
-main -> advanced_globs
+main -> advanced_globs [demonstrate_traits]
+main -> advanced_globs::prelude [layer1_function]
+main -> custom_path [greet]
 main -> dir_module [greet]
 main -> dir_module::child_dir [greet]
 main -> dir_module::child_file [greet]
@@ -125,17 +131,19 @@ main -> glob_patterns::constants
 main -> glob_patterns::traits
 main -> glob_patterns::types
 main -> glob_patterns::utilities
-main -> glob_showcase
+main -> glob_showcase [API_ENDPOINT, HOST, LOG_LEVEL, NotFoundError, PI, PORT, Post, User, add, connect, count, demonstrate_all, demonstrate_api, demonstrate_config, demonstrate_database, demonstrate_models, demonstrate_traits, demonstrate_utils, execute, get_data, uppercase]
+main -> glob_showcase::prelude [get_data]
 main -> inline_modules
 main -> inline_modules::inner [greet]
 main -> inline_modules::nested::deep [value]
-main -> item_visibility [PUB_CONST, PUB_STATIC, PubEnum, PubStruct, PubTrait]
+main -> item_visibility [PUB_CONST, PUB_STATIC, PubEnum, PubStruct, PubTrait, exercise_all]
+main -> lib [aliased::greet]
 main -> mixed [greet]
 main -> mixed::file_child [greet]
 main -> mixed::inline_child [greet]
 main -> nesting
 main -> nesting::level1::level2::level3 [deepest, depth]
-main -> reexports
+main -> reexports [file_module_greet, nesting_depth, secret_data]
 main -> visibility
 main -> visibility::pub_mod [greet]
 mixed::file_child -> custom_path [greet]

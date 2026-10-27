@@ -107,10 +107,14 @@ first segment is:
   two segments (`sibling::Item`, the 2015-edition form, which is common under
   `use super::*;` in test modules). A lone identifier is never treated this
   way, because it is almost always a local variable;
-- the **crate name of the library**, in a binary or test target that reaches
-  into the library (`use crawk::Analyzer`). That is the name of the lib target,
-  not of the package: `my-crate` is written `my_crate`, and a `[lib] name`
-  setting replaces it.
+- the **crate name of the library**, when the path has at least two segments.
+  That is how a binary or test target reaches into the library, in a `use`
+  item or in a path written out in place (`use crawk::Analyzer`,
+  `.map(crawk::ModuleInfo::target)`). It is the name of the lib target, not of
+  the package: `my-crate` is written `my_crate`, and a `[lib] name` setting
+  replaces it. Inside the library such a path compiles only under
+  `extern crate self as my_crate;`, and counts there too. A package without a
+  library has no such name, so a path led by its own name is external.
 
 Everything else — `std::`, `serde::`, other workspace crates — is dropped.
 
@@ -128,7 +132,8 @@ Before anything else, relative paths are rewritten to absolute ones:
 Names imported from the crate are remembered, so a token-stream path that
 starts with an imported name resolves through the import:
 `use crate::version;` followed by `info!("{}", version::NAME)` yields
-`crate::version::NAME`.
+`crate::version::NAME`. Other paths do not resolve through imports; see
+[Blind spots](#blind-spots).
 
 ## From reference to edge
 
@@ -188,6 +193,13 @@ path. It misses:
 - **macro expansion**: derives, attribute macros and `macro_rules!` output are
   never expanded (see the definition-site rule above), and a bare
   `my_macro!()` reached through `#[macro_use]` has no path to follow;
+- **imported names in code**: a path led by a name imported from the crate
+  resolves through the import only in macro and attribute arguments. After
+  `use my_crate::render;`, `println!("{}", render::LABEL)` yields
+  `my_crate::render::LABEL`, but the call `render::draw(&c)` yields nothing,
+  unless `render` is also a child or top-level module of the current target.
+  The edge still comes from the `use` item; only the API name is missing from
+  `--show-apis` and `why`;
 - **conditional compilation**: every `cfg` branch counts except `cfg(test)`
   modules, so a platform- or feature-gated edge is always present;
 - **`#[path]` modules**: not discovered; see [Discovery](#discovery);

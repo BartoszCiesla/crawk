@@ -1,0 +1,19 @@
+---
+source: tests/int/why_command/hyphenated.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/hyphenated
+    - why
+    - smoke
+    - render
+    - "-t"
+---
+success: true
+exit_code: 0
+----- stdout -----
+hyphenated_pkg::render::LABEL
+hyphenated_pkg::render::draw
+
+----- stderr -----

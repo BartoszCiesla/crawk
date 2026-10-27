@@ -13,5 +13,9 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::support::square
+hyphenated_pkg::Circle
+hyphenated_pkg::render::LABEL
+hyphenated_pkg::render::draw
+hyphenated_pkg::shapes::Circle
 
 ----- stderr -----

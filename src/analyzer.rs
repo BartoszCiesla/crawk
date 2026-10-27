@@ -136,7 +136,13 @@ impl Analyzer {
     /// ```
     pub fn new(crate_root: impl AsRef<Path>) -> Result<Self> {
         let crate_info = CrateInfo::new(crate_root.as_ref())?;
-        let parser = CrateAnalyzer::new(crate_info.lib_crate_name());
+        // Without a library the fallback crate name reaches nothing in the
+        // package, so paths led by it stay external.
+        let parser = CrateAnalyzer::new(
+            crate_info
+                .has_library()
+                .then_some(crate_info.lib_crate_name()),
+        );
 
         Ok(Self {
             crate_info,

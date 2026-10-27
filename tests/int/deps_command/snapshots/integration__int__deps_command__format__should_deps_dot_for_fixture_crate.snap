@@ -121,7 +121,9 @@ digraph dependencies {
     "advanced_globs::layer1::layer2" -> "advanced_globs::layer1::layer2::layer3";
     "advanced_globs::prelude" -> "advanced_globs";
     "app" -> "advanced_globs";
+    "app" -> "advanced_globs::prelude";
     "app" -> "app_only";
+    "app" -> "custom_path";
     "app" -> "dir_module";
     "app" -> "dir_module::child_dir";
     "app" -> "dir_module::child_file";
@@ -132,10 +134,12 @@ digraph dependencies {
     "app" -> "glob_patterns::types";
     "app" -> "glob_patterns::utilities";
     "app" -> "glob_showcase";
+    "app" -> "glob_showcase::prelude";
     "app" -> "inline_modules";
     "app" -> "inline_modules::inner";
     "app" -> "inline_modules::nested::deep";
     "app" -> "item_visibility";
+    "app" -> "lib";
     "app" -> "mixed";
     "app" -> "mixed::file_child";
     "app" -> "mixed::inline_child";
@@ -208,6 +212,8 @@ digraph dependencies {
     "item_visibility" -> "reexports";
     "lib" -> "empty_module";
     "main" -> "advanced_globs";
+    "main" -> "advanced_globs::prelude";
+    "main" -> "custom_path";
     "main" -> "dir_module";
     "main" -> "dir_module::child_dir";
     "main" -> "dir_module::child_file";
@@ -218,10 +224,12 @@ digraph dependencies {
     "main" -> "glob_patterns::types";
     "main" -> "glob_patterns::utilities";
     "main" -> "glob_showcase";
+    "main" -> "glob_showcase::prelude";
     "main" -> "inline_modules";
     "main" -> "inline_modules::inner";
     "main" -> "inline_modules::nested::deep";
     "main" -> "item_visibility";
+    "main" -> "lib";
     "main" -> "mixed";
     "main" -> "mixed::file_child";
     "main" -> "mixed::inline_child";

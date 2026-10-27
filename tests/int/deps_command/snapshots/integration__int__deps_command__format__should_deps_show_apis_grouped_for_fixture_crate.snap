@@ -38,9 +38,11 @@ advanced_globs::layer1::layer2 (1)
 advanced_globs::prelude (1)
   -> advanced_globs [Consumer, MultiImpl, Provider, Transformer, deep_function, layer1_function, layer2_function]
 
-app (24)
-  -> advanced_globs
+app (28)
+  -> advanced_globs [demonstrate_traits]
+  -> advanced_globs::prelude [layer1_function]
   -> app_only [helper_only]
+  -> custom_path [greet]
   -> dir_module [greet]
   -> dir_module::child_dir [greet]
   -> dir_module::child_file [greet]
@@ -50,17 +52,19 @@ app (24)
   -> glob_patterns::traits
   -> glob_patterns::types
   -> glob_patterns::utilities
-  -> glob_showcase
+  -> glob_showcase [API_ENDPOINT, HOST, LOG_LEVEL, NotFoundError, PI, PORT, Post, User, add, connect, count, demonstrate_all, demonstrate_api, demonstrate_config, demonstrate_database, demonstrate_models, demonstrate_traits, demonstrate_utils, execute, get_data, uppercase]
+  -> glob_showcase::prelude [get_data]
   -> inline_modules
   -> inline_modules::inner [greet]
   -> inline_modules::nested::deep [value]
-  -> item_visibility [PUB_CONST, PUB_STATIC, PubEnum, PubStruct, PubTrait]
+  -> item_visibility [PUB_CONST, PUB_STATIC, PubEnum, PubStruct, PubTrait, exercise_all]
+  -> lib [aliased::greet]
   -> mixed [greet]
   -> mixed::file_child [greet]
   -> mixed::inline_child [greet]
   -> nesting
   -> nesting::level1::level2::level3 [deepest, depth]
-  -> reexports
+  -> reexports [file_module_greet, nesting_depth, secret_data]
   -> visibility
   -> visibility::pub_mod [greet]
 
@@ -175,8 +179,10 @@ item_visibility (1)
 lib (1)
   -> empty_module [Standalone]
 
-main (23)
-  -> advanced_globs
+main (27)
+  -> advanced_globs [demonstrate_traits]
+  -> advanced_globs::prelude [layer1_function]
+  -> custom_path [greet]
   -> dir_module [greet]
   -> dir_module::child_dir [greet]
   -> dir_module::child_file [greet]
@@ -186,17 +192,19 @@ main (23)
   -> glob_patterns::traits
   -> glob_patterns::types
   -> glob_patterns::utilities
-  -> glob_showcase
+  -> glob_showcase [API_ENDPOINT, HOST, LOG_LEVEL, NotFoundError, PI, PORT, Post, User, add, connect, count, demonstrate_all, demonstrate_api, demonstrate_config, demonstrate_database, demonstrate_models, demonstrate_traits, demonstrate_utils, execute, get_data, uppercase]
+  -> glob_showcase::prelude [get_data]
   -> inline_modules
   -> inline_modules::inner [greet]
   -> inline_modules::nested::deep [value]
-  -> item_visibility [PUB_CONST, PUB_STATIC, PubEnum, PubStruct, PubTrait]
+  -> item_visibility [PUB_CONST, PUB_STATIC, PubEnum, PubStruct, PubTrait, exercise_all]
+  -> lib [aliased::greet]
   -> mixed [greet]
   -> mixed::file_child [greet]
   -> mixed::inline_child [greet]
   -> nesting
   -> nesting::level1::level2::level3 [deepest, depth]
-  -> reexports
+  -> reexports [file_module_greet, nesting_depth, secret_data]
   -> visibility
   -> visibility::pub_mod [greet]
 

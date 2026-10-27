@@ -14,6 +14,10 @@ success: true
 exit_code: 0
 ----- stdout -----
 modules::advanced_globs::*
+modules::advanced_globs::demonstrate_traits
+modules::advanced_globs::prelude::layer1_function
+modules::aliased::greet
+modules::custom_path::greet
 modules::dir_module
 modules::dir_module::child_dir::greet
 modules::dir_module::child_file::greet
@@ -29,6 +33,28 @@ modules::glob_patterns::traits::*
 modules::glob_patterns::types::*
 modules::glob_patterns::utilities::*
 modules::glob_showcase::*
+modules::glob_showcase::API_ENDPOINT
+modules::glob_showcase::HOST
+modules::glob_showcase::LOG_LEVEL
+modules::glob_showcase::NotFoundError
+modules::glob_showcase::PI
+modules::glob_showcase::PORT
+modules::glob_showcase::Post
+modules::glob_showcase::User
+modules::glob_showcase::add
+modules::glob_showcase::connect
+modules::glob_showcase::count
+modules::glob_showcase::demonstrate_all
+modules::glob_showcase::demonstrate_api
+modules::glob_showcase::demonstrate_config
+modules::glob_showcase::demonstrate_database
+modules::glob_showcase::demonstrate_models
+modules::glob_showcase::demonstrate_traits
+modules::glob_showcase::demonstrate_utils
+modules::glob_showcase::execute
+modules::glob_showcase::get_data
+modules::glob_showcase::prelude::get_data
+modules::glob_showcase::uppercase
 modules::inline_modules
 modules::inline_modules::inner::greet
 modules::inline_modules::nested::deep::value
@@ -38,6 +64,7 @@ modules::item_visibility::PUB_STATIC
 modules::item_visibility::PubEnum
 modules::item_visibility::PubStruct
 modules::item_visibility::PubTrait
+modules::item_visibility::exercise_all
 modules::mixed
 modules::mixed::file_child::greet
 modules::mixed::greet
@@ -46,6 +73,9 @@ modules::nesting
 modules::nesting::level1::level2::level3::deepest
 modules::nesting::level1::level2::level3::depth
 modules::reexports::*
+modules::reexports::file_module_greet
+modules::reexports::nesting_depth
+modules::reexports::secret_data
 modules::visibility
 modules::visibility::pub_mod::greet
 

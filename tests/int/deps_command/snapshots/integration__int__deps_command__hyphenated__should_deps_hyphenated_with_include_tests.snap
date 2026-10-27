@@ -16,6 +16,9 @@ main -> lib
 main -> render
 main -> shapes
 render -> shapes
+smoke -> lib
+smoke -> render
+smoke -> shapes
 smoke -> support
 support -> shapes
 

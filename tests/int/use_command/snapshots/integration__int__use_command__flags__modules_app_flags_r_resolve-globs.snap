@@ -27,6 +27,7 @@ modules::advanced_globs::layer1
 modules::advanced_globs::macro_module
 modules::advanced_globs::original
 modules::advanced_globs::prelude
+modules::advanced_globs::prelude::layer1_function
 modules::advanced_globs::renamed_func
 modules::advanced_globs::shadowed_func
 modules::advanced_globs::shadowing
@@ -35,6 +36,8 @@ modules::advanced_globs::unix_specific
 modules::advanced_globs::use_color_variants
 modules::advanced_globs::use_multiple_crate_globs
 modules::advanced_globs::windows_specific
+modules::aliased::greet
+modules::custom_path::greet
 modules::dir_module
 modules::dir_module::child_dir::greet
 modules::dir_module::child_file::greet
@@ -80,8 +83,19 @@ modules::glob_patterns::utilities::helper_a
 modules::glob_patterns::utilities::helper_b
 modules::glob_patterns::utilities::helper_c
 modules::glob_patterns::{demonstrate_glob_utilities, demonstrate_nested_glob, renamed_special}
+modules::glob_showcase::API_ENDPOINT
+modules::glob_showcase::HOST
+modules::glob_showcase::LOG_LEVEL
+modules::glob_showcase::NotFoundError
+modules::glob_showcase::PI
+modules::glob_showcase::PORT
+modules::glob_showcase::Post
+modules::glob_showcase::User
+modules::glob_showcase::add
 modules::glob_showcase::api
 modules::glob_showcase::config
+modules::glob_showcase::connect
+modules::glob_showcase::count
 modules::glob_showcase::database
 modules::glob_showcase::demonstrate_all
 modules::glob_showcase::demonstrate_api
@@ -91,9 +105,13 @@ modules::glob_showcase::demonstrate_models
 modules::glob_showcase::demonstrate_traits
 modules::glob_showcase::demonstrate_utils
 modules::glob_showcase::errors
+modules::glob_showcase::execute
+modules::glob_showcase::get_data
 modules::glob_showcase::models
 modules::glob_showcase::prelude
+modules::glob_showcase::prelude::get_data
 modules::glob_showcase::traits
+modules::glob_showcase::uppercase
 modules::glob_showcase::use_cross_crate_globs
 modules::glob_showcase::utils
 modules::inline_modules

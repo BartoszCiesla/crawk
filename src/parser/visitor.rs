@@ -183,8 +183,9 @@ pub(super) struct ModuleVisitor {
     /// Updated as we traverse nested modules to filter test-only references.
     in_test_module: bool,
 
-    /// Crate name of the package's library, for recognising imports that reach
-    /// it from another target. E.g., `use crawk::version`.
+    /// Crate name of the package's library, for recognising paths that reach
+    /// it from another target: `use crawk::version`, `crawk::version::NAME`.
+    /// `None` for a package without a library.
     crate_name: Option<String>,
 
     /// Maps imported short names to `(prefix, path_segments)`.
@@ -205,9 +206,10 @@ impl ModuleVisitor {
     /// this module. Bare paths whose first segment matches a child are recognised
     /// as internal references (e.g. `format::deps_cmd::build_edges()`).
     ///
-    /// `crate_name` enables resolution of imports via the library's crate name
-    /// (e.g., `use crawk::version` when the library is `crawk`). Pass `None`
-    /// to disable import-aware token resolution.
+    /// `crate_name` is the library's crate name: paths led by it
+    /// (`crawk::version::NAME`) are internal references, and imports through it
+    /// (`use crawk::version`) resolve token-stream paths. Pass `None` for a
+    /// package without a library.
     pub(super) fn new(
         module_name: impl Into<String>,
         children: HashSet<String>,
@@ -235,14 +237,17 @@ impl ModuleVisitor {
 
     /// Checks if a syn::Path is an internal crate reference.
     /// Returns true if the path starts with `crate::`, `self::`, `super::`,
-    /// a known child module name, or (when `include_root` is set) a crate-root
-    /// top-level module name qualifying a *multi-segment* path.
+    /// a known child module name, (when `include_root` is set) a crate-root
+    /// top-level module name qualifying a *multi-segment* path, or the
+    /// library's crate name qualifying a *multi-segment* path
+    /// (`crawk::ModuleInfo::target`).
     ///
-    /// The root-children check requires more than one segment because a bare
-    /// single-segment path is virtually always a local variable, parameter, or
-    /// field access (e.g. `cache` in `&mut cache`) rather than a genuine
-    /// reference to a same-named crate-root module — modules aren't values, so
-    /// a single segment can only name one legitimately.
+    /// The root-children and crate-name checks require more than one segment
+    /// because a bare single-segment path is virtually always a local variable,
+    /// parameter, or field access (e.g. `cache` in `&mut cache`) rather than a
+    /// genuine reference to a same-named crate-root module or crate — modules
+    /// and crates aren't values. The crate-name check ignores `include_root`:
+    /// a multi-segment macro path (`crawk::my_macro!`) does name the library.
     fn is_internal_path(&self, path: &syn::Path, include_root: bool) -> bool {
         path.segments.first().is_some_and(|first_segment| {
             self.is_internal_head(
@@ -265,6 +270,7 @@ impl ModuleVisitor {
             PATH_QUALIFIER_CRATE | PATH_QUALIFIER_SELF | PATH_QUALIFIER_SUPER
         ) || self.children.contains(first)
             || (include_root && len > 1 && self.root_children.contains(first))
+            || (len > 1 && self.crate_name.as_deref() == Some(first))
     }
 
     /// Builds a TypeReference from a syn::Path if it's an internal crate reference.
@@ -1250,6 +1256,59 @@ mod tests {
         );
     }
 
+    // --- Crate-name paths outside `use` items ---
+
+    /// Every reference the visitor records for `code`, as path strings.
+    fn recorded_paths(mut v: ModuleVisitor, code: &str) -> Vec<String> {
+        let syntax: syn::File = syn::parse_file(code).expect("parse");
+        v.visit_file(&syntax);
+        v.references
+            .into_all()
+            .map(|r| r.to_path_string())
+            .collect()
+    }
+
+    #[test_case("fn f() { myapp::render::draw(); }", "myapp::render::draw"; "function call")]
+    #[test_case("fn f() { let _ = myapp::shapes::Circle; }", "myapp::shapes::Circle"; "unit struct value")]
+    #[test_case("fn f() { let _ = myapp::shapes::Point { x: 0 }; }", "myapp::shapes::Point"; "struct literal")]
+    #[test_case("fn f(_: myapp::shapes::Square) {}", "myapp::shapes::Square"; "type annotation")]
+    #[test_case("fn f<T: myapp::render::Draw>() {}", "myapp::render::Draw"; "trait bound")]
+    #[test_case("impl myapp::render::Draw for Foo {}", "myapp::render::Draw"; "implemented trait")]
+    #[test_case("fn f(s: S) { let myapp::shapes::Point { .. } = s; }", "myapp::shapes::Point"; "struct pattern")]
+    #[test_case("fn f() { println!(\"{}\", myapp::render::LABEL); }", "myapp::render::LABEL"; "macro argument")]
+    #[test_case("#[command(version = myapp::version::VERSION)] struct Cli;", "myapp::version::VERSION"; "attribute argument")]
+    #[test_case("fn f() { myapp::macros::trace!(); }", "myapp::macros::trace"; "macro invocation path")]
+    fn crate_name_path_is_recorded_outside_use(code: &str, expected: &str) {
+        let paths = recorded_paths(visitor_with_crate_name("myapp"), code);
+
+        assert!(
+            paths.contains(&expected.to_owned()),
+            "Expected {expected} in {paths:?}"
+        );
+    }
+
+    #[test]
+    fn lone_crate_name_is_not_a_crate_path() {
+        // A single segment is a local binding that shares the crate's name —
+        // the same rule crate-root module names follow.
+        let paths = recorded_paths(
+            visitor_with_crate_name("myapp"),
+            "fn f(myapp: u8) -> u8 { myapp }",
+        );
+
+        assert_eq!(paths, Vec::<String>::new());
+    }
+
+    #[test]
+    fn crate_name_path_is_external_without_a_crate_name() {
+        // A package without a library hands the visitor no crate name, so its
+        // own name leads nowhere internal.
+        let v = ModuleVisitor::new("test_mod", HashSet::new(), HashSet::new(), None);
+        let paths = recorded_paths(v, "fn f() { myapp::render::draw(); }");
+
+        assert_eq!(paths, Vec::<String>::new());
+    }
+
     // --- Path-prefix splitting ---
 
     fn segments(path: &str) -> Vec<String> {
@@ -1326,7 +1385,12 @@ mod tests {
             .iter()
             .map(|s| (*s).to_owned())
             .collect();
-        ModuleVisitor::new("test_mod", children, HashSet::new(), None)
+        ModuleVisitor::new(
+            "test_mod",
+            children,
+            HashSet::new(),
+            Some("myapp".to_owned()),
+        )
     }
 
     /// `syn::Path` entry point (type annotations, expressions, trait bounds).
@@ -1362,6 +1426,7 @@ mod tests {
     #[test_case("self::super::x", "crate::test_mod::super::x"; "super after self is an ordinary segment")]
     #[test_case("crate::super::x", "crate::super::x"; "super after crate is an ordinary segment")]
     #[test_case("child::super::Bar", "child::super::Bar"; "super after a child module is an ordinary segment")]
+    #[test_case("myapp::render::draw", "myapp::render::draw"; "library crate name")]
     fn all_entry_points_classify_path_identically(path: &str, expected: &str) {
         let expected = Some(expected.to_owned());
 

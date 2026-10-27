@@ -21,6 +21,13 @@ fn should_why_hyphenated_test_module_to_lib_module() {
     assert_cmd_snapshot!(crawk_hyphenated().args(["why", "support", "shapes", "-t"]));
 }
 
+// The integration test's root names `render` only in qualified paths — a call
+// and a macro argument — with no `use` item behind them.
+#[test]
+fn should_why_hyphenated_test_root_to_lib_module_by_qualified_paths() {
+    assert_cmd_snapshot!(crawk_hyphenated().args(["why", "smoke", "render", "-t"]));
+}
+
 // The integration test's root, named after its file stem, is a valid SOURCE.
 #[test]
 fn should_why_hyphenated_test_root_to_test_module() {

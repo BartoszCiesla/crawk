@@ -19,15 +19,17 @@ advanced_globs (3)
   -> file_module
   -> visibility
 
-app (12)
+app (14)
   -> advanced_globs
   -> app_only
+  -> custom_path
   -> dir_module
   -> file_module
   -> glob_patterns
   -> glob_showcase
   -> inline_modules
   -> item_visibility
+  -> lib
   -> mixed
   -> nesting
   -> reexports
@@ -74,14 +76,16 @@ item_visibility (1)
 lib (1)
   -> empty_module
 
-main (11)
+main (13)
   -> advanced_globs
+  -> custom_path
   -> dir_module
   -> file_module
   -> glob_patterns
   -> glob_showcase
   -> inline_modules
   -> item_visibility
+  -> lib
   -> mixed
   -> nesting
   -> reexports

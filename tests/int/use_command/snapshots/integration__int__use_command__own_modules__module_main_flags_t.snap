@@ -32,6 +32,7 @@ crate::format::use_cmd::render_grouped
 crate::format::why_cmd::render_grouped
 crate::format::why_cmd::render_plain
 crate::logger::configure_tracing
+crawk::ModuleInfo::target
 crawk::version::NAME
 crawk::version::VERSION
 crawk::{AnalysisOptions, Analyzer, AnnotatedEdges, CheckOptions, DependencyGraph, DependencyGraphOptions, version}

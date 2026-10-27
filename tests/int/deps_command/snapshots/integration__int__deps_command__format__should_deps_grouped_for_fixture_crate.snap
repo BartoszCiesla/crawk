@@ -37,9 +37,11 @@ advanced_globs::layer1::layer2 (1)
 advanced_globs::prelude (1)
   -> advanced_globs
 
-app (24)
+app (28)
   -> advanced_globs
+  -> advanced_globs::prelude
   -> app_only
+  -> custom_path
   -> dir_module
   -> dir_module::child_dir
   -> dir_module::child_file
@@ -50,10 +52,12 @@ app (24)
   -> glob_patterns::types
   -> glob_patterns::utilities
   -> glob_showcase
+  -> glob_showcase::prelude
   -> inline_modules
   -> inline_modules::inner
   -> inline_modules::nested::deep
   -> item_visibility
+  -> lib
   -> mixed
   -> mixed::file_child
   -> mixed::inline_child
@@ -174,8 +178,10 @@ item_visibility (1)
 lib (1)
   -> empty_module
 
-main (23)
+main (27)
   -> advanced_globs
+  -> advanced_globs::prelude
+  -> custom_path
   -> dir_module
   -> dir_module::child_dir
   -> dir_module::child_file
@@ -186,10 +192,12 @@ main (23)
   -> glob_patterns::types
   -> glob_patterns::utilities
   -> glob_showcase
+  -> glob_showcase::prelude
   -> inline_modules
   -> inline_modules::inner
   -> inline_modules::nested::deep
   -> item_visibility
+  -> lib
   -> mixed
   -> mixed::file_child
   -> mixed::inline_child

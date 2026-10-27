@@ -14,18 +14,24 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::app_only::helper_only
+modules::advanced_globs
 modules::advanced_globs::*
+modules::aliased
+modules::custom_path
 modules::dir_module
 modules::file_module
 modules::glob_patterns
 modules::glob_patterns::*
 modules::glob_patterns::{demonstrate_glob_utilities, demonstrate_nested_glob, renamed_special}
+modules::glob_showcase
 modules::glob_showcase::*
 modules::inline_modules
+modules::item_visibility
 modules::item_visibility::*
 modules::item_visibility::{PubEnum, PubStruct, PubTrait, PUB_CONST, PUB_STATIC}
 modules::mixed
 modules::nesting
+modules::reexports
 modules::reexports::*
 modules::visibility
 

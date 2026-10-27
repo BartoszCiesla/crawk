@@ -11,14 +11,12 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-advanced_globs::prelude
 app
 baz
 crate_root_reexport
 foo
 foo::other
 glob_showcase::config
-glob_showcase::prelude
 glob_showcase::utils
 group_patterns
 inline_modules::nested

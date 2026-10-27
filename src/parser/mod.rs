@@ -79,8 +79,9 @@ pub(crate) type Result<T> = std::result::Result<T, AnalyzerError>;
 /// Analyzer for collecting type references from a Rust crate.
 #[derive(Debug, Clone)]
 pub(crate) struct CrateAnalyzer {
-    /// Name of the crate being analyzed.
-    crate_name: String,
+    /// Crate name of the package's library, which paths from other targets
+    /// lead with; `None` for a package without a library.
+    crate_name: Option<String>,
 
     /// Collected references per module path.
     files: HashMap<String, Vec<TypeReference>>,
@@ -90,10 +91,13 @@ pub(crate) struct CrateAnalyzer {
 }
 
 impl CrateAnalyzer {
-    /// Creates a new analyzer for the given crate.
-    pub(crate) fn new(crate_name: impl Into<String>) -> Self {
+    /// Creates a new analyzer for a package whose library has `crate_name`.
+    ///
+    /// Pass `None` for a package without a library: a path led by its own name
+    /// then reaches nothing internal.
+    pub(crate) fn new(crate_name: Option<&str>) -> Self {
         Self {
-            crate_name: crate_name.into(),
+            crate_name: crate_name.map(str::to_owned),
             files: HashMap::new(),
             file_order: Vec::new(),
         }
@@ -136,8 +140,12 @@ impl CrateAnalyzer {
         })?;
 
         let module = module.into();
-        let crate_name = Some(self.crate_name.clone());
-        let mut visitor = ModuleVisitor::new(module.clone(), children, root_children, crate_name);
+        let mut visitor = ModuleVisitor::new(
+            module.clone(),
+            children,
+            root_children,
+            self.crate_name.clone(),
+        );
 
         if inline_scope.is_empty() {
             visitor.visit_file(&syntax);
@@ -196,7 +204,10 @@ impl CrateAnalyzer {
                         .iter()
                         .filter(|r| {
                             r.is_relative()
-                                || r.is_from_crate(&self.crate_name)
+                                || self
+                                    .crate_name
+                                    .as_deref()
+                                    .is_some_and(|name| r.is_from_crate(name))
                                 || Self::is_bare_child(r, module, children_map)
                         })
                         .collect();
@@ -237,8 +248,8 @@ impl CrateAnalyzer {
 
 #[cfg(test)]
 impl CrateAnalyzer {
-    pub(crate) fn crate_name(&self) -> &str {
-        &self.crate_name
+    pub(crate) fn crate_name(&self) -> Option<&str> {
+        self.crate_name.as_deref()
     }
 
     pub(crate) fn total_references(&self) -> usize {
@@ -257,6 +268,7 @@ mod tests {
     use std::io::Write;
     use std::path::Path;
     use tempfile::NamedTempFile;
+    use test_case::test_case;
 
     fn parse_use(code: &str) -> Vec<TypeReference> {
         let syntax: File = syn::parse_file(code).unwrap();
@@ -397,8 +409,8 @@ mod tests {
 
     #[test]
     fn test_crate_analyzer() {
-        let analyzer = CrateAnalyzer::new("test_crate");
-        assert_eq!(analyzer.crate_name(), "test_crate");
+        let analyzer = CrateAnalyzer::new(Some("test_crate"));
+        assert_eq!(analyzer.crate_name(), Some("test_crate"));
         assert_eq!(analyzer.file_count(), 0);
         assert_eq!(analyzer.total_references(), 0);
     }
@@ -597,7 +609,7 @@ mod tests {
 
     #[test]
     fn parse_file_returns_file_read_error_for_nonexistent_file() {
-        let mut analyzer = CrateAnalyzer::new("test");
+        let mut analyzer = CrateAnalyzer::new(Some("test"));
         let mut cache = ParseCache::new();
         let err = analyzer
             .parse_file(
@@ -616,7 +628,7 @@ mod tests {
     fn parse_file_returns_parse_error_for_invalid_syntax() {
         let mut f = NamedTempFile::new().unwrap();
         writeln!(f, "this is not valid rust !!!").unwrap();
-        let mut analyzer = CrateAnalyzer::new("test");
+        let mut analyzer = CrateAnalyzer::new(Some("test"));
         let mut cache = ParseCache::new();
         let err = analyzer
             .parse_file(
@@ -636,7 +648,7 @@ mod tests {
         let mut f = NamedTempFile::new().unwrap();
         writeln!(f, "mod real {{ pub struct Real; }}").unwrap();
         f.flush().unwrap();
-        let mut analyzer = CrateAnalyzer::new("test");
+        let mut analyzer = CrateAnalyzer::new(Some("test"));
         let mut cache = ParseCache::new();
         let err = analyzer
             .parse_file(
@@ -659,7 +671,7 @@ mod tests {
         let mut f = NamedTempFile::new().unwrap();
         writeln!(f, "use crate::a::B;\nuse crate::c::D;").unwrap();
         f.flush().unwrap();
-        let mut analyzer = CrateAnalyzer::new("test");
+        let mut analyzer = CrateAnalyzer::new(Some("test"));
         let mut cache = ParseCache::new();
         let refs = analyzer
             .parse_file(
@@ -681,7 +693,7 @@ mod tests {
         let mut f = NamedTempFile::new().unwrap();
         writeln!(f, "use crate::a::B;\nuse crate::c::D;").unwrap();
         f.flush().unwrap();
-        let mut analyzer = CrateAnalyzer::new("test");
+        let mut analyzer = CrateAnalyzer::new(Some("test"));
         let mut cache = ParseCache::new();
         let returned: Vec<String> = analyzer
             .parse_file(
@@ -712,7 +724,7 @@ mod tests {
         let mut f = NamedTempFile::new().unwrap();
         writeln!(f, "use crate::a::B;").unwrap();
         f.flush().unwrap();
-        let mut analyzer = CrateAnalyzer::new("test");
+        let mut analyzer = CrateAnalyzer::new(Some("test"));
         let mut cache = ParseCache::new();
 
         for _ in 0..2 {
@@ -731,6 +743,40 @@ mod tests {
         assert_eq!(analyzer.file_count(), 1);
         assert_eq!(analyzer.total_references(), 1);
         assert_eq!(analyzer.file_order, ["mod"]);
+    }
+
+    // The library's crate name leads a `use` item and a qualified call alike.
+    // Without a library the name reaches nothing in the package, so neither is
+    // internal.
+    #[test_case(Some("tool"), &["tool::greet", "tool::greet"] ; "package with a library")]
+    #[test_case(None, &[] ; "package without a library")]
+    fn crate_name_references_are_internal_only_with_a_library(
+        crate_name: Option<&str>,
+        expected: &[&str],
+    ) {
+        let mut f = NamedTempFile::new().unwrap();
+        writeln!(f, "use tool::greet;\nfn main() {{ tool::greet(); }}").unwrap();
+        f.flush().unwrap();
+        let mut analyzer = CrateAnalyzer::new(crate_name);
+        let mut cache = ParseCache::new();
+        analyzer
+            .parse_file(
+                "main",
+                f.path(),
+                &[],
+                HashSet::new(),
+                HashSet::new(),
+                &mut cache,
+            )
+            .unwrap();
+
+        let children_map = HashMap::new();
+        let paths: Vec<String> = analyzer
+            .all_crate_references(&children_map, None)
+            .flat_map(|(_, refs)| refs)
+            .map(TypeReference::to_path_string)
+            .collect();
+        assert_eq!(paths, expected);
     }
 
     #[test]

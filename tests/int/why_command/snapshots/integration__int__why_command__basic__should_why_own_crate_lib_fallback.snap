@@ -16,5 +16,6 @@ crawk::AnnotatedEdges
 crawk::CheckOptions
 crawk::DependencyGraph
 crawk::DependencyGraphOptions
+crawk::ModuleInfo::target
 
 ----- stderr -----
