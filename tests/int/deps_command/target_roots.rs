@@ -223,6 +223,55 @@ fn should_not_read_binary_named_like_the_crate_from_the_library() {
     );
 }
 
+// `src/bin/helper.rs` is a binary and a module of `tool`, with an inline child.
+// Seen from `tool` that child's root is the module `helper`, not a crate root,
+// so `tool` must not be lost to a failed lookup of `mod helper` inside the file.
+#[test]
+fn should_deps_module_whose_file_is_also_a_binary() {
+    let dir = scratch_crate(&[
+        ("src/lib.rs", "pub mod foo;\n"),
+        ("src/foo.rs", "pub struct Bar;\n"),
+        (
+            "src/bin/tool.rs",
+            "use my_crate::foo::Bar;\nmod helper;\nfn main() { let _ = Bar; helper::f(); }\n",
+        ),
+        (
+            "src/bin/helper.rs",
+            "use my_crate::foo::Bar;\n\
+             mod deep { pub fn x() {} }\n\
+             pub fn f() { let _ = Bar; deep::x(); }\n\
+             fn main() {}\n",
+        ),
+    ]);
+
+    assert_eq!(
+        crawk_stdout(dir.path(), 0, &["deps"]),
+        "helper -> deep\n\
+         helper -> foo\n\
+         helper -> helper::deep\n\
+         tool -> foo\n\
+         tool -> helper\n"
+    );
+}
+
+// An inline module named like its file is still inline: asking for it must not
+// analyse the whole file.
+#[test]
+fn should_use_inline_module_named_like_its_binary_file() {
+    let dir = scratch_crate(&[
+        ("src/lib.rs", "pub mod foo;\n"),
+        ("src/foo.rs", "pub struct Bar;\n"),
+        (
+            "src/bin/tool.rs",
+            "use my_crate::foo::Bar;\n\
+             mod tool { pub mod inner { pub fn f() {} } }\n\
+             fn main() { let _ = Bar; tool::inner::f(); }\n",
+        ),
+    ]);
+
+    assert_eq!(crawk_stdout(dir.path(), 0, &["use", "tool::tool"]), "");
+}
+
 // A checkout path with a `tests` component must not change the graph: the
 // target root comes from cargo, not from the shape of the absolute path.
 #[test]

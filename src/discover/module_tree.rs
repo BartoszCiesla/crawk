@@ -925,18 +925,26 @@ impl CrateInfo {
         let owned = |parts: &[&str]| parts.iter().map(ToString::to_string).collect();
 
         // A target's own entry-point file (library root, binary root, or
-        // integration-test root) has no shorter file-backed prefix to find: the
-        // path either *is* that root, or every one of its segments is inline in
-        // the entry file. Checked before the peel loop because a prefix that is
-        // itself inline in the entry file would otherwise match and truncate the
-        // scope.
+        // integration-test root) cannot be peeled through module resolution: a
+        // prefix that is itself inline in the file would match and truncate the
+        // scope. The file's own declarations decide instead. The longest tail of
+        // the path that is inline in the file is the scope: the whole path when
+        // the file is the root, less when another target declares the file as a
+        // module (`src/bin/helper.rs` as `mod helper;` of `src/bin/tool.rs`, whose
+        // `helper::deep` is inline below `helper`).
         if self.is_target_entry_point(file_path) {
-            let stem = file_path.file_stem().and_then(|s| s.to_str());
-            if Some(module_path) == stem {
-                // bin/test root — module paths there are stem-prefixed.
-                return (module_path.to_owned(), vec![]);
+            let Ok(syntax) = Self::parse_cached(file_path, cache) else {
+                // The parse error surfaces when the file is analysed.
+                return (String::new(), owned(&segments));
+            };
+            for len in 0..segments.len() {
+                let scope: Vec<String> = owned(&segments[len..]);
+                if Self::get_inline_module_items(&syntax.items, &scope).is_ok() {
+                    return (segments[..len].join("::"), scope);
+                }
             }
-            return (String::new(), owned(&segments));
+            // Nothing inline: the path names the file itself.
+            return (module_path.to_owned(), vec![]);
         }
 
         for len in 1..segments.len() {
@@ -1510,6 +1518,40 @@ mod tests {
         assert_eq!(
             info.split_inline_scope("tests", &fixture_src("lib.rs"), &mut cache),
             (String::new(), vec!["tests".to_owned()])
+        );
+    }
+
+    /// `src/app.rs` is a binary's entry point. With no inline `mod app` in it, the
+    /// path `app` can only be the file itself, seen as a module of another target.
+    #[test]
+    fn split_inline_scope_entry_point_as_a_module() {
+        let info = fixture_crate_info();
+        let mut cache = ParseCache::new();
+        assert_eq!(
+            info.split_inline_scope("app", &fixture_src("app.rs"), &mut cache),
+            ("app".to_owned(), vec![])
+        );
+    }
+
+    /// Regression: an inline child of such a module was reported with the whole
+    /// path as its scope, and the descent looked for a `mod app` inside `app.rs`.
+    #[test]
+    fn split_inline_scope_inline_child_of_entry_point_as_a_module() {
+        let info = fixture_crate_info();
+        let mut cache = ParseCache::new();
+        assert_eq!(
+            info.split_inline_scope("app::app_only", &fixture_src("app.rs"), &mut cache),
+            ("app".to_owned(), vec!["app_only".to_owned()])
+        );
+    }
+
+    #[test]
+    fn split_inline_scope_inline_module_in_binary_entry_point() {
+        let info = fixture_crate_info();
+        let mut cache = ParseCache::new();
+        assert_eq!(
+            info.split_inline_scope("app_only", &fixture_src("app.rs"), &mut cache),
+            (String::new(), vec!["app_only".to_owned()])
         );
     }
 
