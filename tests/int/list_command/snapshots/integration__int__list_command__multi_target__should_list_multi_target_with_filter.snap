@@ -13,7 +13,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-[test@helpers]     helpers
-[test@integration] helpers
+[test@helpers]     test@helpers
+[test@integration] test@integration::helpers
 
 ----- stderr -----

@@ -110,12 +110,13 @@ pub(crate) enum CrawkCommands {
     ///
     /// Valid root targets: "lib" (library) or a binary target's cargo name
     /// after "bin@" (e.g. "bin@crawk"), whatever its file is called. With -t,
-    /// also an integration test's file stem (e.g. "integration" for
-    /// tests/integration.rs).
+    /// also an integration test's cargo name after "test@" (e.g.
+    /// "test@integration").
     /// Any submodule path within those targets is also accepted; a binary's
-    /// modules go by "bin@<name>::<path>" (e.g. "bin@crawk::cli").
+    /// modules go by "bin@<name>::<path>" (e.g. "bin@crawk::cli"), a test's by
+    /// "test@<name>::<path>".
     /// A bare path reaches a module of any target when it names only one, and
-    /// otherwise lists the full paths to pick from.
+    /// otherwise lists the full paths to pick from; test modules count with -t.
     /// Note: references from binary targets use the library's crate name as
     /// prefix (e.g. "crawk::") rather than "crate::".
     ///

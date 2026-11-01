@@ -2,6 +2,10 @@
 /// Same spelling as the target's `Display` (the `list -T` tag).
 pub(crate) const BIN_ROOT_PREFIX: &str = "bin@";
 
+/// Leads the name of an integration test's root module: `test@<cargo target name>`.
+/// Same spelling as the target's `Display` (the `list -T` tag).
+pub(crate) const TEST_ROOT_PREFIX: &str = "test@";
+
 /// Path qualifier for the crate root
 pub(crate) const PATH_QUALIFIER_CRATE: &str = "crate";
 

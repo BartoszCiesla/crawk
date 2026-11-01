@@ -6,13 +6,13 @@ info:
     - "-p"
     - fixtures/hyphenated
     - list
-    - smoke
+    - test@smoke
     - "-t"
 ---
 success: true
 exit_code: 0
 ----- stdout -----
-smoke
-support
+test@smoke
+test@smoke::support
 
 ----- stderr -----

@@ -55,6 +55,7 @@ lib -> model
 lib -> reference
 lib -> rules
 model -> reference
+module_path -> constants
 parser -> cache
 parser -> parser::visitor
 parser -> reference

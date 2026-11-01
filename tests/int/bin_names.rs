@@ -21,7 +21,7 @@ use crate::common::{crawk, crawk_stdout};
 /// Not itself a `#[test]` fn, so clippy's `allow-expect-in-tests` doesn't
 /// cover it; it's test-support scaffolding, so `expect` is fine here.
 #[allow(clippy::expect_used)]
-fn scratch_crate(name: &str, files: &[(&str, &str)]) -> TempDir {
+pub(super) fn scratch_crate(name: &str, files: &[(&str, &str)]) -> TempDir {
     let dir = tempfile::tempdir().expect("tempdir");
     let manifest =
         format!("[package]\nname = \"{name}\"\nversion = \"0.1.0\"\nedition = \"2024\"\n");
@@ -93,7 +93,7 @@ fn two_directory_binaries() -> TempDir {
 
 /// Runs crawk on `root` and returns the whole output.
 #[allow(clippy::expect_used)]
-fn crawk_output(root: &Path, args: &[&str]) -> Output {
+pub(super) fn crawk_output(root: &Path, args: &[&str]) -> Output {
     crawk()
         .arg("-p")
         .arg(root)
@@ -103,14 +103,14 @@ fn crawk_output(root: &Path, args: &[&str]) -> Output {
 }
 
 /// Runs a crawk command that must fail with `code` and returns its stderr.
-fn crawk_failure(root: &Path, code: i32, args: &[&str]) -> String {
+pub(super) fn crawk_failure(root: &Path, code: i32, args: &[&str]) -> String {
     let output = crawk_output(root, args);
     assert_eq!(output.status.code(), Some(code), "crawk {args:?}");
     String::from_utf8_lossy(&output.stderr).into_owned()
 }
 
 /// Sorted, trimmed lines of `text`.
-fn lines(text: &str) -> Vec<&str> {
+pub(super) fn lines(text: &str) -> Vec<&str> {
     let mut lines: Vec<&str> = text.lines().map(str::trim_end).collect();
     lines.sort_unstable();
     lines
@@ -118,7 +118,7 @@ fn lines(text: &str) -> Vec<&str> {
 
 /// Writes a rule config beside the crate.
 #[allow(clippy::expect_used)]
-fn write_rules(root: &Path, rules: &str) {
+pub(super) fn write_rules(root: &Path, rules: &str) {
     fs::write(root.join("crawk.toml"), rules).expect("write crawk.toml");
 }
 

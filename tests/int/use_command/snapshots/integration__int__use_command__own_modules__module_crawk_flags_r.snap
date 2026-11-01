@@ -16,6 +16,7 @@ crate::constants::BIN_ROOT_PREFIX
 crate::constants::PATH_QUALIFIER_SELF
 crate::constants::{ATTR_CFG, MODULE_NAME_TEST}
 crate::constants::{BIN_ROOT_PREFIX, LIB_FILE_NAME, MAIN_FILE_NAME, MODULE_FILE_NAME}
+crate::constants::{BIN_ROOT_PREFIX, TEST_ROOT_PREFIX}
 crate::constants::{PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER}
 crate::discover::CrateInfo
 crate::discover::CrateInfoError
@@ -52,7 +53,7 @@ crate::model::{AnalysisOptions, AnalysisResult}
 crate::module_path::is_in_subtree
 crate::module_path::split_parent
 crate::module_path::{is_in_subtree, parent_module}
-crate::module_path::{is_in_subtree, path_below, split_parent}
+crate::module_path::{is_in_subtree, path_below, split_parent, target_root}
 crate::parser::CrateAnalyzer
 crate::parser::visitor
 crate::parser::visitor::ModuleVisitor

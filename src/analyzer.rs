@@ -4,7 +4,7 @@ use crate::discover::{CrateInfo, ModuleInfo, TargetInfo, TargetKind};
 use crate::error::{AnalysisError, Result};
 use crate::graph::{self, DependencyGraph, DependencyGraphOptions};
 use crate::model::{AnalysisOptions, AnalysisResult};
-use crate::module_path::{is_in_subtree, path_below, split_parent};
+use crate::module_path::{is_in_subtree, path_below, split_parent, target_root};
 use crate::parser::CrateAnalyzer;
 use crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference};
 use crate::resolve::resolve_glob;
@@ -183,13 +183,13 @@ impl Analyzer {
             }
             Err(e) => return Err(e),
         };
-        // Rename root entry (empty path) to the requested module path; a
-        // binary's modules are named under its root
+        // Rename root entry (empty path) to the requested module path; the
+        // modules of a binary or test are named under its root
         let mut modules: Vec<ModuleInfo> = modules
             .into_iter()
             .map(|m| {
-                if *m.target().kind() == TargetKind::Bin {
-                    let name = Self::binary_module_name(m.target(), m.path());
+                if *m.target().kind() != TargetKind::Lib {
+                    let name = Self::target_module_name(m.target(), m.path());
                     m.with_path(name)
                 } else if m.path().is_empty() {
                     m.with_path(module_path.to_owned())
@@ -206,13 +206,13 @@ impl Analyzer {
 
     /// Searches integration test targets for the given module path.
     ///
-    /// A path led by a test target's root name — its file stem, the name
-    /// [`list_all_modules`](Self::list_all_modules) gives the root — addresses
-    /// that target: `smoke` is its root, `smoke::support` one of its modules.
-    /// Failing that, the path is looked up bare in every test target, the way
-    /// their modules are listed. Returns the module found — with its whole
-    /// subtree when `recursive` — with paths relative to the target root (the
-    /// root itself is `""`).
+    /// A path led by a test target's root addresses that target: `test@smoke` is
+    /// its root, `test@smoke::support` one of its modules. Failing that, the path
+    /// is looked up bare in every test target: it reaches here bare when
+    /// [`resolve_module_name`](Self::resolve_module_name) could not list the
+    /// targets, and a target that cannot be read then reports why. Returns the
+    /// module found — with its whole subtree when `recursive` — with paths
+    /// relative to the target root (the root itself is `""`).
     fn list_from_test_target(
         &mut self,
         module_path: &str,
@@ -226,8 +226,8 @@ impl Analyzer {
             .collect();
 
         let led_by_root = test_targets.iter().filter_map(|(target, src_path)| {
-            let root = Self::target_module_path(target, src_path);
-            path_below(module_path, &root).map(|relative| (target, src_path, relative))
+            path_below(module_path, &target.to_string())
+                .map(|relative| (target, src_path, relative))
         });
         let bare = test_targets
             .iter()
@@ -282,16 +282,15 @@ impl Analyzer {
         let mut all_modules = Vec::new();
 
         for (target_info, src_path) in &targets {
-            let canonical_name = Self::target_module_path(target_info, src_path);
             let modules = self.target_modules(target_info, src_path, include_tests)?;
-            // Rename root entry from "" to canonical name (e.g. "lib", "bin@crawk");
-            // a binary's modules are named under its root
+            // Rename root entry from "" to the root's name (e.g. "lib", "bin@crawk");
+            // the modules of a binary or test are named under its root
             let modules = modules.into_iter().map(|m| {
-                if *target_info.kind() == TargetKind::Bin {
-                    let name = Self::binary_module_name(target_info, m.path());
+                if *target_info.kind() != TargetKind::Lib {
+                    let name = Self::target_module_name(target_info, m.path());
                     m.with_path(name)
                 } else if m.path().is_empty() {
-                    m.with_path(canonical_name.clone())
+                    m.with_path(target_info.to_string())
                 } else {
                     m
                 }
@@ -332,7 +331,7 @@ impl Analyzer {
     ) -> Result<Vec<ModuleInfo>> {
         let modules = match target.kind() {
             TargetKind::Lib => self.crate_info.get_module_tree(
-                &Self::target_module_path(target, src_path),
+                &target.to_string(),
                 true,
                 include_tests,
                 target,
@@ -355,24 +354,24 @@ impl Analyzer {
     /// A bare path naming one module reaches it wherever it lives, so `cli` is
     /// `bin@crawk::cli` when only that binary declares it, and `my-tool` is
     /// `bin@my-tool`. The library's aliases (`lib`, the crate and package names)
-    /// win over a binary named alike, which is reachable as `bin@<name>`; in a
-    /// package without a library they stand for its binary.
+    /// win over a binary or test named alike, which is reachable by its full
+    /// name; in a package without a library they stand for its binary.
     ///
-    /// Integration-test modules take no part: they are looked up after the
-    /// library and binaries fail. A path matching nothing comes back unchanged,
-    /// for discovery to report.
+    /// Integration-test modules count when `include_tests` is set, as `smoke` for
+    /// `test@smoke`. A path matching nothing comes back unchanged, for discovery
+    /// to report.
     ///
     /// # Errors
     ///
     /// Returns [`AnalysisError::AmbiguousModule`] if a bare path names several
-    /// modules, and [`AnalysisError::BinaryFileStem`] if it is led by a binary's
-    /// file stem, which is no name of it.
+    /// modules, and [`AnalysisError::TargetFileStem`] if it is led by the file
+    /// stem of a binary or test, which is no name of it.
     pub fn resolve_module_name(
         &mut self,
         module_path: &str,
         include_tests: bool,
     ) -> Result<String> {
-        if module_path.starts_with(BIN_ROOT_PREFIX) {
+        if target_root(module_path).is_some() {
             return Ok(module_path.to_owned());
         }
         let (head, rest) = module_path.split_once("::").unwrap_or((module_path, ""));
@@ -391,10 +390,10 @@ impl Analyzer {
             Self::modules_named(&all_modules, module_path)
         };
         match candidates.len() {
-            0 => self.reject_binary_file_stem(module_path)?,
+            0 => self.reject_target_file_stem(module_path, include_tests)?,
             1 => {
                 let only = candidates.remove(0);
-                if only.starts_with(BIN_ROOT_PREFIX) {
+                if target_root(&only).is_some() {
                     return Ok(only);
                 }
             }
@@ -408,22 +407,21 @@ impl Analyzer {
         Ok(module_path.to_owned())
     }
 
-    /// Full paths of the library and binary modules a bare `path` could mean.
+    /// Full paths of the modules among `modules` a bare `path` could mean.
     ///
-    /// A binary's module matches by its path inside the binary, a binary by its
-    /// cargo name; that name may lead the path too (`my-tool::cli`).
+    /// A module of a binary or test matches by its path inside the target, the
+    /// target by its cargo name; that name may lead the path too (`my-tool::cli`).
     fn modules_named(modules: &[ModuleInfo], path: &str) -> Vec<String> {
         let (head, rest) = path.split_once("::").unwrap_or((path, ""));
         modules
             .iter()
             .filter_map(|m| match m.target().kind() {
                 TargetKind::Lib => (m.path() == path).then(|| format!("lib::{path}")),
-                TargetKind::Bin => {
+                TargetKind::Bin | TargetKind::Test => {
                     let below = path_below(m.path(), &m.target().to_string())?;
                     let by_name = m.target().name() == head && below == rest;
                     (below == path || by_name).then(|| m.path().to_owned())
                 }
-                TargetKind::Test => None,
             })
             .collect()
     }
@@ -440,28 +438,29 @@ impl Analyzer {
             .collect()
     }
 
-    /// `module_path` under each binary whose file stem leads it (`main` →
-    /// `bin@crawk`, `main::cli` → `bin@crawk::cli`).
-    fn stem_led_names(&self, module_path: &str) -> Vec<String> {
+    /// `module_path` under each binary, and each test when `include_tests` is set,
+    /// whose file stem leads it (`main` → `bin@crawk`, `main::cli` →
+    /// `bin@crawk::cli`, `mod` → `test@integration`).
+    fn stem_led_names(&self, module_path: &str, include_tests: bool) -> Vec<String> {
         let (head, rest) = module_path.split_once("::").unwrap_or((module_path, ""));
         self.crate_info
-            .all_targets(false)
+            .all_targets(include_tests)
             .into_iter()
             .filter(|(target, src_path)| {
-                *target.kind() == TargetKind::Bin
+                *target.kind() != TargetKind::Lib
                     && src_path.file_stem().and_then(|s| s.to_str()) == Some(head)
             })
-            .map(|(target, _)| Self::binary_module_name(&target, rest))
+            .map(|(target, _)| Self::target_module_name(&target, rest))
             .collect()
     }
 
-    /// Fails if `module_path` is led by a binary's file stem.
-    fn reject_binary_file_stem(&self, module_path: &str) -> Result<()> {
-        let candidates = self.stem_led_names(module_path);
+    /// Fails if `module_path` is led by the file stem of a binary or test.
+    fn reject_target_file_stem(&self, module_path: &str, include_tests: bool) -> Result<()> {
+        let candidates = self.stem_led_names(module_path, include_tests);
         if candidates.is_empty() {
             Ok(())
         } else {
-            Err(AnalysisError::BinaryFileStem {
+            Err(AnalysisError::TargetFileStem {
                 module_path: module_path.to_owned(),
                 candidates,
             })
@@ -469,7 +468,7 @@ impl Analyzer {
     }
 
     /// Adds to an unknown-module error what the rule may have meant: rules take
-    /// only the full name of a binary's module.
+    /// only the full name of a module of a binary or test.
     fn hint_rule_module(&mut self, error: AnalysisError, include_tests: bool) -> AnalysisError {
         let AnalysisError::UnknownRuleModule { module, rule, .. } = error else {
             return error;
@@ -480,7 +479,7 @@ impl Analyzer {
             |modules| Self::modules_named(&modules, base),
         );
         let candidates = if named.is_empty() {
-            self.stem_led_names(base)
+            self.stem_led_names(base, include_tests)
         } else {
             named
         };
@@ -681,7 +680,7 @@ impl Analyzer {
                     );
                     Vec::new()
                 });
-            let belongs_to_lib = *target.kind() != TargetKind::Bin
+            let belongs_to_lib = *target.kind() == TargetKind::Lib
                 && root_modules.iter().any(|m| m.path() == resolved_path);
             if belongs_to_lib
                 && let Some(root_children) = Self::build_children_map(&root_modules).remove("")
@@ -711,10 +710,9 @@ impl Analyzer {
         src_path: &Path,
         options: &AnalysisOptions,
     ) -> Result<AnalysisResult> {
-        let root = Self::target_module_path(target, src_path);
         let modules = self.target_modules(target, src_path, options.include_tests)?;
         let children_map = Self::build_children_map(&modules);
-        self.analyze_discovered(root, modules, &children_map, options)
+        self.analyze_discovered(target.to_string(), modules, &children_map, options)
     }
 
     /// Parse already-discovered `modules` and collect their references into an
@@ -733,10 +731,10 @@ impl Analyzer {
             .first()
             .map(|m| m.source().to_path_buf())
             .unwrap_or_default();
-        let binary = modules
+        let target = modules
             .first()
             .map(ModuleInfo::target)
-            .filter(|target| *target.kind() == TargetKind::Bin)
+            .filter(|target| *target.kind() != TargetKind::Lib)
             .cloned();
 
         let file_root = self.build_file_root_map(&modules);
@@ -746,18 +744,23 @@ impl Analyzer {
         // overlapping or differently-rooted module paths).
         let module_filter: HashSet<String> = modules.iter().map(|m| m.path().to_owned()).collect();
         self.parse_all_modules(modules, &file_root, children_map)?;
-        let bin_root = binary.as_ref().map(ToString::to_string);
+        // The resolver reaches binaries by root but not tests yet, so a glob in a
+        // test is still looked up from the library.
+        let bin_root = target
+            .as_ref()
+            .filter(|target| *target.kind() == TargetKind::Bin)
+            .map(ToString::to_string);
         let dependencies =
             self.collect_references(options, children_map, &module_filter, bin_root.as_deref());
         // The root keeps its empty key: `module_path` names it.
-        let dependencies = match &binary {
+        let dependencies = match &target {
             Some(target) => dependencies
                 .into_iter()
                 .map(|(module, refs)| {
                     if module.is_empty() {
                         (module, refs)
                     } else {
-                        (Self::binary_module_name(target, &module), refs)
+                        (Self::target_module_name(target, &module), refs)
                     }
                 })
                 .collect(),
@@ -772,38 +775,23 @@ impl Analyzer {
         TargetInfo::new(TargetKind::Lib, self.crate_info.lib_crate_name())
     }
 
-    /// Computes the name a target's root module goes by.
-    ///
-    /// Library targets use `"lib"`, binary targets their cargo name (`"bin@crawk"`,
-    /// which cargo keeps unique), test targets the file stem of their source path
-    /// (e.g., `"smoke"` for `tests/smoke.rs`).
-    fn target_module_path(target: &TargetInfo, src_path: &Path) -> String {
-        match target.kind() {
-            TargetKind::Lib => "lib".to_owned(),
-            TargetKind::Bin => target.to_string(),
-            TargetKind::Test => src_path
-                .file_stem()
-                .and_then(|s| s.to_str())
-                .unwrap_or("test")
-                .to_owned(),
-        }
-    }
-
-    /// The name of the module at `path` inside a binary: `bin@<name>` for its
-    /// root (`""`), `bin@<name>::<path>` below it.
-    fn binary_module_name(binary: &TargetInfo, path: &str) -> String {
+    /// The name of the module at `path` inside a binary or test: `bin@<name>` for
+    /// its root (`""`), `bin@<name>::<path>` below it; `test@` likewise. Cargo keeps
+    /// target names unique per kind.
+    fn target_module_name(target: &TargetInfo, path: &str) -> String {
         if path.is_empty() {
-            binary.to_string()
+            target.to_string()
         } else {
-            format!("{binary}::{path}")
+            format!("{target}::{path}")
         }
     }
 
     /// The path that locates `module` from outside its target: under its root
-    /// for a binary, where a bare path would be looked up from the library.
+    /// for a binary, where a bare path would be looked up from the library. A
+    /// test's module stays relative: the resolver does not reach tests by root.
     fn resolvable_path(module: &ModuleInfo) -> String {
         if *module.target().kind() == TargetKind::Bin {
-            Self::binary_module_name(module.target(), module.path())
+            Self::target_module_name(module.target(), module.path())
         } else {
             module.path().to_owned()
         }
@@ -1151,17 +1139,17 @@ impl Analyzer {
         // runs: a same-named module of a later target replaces the parsed refs.
         let mut all_edges: BTreeMap<graph::Edge, BTreeSet<String>> = BTreeMap::new();
         for (target, src_path) in &targets {
-            let root = Self::target_module_path(target, src_path);
+            let root = target.to_string();
             info!("Analysing target root '{root}'");
             match self.analyze_target(target, src_path, &analysis_options) {
                 Ok(result) => {
-                    let bin_root = (*target.kind() == TargetKind::Bin).then_some(root.as_str());
+                    let target_root = (*target.kind() != TargetKind::Lib).then_some(root.as_str());
                     for (edge, apis) in graph::build_edges(
                         &result,
                         options.depth,
                         &known_modules,
                         lib_crate_name.as_deref(),
-                        bin_root,
+                        target_root,
                         options.show_apis,
                     ) {
                         all_edges.entry(edge).or_default().extend(apis);
@@ -1293,9 +1281,7 @@ impl Analyzer {
             resolve_globs: false,
         };
         let result = self.analyze_module(source, &analysis_options)?;
-        let bin_root = self
-            .binary_of_path(source)
-            .map(|(binary, ..)| binary.to_string());
+        let source_root = target_root(source);
 
         let mut filtered: BTreeMap<String, HashSet<TypeReference>> = BTreeMap::new();
         for (module_key, refs) in result.dependencies() {
@@ -1310,7 +1296,7 @@ impl Analyzer {
                     reference,
                     &known_modules,
                     lib_crate_name.as_deref(),
-                    bin_root.as_deref(),
+                    source_root,
                 ) && module_path == target
                 {
                     filtered

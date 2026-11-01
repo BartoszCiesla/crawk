@@ -62,6 +62,7 @@ analyzer
  - crate::module_path::is_in_subtree
  - crate::module_path::path_below
  - crate::module_path::split_parent
+ - crate::module_path::target_root
  - crate::parser::CrateAnalyzer
  - crate::reference::GroupItem
  - crate::reference::PathPrefix
@@ -177,11 +178,14 @@ model::tests
  - crate::model::AnalysisResult
  - crate::reference::TypeReference
 module_path
+ - crate::constants::BIN_ROOT_PREFIX
+ - crate::constants::TEST_ROOT_PREFIX
 module_path::tests
  - crate::module_path::is_in_subtree
  - crate::module_path::parent_module
  - crate::module_path::path_below
  - crate::module_path::split_parent
+ - crate::module_path::target_root
 parser
  - crate::cache::ParseCache
  - crate::parser::visitor

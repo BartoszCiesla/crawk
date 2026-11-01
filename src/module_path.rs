@@ -15,6 +15,16 @@
 //! [`rules`]: crate::rules
 //! [`graph`]: crate::graph
 
+use crate::constants::{BIN_ROOT_PREFIX, TEST_ROOT_PREFIX};
+
+/// The root of the binary or integration test `module` belongs to, when its name
+/// is led by one: `bin@crawk::cli` → `bin@crawk`, `test@it` → `test@it`. A library
+/// module has none.
+pub(crate) fn target_root(module: &str) -> Option<&str> {
+    let head = module.split_once("::").map_or(module, |(head, _)| head);
+    (head.starts_with(BIN_ROOT_PREFIX) || head.starts_with(TEST_ROOT_PREFIX)).then_some(head)
+}
+
 /// Returns `true` if `module` lies in the subtree rooted at `ancestor`,
 /// including `ancestor` itself.
 ///

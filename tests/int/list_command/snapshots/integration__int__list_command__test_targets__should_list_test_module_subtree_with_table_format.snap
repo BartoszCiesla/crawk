@@ -6,7 +6,7 @@ info:
     - "-p"
     - fixtures/modules
     - list
-    - helpers
+    - "test@integration::helpers"
     - "-t"
     - "--format"
     - table
@@ -14,10 +14,10 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-+---------+
-| Module  |
-+=========+
-| helpers |
-+---------+
++---------------------------+
+| Module                    |
++===========================+
+| test@integration::helpers |
++---------------------------+
 
 ----- stderr -----

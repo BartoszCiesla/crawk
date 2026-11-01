@@ -7,22 +7,23 @@ info:
     - int
     - "-t"
     - "-d"
-    - "2"
+    - "3"
 ---
 success: true
 exit_code: 0
 ----- stdout -----
-int
-int::bin_names
-int::check_command
-int::command
-int::deps_command
-int::error_cases
-int::list_command
-int::non_lib_library
-int::use_command
-int::verbosity
-int::version
-int::why_command
+test@integration::int
+test@integration::int::bin_names
+test@integration::int::check_command
+test@integration::int::command
+test@integration::int::deps_command
+test@integration::int::error_cases
+test@integration::int::list_command
+test@integration::int::non_lib_library
+test@integration::int::test_names
+test@integration::int::use_command
+test@integration::int::verbosity
+test@integration::int::version
+test@integration::int::why_command
 
 ----- stderr -----

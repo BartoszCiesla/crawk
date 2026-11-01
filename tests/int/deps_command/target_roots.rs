@@ -304,6 +304,6 @@ fn should_deps_test_target_named_like_a_library_module() {
 
     assert_eq!(
         crawk_stdout(dir.path(), 0, &["deps", "-t"]),
-        "support -> bar\n"
+        "test@foo::support -> bar\n"
     );
 }

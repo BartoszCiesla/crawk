@@ -25,6 +25,7 @@ crate::constants::MODULE_NAME_TEST
 crate::constants::PATH_QUALIFIER_CRATE
 crate::constants::PATH_QUALIFIER_SELF
 crate::constants::PATH_QUALIFIER_SUPER
+crate::constants::TEST_ROOT_PREFIX
 crate::discover::CrateInfo
 crate::discover::CrateInfoError
 crate::discover::MetadataError
@@ -69,6 +70,7 @@ crate::module_path::is_in_subtree
 crate::module_path::parent_module
 crate::module_path::path_below
 crate::module_path::split_parent
+crate::module_path::target_root
 crate::parser::AnalyzerError
 crate::parser::CrateAnalyzer
 crate::parser::Result

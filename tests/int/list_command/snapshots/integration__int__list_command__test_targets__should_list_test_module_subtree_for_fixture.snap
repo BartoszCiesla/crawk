@@ -6,12 +6,12 @@ info:
     - "-p"
     - fixtures/modules
     - list
-    - helpers
+    - "test@integration::helpers"
     - "-t"
 ---
 success: true
 exit_code: 0
 ----- stdout -----
-helpers
+test@integration::helpers
 
 ----- stderr -----

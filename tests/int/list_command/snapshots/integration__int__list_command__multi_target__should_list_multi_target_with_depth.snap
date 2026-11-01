@@ -36,8 +36,7 @@ exit_code: 0
 [lib]              visibility
 [bin@modules]      bin@modules
 [bin@modules-cli]  bin@modules-cli
-[test@helpers]     helpers
-[test@integration] helpers
-[test@integration] integration
+[test@helpers]     test@helpers
+[test@integration] test@integration
 
 ----- stderr -----

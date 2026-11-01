@@ -100,8 +100,8 @@ exit_code: 0
 [bin@modules]      bin@modules                             src/main.rs
 [bin@modules-cli]  bin@modules-cli                         src/app.rs
 [bin@modules-cli]  bin@modules-cli::app_only               src/app.rs
-[test@helpers]     helpers                                 tests/helpers.rs
-[test@integration] helpers                                 tests/helpers.rs
-[test@integration] integration                             tests/integration.rs
+[test@helpers]     test@helpers                            tests/helpers.rs
+[test@integration] test@integration                        tests/integration.rs
+[test@integration] test@integration::helpers               tests/helpers.rs
 
 ----- stderr -----

@@ -16,10 +16,10 @@ bin@hyphenated-pkg -> render
 bin@hyphenated-pkg -> shapes
 lib -> shapes
 render -> shapes
-smoke -> lib
-smoke -> render
-smoke -> shapes
-smoke -> support
-support -> shapes
+test@smoke -> lib
+test@smoke -> render
+test@smoke -> shapes
+test@smoke -> test@smoke::support
+test@smoke::support -> shapes
 
 ----- stderr -----

@@ -11,6 +11,6 @@ exit_code: 2
 ----- stdout -----
 
 ----- stderr -----
-error: invalid value 'foo::..::lib' for '<MODULE_PATH>': module path 'foo::..::lib' contains invalid characters (only a-z, A-Z, 0-9, _, -, :: and a leading bin@<name> are allowed)
+error: invalid value 'foo::..::lib' for '<MODULE_PATH>': module path 'foo::..::lib' contains invalid characters (only a-z, A-Z, 0-9, _, -, :: and a leading bin@<name> or test@<name> are allowed)
 
 For more information, try '--help'.

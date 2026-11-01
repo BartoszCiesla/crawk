@@ -104,6 +104,8 @@ impl TargetInfo {
     }
 }
 
+/// The name of the target's root module: `lib`, `bin@<name>` or `test@<name>`.
+/// Everything below a binary's or a test's root is written under it.
 impl fmt::Display for TargetInfo {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.kind {

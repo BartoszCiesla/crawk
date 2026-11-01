@@ -41,14 +41,19 @@ fn should_analyze_leaf_test_module_for_own_crate() {
 
 #[test]
 fn should_analyze_test_module_for_fixture() {
-    assert_cmd_snapshot!(crawk_modules().arg("use").arg("helpers").arg("-t"));
+    assert_cmd_snapshot!(
+        crawk_modules()
+            .arg("use")
+            .arg("test@integration::helpers")
+            .arg("-t")
+    );
 }
 
-// `list -t` names a test target's root after its file stem: `use` must
-// accept that name too.
+// `list -t` names a test target's root `test@<cargo name>`: `use` must accept
+// that name too.
 #[test]
 fn should_analyze_test_target_root_for_fixture() {
-    assert_cmd_snapshot!(crawk_modules().arg("use").arg("integration").arg("-t"));
+    assert_cmd_snapshot!(crawk_modules().arg("use").arg("test@integration").arg("-t"));
 }
 
 // === Without -t flag: must fail ===

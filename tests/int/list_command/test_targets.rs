@@ -28,7 +28,22 @@ fn should_list_common_test_module_for_own_crate() {
 
 #[test]
 fn should_list_test_module_subtree_for_fixture() {
-    assert_cmd_snapshot!(crawk_modules().arg("list").arg("helpers").arg("-t"));
+    assert_cmd_snapshot!(
+        crawk_modules()
+            .arg("list")
+            .arg("test@integration::helpers")
+            .arg("-t")
+    );
+}
+
+// `tests/helpers.rs` is a target of its own and a module of `tests/integration.rs`.
+#[test]
+fn should_error_for_bare_name_of_a_test_root_and_a_test_module() {
+    with_settings!({
+        filters => backtrace_filters(),
+    }, {
+        assert_cmd_snapshot!(crawk_modules().arg("list").arg("helpers").arg("-t"));
+    });
 }
 
 // === Without -t flag: must fail ===
@@ -69,7 +84,7 @@ fn should_list_test_module_subtree_with_source() {
     assert_cmd_snapshot!(
         crawk_modules()
             .arg("list")
-            .arg("helpers")
+            .arg("test@integration::helpers")
             .arg("-t")
             .arg("-s")
     );
@@ -77,7 +92,7 @@ fn should_list_test_module_subtree_with_source() {
 
 #[test]
 fn should_list_test_module_subtree_with_depth() {
-    assert_cmd_snapshot!(crawk().arg("list").arg("int").arg("-t").arg("-d").arg("2"));
+    assert_cmd_snapshot!(crawk().arg("list").arg("int").arg("-t").arg("-d").arg("3"));
 }
 
 #[test]
@@ -97,7 +112,7 @@ fn should_list_test_module_subtree_with_table_format() {
     assert_cmd_snapshot!(
         crawk_modules()
             .arg("list")
-            .arg("helpers")
+            .arg("test@integration::helpers")
             .arg("-t")
             .arg("--format")
             .arg("table")

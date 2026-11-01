@@ -192,11 +192,11 @@ exit_code: 0
 |------------------+----------------------------------------|
 | bin@modules-cli  | bin@modules-cli::app_only              |
 |------------------+----------------------------------------|
-| test@helpers     | helpers                                |
+| test@helpers     | test@helpers                           |
 |------------------+----------------------------------------|
-| test@integration | helpers                                |
+| test@integration | test@integration                       |
 |------------------+----------------------------------------|
-| test@integration | integration                            |
+| test@integration | test@integration::helpers              |
 +------------------+----------------------------------------+
 
 ----- stderr -----

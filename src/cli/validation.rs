@@ -1,7 +1,7 @@
 const MAX_MODULE_PATH_LEN: usize = 512;
 
 /// Validate that the module path contains only legal Rust identifier characters,
-/// `::` separators and a leading `bin@<name>`.
+/// `::` separators and a leading `bin@<name>` or `test@<name>`.
 ///
 /// # Errors
 ///
@@ -11,6 +11,7 @@ const MAX_MODULE_PATH_LEN: usize = 512;
 /// - Any character is not alphanumeric, `_`, `-`, `:` or `@`
 /// - The path contains `:::` or starts/ends with `::`
 /// - A segment holds a single `:`, or an `@` other than in a leading `bin@<name>`
+///   or `test@<name>`
 pub(super) fn validate_module_path(s: &str) -> Result<String, String> {
     if s.is_empty() {
         return Err(String::from("module path cannot be empty"));
@@ -27,14 +28,14 @@ pub(super) fn validate_module_path(s: &str) -> Result<String, String> {
     {
         return Err(format!(
             "module path '{s}' contains invalid characters \
-             (only a-z, A-Z, 0-9, _, -, :: and a leading bin@<name> are allowed)"
+             (only a-z, A-Z, 0-9, _, -, :: and a leading bin@<name> or test@<name> are allowed)"
         ));
     }
     if s.starts_with("::")
         || s.ends_with("::")
         || s.contains(":::")
         || s.split("::").enumerate().any(|(index, seg)| {
-            seg.contains(':') || (seg.contains('@') && !(index == 0 && is_binary_root(seg)))
+            seg.contains(':') || (seg.contains('@') && !(index == 0 && is_target_root(seg)))
         })
     {
         return Err(format!("module path '{s}' has malformed '::' separator"));
@@ -42,11 +43,13 @@ pub(super) fn validate_module_path(s: &str) -> Result<String, String> {
     Ok(s.to_owned())
 }
 
-/// `bin@<name>`, the root of a binary target. Hardcoded rather than taken from
-/// the library: this module's only legal library contact is `version`.
-fn is_binary_root(segment: &str) -> bool {
+/// `bin@<name>` or `test@<name>`, the root of a binary or test target. Hardcoded
+/// rather than taken from the library: this module's only legal library contact
+/// is `version`.
+fn is_target_root(segment: &str) -> bool {
     segment
         .strip_prefix("bin@")
+        .or_else(|| segment.strip_prefix("test@"))
         .is_some_and(|name| !name.is_empty() && !name.contains('@'))
 }
 
@@ -81,6 +84,16 @@ mod tests {
         assert!(validate_module_path("my-crate::module").is_ok()); // hyphenated package names
         assert!(validate_module_path("bin@my-tool").is_ok());
         assert!(validate_module_path("bin@my-tool::cli::overview").is_ok());
+        assert!(validate_module_path("test@my-test").is_ok());
+        assert!(validate_module_path("test@my-test::common").is_ok());
+    }
+
+    #[test]
+    fn test_validate_module_path_rejects_at_outside_a_target_root() {
+        assert!(validate_module_path("test@").is_err());
+        assert!(validate_module_path("test@a@b").is_err());
+        assert!(validate_module_path("foo::test@a").is_err());
+        assert!(validate_module_path("other@a").is_err());
     }
 
     #[test]

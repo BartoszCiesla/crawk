@@ -144,7 +144,6 @@ inline_modules::inner -> file_module
 inline_modules::nested::deep -> dir_module
 inline_modules::outer -> inline_modules::outer::file_child
 inline_modules::outer::file_child -> no_pub_items
-integration -> helpers
 item_visibility -> reexports
 lib -> empty_module
 mixed::file_child -> custom_path
@@ -164,6 +163,7 @@ reexports -> reexports::types
 reexports::internal -> item_visibility
 reexports::types -> visibility
 reexports::types -> visibility::pub_mod
+test@integration -> test@integration::helpers
 tests -> advanced_globs
 tests -> advanced_globs::prelude
 tests -> dir_module

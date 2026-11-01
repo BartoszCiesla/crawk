@@ -18,19 +18,20 @@ pub enum AnalysisError {
     AmbiguousModule {
         /// The bare path as given.
         module_path: String,
-        /// Full paths of the modules it could mean: `lib::x`, `bin@<name>::x`.
+        /// Full paths of the modules it could mean: `lib::x`, `bin@<name>::x`,
+        /// `test@<name>::x`.
         candidates: Vec<String>,
     },
 
-    /// A path is led by a binary's file stem, which does not name it.
+    /// A path is led by the file stem of a binary or test, which does not name it.
     #[error(
-        "Module '{module_path}' not found: a binary goes by its cargo target name, did you mean {}?",
+        "Module '{module_path}' not found: a binary or test goes by its cargo target name, did you mean {}?",
         .candidates.join(", ")
     )]
-    BinaryFileStem {
+    TargetFileStem {
         /// The path as given.
         module_path: String,
-        /// The same path under each binary with that file stem.
+        /// The same path under each binary or test with that file stem.
         candidates: Vec<String>,
     },
 
@@ -77,8 +78,8 @@ pub enum AnalysisError {
         module: String,
         /// Human-readable description of the offending rule.
         rule: String,
-        /// Full names of binary modules the rule may have meant; rules take
-        /// no bare form of those.
+        /// Full names of binary or test modules the rule may have meant; rules
+        /// take no bare form of those.
         candidates: Vec<String>,
     },
 }

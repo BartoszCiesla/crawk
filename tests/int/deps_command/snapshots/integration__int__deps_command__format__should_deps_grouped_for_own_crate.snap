@@ -119,6 +119,9 @@ lib (7)
 model (1)
   -> reference
 
+module_path (1)
+  -> constants
+
 parser (4)
   -> cache
   -> parser::visitor

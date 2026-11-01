@@ -72,9 +72,9 @@ pub(crate) fn find_module_target<'a>(
 /// on how a reference maps to a target module. Two reference kinds resolve:
 ///
 /// - `crate::` prefixed — intra-target refs resolved via `known_modules`,
-///   falling back to `"lib"` for crate-root re-exports. Inside a binary,
-///   `bin_root` (`bin@<name>`) leads the lookup and is the fallback: there
-///   `crate` is that binary
+///   falling back to `"lib"` for crate-root re-exports. Inside a binary or a
+///   test, `target_root` (`bin@<name>`, `test@<name>`) leads the lookup and is
+///   the fallback: there `crate` is that target
 /// - `<lib crate>::` prefixed — cross-target refs from a binary/test to the lib
 ///   target; the crate-name prefix is stripped and the rest resolved,
 ///   falling back to `"lib"`
@@ -86,7 +86,7 @@ pub(crate) fn resolve_reference_target<'a>(
     reference: &'a TypeReference,
     known_modules: &'a HashSet<String>,
     lib_crate_name: Option<&str>,
-    bin_root: Option<&'a str>,
+    target_root: Option<&'a str>,
 ) -> Option<(&'a str, &'a [String])> {
     let segments = reference.segments();
     if segments.is_empty() {
@@ -97,7 +97,7 @@ pub(crate) fn resolve_reference_target<'a>(
         // Intra-target: crate:: references resolved directly, falling back to
         // "lib" for crate-root re-exports (no module in the path matches,
         // e.g. `crate::Widget` re-exported in lib.rs).
-        PathPrefix::Crate => Some(bin_root.map_or_else(
+        PathPrefix::Crate => Some(target_root.map_or_else(
             || {
                 find_module_target(segments, known_modules).map_or(("lib", segments), |m| {
                     (m, &segments[m.split("::").count()..])
@@ -179,15 +179,15 @@ pub(crate) fn resolve_reference_target<'a>(
 ///   type references to their owning module
 /// - `lib_crate_name` — crate name of the library (e.g. `"crawk"`); when set,
 ///   refs prefixed with this name are treated as cross-target lib dependencies
-/// - `bin_root` — the analysed binary's root (`bin@<name>`), `None` for other
-///   targets; see [`resolve_reference_target`]
+/// - `target_root` — the analysed binary's or test's root (`bin@<name>`,
+///   `test@<name>`), `None` for the library; see [`resolve_reference_target`]
 /// - `show_apis` — collect API symbol names per edge
 pub(crate) fn build_edges(
     result: &AnalysisResult,
     depth: Option<usize>,
     known_modules: &HashSet<String>,
     lib_crate_name: Option<&str>,
-    bin_root: Option<&str>,
+    target_root: Option<&str>,
     show_apis: bool,
 ) -> AnnotatedEdges {
     let mut edges: AnnotatedEdges = BTreeMap::new();
@@ -207,7 +207,7 @@ pub(crate) fn build_edges(
 
         for reference in refs {
             let Some((module_path, api_segments)) =
-                resolve_reference_target(reference, known_modules, lib_crate_name, bin_root)
+                resolve_reference_target(reference, known_modules, lib_crate_name, target_root)
             else {
                 continue;
             };

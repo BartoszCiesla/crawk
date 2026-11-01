@@ -100,8 +100,8 @@ exit_code: 0
 [bin@modules]      bin@modules                             pub
 [bin@modules-cli]  bin@modules-cli                         pub
 [bin@modules-cli]  bin@modules-cli::app_only               
-[test@helpers]     helpers                                 pub
-[test@integration] helpers                                 
-[test@integration] integration                             pub
+[test@helpers]     test@helpers                            pub
+[test@integration] test@integration                        pub
+[test@integration] test@integration::helpers               
 
 ----- stderr -----

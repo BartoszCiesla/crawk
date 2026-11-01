@@ -10,6 +10,6 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-int::version
+test@integration::int::version
 
 ----- stderr -----

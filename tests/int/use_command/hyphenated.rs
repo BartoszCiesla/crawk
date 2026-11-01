@@ -39,11 +39,11 @@ fn should_use_path_led_by_library_name_in_hyphenated(module: &str, case: &str) {
     );
 }
 
-// The integration test's root is named after its file stem, as `list -t`
-// shows it, and a path led by that name reaches the root's modules — the way
+// The integration test's root goes by `test@<cargo name>`, as `list -t` shows
+// it, and a path led by that name reaches the root's modules — the way
 // `bin@crawk::cli` reaches a binary's.
-#[test_case("smoke", "root" ; "root")]
-#[test_case("smoke::support", "root_and_module" ; "root and module")]
+#[test_case("test@smoke", "root" ; "root")]
+#[test_case("test@smoke::support", "root_and_module" ; "root and module")]
 fn should_use_path_led_by_test_root_in_hyphenated(module: &str, case: &str) {
     assert_cmd_snapshot!(
         format!("hyphenated_use_test_{case}"),
@@ -55,5 +55,5 @@ fn should_use_path_led_by_test_root_in_hyphenated(module: &str, case: &str) {
 // the root's own reference, not its submodule's.
 #[test]
 fn should_use_test_root_without_recursion_in_hyphenated() {
-    assert_cmd_snapshot!(crawk_hyphenated().args(["use", "smoke", "-t"]));
+    assert_cmd_snapshot!(crawk_hyphenated().args(["use", "test@smoke", "-t"]));
 }

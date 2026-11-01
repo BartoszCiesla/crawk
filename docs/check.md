@@ -105,8 +105,9 @@ Each `[[check.layers]]` entry defines one layer group:
 Notes on `order`:
 
 - A pattern is a module path, as `crawk list` prints it: a binary's modules go by
-  `bin@<cargo target name>::<path>`, and the bare form the command line accepts
-  is an unknown module here. It matches that module **and its subtree** —
+  `bin@<cargo target name>::<path>`, an integration test's by
+  `test@<cargo target name>::<path>` (with `check -t`), and the bare form the
+  command line accepts is an unknown module here. It matches that module **and its subtree** —
   `"graph"` covers `graph::edges`, `graph::cycles`, and so on. Membership uses
   **longest-prefix match**, so a more specific pattern wins over a broader one.
 - Every pattern must name a **real module** in the crate. A pattern that matches
