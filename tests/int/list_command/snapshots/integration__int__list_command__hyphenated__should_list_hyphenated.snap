@@ -13,6 +13,6 @@ exit_code: 0
 [lib]                lib
 [lib]                render
 [lib]                shapes
-[bin:hyphenated-pkg] main
+[bin@hyphenated-pkg] bin@hyphenated-pkg
 
 ----- stderr -----

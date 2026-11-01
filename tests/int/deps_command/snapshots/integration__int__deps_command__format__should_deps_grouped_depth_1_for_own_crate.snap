@@ -12,8 +12,9 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-analyzer (10)
+analyzer (11)
   -> cache
+  -> constants
   -> discover
   -> error
   -> graph
@@ -24,7 +25,8 @@ analyzer (10)
   -> resolve
   -> rules
 
-cli (1)
+bin@crawk (2)
+  -> lib
   -> version
 
 discover (4)
@@ -35,9 +37,6 @@ discover (4)
 
 error (1)
   -> discover
-
-format (1)
-  -> lib
 
 graph (3)
   -> error
@@ -52,16 +51,6 @@ lib (7)
   -> model
   -> reference
   -> rules
-
-logger (1)
-  -> cli
-
-main (5)
-  -> cli
-  -> format
-  -> lib
-  -> logger
-  -> version
 
 model (1)
   -> reference

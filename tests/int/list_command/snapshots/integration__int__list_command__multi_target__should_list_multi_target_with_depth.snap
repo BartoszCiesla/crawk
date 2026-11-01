@@ -34,11 +34,10 @@ exit_code: 0
 [lib]              tests
 [lib]              uses_empty_glob
 [lib]              visibility
-[bin:modules]      main
-[bin:modules-cli]  app
-[bin:modules-cli]  app_only
-[test:helpers]     helpers
-[test:integration] helpers
-[test:integration] integration
+[bin@modules]      bin@modules
+[bin@modules-cli]  bin@modules-cli
+[test@helpers]     helpers
+[test@integration] helpers
+[test@integration] integration
 
 ----- stderr -----

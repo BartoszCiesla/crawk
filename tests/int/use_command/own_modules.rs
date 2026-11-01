@@ -9,13 +9,13 @@ use test_case::{test_case, test_matrix};
 
 #[test_case("cli"; "for cli module")]
 #[test_case("lib"; "for lib module")]
-#[test_case("main"; "for main module")]
+#[test_case("bin@crawk"; "for main module")]
 #[test_case("parser"; "for parser module")]
 #[test_case("discover"; "for discover module")]
 #[test_case("reference"; "for reference module")]
 #[test_case("nonexisting"; "for nonexisting module")]
 fn should_use_command_provide_output(module: &str) {
-    let snapshot_name = format!("module_{}", module.replace("::", "__"));
+    let snapshot_name = format!("module_{}", module.replace("::", "__").replace('@', "_"));
 
     with_settings!({
         filters => backtrace_filters(),
@@ -25,10 +25,10 @@ fn should_use_command_provide_output(module: &str) {
 }
 
 // Binary submodule resolution — exercises resolve_module_path_from_binary
-#[test_case("main::format"; "for main binary submodule format")]
-#[test_case("main::cli"; "for main binary submodule cli")]
+#[test_case("bin@crawk::format"; "for main binary submodule format")]
+#[test_case("bin@crawk::cli"; "for main binary submodule cli")]
 fn should_use_command_resolve_binary_submodule(module: &str) {
-    let snapshot_name = format!("module_{}", module.replace("::", "__"));
+    let snapshot_name = format!("module_{}", module.replace("::", "__").replace('@', "_"));
     assert_cmd_snapshot!(snapshot_name, crawk().arg("use").arg(module));
 }
 
@@ -39,7 +39,7 @@ fn should_use_command_resolve_binary_submodule(module: &str) {
 // - main should give the output for binary only.
 // - tests should give the output for test module in the lib only.
 #[test_matrix(
-        ["crawk", "parser", "discover", "reference", "resolve", "lib", "main", "cli", "constants", "logger", "version"],
+        ["crawk", "parser", "discover", "reference", "resolve", "lib", "bin@crawk", "cli", "constants", "logger", "version"],
         [&["-t"],
          &["-t", "-e"],
          &["-t", "-e", "-d", "1"],
@@ -57,7 +57,10 @@ fn should_use_command_provide_output_for_flags(module: &str, flags: &[&str]) {
         .map(|f| f.trim_start_matches('-'))
         .collect::<Vec<_>>()
         .join("_");
-    let snapshot_name = format!("module_{}_flags_{flags_part}", module.replace("::", "__"));
+    let snapshot_name = format!(
+        "module_{}_flags_{flags_part}",
+        module.replace("::", "__").replace('@', "_")
+    );
 
     with_settings!({
         filters => backtrace_filters(),

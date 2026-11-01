@@ -23,12 +23,12 @@ This document describes that shared model. Per-flag behavior lives in
 crawk analyzes the package whose `Cargo.toml` sits at the crate root (`-p`,
 default: cwd), using `cargo metadata` to find its targets:
 
-| Target kind                  | Included       | Root module name                     |
-|------------------------------|----------------|--------------------------------------|
-| library (any crate type)     | always         | `lib`                                |
-| binary                       | always         | file stem of the target's `src_path` |
-| integration test             | only with `-t` | file stem of the target's `src_path` |
-| example, bench, build script | never          | —                                    |
+| Target kind                  | Included       | Root module name                      |
+|------------------------------|----------------|---------------------------------------|
+| library (any crate type)     | always         | `lib`                                 |
+| binary                       | always         | `bin@<name>`, cargo's target name     |
+| integration test             | only with `-t` | file stem of the target's `src_path`  |
+| example, bench, build script | never          | —                                     |
 
 A package has at most one library, and it counts whatever its crate type:
 `cargo metadata` reports a plain library as `lib`, but a proc-macro crate
@@ -38,17 +38,35 @@ A package has at most one library, and it counts whatever its crate type:
 `[lib] name` override renames the crate in paths either way.
 
 The source path comes from `cargo metadata`, so it follows the manifest, not a
-fixed layout. With Cargo's default layout, `src/main.rs` becomes `main`,
-`src/bin/foo.rs` becomes `foo`, and `tests/integration.rs` becomes
-`integration`. A `[[bin]] name = "modules-cli"` with `path = "src/app.rs"`
-becomes `app`. The root is named after the file, **not** after the target, so
-a binary called `crawk` built from `src/main.rs` is `main`.
+fixed layout. A binary is named after its target, **not** after its file:
+`src/main.rs` of package `crawk` is `bin@crawk`, `src/bin/foo.rs` is `bin@foo`,
+`src/bin/foo/main.rs` is `bin@foo` too, and `[[bin]] name = "modules-cli"` with
+`path = "src/app.rs"` is `bin@modules-cli`. Cargo keeps binary names unique
+within a package, so two binaries never share a name, whatever their files are
+called. `tests/integration.rs` becomes `integration`.
 
-Module paths are written **without** a target prefix and without `crate::`:
-`parser::visitor`, not `crate::parser::visitor` or `lib::parser::visitor`.
-`list -T` shows which target each module belongs to. All targets share one
-module namespace, so a binary's `mod cli` and a library's `mod cli` would be
-the same node in the graph.
+Library module paths are written **without** a target prefix and without
+`crate::`: `parser::visitor`, not `crate::parser::visitor`. A binary's modules
+go by their full path below its root, `bin@crawk::cli::overview`, so a binary's
+`mod cli`, another binary's `mod cli` and a library's `mod cli` are three nodes
+in the graph, even when two of them declare the same file. Integration-test
+modules are still written bare and share the library's namespace. `list -T`
+shows which target each module belongs to.
+
+`check` rules take these names literally. On the command line (`use`, `why`,
+`list`, `deps --path`) a bare path is accepted too:
+
+- It reaches a module of the library or of a binary when it names only one:
+  `cli` is `bin@crawk::cli` when no other target has a `cli`, and a binary's
+  cargo name is its root (`my-tool`, `my-tool::cli`).
+- When it names several, the command fails and lists the full paths to pick
+  from: `lib::cli, bin@a::cli, bin@b::cli`. `lib::` spells the library's module.
+- The library's own names come first: `lib`, the crate name and the package name
+  always mean the library, so the default binary, named like the package, is
+  only reachable as `bin@<package>`. In a package without a library they mean its
+  binary, or fail with the list if it has several.
+- A binary's file stem is no name of it: `main` fails, pointing at the binaries
+  with that stem.
 
 ### Discovery
 
@@ -147,6 +165,19 @@ this:
    `-a` / `--show-apis`.
 3. If no prefix is a known module, the target is the synthetic **`lib`** node.
 
+Inside a binary, a `crate::` path is looked up below that binary's root and falls
+back to the root itself, since there `crate` is the binary: `use crate::cli::Args`
+in `bin@crawk` is `bin@crawk -> bin@crawk::cli`, and an item at the root of the
+file is `… -> bin@crawk`. A path led by the library's crate name goes to the
+library as above.
+
+`use` and `why` print the reference, not this mapping, so `crate::` stays in
+their output, meaning the target that was queried. Dropping `crate::` gives the
+module name only in the library: `crate::graph::Cycle` belongs to `graph`, but
+`crate::cli::Args` printed for `bin@crawk` belongs to `bin@crawk::cli`. To process
+results by module name, read `deps -a`, which has full names on both ends and the
+symbols on the edge: `bin@crawk -> bin@crawk::cli [Args]`.
+
 Two consequences follow, and both are deliberate:
 
 - **The edge points at the module named in the path, not at the module that
@@ -162,7 +193,8 @@ Two consequences follow, and both are deliberate:
 After mapping, self-loops (`a -> a`) are dropped and duplicate edges merge,
 with their API names unioned. With `--depth N`, both ends are truncated first,
 so edges that collapse onto one pair, or onto a self-loop, merge or disappear
-too.
+too. A binary's root is the first segment of its modules, so `--depth 1` shows
+each binary as a single node and `--depth 2` its top-level modules.
 
 ## Test code
 
@@ -226,8 +258,8 @@ Things that follow from this table:
 - **`use -r` and `deps` can disagree.** `use` prints references (`crate::graph::Cycle`),
   `deps` prints edges (`rules::eval -> graph`). `use` without `-e` also shows a
   grouped import as one line. And `use` analyzes the library target unless you
-  name a binary root by its file stem (`main`, not the binary's name), or with
-  `-t` a test root (`integration`), while `deps` always covers all targets.
+  name a binary (`bin@crawk`) or one of its modules, or with `-t` a test root
+  (`integration`), while `deps` always covers all targets.
 - **`-G` exists only on `use`.** It reads the glob target's source and lists
   the items visible to the importing module: `pub`, `pub(crate)`, and
   `pub(super)` / `pub(in path)` when the importer is inside the allowed scope.

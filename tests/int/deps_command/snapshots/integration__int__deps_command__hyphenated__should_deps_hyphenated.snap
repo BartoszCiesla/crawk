@@ -10,10 +10,10 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
+bin@hyphenated-pkg -> lib
+bin@hyphenated-pkg -> render
+bin@hyphenated-pkg -> shapes
 lib -> shapes
-main -> lib
-main -> render
-main -> shapes
 render -> shapes
 
 ----- stderr -----

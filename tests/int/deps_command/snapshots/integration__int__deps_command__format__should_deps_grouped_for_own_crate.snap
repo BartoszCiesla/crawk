@@ -10,8 +10,9 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-analyzer (10)
+analyzer (11)
   -> cache
+  -> constants
   -> discover
   -> error
   -> graph
@@ -22,16 +23,59 @@ analyzer (10)
   -> resolve
   -> rules
 
-cli (3)
-  -> cli::overview
-  -> cli::validation
+bin@crawk (13)
+  -> bin@crawk::cli
+  -> bin@crawk::format
+  -> bin@crawk::format::check_cmd
+  -> bin@crawk::format::cycles
+  -> bin@crawk::format::deps_cmd
+  -> bin@crawk::format::list_cmd
+  -> bin@crawk::format::orphans
+  -> bin@crawk::format::paths
+  -> bin@crawk::format::use_cmd
+  -> bin@crawk::format::why_cmd
+  -> bin@crawk::logger
+  -> lib
   -> version
 
-cli::overview (1)
+bin@crawk::cli (3)
+  -> bin@crawk::cli::overview
+  -> bin@crawk::cli::validation
   -> version
 
-discover (1)
+bin@crawk::cli::overview (1)
+  -> version
+
+bin@crawk::format::check_cmd (2)
+  -> bin@crawk::format
+  -> lib
+
+bin@crawk::format::cycles (2)
+  -> bin@crawk::format
+  -> lib
+
+bin@crawk::format::deps_cmd (2)
+  -> bin@crawk::format
+  -> lib
+
+bin@crawk::format::list_cmd (1)
+  -> lib
+
+bin@crawk::format::paths (1)
+  -> lib
+
+bin@crawk::format::use_cmd (1)
+  -> lib
+
+bin@crawk::format::why_cmd (1)
+  -> lib
+
+bin@crawk::logger (1)
+  -> bin@crawk::cli
+
+discover (2)
   -> cache
+  -> constants
 
 discover::module_tree (5)
   -> cache
@@ -42,30 +86,6 @@ discover::module_tree (5)
 
 error (1)
   -> discover
-
-format::check_cmd (2)
-  -> format
-  -> lib
-
-format::cycles (2)
-  -> format
-  -> lib
-
-format::deps_cmd (2)
-  -> format
-  -> lib
-
-format::list_cmd (1)
-  -> lib
-
-format::paths (1)
-  -> lib
-
-format::use_cmd (1)
-  -> lib
-
-format::why_cmd (1)
-  -> lib
 
 graph (5)
   -> error
@@ -95,24 +115,6 @@ lib (7)
   -> model
   -> reference
   -> rules
-
-logger (1)
-  -> cli
-
-main (13)
-  -> cli
-  -> format
-  -> format::check_cmd
-  -> format::cycles
-  -> format::deps_cmd
-  -> format::list_cmd
-  -> format::orphans
-  -> format::paths
-  -> format::use_cmd
-  -> format::why_cmd
-  -> lib
-  -> logger
-  -> version
 
 model (1)
   -> reference

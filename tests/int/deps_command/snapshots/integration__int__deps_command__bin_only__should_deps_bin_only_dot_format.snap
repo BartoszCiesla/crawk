@@ -17,13 +17,13 @@ digraph dependencies {
     node [shape=box, style=rounded, fontname="monospace", fontsize=10];
     edge [color="#444444"];
 
-    "config";
-    "main";
-    "utils::helper";
+    "bin@bin_only";
+    "bin@bin_only::config";
+    "bin@bin_only::utils::helper";
 
-    "main" -> "config";
-    "main" -> "utils::helper";
-    "utils::helper" -> "config";
+    "bin@bin_only" -> "bin@bin_only::config";
+    "bin@bin_only" -> "bin@bin_only::utils::helper";
+    "bin@bin_only::utils::helper" -> "bin@bin_only::config";
 }
 
 ----- stderr -----

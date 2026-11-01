@@ -32,8 +32,7 @@ exit_code: 0
 [lib]             reexports
 [lib]             uses_empty_glob
 [lib]             visibility
-[bin:modules]     main
-[bin:modules-cli] app
-[bin:modules-cli] app_only
+[bin@modules]     bin@modules
+[bin@modules-cli] bin@modules-cli
 
 ----- stderr -----

@@ -15,16 +15,16 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-cli
+bin@crawk::cli
  - crate::cli::overview::generate_after_help
  - crate::cli::validation::validate_depth
  - crate::cli::validation::validate_module_path
  - crawk::version
  - crawk::version::LONG_VERSION_MESSAGE
  - crawk::version::VERSION
-cli::overview
+bin@crawk::cli::overview
  - crawk::version
-cli::tests
+bin@crawk::cli::tests
  - crate::cli::CheckArgs
  - crate::cli::CheckOutputFormat
  - crate::cli::CrawkArgs
@@ -40,8 +40,8 @@ cli::tests
  - crate::cli::UseOutputFormat
  - crate::cli::WhyArgs
  - crate::cli::WhyOutputFormat
-cli::validation
-cli::validation::tests
+bin@crawk::cli::validation
+bin@crawk::cli::validation::tests
  - crate::cli::validation::validate_depth
  - crate::cli::validation::validate_module_path
 

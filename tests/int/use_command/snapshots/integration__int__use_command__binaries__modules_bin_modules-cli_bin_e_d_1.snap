@@ -1,0 +1,20 @@
+---
+source: tests/int/use_command/binaries.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/modules
+    - use
+    - "bin:modules-cli"
+    - "-e"
+    - "-d"
+    - "1"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::app_only
+modules
+
+----- stderr -----

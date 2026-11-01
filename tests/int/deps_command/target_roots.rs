@@ -77,7 +77,7 @@ fn should_deps_binary_with_submodule_from_its_root() {
 
     assert_eq!(
         crawk_stdout(dir.path(), 0, &["deps"]),
-        "inner -> foo\ntool -> foo\ntool -> inner\n"
+        "bin@tool -> bin@tool::inner\nbin@tool -> foo\nbin@tool::inner -> foo\n"
     );
 }
 
@@ -126,23 +126,22 @@ fn should_list_binary_sharing_a_stem_from_its_own_file() {
 
     assert_eq!(
         crawk_stdout(dir.path(), 0, &["list", "-T", "-s"]),
-        "[lib]          foo           src/foo.rs\n\
-         [lib]          lib           src/lib.rs\n\
-         [bin:my-tool]  main          src/bin/my-tool/main.rs\n\
-         [bin:my-tool]  only_in_tool  src/bin/my-tool/main.rs\n\
-         [bin:my_crate] main          src/main.rs\n"
+        "[lib]          foo                        src/foo.rs\n\
+         [lib]          lib                        src/lib.rs\n\
+         [bin@my-tool]  bin@my-tool                src/bin/my-tool/main.rs\n\
+         [bin@my-tool]  bin@my-tool::only_in_tool  src/bin/my-tool/main.rs\n\
+         [bin@my_crate] bin@my_crate               src/main.rs\n"
     );
 }
 
-// The two binaries still share the node name `main`; the edge into the module
-// only the second one declares proves it was analysed.
+// Two nodes, each with its own edges, though both files have the stem `main`.
 #[test]
 fn should_deps_binary_sharing_a_stem_from_its_own_file() {
     let dir = main_and_directory_binary();
 
     assert_eq!(
         crawk_stdout(dir.path(), 0, &["deps"]),
-        "main -> foo\nmain -> only_in_tool\n"
+        "bin@my-tool -> bin@my-tool::only_in_tool\nbin@my_crate -> foo\n"
     );
 }
 
@@ -152,12 +151,12 @@ fn should_list_two_directory_binaries_from_their_own_files() {
 
     assert_eq!(
         crawk_stdout(dir.path(), 0, &["list", "-T", "-s"]),
-        "[lib]   foo        src/foo.rs\n\
-         [lib]   lib        src/lib.rs\n\
-         [bin:a] main       src/bin/a/main.rs\n\
-         [bin:a] only_in_a  src/bin/a/only_in_a.rs\n\
-         [bin:b] main       src/bin/b/main.rs\n\
-         [bin:b] only_in_b  src/bin/b/main.rs\n"
+        "[lib]   foo               src/foo.rs\n\
+         [lib]   lib               src/lib.rs\n\
+         [bin@a] bin@a             src/bin/a/main.rs\n\
+         [bin@a] bin@a::only_in_a  src/bin/a/only_in_a.rs\n\
+         [bin@b] bin@b             src/bin/b/main.rs\n\
+         [bin@b] bin@b::only_in_b  src/bin/b/main.rs\n"
     );
 }
 
@@ -167,7 +166,7 @@ fn should_deps_two_directory_binaries_from_their_own_files() {
 
     assert_eq!(
         crawk_stdout(dir.path(), 0, &["deps"]),
-        "main -> only_in_a\nmain -> only_in_b\nonly_in_a -> foo\n"
+        "bin@a -> bin@a::only_in_a\nbin@a::only_in_a -> foo\nbin@b -> bin@b::only_in_b\n"
     );
 }
 
@@ -190,19 +189,19 @@ fn should_resolve_module_of_a_binary_root_beside_its_file() {
 
     assert_eq!(
         crawk_stdout(dir.path(), 0, &["list", "-T", "-s"]),
-        "[lib]      foo     src/foo.rs\n\
-         [lib]      lib     src/lib.rs\n\
-         [bin:tool] shared  src/bin/shared/mod.rs\n\
-         [bin:tool] tool    src/bin/tool.rs\n"
+        "[lib]      foo               src/foo.rs\n\
+         [lib]      lib               src/lib.rs\n\
+         [bin@tool] bin@tool          src/bin/tool.rs\n\
+         [bin@tool] bin@tool::shared  src/bin/shared/mod.rs\n"
     );
     assert_eq!(
         crawk_stdout(dir.path(), 0, &["deps"]),
-        "shared -> foo\ntool -> shared\n"
+        "bin@tool -> bin@tool::shared\nbin@tool::shared -> foo\n"
     );
 }
 
 // A binary named like the package is the default for `src/bin/<package>.rs`.
-// Its root name is a library alias too, but the entry point is its own file.
+// Its cargo name is a library alias too, but the entry point is its own file.
 #[test]
 fn should_not_read_binary_named_like_the_crate_from_the_library() {
     let dir = scratch_crate(&[
@@ -216,10 +215,10 @@ fn should_not_read_binary_named_like_the_crate_from_the_library() {
 
     assert_eq!(
         crawk_stdout(dir.path(), 0, &["list", "-T", "-s"]),
-        "[lib]          foo          src/foo.rs\n\
-         [lib]          lib          src/lib.rs\n\
-         [bin:my_crate] my_crate     src/bin/my_crate.rs\n\
-         [bin:my_crate] only_in_bin  src/bin/my_crate.rs\n"
+        "[lib]          foo                        src/foo.rs\n\
+         [lib]          lib                        src/lib.rs\n\
+         [bin@my_crate] bin@my_crate               src/bin/my_crate.rs\n\
+         [bin@my_crate] bin@my_crate::only_in_bin  src/bin/my_crate.rs\n"
     );
 }
 
@@ -246,11 +245,12 @@ fn should_deps_module_whose_file_is_also_a_binary() {
 
     assert_eq!(
         crawk_stdout(dir.path(), 0, &["deps"]),
-        "helper -> deep\n\
-         helper -> foo\n\
-         helper -> helper::deep\n\
-         tool -> foo\n\
-         tool -> helper\n"
+        "bin@helper -> bin@helper::deep\n\
+         bin@helper -> foo\n\
+         bin@tool -> bin@tool::helper\n\
+         bin@tool -> foo\n\
+         bin@tool::helper -> bin@tool::helper::deep\n\
+         bin@tool::helper -> foo\n"
     );
 }
 

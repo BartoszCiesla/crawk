@@ -11,6 +11,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 int
+int::bin_names
 int::check_command
 int::check_command::basic
 int::check_command::config

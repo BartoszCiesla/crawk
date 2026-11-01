@@ -12,11 +12,11 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-main (2)
-  -> config
-  -> utils::helper
+bin@bin_only (2)
+  -> bin@bin_only::config
+  -> bin@bin_only::utils::helper
 
-utils::helper (1)
-  -> config
+bin@bin_only::utils::helper (1)
+  -> bin@bin_only::config
 
 ----- stderr -----

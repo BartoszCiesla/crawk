@@ -143,7 +143,9 @@ fn handle_deps_command(crate_root: &Path, args: &DepsArgs) -> anyhow::Result<()>
     let graph = analyzer.dependency_graph(&graph_opts)?;
 
     let output = if let Some(ref pair) = args.path {
-        render_path_output(&graph, &pair[0], &pair[1], args)?
+        let src = analyzer.resolve_module_name(&pair[0], args.include_tests)?;
+        let tgt = analyzer.resolve_module_name(&pair[1], args.include_tests)?;
+        render_path_output(&graph, &src, &tgt, args)?
     } else if args.orphans {
         render_orphans_output(&graph)
     } else if let Some(ref cycles_mode) = args.cycles {

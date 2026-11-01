@@ -12,8 +12,5 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-main -> config
-main -> utils
-utils -> config
 
 ----- stderr -----

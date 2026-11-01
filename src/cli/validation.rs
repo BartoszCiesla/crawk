@@ -1,15 +1,16 @@
 const MAX_MODULE_PATH_LEN: usize = 512;
 
-/// Validate that the module path contains only legal Rust identifier characters
-/// and `::` separators.
+/// Validate that the module path contains only legal Rust identifier characters,
+/// `::` separators and a leading `bin@<name>`.
 ///
 /// # Errors
 ///
 /// Returns an error if:
 /// - The path exceeds 512 characters
 /// - The path is empty
-/// - Any character is not alphanumeric, `_`, or `:`
+/// - Any character is not alphanumeric, `_`, `-`, `:` or `@`
 /// - The path contains `:::` or starts/ends with `::`
+/// - A segment holds a single `:`, or an `@` other than in a leading `bin@<name>`
 pub(super) fn validate_module_path(s: &str) -> Result<String, String> {
     if s.is_empty() {
         return Err(String::from("module path cannot be empty"));
@@ -22,21 +23,31 @@ pub(super) fn validate_module_path(s: &str) -> Result<String, String> {
     }
     if !s
         .chars()
-        .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == ':' || c == '-')
+        .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == ':' || c == '-' || c == '@')
     {
         return Err(format!(
             "module path '{s}' contains invalid characters \
-             (only a-z, A-Z, 0-9, _, - and :: are allowed)"
+             (only a-z, A-Z, 0-9, _, -, :: and a leading bin@<name> are allowed)"
         ));
     }
     if s.starts_with("::")
         || s.ends_with("::")
         || s.contains(":::")
-        || s.split("::").any(|seg| seg.contains(':'))
+        || s.split("::").enumerate().any(|(index, seg)| {
+            seg.contains(':') || (seg.contains('@') && !(index == 0 && is_binary_root(seg)))
+        })
     {
         return Err(format!("module path '{s}' has malformed '::' separator"));
     }
     Ok(s.to_owned())
+}
+
+/// `bin@<name>`, the root of a binary target. Hardcoded rather than taken from
+/// the library: this module's only legal library contact is `version`.
+fn is_binary_root(segment: &str) -> bool {
+    segment
+        .strip_prefix("bin@")
+        .is_some_and(|name| !name.is_empty() && !name.contains('@'))
 }
 
 /// Validate that the depth argument is a positive integer
@@ -68,6 +79,8 @@ mod tests {
         assert!(validate_module_path("foo::bar::baz").is_ok());
         assert!(validate_module_path("my_mod::SomeType").is_ok());
         assert!(validate_module_path("my-crate::module").is_ok()); // hyphenated package names
+        assert!(validate_module_path("bin@my-tool").is_ok());
+        assert!(validate_module_path("bin@my-tool::cli::overview").is_ok());
     }
 
     #[test]

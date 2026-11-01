@@ -11,8 +11,9 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-app
 baz
+bin@modules
+bin@modules-cli
 crate_root_reexport
 foo
 foo::other
@@ -21,7 +22,6 @@ glob_showcase::utils
 group_patterns
 inline_modules::nested
 inline_modules::outer
-main
 uses_empty_glob
 
 ----- stderr -----

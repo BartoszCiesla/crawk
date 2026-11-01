@@ -10,9 +10,9 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-config
-main
-utils
-utils::helper
+bin@bin_only
+bin@bin_only::config
+bin@bin_only::utils
+bin@bin_only::utils::helper
 
 ----- stderr -----

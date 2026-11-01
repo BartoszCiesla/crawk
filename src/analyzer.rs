@@ -1,4 +1,5 @@
 use crate::cache::ParseCache;
+use crate::constants::BIN_ROOT_PREFIX;
 use crate::discover::{CrateInfo, ModuleInfo, TargetInfo, TargetKind};
 use crate::error::{AnalysisError, Result};
 use crate::graph::{self, DependencyGraph, DependencyGraphOptions};
@@ -154,7 +155,9 @@ impl Analyzer {
     /// List all modules discovered under the given module path.
     ///
     /// Returns a sorted list of all modules found recursively under
-    /// `module_path`. If `module_path` is `"lib"`, lists the entire crate.
+    /// `module_path`. If `module_path` is `"lib"`, lists the entire crate. The
+    /// path is read by [`resolve_module_name`](Self::resolve_module_name); a
+    /// binary's modules come back under its root (`bin@<name>::cli`).
     ///
     /// # Arguments
     ///
@@ -169,25 +172,26 @@ impl Analyzer {
         module_path: &str,
         include_tests: bool,
     ) -> Result<Vec<ModuleInfo>> {
+        let module_path = self.resolve_module_name(module_path, include_tests)?;
+        let module_path = module_path.as_str();
         let default_target = self.default_lib_target();
-        let modules = match self.crate_info.get_module_tree(
-            module_path,
-            true,
-            include_tests,
-            &default_target,
-            &mut self.parse_cache,
-        ) {
+        let modules = match self.discover_module(module_path, true, include_tests, &default_target)
+        {
             Ok(mods) => mods,
             Err(ref e) if include_tests && e.is_module_not_found() => {
                 self.list_from_test_target(module_path, true)?
             }
-            Err(e) => return Err(e.into()),
+            Err(e) => return Err(e),
         };
-        // Rename root entry (empty path) to the requested module path
+        // Rename root entry (empty path) to the requested module path; a
+        // binary's modules are named under its root
         let mut modules: Vec<ModuleInfo> = modules
             .into_iter()
             .map(|m| {
-                if m.path().is_empty() {
+                if *m.target().kind() == TargetKind::Bin {
+                    let name = Self::binary_module_name(m.target(), m.path());
+                    m.with_path(name)
+                } else if m.path().is_empty() {
                     m.with_path(module_path.to_owned())
                 } else {
                     m
@@ -280,9 +284,13 @@ impl Analyzer {
         for (target_info, src_path) in &targets {
             let canonical_name = Self::target_module_path(target_info, src_path);
             let modules = self.target_modules(target_info, src_path, include_tests)?;
-            // Rename root entry from "" to canonical name (e.g. "lib", "main")
+            // Rename root entry from "" to canonical name (e.g. "lib", "bin@crawk");
+            // a binary's modules are named under its root
             let modules = modules.into_iter().map(|m| {
-                if m.path().is_empty() {
+                if *target_info.kind() == TargetKind::Bin {
+                    let name = Self::binary_module_name(target_info, m.path());
+                    m.with_path(name)
+                } else if m.path().is_empty() {
                     m.with_path(canonical_name.clone())
                 } else {
                     m
@@ -340,6 +348,202 @@ impl Analyzer {
         Ok(modules)
     }
 
+    /// Reads a module path typed by a user into the name it goes by: what
+    /// [`DependencyGraph::modules`] holds for it, or for a library path led by a
+    /// root alias, the same path without the alias.
+    ///
+    /// A bare path naming one module reaches it wherever it lives, so `cli` is
+    /// `bin@crawk::cli` when only that binary declares it, and `my-tool` is
+    /// `bin@my-tool`. The library's aliases (`lib`, the crate and package names)
+    /// win over a binary named alike, which is reachable as `bin@<name>`; in a
+    /// package without a library they stand for its binary.
+    ///
+    /// Integration-test modules take no part: they are looked up after the
+    /// library and binaries fail. A path matching nothing comes back unchanged,
+    /// for discovery to report.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`AnalysisError::AmbiguousModule`] if a bare path names several
+    /// modules, and [`AnalysisError::BinaryFileStem`] if it is led by a binary's
+    /// file stem, which is no name of it.
+    pub fn resolve_module_name(
+        &mut self,
+        module_path: &str,
+        include_tests: bool,
+    ) -> Result<String> {
+        if module_path.starts_with(BIN_ROOT_PREFIX) {
+            return Ok(module_path.to_owned());
+        }
+        let (head, rest) = module_path.split_once("::").unwrap_or((module_path, ""));
+        let aliased = self.crate_info.is_lib_root_alias(head);
+        if aliased && self.crate_info.has_library() {
+            return Ok(if rest.is_empty() { module_path } else { rest }.to_owned());
+        }
+
+        // A failure surfaces, as itself, when the module is discovered.
+        let Ok(all_modules) = self.list_all_modules(include_tests) else {
+            return Ok(module_path.to_owned());
+        };
+        let mut candidates = if aliased {
+            Self::modules_of_every_binary(&all_modules, rest)
+        } else {
+            Self::modules_named(&all_modules, module_path)
+        };
+        match candidates.len() {
+            0 => self.reject_binary_file_stem(module_path)?,
+            1 => {
+                let only = candidates.remove(0);
+                if only.starts_with(BIN_ROOT_PREFIX) {
+                    return Ok(only);
+                }
+            }
+            _ => {
+                return Err(AnalysisError::AmbiguousModule {
+                    module_path: module_path.to_owned(),
+                    candidates,
+                });
+            }
+        }
+        Ok(module_path.to_owned())
+    }
+
+    /// Full paths of the library and binary modules a bare `path` could mean.
+    ///
+    /// A binary's module matches by its path inside the binary, a binary by its
+    /// cargo name; that name may lead the path too (`my-tool::cli`).
+    fn modules_named(modules: &[ModuleInfo], path: &str) -> Vec<String> {
+        let (head, rest) = path.split_once("::").unwrap_or((path, ""));
+        modules
+            .iter()
+            .filter_map(|m| match m.target().kind() {
+                TargetKind::Lib => (m.path() == path).then(|| format!("lib::{path}")),
+                TargetKind::Bin => {
+                    let below = path_below(m.path(), &m.target().to_string())?;
+                    let by_name = m.target().name() == head && below == rest;
+                    (below == path || by_name).then(|| m.path().to_owned())
+                }
+                TargetKind::Test => None,
+            })
+            .collect()
+    }
+
+    /// The module at `path` in each binary that has one; `""` is its root.
+    fn modules_of_every_binary(modules: &[ModuleInfo], path: &str) -> Vec<String> {
+        modules
+            .iter()
+            .filter(|m| {
+                *m.target().kind() == TargetKind::Bin
+                    && path_below(m.path(), &m.target().to_string()) == Some(path)
+            })
+            .map(|m| m.path().to_owned())
+            .collect()
+    }
+
+    /// `module_path` under each binary whose file stem leads it (`main` →
+    /// `bin@crawk`, `main::cli` → `bin@crawk::cli`).
+    fn stem_led_names(&self, module_path: &str) -> Vec<String> {
+        let (head, rest) = module_path.split_once("::").unwrap_or((module_path, ""));
+        self.crate_info
+            .all_targets(false)
+            .into_iter()
+            .filter(|(target, src_path)| {
+                *target.kind() == TargetKind::Bin
+                    && src_path.file_stem().and_then(|s| s.to_str()) == Some(head)
+            })
+            .map(|(target, _)| Self::binary_module_name(&target, rest))
+            .collect()
+    }
+
+    /// Fails if `module_path` is led by a binary's file stem.
+    fn reject_binary_file_stem(&self, module_path: &str) -> Result<()> {
+        let candidates = self.stem_led_names(module_path);
+        if candidates.is_empty() {
+            Ok(())
+        } else {
+            Err(AnalysisError::BinaryFileStem {
+                module_path: module_path.to_owned(),
+                candidates,
+            })
+        }
+    }
+
+    /// Adds to an unknown-module error what the rule may have meant: rules take
+    /// only the full name of a binary's module.
+    fn hint_rule_module(&mut self, error: AnalysisError, include_tests: bool) -> AnalysisError {
+        let AnalysisError::UnknownRuleModule { module, rule, .. } = error else {
+            return error;
+        };
+        let base = module.strip_suffix("::*").unwrap_or(&module);
+        let named = self.list_all_modules(include_tests).map_or_else(
+            |_| Vec::new(),
+            |modules| Self::modules_named(&modules, base),
+        );
+        let candidates = if named.is_empty() {
+            self.stem_led_names(base)
+        } else {
+            named
+        };
+        AnalysisError::UnknownRuleModule {
+            module,
+            rule,
+            candidates,
+        }
+    }
+
+    /// The binary target a `bin@<name>[::path]` module path addresses, with its
+    /// entry point and the path inside it (`""` for its root).
+    fn binary_of_path(&self, module_path: &str) -> Option<(TargetInfo, PathBuf, String)> {
+        if !module_path.starts_with(BIN_ROOT_PREFIX) {
+            return None;
+        }
+        self.crate_info
+            .all_targets(false)
+            .into_iter()
+            .find_map(|(target, src_path)| {
+                let relative = path_below(module_path, &target.to_string())?.to_owned();
+                Some((target, src_path, relative))
+            })
+    }
+
+    /// Discovers the module at `module_path`, with its subtree when `recursive`,
+    /// with paths relative to its target's root.
+    ///
+    /// A binary's subtree is cut from the tree of the whole target, read from
+    /// its cargo entry point: only that knows where the root's `mod` declarations
+    /// point, whatever the entry file is called.
+    fn discover_module(
+        &mut self,
+        module_path: &str,
+        recursive: bool,
+        include_tests: bool,
+        default_target: &TargetInfo,
+    ) -> Result<Vec<ModuleInfo>> {
+        let binary = self.binary_of_path(module_path);
+        let target = binary.as_ref().map_or(default_target, |(t, ..)| t);
+        if recursive && let Some((target, src_path, relative)) = &binary {
+            let matched: Vec<ModuleInfo> = self
+                .target_modules(target, src_path, include_tests)?
+                .into_iter()
+                .filter(|m| is_in_subtree(m.path(), relative))
+                .collect();
+            return if matched.is_empty() {
+                Err(AnalysisError::ModuleNotFound {
+                    module_path: module_path.to_owned(),
+                })
+            } else {
+                Ok(matched)
+            };
+        }
+        Ok(self.crate_info.get_module_tree(
+            module_path,
+            recursive,
+            include_tests,
+            target,
+            &mut self.parse_cache,
+        )?)
+    }
+
     /// Analyze dependencies for a specific module.
     ///
     /// Recursively analyzes the module and all its submodules, collecting
@@ -377,21 +581,20 @@ impl Analyzer {
         module_path: impl Into<String>,
         options: &AnalysisOptions,
     ) -> Result<AnalysisResult> {
-        let module_path = module_path.into();
+        let module_path = self.resolve_module_name(&module_path.into(), options.include_tests)?;
 
         let default_target = self.default_lib_target();
-        let modules = match self.crate_info.get_module_tree(
+        let modules = match self.discover_module(
             &module_path,
             options.recursive,
             options.include_tests,
             &default_target,
-            &mut self.parse_cache,
         ) {
             Ok(mods) => mods,
             Err(ref e) if options.include_tests && e.is_module_not_found() => {
                 self.list_from_test_target(&module_path, options.recursive)?
             }
-            Err(e) => return Err(e.into()),
+            Err(e) => return Err(e),
         };
 
         // Use the target from the already-discovered modules so further
@@ -407,30 +610,25 @@ impl Analyzer {
         let mut children_map = if options.recursive {
             Self::build_children_map(&modules)
         } else {
-            let all_modules = match self.crate_info.get_module_tree(
-                &module_path,
-                true,
-                options.include_tests,
-                &target,
-                &mut self.parse_cache,
-            ) {
-                Ok(mods) => mods,
-                // Fallback: for test targets the module tree is built from
-                // the source file directly, not via path resolution. Gated
-                // exactly like the discovery call above — a parse or I/O
-                // failure must surface as itself, not as "module not found".
-                Err(ref e) if options.include_tests && e.is_module_not_found() => {
-                    self.list_from_test_target(&module_path, true)?
-                }
-                // The queried module already resolved above, so a not-found
-                // here is about the recursive walk losing it. Report the
-                // fully-qualified query rather than the single segment the
-                // discovery error names.
-                Err(ref e) if e.is_module_not_found() => {
-                    return Err(AnalysisError::ModuleNotFound { module_path });
-                }
-                Err(e) => return Err(e.into()),
-            };
+            let all_modules =
+                match self.discover_module(&module_path, true, options.include_tests, &target) {
+                    Ok(mods) => mods,
+                    // Fallback: for test targets the module tree is built from
+                    // the source file directly, not via path resolution. Gated
+                    // exactly like the discovery call above — a parse or I/O
+                    // failure must surface as itself, not as "module not found".
+                    Err(ref e) if options.include_tests && e.is_module_not_found() => {
+                        self.list_from_test_target(&module_path, true)?
+                    }
+                    // The queried module already resolved above, so a not-found
+                    // here is about the recursive walk losing it. Report the
+                    // fully-qualified query rather than the single segment the
+                    // discovery error names.
+                    Err(ref e) if e.is_module_not_found() => {
+                        return Err(AnalysisError::ModuleNotFound { module_path });
+                    }
+                    Err(e) => return Err(e),
+                };
             Self::build_children_map(&all_modules)
         };
 
@@ -483,7 +681,8 @@ impl Analyzer {
                     );
                     Vec::new()
                 });
-            let belongs_to_lib = root_modules.iter().any(|m| m.path() == resolved_path);
+            let belongs_to_lib = *target.kind() != TargetKind::Bin
+                && root_modules.iter().any(|m| m.path() == resolved_path);
             if belongs_to_lib
                 && let Some(root_children) = Self::build_children_map(&root_modules).remove("")
             {
@@ -534,6 +733,11 @@ impl Analyzer {
             .first()
             .map(|m| m.source().to_path_buf())
             .unwrap_or_default();
+        let binary = modules
+            .first()
+            .map(ModuleInfo::target)
+            .filter(|target| *target.kind() == TargetKind::Bin)
+            .cloned();
 
         let file_root = self.build_file_root_map(&modules);
         // Capture module names BEFORE consuming `modules`. The filter prevents
@@ -542,7 +746,23 @@ impl Analyzer {
         // overlapping or differently-rooted module paths).
         let module_filter: HashSet<String> = modules.iter().map(|m| m.path().to_owned()).collect();
         self.parse_all_modules(modules, &file_root, children_map)?;
-        let dependencies = self.collect_references(options, children_map, &module_filter);
+        let bin_root = binary.as_ref().map(ToString::to_string);
+        let dependencies =
+            self.collect_references(options, children_map, &module_filter, bin_root.as_deref());
+        // The root keeps its empty key: `module_path` names it.
+        let dependencies = match &binary {
+            Some(target) => dependencies
+                .into_iter()
+                .map(|(module, refs)| {
+                    if module.is_empty() {
+                        (module, refs)
+                    } else {
+                        (Self::binary_module_name(target, &module), refs)
+                    }
+                })
+                .collect(),
+            None => dependencies,
+        };
 
         Ok(AnalysisResult::new(module_path, dependencies, source_file))
     }
@@ -554,21 +774,38 @@ impl Analyzer {
 
     /// Computes the name a target's root module goes by.
     ///
-    /// Library targets use `"lib"`, binary and test targets use the file stem
-    /// of their source path (e.g., `"main"` for `src/main.rs`).
+    /// Library targets use `"lib"`, binary targets their cargo name (`"bin@crawk"`,
+    /// which cargo keeps unique), test targets the file stem of their source path
+    /// (e.g., `"smoke"` for `tests/smoke.rs`).
     fn target_module_path(target: &TargetInfo, src_path: &Path) -> String {
         match target.kind() {
             TargetKind::Lib => "lib".to_owned(),
-            TargetKind::Bin => src_path
-                .file_stem()
-                .and_then(|s| s.to_str())
-                .unwrap_or("main")
-                .to_owned(),
+            TargetKind::Bin => target.to_string(),
             TargetKind::Test => src_path
                 .file_stem()
                 .and_then(|s| s.to_str())
                 .unwrap_or("test")
                 .to_owned(),
+        }
+    }
+
+    /// The name of the module at `path` inside a binary: `bin@<name>` for its
+    /// root (`""`), `bin@<name>::<path>` below it.
+    fn binary_module_name(binary: &TargetInfo, path: &str) -> String {
+        if path.is_empty() {
+            binary.to_string()
+        } else {
+            format!("{binary}::{path}")
+        }
+    }
+
+    /// The path that locates `module` from outside its target: under its root
+    /// for a binary, where a bare path would be looked up from the library.
+    fn resolvable_path(module: &ModuleInfo) -> String {
+        if *module.target().kind() == TargetKind::Bin {
+            Self::binary_module_name(module.target(), module.path())
+        } else {
+            module.path().to_owned()
         }
     }
 
@@ -581,7 +818,8 @@ impl Analyzer {
     ) -> Result<()> {
         for module in modules {
             let root_path = &file_root[module.source()];
-            let inline_scope = Self::compute_inline_scope(module.path(), root_path);
+            let inline_scope =
+                Self::compute_inline_scope(&Self::resolvable_path(&module), root_path);
 
             trace!(
                 "Module '{}' inline_scope={:?} (file root: '{}')",
@@ -647,6 +885,7 @@ impl Analyzer {
         options: &AnalysisOptions,
         children_map: &HashMap<String, HashSet<String>>,
         module_filter: &HashSet<String>,
+        bin_root: Option<&str>,
     ) -> HashMap<String, HashSet<TypeReference>> {
         let mut dependencies = HashMap::new();
         for (module, module_references) in self
@@ -694,8 +933,13 @@ impl Analyzer {
 
                     if options.resolve_globs && r.has_glob() {
                         debug!("Resolving glob: {}", r.to_path_string());
-                        let resolved =
-                            resolve_glob(&r, module, &self.crate_info, &mut self.parse_cache);
+                        let resolved = resolve_glob(
+                            &r,
+                            module,
+                            bin_root,
+                            &self.crate_info,
+                            &mut self.parse_cache,
+                        );
                         for res in resolved {
                             debug!("Resolved glob item: {}", res.to_path_string());
                             refs.insert(res);
@@ -794,7 +1038,7 @@ impl Analyzer {
         for module in modules {
             let source_path = module.source().to_path_buf();
             let (actual_root, _) = self.crate_info.split_inline_scope(
-                module.path(),
+                &Self::resolvable_path(module),
                 &source_path,
                 &mut self.parse_cache,
             );
@@ -911,11 +1155,13 @@ impl Analyzer {
             info!("Analysing target root '{root}'");
             match self.analyze_target(target, src_path, &analysis_options) {
                 Ok(result) => {
+                    let bin_root = (*target.kind() == TargetKind::Bin).then_some(root.as_str());
                     for (edge, apis) in graph::build_edges(
                         &result,
                         options.depth,
                         &known_modules,
                         lib_crate_name.as_deref(),
+                        bin_root,
                         options.show_apis,
                     ) {
                         all_edges.entry(edge).or_default().extend(apis);
@@ -952,7 +1198,8 @@ impl Analyzer {
     pub fn check(&mut self, crate_root: &Path, opts: &CheckOptions) -> Result<CheckReport> {
         let graph = self.dependency_graph(&opts.graph_opts())?;
         let path = rules::resolve_config_path(crate_root, opts.config.as_deref())?;
-        let rule_set = RuleSet::load(&path, graph.modules())?;
+        let rule_set = RuleSet::load(&path, graph.modules())
+            .map_err(|e| self.hint_rule_module(e, opts.include_tests))?;
         Ok(rules::evaluate(&rule_set, &graph))
     }
 
@@ -1005,6 +1252,7 @@ impl Analyzer {
     ///
     /// * `source` - Module path of the dependent (e.g., `"analyzer"`)
     /// * `target` - Module path being depended on (e.g., `"reference"`)
+    ///   — both read by [`resolve_module_name`](Self::resolve_module_name)
     /// * `options` - Analysis options (recursive, include_tests are respected;
     ///   `expand_groups` is forced to `true` internally for precise matching)
     ///
@@ -1012,12 +1260,16 @@ impl Analyzer {
     ///
     /// Returns [`AnalysisError::ModuleNotFound`] if `source` does not exist.
     /// A non-existent `target` returns an empty map (no error).
+    /// Returns [`AnalysisError::AmbiguousModule`] if a bare path names several modules.
     pub fn explain_dependency(
         &mut self,
         source: &str,
         target: &str,
         options: &AnalysisOptions,
     ) -> Result<BTreeMap<String, HashSet<TypeReference>>> {
+        let source = self.resolve_module_name(source, options.include_tests)?;
+        let target = self.resolve_module_name(target, options.include_tests)?;
+        let (source, target) = (source.as_str(), target.as_str());
         let all_modules = self.list_all_modules(options.include_tests)?;
         let known_modules: HashSet<String> =
             all_modules.iter().map(|m| m.path().to_owned()).collect();
@@ -1041,6 +1293,9 @@ impl Analyzer {
             resolve_globs: false,
         };
         let result = self.analyze_module(source, &analysis_options)?;
+        let bin_root = self
+            .binary_of_path(source)
+            .map(|(binary, ..)| binary.to_string());
 
         let mut filtered: BTreeMap<String, HashSet<TypeReference>> = BTreeMap::new();
         for (module_key, refs) in result.dependencies() {
@@ -1055,6 +1310,7 @@ impl Analyzer {
                     reference,
                     &known_modules,
                     lib_crate_name.as_deref(),
+                    bin_root.as_deref(),
                 ) && module_path == target
                 {
                     filtered

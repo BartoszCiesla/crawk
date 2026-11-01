@@ -13,6 +13,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::cache::ParseCache
+crate::constants::BIN_ROOT_PREFIX
 crate::constants::LIB_FILE_NAME
 crate::constants::MAIN_FILE_NAME
 crate::constants::MODULE_FILE_NAME

@@ -29,12 +29,12 @@ fn should_why_no_dependency_own_crate() {
 // (`crawk::version::…`) — `deps` reports `main -> version`.
 #[test]
 fn should_why_own_crate_pkg_name_ref() {
-    assert_cmd_snapshot!(crawk().args(["why", "main", "version"]));
+    assert_cmd_snapshot!(crawk().args(["why", "bin@crawk", "version"]));
 }
 
 // `why` must agree with `deps` for crate-root re-exports resolving to the
 // synthetic `lib` target — `deps` reports `main -> lib`.
 #[test]
 fn should_why_own_crate_lib_fallback() {
-    assert_cmd_snapshot!(crawk().args(["why", "main", "lib"]));
+    assert_cmd_snapshot!(crawk().args(["why", "bin@crawk", "lib"]));
 }

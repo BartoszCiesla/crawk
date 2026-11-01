@@ -97,11 +97,11 @@ exit_code: 0
 [lib]              visibility::pub_mod                     pub
 [lib]              visibility::pub_super_mod               pub(super)
 [lib]              visibility::restricted_mod              pub(in crate::visibility)
-[bin:modules]      main                                    pub
-[bin:modules-cli]  app                                     pub
-[bin:modules-cli]  app_only                                
-[test:helpers]     helpers                                 pub
-[test:integration] helpers                                 
-[test:integration] integration                             pub
+[bin@modules]      bin@modules                             pub
+[bin@modules-cli]  bin@modules-cli                         pub
+[bin@modules-cli]  bin@modules-cli::app_only               
+[test@helpers]     helpers                                 pub
+[test@integration] helpers                                 
+[test@integration] integration                             pub
 
 ----- stderr -----

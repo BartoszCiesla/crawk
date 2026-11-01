@@ -419,6 +419,7 @@ impl RuleSet {
                     return Err(AnalysisError::UnknownRuleModule {
                         module: pattern.display(),
                         rule: format!("layers '{}'", layer.name),
+                        candidates: Vec::new(),
                     });
                 }
             }
@@ -430,6 +431,7 @@ impl RuleSet {
                     return Err(AnalysisError::UnknownRuleModule {
                         module: pattern.pattern_display(),
                         rule: rule.display(),
+                        candidates: Vec::new(),
                     });
                 }
             }
@@ -443,6 +445,7 @@ impl RuleSet {
                     return Err(AnalysisError::UnknownRuleModule {
                         module: pattern.pattern_display(),
                         rule: rule.display(),
+                        candidates: Vec::new(),
                     });
                 }
             }
@@ -462,6 +465,7 @@ impl RuleSet {
                     return Err(AnalysisError::UnknownRuleModule {
                         module: module.clone(),
                         rule: entry.display(),
+                        candidates: Vec::new(),
                     });
                 }
             }
@@ -828,7 +832,7 @@ mod tests {
         let err = RuleSet::load(&cfg, &modules).expect_err("should reject unknown module");
         assert!(matches!(
             &err,
-            AnalysisError::UnknownRuleModule { module, rule }
+            AnalysisError::UnknownRuleModule { module, rule, .. }
                 if module == "clii" && rule == "deny clii -> web"
         ));
     }
@@ -883,7 +887,7 @@ mod tests {
         let err = RuleSet::load(&cfg, &modules).expect_err("should reject unknown module");
         assert!(matches!(
             &err,
-            AnalysisError::UnknownRuleModule { module, rule }
+            AnalysisError::UnknownRuleModule { module, rule, .. }
                 if module == "clii" && rule == "restrict clii -> [web]"
         ));
     }
@@ -900,7 +904,7 @@ mod tests {
         let err = RuleSet::load(&cfg, &modules).expect_err("should reject unknown module");
         assert!(matches!(
             &err,
-            AnalysisError::UnknownRuleModule { module, rule }
+            AnalysisError::UnknownRuleModule { module, rule, .. }
                 if module == "webb" && rule == "restrict cli -> [webb]"
         ));
     }
@@ -1083,7 +1087,7 @@ mod tests {
         let err = RuleSet::load(&cfg, &modules).expect_err("should reject unknown module");
         assert!(matches!(
             &err,
-            AnalysisError::UnknownRuleModule { module, rule }
+            AnalysisError::UnknownRuleModule { module, rule, .. }
                 if module == "alfa" && rule == "allow-cycle [alfa, alpha]"
         ));
     }

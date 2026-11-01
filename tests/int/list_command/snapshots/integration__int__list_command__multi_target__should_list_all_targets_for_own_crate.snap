@@ -31,19 +31,19 @@ exit_code: 0
 [lib]       rules::load
 [lib]       utils
 [lib]       version
-[bin:crawk] cli
-[bin:crawk] cli::overview
-[bin:crawk] cli::validation
-[bin:crawk] format
-[bin:crawk] format::check_cmd
-[bin:crawk] format::cycles
-[bin:crawk] format::deps_cmd
-[bin:crawk] format::list_cmd
-[bin:crawk] format::orphans
-[bin:crawk] format::paths
-[bin:crawk] format::use_cmd
-[bin:crawk] format::why_cmd
-[bin:crawk] logger
-[bin:crawk] main
+[bin@crawk] bin@crawk
+[bin@crawk] bin@crawk::cli
+[bin@crawk] bin@crawk::cli::overview
+[bin@crawk] bin@crawk::cli::validation
+[bin@crawk] bin@crawk::format
+[bin@crawk] bin@crawk::format::check_cmd
+[bin@crawk] bin@crawk::format::cycles
+[bin@crawk] bin@crawk::format::deps_cmd
+[bin@crawk] bin@crawk::format::list_cmd
+[bin@crawk] bin@crawk::format::orphans
+[bin@crawk] bin@crawk::format::paths
+[bin@crawk] bin@crawk::format::use_cmd
+[bin@crawk] bin@crawk::format::why_cmd
+[bin@crawk] bin@crawk::logger
 
 ----- stderr -----

@@ -1,3 +1,4 @@
+mod bin_names;
 mod check_command;
 mod command;
 mod deps_command;

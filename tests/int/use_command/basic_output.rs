@@ -8,8 +8,8 @@ use test_case::test_case;
 // ============================================================================
 
 #[test_case("lib"; "for lib")]
-#[test_case("main"; "for main")]
-#[test_case("app"; "for modules cli binary")]
+#[test_case("bin@modules"; "for main")]
+#[test_case("bin@modules-cli"; "for modules cli binary")]
 #[test_case("file_module"; "for file_module")]
 #[test_case("dir_module"; "for dir_module")]
 #[test_case("dir_module::child_file"; "for dir_module child_file")]
@@ -46,7 +46,7 @@ use test_case::test_case;
 #[test_case("group_patterns"; "for group_patterns")]
 #[test_case("nonexisting"; "for nonexisting module")]
 fn should_modules_use_provide_output(module: &str) {
-    let snapshot_name = format!("modules_{}", module.replace("::", "__"));
+    let snapshot_name = format!("modules_{}", module.replace("::", "__").replace('@', "_"));
 
     with_settings!({
         filters => backtrace_filters(),

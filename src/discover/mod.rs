@@ -12,6 +12,7 @@ use std::fmt;
 use std::path::{Path, PathBuf};
 
 use crate::cache::ParseCache;
+use crate::constants::BIN_ROOT_PREFIX;
 use tracing::info;
 
 use cargo_metadata::{Metadata, MetadataCommand};
@@ -107,7 +108,7 @@ impl fmt::Display for TargetInfo {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.kind {
             TargetKind::Lib => fmt::Display::fmt(&self.kind, f),
-            TargetKind::Bin | TargetKind::Test => write!(f, "{}:{}", self.kind, self.name),
+            TargetKind::Bin | TargetKind::Test => write!(f, "{}@{}", self.kind, self.name),
         }
     }
 }
@@ -572,7 +573,7 @@ impl CrateInfo {
     /// Returns `true` if `segment`, leading a module path, names the library
     /// root: the `lib` alias, the crate name Rust source uses, or the package
     /// name as `Cargo.toml` spells it.
-    pub(super) fn is_lib_root_alias(&self, segment: &str) -> bool {
+    pub(crate) fn is_lib_root_alias(&self, segment: &str) -> bool {
         segment == "lib" || segment == self.lib_crate_name || segment == self.root_package_name
     }
 
@@ -671,6 +672,14 @@ impl CrateInfo {
 
         // Normalize the module path (remove crate name prefix if present)
         let normalized_path = self.normalize_module_path(module_path);
+        // A binary's module only resolves under its root: bare, it would be
+        // looked up from the library, which may hold a namesake.
+        let scope_path = if normalized_path.is_empty() || !module_path.starts_with(BIN_ROOT_PREFIX)
+        {
+            normalized_path.as_str()
+        } else {
+            module_path
+        };
         info!(
             "Module tree: '{}' \u{2192} {}, recursive={recursive}",
             normalized_path,
@@ -678,10 +687,10 @@ impl CrateInfo {
         );
 
         // Determine if this is an inline module and compute inline scope
-        let (_, inline_scope) = self.split_inline_scope(&normalized_path, &file_path, cache);
+        let (_, inline_scope) = self.split_inline_scope(scope_path, &file_path, cache);
 
         let root_visibility =
-            self.compute_root_visibility(&normalized_path, &file_path, &inline_scope, cache)?;
+            self.compute_root_visibility(scope_path, &file_path, &inline_scope, cache)?;
 
         if recursive {
             Self::collect_submodules_recursive(
@@ -740,7 +749,7 @@ impl CrateInfo {
 
     /// Normalizes a module path by removing the crate name prefix if present.
     /// Also normalizes "lib" alias to the crate name.
-    /// Also normalizes binary target file stems (e.g., "main" for main.rs).
+    /// Also strips a binary target's root (`bin@<name>`).
     /// If the module path is just the crate name/lib/binary, returns empty string.
     fn normalize_module_path(&self, module_path: &str) -> String {
         let parts: Vec<&str> = module_path.split("::").collect();
@@ -757,9 +766,9 @@ impl CrateInfo {
             };
         }
 
-        // Check if first part is a binary target file stem (e.g., "main", "app")
+        // Check if first part is a binary target's root (`bin@<name>`)
         if let Some(package) = self.root_package()
-            && Self::find_binary_by_file_stem(package, first_part).is_some()
+            && Self::find_binary_by_root(package, first_part).is_some()
         {
             return if parts.len() == 1 {
                 // Just the binary target name - return empty (analyzing binary root)

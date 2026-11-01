@@ -7,7 +7,7 @@ use test_case::test_matrix;
 // ============================================================================
 
 #[test_matrix(
-    ["lib", "main", "app", "inline_modules", "reexports", "visibility",
+    ["lib", "bin@modules", "bin@modules-cli", "inline_modules", "reexports", "visibility",
      "nesting", "glob_patterns", "advanced_globs", "glob_showcase",
      "dir_module", "mixed"],
     [&["-e"],
@@ -27,7 +27,10 @@ fn should_modules_use_provide_output_for_flags(module: &str, flags: &[&str]) {
         .map(|f| f.trim_start_matches('-'))
         .collect::<Vec<_>>()
         .join("_");
-    let snapshot_name = format!("modules_{}_flags_{flags_part}", module.replace("::", "__"));
+    let snapshot_name = format!(
+        "modules_{}_flags_{flags_part}",
+        module.replace("::", "__").replace('@', "_")
+    );
 
     assert_cmd_snapshot!(
         snapshot_name,

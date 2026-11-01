@@ -25,15 +25,15 @@ strict-layers = true
 deny-same-layer = false
 deny-cycles = true
 
-# Binary target (`crawk` bin) internal flow, entry point highest. Catches an
-# accidental back-edge, e.g. cli -> logger or format -> main.
+# Binary target (`bin@crawk`) internal flow, entry point highest. Catches an
+# accidental back-edge, e.g. cli -> logger or format -> bin@crawk.
 [[check.layers]]
 name = "bin"
 order = [
-    "main",
-    "logger",
-    "cli",
-    "format",
+    "bin@crawk",
+    "bin@crawk::logger",
+    "bin@crawk::cli",
+    "bin@crawk::format",
 ]
 
 # Library dependency stack, facade (`lib`) highest, foundation lowest, in
@@ -96,33 +96,32 @@ order = [
 # lib-side contact format needs; the engine (parser / discover / resolve) and
 # the orchestrator (analyzer) are out of reach by omission.
 [[check.restrict]]
-from = "format::*"
+from = "bin@crawk::format::*"
 to = ["lib"]
 
-# main orchestrates: parse args (cli), configure logging (logger), call the
+# The entry point orchestrates: parse args (cli), configure logging (logger), call the
 # facade (lib -> Analyzer), render (format), print version metadata. Reaching
 # past the facade would open a second, parallel orchestration path in the
-# binary — the most likely spot for a future shortcut. (Bare `main` is exact
-# by design: children of the bin root are flat top-level modules, so a
-# `main::x` module can never exist.)
+# binary — the most likely spot for a future shortcut. (Bare `bin@crawk` is
+# exact on purpose: its modules carry their own allowances, below and above.)
 [[check.restrict]]
-from = "main"
-to = ["cli", "format::*", "lib", "logger", "version"]
+from = "bin@crawk"
+to = ["bin@crawk::cli", "bin@crawk::format::*", "bin@crawk::logger", "lib", "version"]
 
 # cli is pure interface definition (clap derive); its only legal lib-target
 # contact is `version` (--version/help text). Rendering results is format's
-# job, orchestrated by main — even the facade and orchestrator are out of
-# bounds: semantic validation that needs the engine belongs to main.
+# job, orchestrated by bin@crawk — even the facade and orchestrator are out of
+# bounds: semantic validation that needs the engine belongs to bin@crawk.
 [[check.restrict]]
-from = "cli::*"
+from = "bin@crawk::cli::*"
 to = ["version"]
 
 # logger configures tracing from verbosity flags — hence the legal
 # logger -> cli edge, and nothing else. It must not leak presentation logic
 # into logging infrastructure.
 [[check.restrict]]
-from = "logger::*"
-to = ["cli"]
+from = "bin@crawk::logger::*"
+to = ["bin@crawk::cli"]
 
 # -- lib target: deny point bans ----------------------------------------------
 # The lib layer order puts rules and graph above the source engine

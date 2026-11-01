@@ -16,7 +16,7 @@ Always lists recursively; use --depth to limit visible levels.
 
 Without MODULE_PATH: lists modules from all targets. When modules from
 multiple distinct targets are found, each line is prefixed with a target
-tag: [lib], [bin:name], [test:name]. Use --targets to always show the tag.
+tag: [lib], [bin@name], [test@name]. Use --targets to always show the tag.
 
 With MODULE_PATH: scopes to that module's subtree (root included).
 Target tags are suppressed unless --targets is given.
@@ -58,7 +58,7 @@ Options:
           Show module visibility (pub, pub(crate), pub(super), …)
 
   -T, --targets
-          Always show the target tag column ([lib], [bin:name], [test:name]).
+          Always show the target tag column ([lib], [bin@name], [test@name]).
           
           By default, the tag is shown only when modules from multiple distinct
           targets are present. Use this flag to force the tag in any context —

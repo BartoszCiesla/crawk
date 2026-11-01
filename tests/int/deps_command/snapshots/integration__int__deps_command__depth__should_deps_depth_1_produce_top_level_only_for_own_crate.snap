@@ -11,6 +11,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 analyzer -> cache
+analyzer -> constants
 analyzer -> discover
 analyzer -> error
 analyzer -> graph
@@ -20,13 +21,13 @@ analyzer -> parser
 analyzer -> reference
 analyzer -> resolve
 analyzer -> rules
-cli -> version
+bin@crawk -> lib
+bin@crawk -> version
 discover -> cache
 discover -> constants
 discover -> module_path
 discover -> utils
 error -> discover
-format -> lib
 graph -> error
 graph -> model
 graph -> reference
@@ -37,12 +38,6 @@ lib -> graph
 lib -> model
 lib -> reference
 lib -> rules
-logger -> cli
-main -> cli
-main -> format
-main -> lib
-main -> logger
-main -> version
 model -> reference
 parser -> cache
 parser -> constants

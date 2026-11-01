@@ -102,7 +102,7 @@ fn should_trace_a_test_target_reference_into_a_proc_macro_library() {
 
     assert_eq!(
         run(&dir, 0, &["list", "-T", "-t"]),
-        "[lib]     bar\n[lib]     foo\n[lib]     lib\n[test:it] it\n[test:it] support\n"
+        "[lib]     bar\n[lib]     foo\n[lib]     lib\n[test@it] it\n[test@it] support\n"
     );
     assert_eq!(
         run(&dir, 0, &["why", "-t", "support", "foo"]),

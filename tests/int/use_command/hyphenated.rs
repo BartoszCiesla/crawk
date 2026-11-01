@@ -10,14 +10,14 @@ use test_case::test_case;
 // and all, never appears in source.
 #[test]
 fn should_use_main_in_hyphenated() {
-    assert_cmd_snapshot!(crawk_hyphenated().args(["use", "main"]));
+    assert_cmd_snapshot!(crawk_hyphenated().args(["use", "bin@hyphenated-pkg"]));
 }
 
 // The glob is written behind the crate name, so resolving it means finding the
 // library under that name.
 #[test]
 fn should_use_main_with_resolved_globs_in_hyphenated() {
-    assert_cmd_snapshot!(crawk_hyphenated().args(["use", "main", "-G"]));
+    assert_cmd_snapshot!(crawk_hyphenated().args(["use", "bin@hyphenated-pkg", "-G"]));
 }
 
 // A module of an integration test reaches the library the same way.
@@ -41,7 +41,7 @@ fn should_use_path_led_by_library_name_in_hyphenated(module: &str, case: &str) {
 
 // The integration test's root is named after its file stem, as `list -t`
 // shows it, and a path led by that name reaches the root's modules — the way
-// `main::cli` reaches a binary's.
+// `bin@crawk::cli` reaches a binary's.
 #[test_case("smoke", "root" ; "root")]
 #[test_case("smoke::support", "root_and_module" ; "root and module")]
 fn should_use_path_led_by_test_root_in_hyphenated(module: &str, case: &str) {

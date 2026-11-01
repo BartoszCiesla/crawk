@@ -17,6 +17,79 @@ crate::nesting
 ----- stderr -----
 INFO Running crawk version
 INFO Crate root: fixtures/modules
+INFO Resolving module: 'lib'
+INFO Resolved 'lib' via library root
+INFO Module tree: '' → [MODULES]/src/lib.rs, recursive=true
+INFO Found submodule: 'file_module' → [MODULES]/src/file_module.rs
+INFO Found submodule: 'dir_module' → [MODULES]/src/dir_module/mod.rs
+INFO Found submodule: 'dir_module::child_file' → [MODULES]/src/dir_module/child_file.rs
+INFO Found submodule: 'dir_module::child_dir' → [MODULES]/src/dir_module/child_dir/mod.rs
+INFO Found submodule: 'inline_modules' → [MODULES]/src/inline_modules.rs
+INFO Found submodule: 'inline_modules::inner' (inline)
+INFO Found submodule: 'inline_modules::nested' (inline)
+INFO Found submodule: 'inline_modules::private_inline' (inline)
+INFO Found submodule: 'inline_modules::outer' (inline)
+INFO Found submodule: 'custom_path' → [MODULES]/src/custom_path.rs
+INFO Found submodule: 'visibility' → [MODULES]/src/visibility/mod.rs
+INFO Found submodule: 'visibility::pub_mod' → [MODULES]/src/visibility/pub_mod.rs
+INFO Found submodule: 'visibility::pub_crate_mod' → [MODULES]/src/visibility/pub_crate_mod.rs
+INFO Found submodule: 'visibility::pub_super_mod' → [MODULES]/src/visibility/pub_super_mod.rs
+INFO Found submodule: 'visibility::private_mod' → [MODULES]/src/visibility/private_mod.rs
+INFO Found submodule: 'visibility::inner' → [MODULES]/src/visibility/inner.rs
+INFO Found submodule: 'visibility::restricted_mod' (inline)
+INFO Found submodule: 'nesting' → [MODULES]/src/nesting/mod.rs
+INFO Found submodule: 'nesting::level1' → [MODULES]/src/nesting/level1/mod.rs
+INFO Found submodule: 'nesting::level1::level2' → [MODULES]/src/nesting/level1/level2/mod.rs
+INFO Found submodule: 'nesting::level1::level2::level3' → [MODULES]/src/nesting/level1/level2/level3.rs
+INFO Found submodule: 'reexports' → [MODULES]/src/reexports/mod.rs
+INFO Found submodule: 'reexports::internal' → [MODULES]/src/reexports/internal.rs
+INFO Found submodule: 'reexports::types' → [MODULES]/src/reexports/types.rs
+INFO Found submodule: 'mixed' → [MODULES]/src/mixed/mod.rs
+INFO Found submodule: 'mixed::file_child' → [MODULES]/src/mixed/file_child.rs
+INFO Found submodule: 'mixed::inline_child' (inline)
+INFO Found submodule: 'item_visibility' → [MODULES]/src/item_visibility.rs
+INFO Found submodule: 'glob_patterns' → [MODULES]/src/glob_patterns.rs
+INFO Found submodule: 'glob_patterns::utilities' (inline)
+INFO Found submodule: 'glob_patterns::types' (inline)
+INFO Found submodule: 'glob_patterns::traits' (inline)
+INFO Found submodule: 'glob_patterns::constants' (inline)
+INFO Found submodule: 'glob_patterns::mixed_exports' (inline)
+INFO Found submodule: 'glob_patterns::outer' (inline)
+INFO Found submodule: 'glob_patterns::self_ref' (inline)
+INFO Found submodule: 'glob_patterns::set_a' (inline)
+INFO Found submodule: 'glob_patterns::set_b' (inline)
+INFO Found submodule: 'advanced_globs' → [MODULES]/src/advanced_globs.rs
+INFO Found submodule: 'advanced_globs::layer1' (inline)
+INFO Found submodule: 'advanced_globs::original' (inline)
+INFO Found submodule: 'advanced_globs::shadowing' (inline)
+INFO Found submodule: 'advanced_globs::unix_specific' (inline)
+INFO Found submodule: 'advanced_globs::windows_specific' (inline)
+INFO Found submodule: 'advanced_globs::trait_providers' (inline)
+INFO Found submodule: 'advanced_globs::macro_module' (inline)
+INFO Found submodule: 'advanced_globs::internal' (inline)
+INFO Found submodule: 'advanced_globs::aliased_module' (inline)
+INFO Found submodule: 'advanced_globs::enum_variants' (inline)
+INFO Found submodule: 'advanced_globs::prelude' (inline)
+INFO Found submodule: 'glob_showcase' → [MODULES]/src/glob_showcase.rs
+INFO Found submodule: 'glob_showcase::api' (inline)
+INFO Found submodule: 'glob_showcase::models' (inline)
+INFO Found submodule: 'glob_showcase::database' (inline)
+INFO Found submodule: 'glob_showcase::utils' (inline)
+INFO Found submodule: 'glob_showcase::errors' (inline)
+INFO Found submodule: 'glob_showcase::config' (inline)
+INFO Found submodule: 'glob_showcase::traits' (inline)
+INFO Found submodule: 'glob_showcase::prelude' (inline)
+INFO Found submodule: 'empty_module' → [MODULES]/src/empty_module.rs
+INFO Found submodule: 'no_pub_items' → [MODULES]/src/no_pub_items.rs
+INFO Found submodule: 'uses_empty_glob' → [MODULES]/src/uses_empty_glob.rs
+INFO Found submodule: 'group_patterns' → [MODULES]/src/group_patterns.rs
+INFO Found submodule: 'foo' → [MODULES]/src/foo/mod.rs
+INFO Found submodule: 'foo::bar' → [MODULES]/src/foo/bar.rs
+INFO Found submodule: 'foo::other' → [MODULES]/src/foo/other.rs
+INFO Found submodule: 'baz' → [MODULES]/src/baz.rs
+INFO Found submodule: 'crate_root_reexport' → [MODULES]/src/crate_root_reexport.rs
+INFO Found submodule: 'app_only' (inline)
+INFO Listed 87 modules across 3 targets
 INFO Resolving module: 'file_module'
 INFO Module tree: 'file_module' → [MODULES]/src/file_module.rs, recursive=false
 INFO Module tree: 'file_module' → [MODULES]/src/file_module.rs, recursive=true

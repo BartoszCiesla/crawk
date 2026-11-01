@@ -19,9 +19,11 @@ advanced_globs (3)
   -> file_module
   -> visibility
 
-app (14)
+baz (1)
+  -> foo
+
+bin@modules (13)
   -> advanced_globs
-  -> app_only
   -> custom_path
   -> dir_module
   -> file_module
@@ -35,8 +37,20 @@ app (14)
   -> reexports
   -> visibility
 
-baz (1)
-  -> foo
+bin@modules-cli (13)
+  -> advanced_globs
+  -> custom_path
+  -> dir_module
+  -> file_module
+  -> glob_patterns
+  -> glob_showcase
+  -> inline_modules
+  -> item_visibility
+  -> lib
+  -> mixed
+  -> nesting
+  -> reexports
+  -> visibility
 
 crate_root_reexport (1)
   -> lib
@@ -75,21 +89,6 @@ item_visibility (1)
 
 lib (1)
   -> empty_module
-
-main (13)
-  -> advanced_globs
-  -> custom_path
-  -> dir_module
-  -> file_module
-  -> glob_patterns
-  -> glob_showcase
-  -> inline_modules
-  -> item_visibility
-  -> lib
-  -> mixed
-  -> nesting
-  -> reexports
-  -> visibility
 
 mixed (1)
   -> custom_path

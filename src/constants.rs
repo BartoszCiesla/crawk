@@ -1,3 +1,7 @@
+/// Leads the name of a binary target's root module: `bin@<cargo target name>`.
+/// Same spelling as the target's `Display` (the `list -T` tag).
+pub(crate) const BIN_ROOT_PREFIX: &str = "bin@";
+
 /// Path qualifier for the crate root
 pub(crate) const PATH_QUALIFIER_CRATE: &str = "crate";
 

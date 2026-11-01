@@ -9,8 +9,8 @@
 //!
 //! - **Path resolution**: mapping `crate::foo::bar` paths to `.rs` files, handling
 //!   both `foo.rs` (2018+ style) and `foo/mod.rs` (legacy style) layouts
-//! - **Binary target support**: resolving paths rooted at binary targets by matching
-//!   source file stems (e.g., `main` → `src/main.rs`)
+//! - **Binary target support**: resolving paths rooted at binary targets by their
+//!   cargo target name (e.g., `bin@my-tool` → `src/bin/my-tool/main.rs`)
 //! - **Inline module detection**: identifying when a module path resolves to an
 //!   inline `mod { ... }` block rather than a separate file
 //! - **Tree collection**: recursively or shallowly enumerating submodules, with
@@ -26,7 +26,7 @@ use crate::cache::ParseCache;
 use cargo_metadata::Package;
 use syn::Item;
 
-use crate::constants::{LIB_FILE_NAME, MAIN_FILE_NAME, MODULE_FILE_NAME};
+use crate::constants::{BIN_ROOT_PREFIX, LIB_FILE_NAME, MAIN_FILE_NAME, MODULE_FILE_NAME};
 use crate::module_path::split_parent;
 use crate::utils::{ReadFileError, has_cfg_test, read_source_file};
 use tracing::{debug, info};
@@ -158,7 +158,7 @@ impl CrateInfo {
     ///
     /// E.g., `crawk::analysis::collect` or just `analysis::collect`
     /// Also treats "lib" as an alias for the library root (same as crate name).
-    /// Also matches binary targets by their source file stem (e.g., "main" for main.rs, "app" for app.rs).
+    /// Also matches binary targets by their root, `bin@<cargo target name>`.
     fn resolve_module_path_with_crate(
         &self,
         package: &Package,
@@ -188,14 +188,19 @@ impl CrateInfo {
             return result;
         }
 
-        // Check if the first part matches any binary target's source file stem
-        if Self::find_binary_by_file_stem(package, parts[0]).is_some() {
+        // A binary's root addresses that binary and nothing else: an unknown
+        // one must not fall through to a lookup from the library.
+        if parts[0].starts_with(BIN_ROOT_PREFIX) {
+            let bin_root = Self::find_binary_by_root(package, parts[0]).ok_or_else(|| {
+                CrateInfoError::ModuleNotFound {
+                    module_path: module_path.to_owned(),
+                }
+            })?;
             let result = if parts.len() > 1 {
                 let remaining = parts[1..].join("::");
-                self.resolve_module_path_from_binary(package, parts[0], &remaining, cache)
+                self.resolve_module_path_from_binary(package, &bin_root, &remaining, cache)
             } else {
-                Self::find_binary_by_file_stem(package, parts[0])
-                    .ok_or_else(|| CrateInfoError::NoCrateRoot(package.name.to_string()))
+                Ok(bin_root)
             };
             info!("Resolved '{module_path}' via binary target '{}'", parts[0]);
             return result;
@@ -231,29 +236,25 @@ impl CrateInfo {
             .map(|t| t.src_path.as_std_path().to_path_buf())
     }
 
-    /// Finds a binary target by matching its source file's filename against `"{file_stem}.rs"`.
-    pub(super) fn find_binary_by_file_stem(package: &Package, file_stem: &str) -> Option<PathBuf> {
-        let expected_filename = format!("{file_stem}.rs");
+    /// Finds the entry point of the binary whose root is `segment`: `bin@<name>`.
+    ///
+    /// Cargo keeps binary names unique within a package, so at most one matches.
+    pub(super) fn find_binary_by_root(package: &Package, segment: &str) -> Option<PathBuf> {
+        let name = segment.strip_prefix(BIN_ROOT_PREFIX)?;
         package
             .targets
             .iter()
-            .find(|t| {
-                t.is_bin()
-                    && Path::new(t.src_path.as_str())
-                        .file_name()
-                        .and_then(|f| f.to_str())
-                        .is_some_and(|name| name == expected_filename)
-            })
+            .find(|t| t.is_bin() && t.name == name)
             .map(|t| t.src_path.as_std_path().to_path_buf())
     }
 
-    /// Resolves a module path relative to a binary target identified by its source file stem.
+    /// Resolves a module path relative to the binary with entry point `bin_root`.
     ///
     /// Similar to `resolve_module_path`, but uses the specified binary as the root.
     fn resolve_module_path_from_binary(
         &self,
         package: &Package,
-        file_stem: &str,
+        bin_root: &Path,
         module_path: &str,
         cache: &mut ParseCache,
     ) -> Result<PathBuf> {
@@ -263,14 +264,11 @@ impl CrateInfo {
 
         let parts: Vec<&str> = module_path.split("::").collect();
 
-        let bin_root = Self::find_binary_by_file_stem(package, file_stem)
-            .ok_or_else(|| CrateInfoError::NoCrateRoot(package.name.to_string()))?;
-
         let bin_root_dir = bin_root
             .parent()
             .ok_or_else(|| CrateInfoError::NoCrateRoot(package.name.to_string()))?;
 
-        let resolved = Self::resolve_module_parts(bin_root_dir, &parts, Some(&bin_root), cache)?
+        let resolved = Self::resolve_module_parts(bin_root_dir, &parts, Some(bin_root), cache)?
             .ok_or_else(|| CrateInfoError::ModuleNotFound {
                 module_path: module_path.to_owned(),
             })?;
@@ -1588,10 +1586,10 @@ mod tests {
 
     /// Each input reaches the empty-path guard of a different resolver: the
     /// entry point itself, the library-root branch with nothing after `lib::`,
-    /// and the binary-root branch with nothing after `main::`.
+    /// and the binary-root branch with nothing after `bin@modules::`.
     #[test_case("" ; "entry point")]
     #[test_case("lib::" ; "library root remainder")]
-    #[test_case("main::" ; "binary root remainder")]
+    #[test_case("bin@modules::" ; "binary root remainder")]
     fn resolve_module_rejects_empty_path(module_path: &str) {
         let info = fixture_crate_info();
         let mut cache = ParseCache::new();

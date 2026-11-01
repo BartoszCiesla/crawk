@@ -7,7 +7,7 @@ use test_case::test_matrix;
 // ============================================================================
 
 #[test_matrix(
-    ["main", "app"],
+    ["bin@modules", "bin@modules-cli"],
     [&["-d", "1"],
      &["-d", "2"],
      &["-e", "-d", "1"],
@@ -25,7 +25,10 @@ fn should_modules_use_handle_binaries(module: &str, flags: &[&str]) {
         .map(|f| f.trim_start_matches('-'))
         .collect::<Vec<_>>()
         .join("_");
-    let snapshot_name = format!("modules_{}_bin_{flags_part}", module.replace("::", "__"));
+    let snapshot_name = format!(
+        "modules_{}_bin_{flags_part}",
+        module.replace("::", "__").replace('@', "_")
+    );
 
     assert_cmd_snapshot!(
         snapshot_name,
@@ -42,5 +45,5 @@ fn should_modules_use_handle_binaries(module: &str, flags: &[&str]) {
 /// statements — it has none of its own, so output must be empty.
 #[test]
 fn should_not_leak_top_level_uses_into_inline_module_of_custom_path_bin_target() {
-    assert_cmd_snapshot!(crawk_modules().arg("use").arg("app::app_only"));
+    assert_cmd_snapshot!(crawk_modules().arg("use").arg("bin@modules-cli::app_only"));
 }

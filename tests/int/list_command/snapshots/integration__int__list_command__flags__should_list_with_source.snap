@@ -95,8 +95,8 @@ exit_code: 0
 [lib]             visibility::pub_mod                     src/visibility/pub_mod.rs
 [lib]             visibility::pub_super_mod               src/visibility/pub_super_mod.rs
 [lib]             visibility::restricted_mod              src/visibility/mod.rs
-[bin:modules]     main                                    src/main.rs
-[bin:modules-cli] app                                     src/app.rs
-[bin:modules-cli] app_only                                src/app.rs
+[bin@modules]     bin@modules                             src/main.rs
+[bin@modules-cli] bin@modules-cli                         src/app.rs
+[bin@modules-cli] bin@modules-cli::app_only               src/app.rs
 
 ----- stderr -----

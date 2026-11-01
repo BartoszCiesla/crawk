@@ -209,15 +209,9 @@ fn should_reject_symlink_escaping_crate_root() {
 /// must warn and continue rather than hard-failing an otherwise-healthy
 /// query about an unrelated, healthy target.
 ///
-/// Queries a *nested* bin submodule (`main::tool::sub`, `sub` inline inside
-/// `tool.rs`) rather than a bare top-level one: for a single-segment
-/// normalized path, `compute_root_visibility` unconditionally treats the
-/// crate root (which prefers lib.rs) as the parent to look up `mod`
-/// visibility in — a separate, pre-existing resolution quirk that would
-/// otherwise make the very first, pre-top-up discovery call itself need to
-/// parse the broken lib.rs before this test ever reaches the code under
-/// test. Nesting one level deeper resolves visibility from `tool.rs`
-/// instead, isolating the top-up's own warn-and-continue behavior.
+/// Queries a bin submodule under its root (`bin@<name>::tool::sub`, `sub`
+/// inline inside `tool.rs`), whose discovery reads nothing of the broken
+/// lib.rs, isolating the top-up's own warn-and-continue behavior.
 #[test]
 fn should_warn_not_fail_when_lib_broken_during_root_children_top_up() {
     use std::fs;
@@ -249,7 +243,7 @@ fn should_warn_not_fail_when_lib_broken_during_root_children_top_up() {
         assert_cmd_snapshot!(crawk()
             .arg("-p").arg(root.path())
             .arg("use")
-            .arg("main::tool::sub")
+            .arg("bin@test-broken-lib-top-up::tool::sub")
             .arg("-t"));
     });
 }

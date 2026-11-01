@@ -10,27 +10,33 @@ use insta_cmd::assert_cmd_snapshot;
 
 #[test]
 fn should_use_main_in_bin_only() {
-    assert_cmd_snapshot!(crawk_bin_only().args(["use", "main"]));
+    assert_cmd_snapshot!(crawk_bin_only().args(["use", "bin@bin_only"]));
 }
 
 #[test]
 fn should_use_main_recursive_in_bin_only() {
-    assert_cmd_snapshot!(crawk_bin_only().args(["use", "main", "-r"]));
+    assert_cmd_snapshot!(crawk_bin_only().args(["use", "bin@bin_only", "-r"]));
 }
 
 #[test]
 fn should_use_nested_module_in_bin_only() {
-    assert_cmd_snapshot!(crawk_bin_only().args(["use", "main::utils::helper"]));
+    assert_cmd_snapshot!(crawk_bin_only().args(["use", "bin@bin_only::utils::helper"]));
 }
 
 #[test]
 fn should_use_main_with_expand_in_bin_only() {
-    assert_cmd_snapshot!(crawk_bin_only().args(["use", "main", "-e"]));
+    assert_cmd_snapshot!(crawk_bin_only().args(["use", "bin@bin_only", "-e"]));
 }
 
 #[test]
 fn should_use_main_grouped_in_bin_only() {
-    assert_cmd_snapshot!(crawk_bin_only().args(["use", "main", "-e", "--format", "grouped"]));
+    assert_cmd_snapshot!(crawk_bin_only().args([
+        "use",
+        "bin@bin_only",
+        "-e",
+        "--format",
+        "grouped"
+    ]));
 }
 
 /// Writes `contents` to `path` under `root`, creating parent directories.
@@ -80,7 +86,7 @@ fn should_use_main_with_own_name_as_external_in_bin_only() {
     write_file(dir.path(), "tool/src/config.rs", "pub struct Settings;\n");
 
     assert_eq!(
-        crawk_stdout(&dir.path().join("tool"), 0, &["use", "main"]),
+        crawk_stdout(&dir.path().join("tool"), 0, &["use", "bin@tool"]),
         "crate::config::Settings\n"
     );
 }

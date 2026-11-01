@@ -11,7 +11,7 @@ pub(crate) struct ListDisplayOptions {
     pub show_source: bool,
     /// Show visibility column.
     pub show_visibility: bool,
-    /// Show target tag column (e.g. `[lib]`, `[bin:crawk]`).
+    /// Show target tag column (e.g. `[lib]`, `[bin@crawk]`).
     pub multi_target: bool,
 }
 
@@ -133,7 +133,7 @@ pub(crate) fn render_list_table(
     format!("{table}\n")
 }
 
-/// Format the target tag for plain output, e.g. `[lib]`, `[bin:crawk]`.
+/// Format the target tag for plain output, e.g. `[lib]`, `[bin@crawk]`.
 fn format_target_tag(module: &ModuleInfo) -> String {
     format!("[{}]", module.target())
 }

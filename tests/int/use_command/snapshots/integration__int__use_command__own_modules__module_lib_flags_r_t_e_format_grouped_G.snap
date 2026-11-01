@@ -43,6 +43,7 @@ lib
  - crate::rules::ViolationKind
 analyzer
  - crate::cache::ParseCache
+ - crate::constants::BIN_ROOT_PREFIX
  - crate::discover::CrateInfo
  - crate::discover::ModuleInfo
  - crate::discover::TargetInfo
@@ -86,8 +87,10 @@ cache::tests
 constants
 discover
  - crate::cache::ParseCache
+ - crate::constants::BIN_ROOT_PREFIX
 discover::module_tree
  - crate::cache::ParseCache
+ - crate::constants::BIN_ROOT_PREFIX
  - crate::constants::LIB_FILE_NAME
  - crate::constants::MAIN_FILE_NAME
  - crate::constants::MODULE_FILE_NAME

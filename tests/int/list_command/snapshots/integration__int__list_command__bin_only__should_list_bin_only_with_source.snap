@@ -11,9 +11,9 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-config         src/config.rs
-main           src/main.rs
-utils          src/utils/mod.rs
-utils::helper  src/utils/helper.rs
+bin@bin_only                 src/main.rs
+bin@bin_only::config         src/config.rs
+bin@bin_only::utils          src/utils/mod.rs
+bin@bin_only::utils::helper  src/utils/helper.rs
 
 ----- stderr -----

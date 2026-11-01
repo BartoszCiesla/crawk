@@ -108,11 +108,14 @@ pub(crate) enum CrawkCommands {
     /// MODULE_PATH: use `::` separated segments without `crate::` prefix.
     ///   e.g. "utils", "parser::visitor"
     ///
-    /// Valid root targets: "lib" (library) or a binary target's source file
-    /// stem (e.g. "main" for src/main.rs) — not the binary's name. With -t,
+    /// Valid root targets: "lib" (library) or a binary target's cargo name
+    /// after "bin@" (e.g. "bin@crawk"), whatever its file is called. With -t,
     /// also an integration test's file stem (e.g. "integration" for
     /// tests/integration.rs).
-    /// Any submodule path within those targets is also accepted.
+    /// Any submodule path within those targets is also accepted; a binary's
+    /// modules go by "bin@<name>::<path>" (e.g. "bin@crawk::cli").
+    /// A bare path reaches a module of any target when it names only one, and
+    /// otherwise lists the full paths to pick from.
     /// Note: references from binary targets use the library's crate name as
     /// prefix (e.g. "crawk::") rather than "crate::".
     ///
@@ -131,7 +134,7 @@ pub(crate) enum CrawkCommands {
     ///
     /// Without MODULE_PATH: lists modules from all targets. When modules from
     /// multiple distinct targets are found, each line is prefixed with a target
-    /// tag: [lib], [bin:name], [test:name]. Use --targets to always show the tag.
+    /// tag: [lib], [bin@name], [test@name]. Use --targets to always show the tag.
     ///
     /// With MODULE_PATH: scopes to that module's subtree (root included).
     /// Target tags are suppressed unless --targets is given.
@@ -562,7 +565,7 @@ pub(crate) struct ListDisplayArgs {
     #[arg(short = 'V', long = "visibility", default_value_t = false)]
     pub show_visibility: bool,
 
-    /// Always show the target tag column ([lib], [bin:name], [test:name]).
+    /// Always show the target tag column ([lib], [bin@name], [test@name]).
     ///
     /// By default, the tag is shown only when modules from multiple distinct
     /// targets are present. Use this flag to force the tag in any context —

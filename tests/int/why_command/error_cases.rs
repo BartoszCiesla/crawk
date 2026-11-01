@@ -42,7 +42,7 @@ fn should_error_on_invalid_module_path() {
     ----- stdout -----
 
     ----- stderr -----
-    error: invalid value 'invalid..path' for '<SOURCE>': module path 'invalid..path' contains invalid characters (only a-z, A-Z, 0-9, _, - and :: are allowed)
+    error: invalid value 'invalid..path' for '<SOURCE>': module path 'invalid..path' contains invalid characters (only a-z, A-Z, 0-9, _, -, :: and a leading bin@<name> are allowed)
 
     For more information, try '--help'.
     ");

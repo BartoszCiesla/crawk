@@ -1,0 +1,19 @@
+---
+source: tests/int/use_command/binaries.rs
+info:
+  program: crawk
+  args:
+    - "-p"
+    - fixtures/modules
+    - use
+    - "bin:modules"
+    - "-e"
+    - "-d"
+    - "1"
+---
+success: true
+exit_code: 0
+----- stdout -----
+modules
+
+----- stderr -----

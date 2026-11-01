@@ -7,13 +7,13 @@ use insta_cmd::assert_cmd_snapshot;
 
 #[test]
 fn should_why_hyphenated_bin_to_lib_module() {
-    assert_cmd_snapshot!(crawk_hyphenated().args(["why", "main", "shapes"]));
+    assert_cmd_snapshot!(crawk_hyphenated().args(["why", "bin@hyphenated-pkg", "shapes"]));
 }
 
 // A crate-root re-export resolves to the synthetic `lib` target.
 #[test]
 fn should_why_hyphenated_bin_to_lib_root() {
-    assert_cmd_snapshot!(crawk_hyphenated().args(["why", "main", "lib"]));
+    assert_cmd_snapshot!(crawk_hyphenated().args(["why", "bin@hyphenated-pkg", "lib"]));
 }
 
 #[test]

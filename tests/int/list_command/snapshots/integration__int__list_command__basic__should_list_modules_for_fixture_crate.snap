@@ -94,8 +94,8 @@ exit_code: 0
 [lib]             visibility::pub_mod
 [lib]             visibility::pub_super_mod
 [lib]             visibility::restricted_mod
-[bin:modules]     main
-[bin:modules-cli] app
-[bin:modules-cli] app_only
+[bin@modules]     bin@modules
+[bin@modules-cli] bin@modules-cli
+[bin@modules-cli] bin@modules-cli::app_only
 
 ----- stderr -----

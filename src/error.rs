@@ -13,6 +13,27 @@ pub enum AnalysisError {
         module_path: String,
     },
 
+    /// A bare module path names several modules, each under its own target.
+    #[error("Module '{module_path}' is ambiguous, pick one of: {}", .candidates.join(", "))]
+    AmbiguousModule {
+        /// The bare path as given.
+        module_path: String,
+        /// Full paths of the modules it could mean: `lib::x`, `bin@<name>::x`.
+        candidates: Vec<String>,
+    },
+
+    /// A path is led by a binary's file stem, which does not name it.
+    #[error(
+        "Module '{module_path}' not found: a binary goes by its cargo target name, did you mean {}?",
+        .candidates.join(", ")
+    )]
+    BinaryFileStem {
+        /// The path as given.
+        module_path: String,
+        /// The same path under each binary with that file stem.
+        candidates: Vec<String>,
+    },
+
     /// The crate root directory does not exist or is not a valid Rust project.
     #[error("Invalid crate root: {path} - {reason}")]
     InvalidCrateRoot {
@@ -47,13 +68,39 @@ pub enum AnalysisError {
     },
 
     /// A rule references a module that does not exist in the crate.
-    #[error("Rule references unknown module '{module}' (in rule '{rule}')")]
+    #[error(
+        "Rule references unknown module '{module}' (in rule '{rule}'){}",
+        did_you_mean(.candidates)
+    )]
     UnknownRuleModule {
         /// The unknown module path named in the rule.
         module: String,
         /// Human-readable description of the offending rule.
         rule: String,
+        /// Full names of binary modules the rule may have meant; rules take
+        /// no bare form of those.
+        candidates: Vec<String>,
     },
+}
+
+impl AnalysisError {
+    /// Returns `true` if the error reports a module that was not found.
+    pub(crate) const fn is_module_not_found(&self) -> bool {
+        match self {
+            Self::ModuleNotFound { .. } => true,
+            Self::CrateInfoError(error) => error.is_module_not_found(),
+            _ => false,
+        }
+    }
+}
+
+/// The suffix naming what an unknown rule module may have meant, if anything.
+fn did_you_mean(candidates: &[String]) -> String {
+    if candidates.is_empty() {
+        String::new()
+    } else {
+        format!(": did you mean {}?", candidates.join(", "))
+    }
 }
 
 /// Result type alias for analysis info operations.

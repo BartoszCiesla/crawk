@@ -96,8 +96,8 @@ exit_code: 0
 [lib]             visibility::pub_mod                     pub                        src/visibility/pub_mod.rs
 [lib]             visibility::pub_super_mod               pub(super)                 src/visibility/pub_super_mod.rs
 [lib]             visibility::restricted_mod              pub(in crate::visibility)  src/visibility/mod.rs
-[bin:modules]     main                                    pub                        src/main.rs
-[bin:modules-cli] app                                     pub                        src/app.rs
-[bin:modules-cli] app_only                                                           src/app.rs
+[bin@modules]     bin@modules                             pub                        src/main.rs
+[bin@modules-cli] bin@modules-cli                         pub                        src/app.rs
+[bin@modules-cli] bin@modules-cli::app_only                                          src/app.rs
 
 ----- stderr -----

@@ -33,7 +33,7 @@ fn should_list_with_root_for_own_lib() {
 }
 
 #[test_case("crawk" ; "crate name")]
-#[test_case("main" ; "binary stem")]
+#[test_case("bin@crawk" ; "binary root")]
 fn should_list_with_root_for_target(target: &str) {
-    assert_cmd_snapshot!(target, crawk().arg("list").arg(target));
+    assert_cmd_snapshot!(target.replace('@', "_"), crawk().arg("list").arg(target));
 }

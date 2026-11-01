@@ -13,6 +13,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 int
+int::bin_names
 int::check_command
 int::command
 int::deps_command

@@ -279,10 +279,12 @@ fn extract_use_names(tree: &UseTree, items: &mut Vec<String>) {
 ///
 /// `caller_module` is the crawk-internal path of the module performing the
 /// glob-import (empty string for the crate root). It is used to decide
-/// visibility of `pub(super)` items in the target module.
+/// visibility of `pub(super)` items in the target module. `bin_root` is the
+/// caller's binary (`bin@<name>`), if any: there, `crate::` means that binary.
 pub(crate) fn resolve_glob(
     reference: &TypeReference,
     caller_module: &str,
+    bin_root: Option<&str>,
     crate_info: &CrateInfo,
     cache: &mut ParseCache,
 ) -> Vec<TypeReference> {
@@ -329,6 +331,16 @@ pub(crate) fn resolve_glob(
         module_path.clone()
     };
 
+    // Inside a binary, the path only resolves under its root: bare, it would be
+    // looked up from the library, which may hold a namesake.
+    let (module_path, scope_path) = match bin_root {
+        Some(root) if is_crate_prefix => {
+            let qualified = format!("{root}::{module_path}");
+            (qualified.clone(), qualified)
+        }
+        _ => (module_path, target_module.clone()),
+    };
+
     // Resolve module path to file
     let file_path = match crate_info.resolve_module_path_to_file(&module_path, cache) {
         Ok(path) => path,
@@ -343,10 +355,10 @@ pub(crate) fn resolve_glob(
 
     // Determine if the target is an inline module within the file: whatever
     // `split_inline_scope` reports below the file-backed prefix is the chain of
-    // `mod` names to descend through. `target_module` is used rather than the
+    // `mod` names to descend through. `scope_path` is used rather than the
     // raw segments because a crate-name-prefixed glob still carries the crate
     // name, which is not a module inside the file.
-    let (_, inline_path) = crate_info.split_inline_scope(&target_module, &file_path, cache);
+    let (_, inline_path) = crate_info.split_inline_scope(&scope_path, &file_path, cache);
     let inline_refs: Vec<&str> = inline_path.iter().map(String::as_str).collect();
 
     // `target_module` is the full crawk-internal path (including any inline

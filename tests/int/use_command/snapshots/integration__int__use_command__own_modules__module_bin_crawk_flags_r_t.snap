@@ -1,0 +1,62 @@
+---
+source: tests/int/use_command/own_modules.rs
+info:
+  program: crawk
+  args:
+    - use
+    - "bin:crawk"
+    - "-r"
+    - "-t"
+---
+success: true
+exit_code: 0
+----- stdout -----
+crate::cli::*
+crate::cli::CrawkArgs
+crate::cli::overview::generate_after_help
+crate::cli::validation::*
+crate::cli::validation::{validate_depth, validate_module_path}
+crate::cli::{CheckArgs, CheckOutputFormat, CrawkArgs, CrawkCommands, CyclesMode, DepsArgs, DepsOutputFormat, ListArgs, ListOutputFormat, UseArgs, UseOutputFormat, WhyArgs, WhyOutputFormat}
+crate::format
+crate::format::check_cmd::render_plain
+crate::format::cycles::*
+crate::format::cycles::render_cycles_dot
+crate::format::cycles::render_cycles_dot_highlight
+crate::format::cycles::render_cycles_grouped
+crate::format::cycles::render_cycles_plain
+crate::format::deps_cmd::*
+crate::format::deps_cmd::render_dot
+crate::format::deps_cmd::render_grouped
+crate::format::deps_cmd::render_plain
+crate::format::format_api_suffix
+crate::format::list_cmd::ListDisplayOptions
+crate::format::list_cmd::render_list_plain
+crate::format::list_cmd::render_list_table
+crate::format::orphans::*
+crate::format::orphans::render_orphans
+crate::format::paths::*
+crate::format::paths::render_paths_dot
+crate::format::paths::render_paths_grouped
+crate::format::paths::render_paths_plain
+crate::format::use_cmd::*
+crate::format::use_cmd::render_flat
+crate::format::use_cmd::render_grouped
+crate::format::why_cmd::render_grouped
+crate::format::why_cmd::render_plain
+crate::logger::configure_tracing
+crate::logger::use_ansi_colors
+crawk::AnnotatedEdges
+crawk::CheckReport
+crawk::Edge
+crawk::ModuleInfo
+crawk::ModuleInfo::target
+crawk::TypeReference
+crawk::version
+crawk::version::LONG_VERSION_MESSAGE
+crawk::version::NAME
+crawk::version::VERSION
+crawk::{AnalysisOptions, Analyzer, AnnotatedEdges, CheckOptions, DependencyGraph, DependencyGraphOptions, version}
+crawk::{AnalysisResult, TypeReference}
+crawk::{AnnotatedEdges, Cycle}
+
+----- stderr -----

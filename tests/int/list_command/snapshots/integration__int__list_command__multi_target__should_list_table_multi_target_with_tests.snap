@@ -186,17 +186,17 @@ exit_code: 0
 |------------------+----------------------------------------|
 | lib              | visibility::restricted_mod             |
 |------------------+----------------------------------------|
-| bin:modules      | main                                   |
+| bin@modules      | bin@modules                            |
 |------------------+----------------------------------------|
-| bin:modules-cli  | app                                    |
+| bin@modules-cli  | bin@modules-cli                        |
 |------------------+----------------------------------------|
-| bin:modules-cli  | app_only                               |
+| bin@modules-cli  | bin@modules-cli::app_only              |
 |------------------+----------------------------------------|
-| test:helpers     | helpers                                |
+| test@helpers     | helpers                                |
 |------------------+----------------------------------------|
-| test:integration | helpers                                |
+| test@integration | helpers                                |
 |------------------+----------------------------------------|
-| test:integration | integration                            |
+| test@integration | integration                            |
 +------------------+----------------------------------------+
 
 ----- stderr -----

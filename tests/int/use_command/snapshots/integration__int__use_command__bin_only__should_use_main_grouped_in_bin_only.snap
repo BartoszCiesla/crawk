@@ -6,7 +6,7 @@ info:
     - "-p"
     - fixtures/bin_only
     - use
-    - main
+    - bin@bin_only
     - "-e"
     - "--format"
     - grouped
@@ -14,7 +14,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-main
+bin@bin_only
  - crate::config::Config
  - crate::utils::helper::run
 
