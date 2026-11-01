@@ -311,10 +311,11 @@ impl Analyzer {
 
     /// Discovers the whole module tree of one compilation target.
     ///
-    /// The target's root module comes back under the empty path. Library and
-    /// binary roots are resolved through their root name; an integration test
-    /// is read straight from `src_path`, its entry point, since no module path
-    /// leads to it.
+    /// The target's root module comes back under the empty path. The library
+    /// root is resolved through its root name; a binary or an integration test
+    /// is read straight from `src_path`, its entry point, since a root name
+    /// does not identify one: two binaries can share a file stem, and a binary
+    /// can be named like the crate.
     fn target_modules(
         &mut self,
         target: &TargetInfo,
@@ -322,14 +323,14 @@ impl Analyzer {
         include_tests: bool,
     ) -> Result<Vec<ModuleInfo>> {
         let modules = match target.kind() {
-            TargetKind::Lib | TargetKind::Bin => self.crate_info.get_module_tree(
+            TargetKind::Lib => self.crate_info.get_module_tree(
                 &Self::target_module_path(target, src_path),
                 true,
                 include_tests,
                 target,
                 &mut self.parse_cache,
             )?,
-            TargetKind::Test => CrateInfo::get_module_tree_for_file(
+            TargetKind::Bin | TargetKind::Test => CrateInfo::get_module_tree_for_file(
                 src_path,
                 target,
                 include_tests,
@@ -551,10 +552,10 @@ impl Analyzer {
         TargetInfo::new(TargetKind::Lib, self.crate_info.lib_crate_name())
     }
 
-    /// Computes the module path string to pass to `get_module_tree` for a target.
+    /// Computes the name a target's root module goes by.
     ///
-    /// Library targets use `"lib"`, binary targets use the file stem of their
-    /// source path (e.g., `"main"` for `src/main.rs`).
+    /// Library targets use `"lib"`, binary and test targets use the file stem
+    /// of their source path (e.g., `"main"` for `src/main.rs`).
     fn target_module_path(target: &TargetInfo, src_path: &Path) -> String {
         match target.kind() {
             TargetKind::Lib => "lib".to_owned(),
