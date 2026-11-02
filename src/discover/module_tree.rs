@@ -351,9 +351,11 @@ impl CrateInfo {
 
             let part_dir = current_dir.join(part);
 
-            // Check for `part.rs` (Rust 2018+ style)
+            // Check for `part.rs` (Rust 2018+ style). The file we are in is never
+            // the probe's answer: `src/bin/tool.rs` probing `tool` finds itself,
+            // and a `mod tool` there can only be inline.
             let file_path = current_dir.join(format!("{part}.rs"));
-            if file_path.exists() {
+            if file_path.exists() && current_file.as_ref() != Some(&file_path) {
                 debug!("'{part}' found as {}", file_path.display());
                 if is_last {
                     return Ok(Some(file_path));
@@ -1256,6 +1258,28 @@ mod tests {
         let mut cache = ParseCache::new();
         let result = CrateInfo::resolve_module_parts(dir.path(), &[], None, &mut cache).unwrap();
         assert!(result.is_none());
+    }
+
+    /// Regression: `tool.rs` beside itself is the probe for a module `tool` of the
+    /// target it roots, but a module never lives in its parent's file: `tool` is
+    /// whatever `tool.rs` declares inline under that name, or nothing.
+    #[test_case("mod tool { pub mod inner {} }", &["tool", "inner"], true; "inline child of the namesake")]
+    #[test_case("mod tool { pub mod inner {} }", &["tool"], true; "the inline namesake")]
+    #[test_case("fn main() {}", &["tool"], false; "no namesake declared")]
+    fn resolve_module_parts_does_not_take_the_root_file_for_its_namesake(
+        root_source: &str,
+        parts: &[&str],
+        found: bool,
+    ) {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().join("tool.rs");
+        fs::write(&root, root_source).unwrap();
+
+        let mut cache = ParseCache::new();
+        let result =
+            CrateInfo::resolve_module_parts(dir.path(), parts, Some(&root), &mut cache).unwrap();
+
+        assert_eq!(result, found.then_some(root), "{parts:?}");
     }
 
     #[test]

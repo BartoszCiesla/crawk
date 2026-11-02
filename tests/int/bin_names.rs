@@ -198,6 +198,40 @@ fn glob_in_a_binary_resolves_to_its_own_module() {
     assert_eq!(lines(&stdout), ["crate::shared::deep", "crate::shared::f"]);
 }
 
+/// `src/bin/tool.rs` holds an inline `mod tool`, named like its own entry file.
+fn inline_module_named_like_its_binary() -> TempDir {
+    scratch_crate(
+        "pkg",
+        &[
+            ("src/lib.rs", "pub mod foo;\npub mod bar;\n"),
+            ("src/foo.rs", "pub struct Foo;\n"),
+            ("src/bar.rs", "pub struct Bar;\n"),
+            (
+                "src/bin/tool.rs",
+                "use pkg::foo::Foo;\n\
+                 use crate::tool::inner::*;\n\
+                 mod tool { pub mod inner { use pkg::bar::Bar; pub fn make() -> Bar { Bar } } }\n\
+                 fn main() { let _ = (Foo, make()); }\n",
+            ),
+        ],
+    )
+}
+
+#[test_case(&["use", "bin@tool::tool::inner"], "pkg::bar::Bar\n"; "use")]
+#[test_case(&["use", "tool::inner"], "pkg::bar::Bar\n"; "use bare")]
+#[test_case(&["why", "bin@tool::tool::inner", "bar"], "pkg::bar::Bar\n"; "why")]
+fn an_inline_module_named_like_its_binary_is_not_the_entry_file(args: &[&str], expected: &str) {
+    let krate = inline_module_named_like_its_binary();
+    assert_eq!(crawk_stdout(krate.path(), 0, args), expected);
+}
+
+#[test]
+fn a_glob_into_an_inline_module_named_like_its_binary_resolves() {
+    let krate = inline_module_named_like_its_binary();
+    let stdout = crawk_stdout(krate.path(), 0, &["use", "-G", "bin@tool"]);
+    assert!(stdout.contains("crate::tool::inner::make"), "{stdout}");
+}
+
 #[test_case("bin@my-crate", "my_crate::foo::Bar"; "default binary")]
 #[test_case("bin@my-tool", "my_crate::foo::Baz"; "directory binary")]
 fn why_explains_the_addressed_binary(source: &str, reference: &str) {
