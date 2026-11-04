@@ -70,6 +70,13 @@ module `cli` are two nodes. `list -T` shows which target each module belongs to.
   always mean the library, so the default binary, named like the package, is
   only reachable as `bin@<package>`. In a package without a library they mean its
   binary, or fail with the list if it has several.
+- A library module named like one of them goes by its own name first: in crate
+  `my_crate` with a module `my_crate`, `my_crate` and `my_crate::inner` are that
+  module and its child, and `lib::my_crate` reaches it as well. `lib` alone is
+  always the root. An inline `mod lib` in `src/lib.rs` is reachable as
+  `lib::lib`, its child as `lib::inner` or `lib::lib::inner`, but in the graph
+  the module shares the name `lib` with the root: `deps`, `list` and `check` show
+  the two as one node.
 - The file stem of a binary or test is no name of it: `main` fails, pointing at
   the binaries, and with `-t` the tests, with that stem.
 

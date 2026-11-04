@@ -14,6 +14,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::cache::ParseCache
+crate::constants::LIB_ROOT
 crate::discover::CrateInfo
 crate::module_path::is_in_subtree
 crate::module_path::parent_module

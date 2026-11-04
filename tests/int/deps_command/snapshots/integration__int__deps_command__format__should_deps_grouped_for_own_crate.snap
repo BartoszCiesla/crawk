@@ -73,9 +73,10 @@ bin@crawk::format::why_cmd (1)
 bin@crawk::logger (1)
   -> bin@crawk::cli
 
-discover (2)
+discover (3)
   -> cache
   -> constants
+  -> module_path
 
 discover::module_tree (5)
   -> cache
@@ -136,8 +137,9 @@ parser::visitor (3)
 reference (1)
   -> constants
 
-resolve (5)
+resolve (6)
   -> cache
+  -> constants
   -> discover
   -> module_path
   -> reference

@@ -20,6 +20,7 @@ crate::cache::ParseCache
 crate::constants::ATTR_CFG
 crate::constants::BIN_ROOT_PREFIX
 crate::constants::LIB_FILE_NAME
+crate::constants::LIB_ROOT
 crate::constants::MAIN_FILE_NAME
 crate::constants::MODULE_FILE_NAME
 crate::constants::MODULE_NAME_TEST

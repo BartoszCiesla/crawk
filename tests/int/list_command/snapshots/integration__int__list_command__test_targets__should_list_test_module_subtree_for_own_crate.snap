@@ -37,6 +37,7 @@ test@integration::int::deps_command::overview
 test@integration::int::deps_command::paths
 test@integration::int::deps_command::target_roots
 test@integration::int::error_cases
+test@integration::int::lib_names
 test@integration::int::list_command
 test@integration::int::list_command::basic
 test@integration::int::list_command::bin_only

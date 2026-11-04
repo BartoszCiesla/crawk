@@ -21,6 +21,7 @@
 //! | `pub(self)` / private | not visible |
 
 use crate::cache::ParseCache;
+use crate::constants::LIB_ROOT;
 use crate::discover::CrateInfo;
 use crate::module_path::{is_in_subtree, parent_module};
 use crate::reference::{PathPrefix, TypeReference};
@@ -331,14 +332,14 @@ pub(crate) fn resolve_glob(
         module_path.clone()
     };
 
-    // Inside a binary, the path only resolves under its root: bare, it would be
-    // looked up from the library, which may hold a namesake.
-    let (module_path, scope_path) = match bin_root {
-        Some(root) if is_crate_prefix => {
-            let qualified = format!("{root}::{module_path}");
-            (qualified.clone(), qualified)
-        }
-        _ => (module_path, target_module.clone()),
+    // The path only resolves under its target's root. Bare, a binary's would be
+    // looked up from the library, which may hold a namesake, and a library
+    // module named like a root alias (`crate::my_crate::*`) would lose its first
+    // segment to the alias.
+    let module_path = match bin_root {
+        Some(root) if is_crate_prefix => format!("{root}::{module_path}"),
+        _ if target_module.is_empty() => LIB_ROOT.to_owned(),
+        _ => format!("{LIB_ROOT}::{target_module}"),
     };
 
     // Resolve module path to file
@@ -355,10 +356,9 @@ pub(crate) fn resolve_glob(
 
     // Determine if the target is an inline module within the file: whatever
     // `split_inline_scope` reports below the file-backed prefix is the chain of
-    // `mod` names to descend through. `scope_path` is used rather than the
-    // raw segments because a crate-name-prefixed glob still carries the crate
-    // name, which is not a module inside the file.
-    let (_, inline_path) = crate_info.split_inline_scope(&scope_path, &file_path, cache);
+    // `mod` names to descend through. The root leading `module_path` is never
+    // part of it.
+    let (_, inline_path) = crate_info.split_inline_scope(&module_path, &file_path, cache);
     let inline_refs: Vec<&str> = inline_path.iter().map(String::as_str).collect();
 
     // `target_module` is the full crawk-internal path (including any inline

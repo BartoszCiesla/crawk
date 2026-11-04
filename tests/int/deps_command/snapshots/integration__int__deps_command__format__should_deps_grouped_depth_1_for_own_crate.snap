@@ -67,8 +67,9 @@ parser (4)
 reference (1)
   -> constants
 
-resolve (5)
+resolve (6)
   -> cache
+  -> constants
   -> discover
   -> module_path
   -> reference

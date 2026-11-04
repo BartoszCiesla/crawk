@@ -11,7 +11,8 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::cache::ParseCache
-crate::constants::BIN_ROOT_PREFIX
+crate::constants::LIB_ROOT
 crate::discover::*
+crate::module_path::target_root
 
 ----- stderr -----

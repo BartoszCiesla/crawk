@@ -911,6 +911,10 @@ impl CrateInfo {
     /// report only `["baz"]`, and the descent would look for a non-existent
     /// top-level `mod baz`. Shortest-first stops at `foo` and correctly reports
     /// `["bar", "baz"]`.
+    ///
+    /// A root alias or a binary's root leading `module_path` (`lib::foo::bar`,
+    /// `bin@tool::cli`) is the target, never part of the scope: led by one, a
+    /// library module named like an alias keeps its name (`lib::my_crate::inner`).
     pub(crate) fn split_inline_scope(
         &self,
         module_path: &str,
@@ -923,6 +927,8 @@ impl CrateInfo {
 
         let segments: Vec<&str> = module_path.split("::").collect();
         let owned = |parts: &[&str]| parts.iter().map(ToString::to_string).collect();
+        // A root leading the path is the target, never a module of the file.
+        let first = usize::from(self.is_root_segment(segments[0]));
 
         // A target's own entry-point file (library root, binary root, or
         // integration-test root) cannot be peeled through module resolution: a
@@ -931,13 +937,15 @@ impl CrateInfo {
         // the path that is inline in the file is the scope: the whole path when
         // the file is the root, less when another target declares the file as a
         // module (`src/bin/helper.rs` as `mod helper;` of `src/bin/tool.rs`, whose
-        // `helper::deep` is inline below `helper`).
+        // `helper::deep` is inline below `helper`). A root leading the path is
+        // never inline: `lib::foo` is the top-level `foo`, even beside an inline
+        // `mod lib { mod foo {} }`.
         if self.is_target_entry_point(file_path) {
             let Ok(syntax) = Self::parse_cached(file_path, cache) else {
                 // The parse error surfaces when the file is analysed.
-                return (String::new(), owned(&segments));
+                return (segments[..first].join("::"), owned(&segments[first..]));
             };
-            for len in 0..segments.len() {
+            for len in first..segments.len() {
                 let scope: Vec<String> = owned(&segments[len..]);
                 if Self::get_inline_module_items(&syntax.items, &scope).is_ok() {
                     return (segments[..len].join("::"), scope);
@@ -947,7 +955,8 @@ impl CrateInfo {
             return (module_path.to_owned(), vec![]);
         }
 
-        for len in 1..segments.len() {
+        // The root alone backs an entry point, never this file.
+        for len in (first + 1)..segments.len() {
             let prefix = segments[..len].join("::");
 
             if let Ok(resolved) = self.resolve_module_path_to_file(&prefix, cache)

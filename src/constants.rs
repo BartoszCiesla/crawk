@@ -1,3 +1,7 @@
+/// The library's root module, and the alias that leads a library path handed to
+/// discovery: `lib::my_crate` stays the module `my_crate` in crate `my_crate`.
+pub(crate) const LIB_ROOT: &str = "lib";
+
 /// Leads the name of a binary target's root module: `bin@<cargo target name>`.
 /// Same spelling as the target's `Display` (the `list -T` tag).
 pub(crate) const BIN_ROOT_PREFIX: &str = "bin@";

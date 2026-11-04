@@ -12,7 +12,8 @@ use std::fmt;
 use std::path::{Path, PathBuf};
 
 use crate::cache::ParseCache;
-use crate::constants::BIN_ROOT_PREFIX;
+use crate::constants::LIB_ROOT;
+use crate::module_path::target_root;
 use tracing::info;
 
 use cargo_metadata::{Metadata, MetadataCommand};
@@ -576,7 +577,13 @@ impl CrateInfo {
     /// root: the `lib` alias, the crate name Rust source uses, or the package
     /// name as `Cargo.toml` spells it.
     pub(crate) fn is_lib_root_alias(&self, segment: &str) -> bool {
-        segment == "lib" || segment == self.lib_crate_name || segment == self.root_package_name
+        segment == LIB_ROOT || segment == self.lib_crate_name || segment == self.root_package_name
+    }
+
+    /// Returns `true` if `segment`, leading a module path, names a target's
+    /// root: a library root alias, or a binary's or test's root (`bin@tool`).
+    pub(crate) fn is_root_segment(&self, segment: &str) -> bool {
+        self.is_lib_root_alias(segment) || target_root(segment).is_some()
     }
 
     /// Returns all compilation targets in the crate.
@@ -644,7 +651,10 @@ impl CrateInfo {
     ///
     /// # Arguments
     ///
-    /// * `module_path` - A module path like `analysis::collect` or `mycrate::analysis`
+    /// * `module_path` - A module path like `lib::analysis`, `mycrate::analysis` or
+    ///   `bin@tool::cli`. A leading root alias is read once: `lib::my_crate::inner`
+    ///   is the module `my_crate::inner` even in crate `my_crate`. A bare path is
+    ///   read from the library, its first segment taken for an alias it spells.
     /// * `include_tests` - If `true`, includes modules marked with `#[cfg(test)]`
     /// * `recursive` - If `true`, recursively collects all submodules. If `false`, only the
     ///   current module and its direct submodules are returned (without traversing deeper).
@@ -674,11 +684,12 @@ impl CrateInfo {
 
         // Normalize the module path (remove crate name prefix if present)
         let normalized_path = self.normalize_module_path(module_path);
-        // A binary's module only resolves under its root: bare, it would be
-        // looked up from the library, which may hold a namesake.
-        let scope_path = if normalized_path.is_empty() || !module_path.starts_with(BIN_ROOT_PREFIX)
-        {
-            normalized_path.as_str()
+        // A module only resolves under the root leading its path. Bare, a
+        // binary's would be looked up from the library, which may hold a
+        // namesake, and a library module named like a root alias
+        // (`my_crate::inner`) would lose its first segment to the alias.
+        let scope_path = if normalized_path.is_empty() {
+            ""
         } else {
             module_path
         };

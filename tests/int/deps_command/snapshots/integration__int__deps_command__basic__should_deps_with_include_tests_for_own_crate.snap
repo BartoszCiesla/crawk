@@ -62,6 +62,7 @@ bin@crawk::logger::tests -> bin@crawk::logger
 cache::tests -> cache
 discover -> cache
 discover -> constants
+discover -> module_path
 discover::module_tree -> cache
 discover::module_tree -> constants
 discover::module_tree -> discover
@@ -112,6 +113,7 @@ parser::visitor::tests -> parser::visitor
 reference -> constants
 reference::tests -> reference
 resolve -> cache
+resolve -> constants
 resolve -> discover
 resolve -> module_path
 resolve -> reference
@@ -158,6 +160,8 @@ test@integration::int::deps_command::overview -> test@integration::common
 test@integration::int::deps_command::paths -> test@integration::common
 test@integration::int::deps_command::target_roots -> test@integration::common
 test@integration::int::error_cases -> test@integration::common
+test@integration::int::lib_names -> test@integration::common
+test@integration::int::lib_names -> test@integration::int::bin_names
 test@integration::int::list_command::basic -> test@integration::common
 test@integration::int::list_command::bin_only -> test@integration::common
 test@integration::int::list_command::error_cases -> test@integration::common

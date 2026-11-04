@@ -95,13 +95,16 @@ INFO Found submodule: 'baz' → [MODULES]/src/baz.rs
 INFO Found submodule: 'crate_root_reexport' → [MODULES]/src/crate_root_reexport.rs
 INFO Found submodule: 'app_only' (inline)
 INFO Listed 87 modules across 3 targets
-INFO Resolving module: 'nesting'
+INFO Resolving module: 'lib::nesting'
+INFO Resolved 'lib::nesting' via library root
 INFO Module tree: 'nesting' → [MODULES]/src/nesting/mod.rs, recursive=true
 INFO Found submodule: 'nesting::level1' → [MODULES]/src/nesting/level1/mod.rs
 INFO Found submodule: 'nesting::level1::level2' → [MODULES]/src/nesting/level1/level2/mod.rs
 INFO Found submodule: 'nesting::level1::level2::level3' → [MODULES]/src/nesting/level1/level2/level3.rs
-INFO Resolving module: 'nesting::level1'
-INFO Resolving module: 'nesting::level1::level2'
+INFO Resolving module: 'lib::nesting::level1'
+INFO Resolved 'lib::nesting::level1' via library root
+INFO Resolving module: 'lib::nesting::level1::level2'
+INFO Resolved 'lib::nesting::level1::level2' via library root
 INFO File root map: 4 files for 4 modules
 INFO Analyzing module: nesting (file: [MODULES]/src/nesting/mod.rs)
 INFO Parsed 'nesting': 1 references from [MODULES]/src/nesting/mod.rs

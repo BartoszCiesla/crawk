@@ -3,6 +3,7 @@ mod check_command;
 mod command;
 mod deps_command;
 mod error_cases;
+mod lib_names;
 mod list_command;
 mod non_lib_library;
 mod test_names;

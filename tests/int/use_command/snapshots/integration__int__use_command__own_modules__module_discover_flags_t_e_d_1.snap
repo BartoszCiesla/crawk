@@ -16,5 +16,6 @@ exit_code: 0
 crate::cache
 crate::constants
 crate::discover::*
+crate::module_path
 
 ----- stderr -----

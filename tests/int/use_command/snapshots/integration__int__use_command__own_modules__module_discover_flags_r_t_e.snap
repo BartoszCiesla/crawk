@@ -15,6 +15,7 @@ exit_code: 0
 crate::cache::ParseCache
 crate::constants::BIN_ROOT_PREFIX
 crate::constants::LIB_FILE_NAME
+crate::constants::LIB_ROOT
 crate::constants::MAIN_FILE_NAME
 crate::constants::MODULE_FILE_NAME
 crate::discover::*
@@ -27,6 +28,7 @@ crate::discover::TargetInfo
 crate::discover::is_library_target
 crate::discover::module_tree::*
 crate::module_path::split_parent
+crate::module_path::target_root
 crate::utils::ReadFileError
 crate::utils::has_cfg_test
 crate::utils::read_source_file

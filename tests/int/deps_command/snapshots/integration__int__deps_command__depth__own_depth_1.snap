@@ -46,6 +46,7 @@ parser -> reference
 parser -> utils
 reference -> constants
 resolve -> cache
+resolve -> constants
 resolve -> discover
 resolve -> module_path
 resolve -> reference

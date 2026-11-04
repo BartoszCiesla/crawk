@@ -166,15 +166,18 @@ DEBUG Cache miss: [MODULES]/src/main.rs
 DEBUG Cache miss: [MODULES]/src/app.rs
 INFO Found submodule: 'app_only' (inline)
 INFO Listed 87 modules across 3 targets
-INFO Resolving module: 'file_module'
+INFO Resolving module: 'lib::file_module'
 DEBUG 'file_module' found as [MODULES]/src/file_module.rs
+INFO Resolved 'lib::file_module' via library root
 INFO Module tree: 'file_module' → [MODULES]/src/file_module.rs, recursive=false
+DEBUG Resolved module 'lib' from memo
 DEBUG Cache hit: [MODULES]/src/lib.rs
-DEBUG Resolved module 'file_module' from memo
+DEBUG Resolved module 'lib::file_module' from memo
 INFO Module tree: 'file_module' → [MODULES]/src/file_module.rs, recursive=true
+DEBUG Resolved module 'lib' from memo
 DEBUG Cache hit: [MODULES]/src/lib.rs
 DEBUG Cache hit: [MODULES]/src/file_module.rs
-DEBUG File root: 'file_module' → 'file_module' (file: [MODULES]/src/file_module.rs)
+DEBUG File root: 'file_module' → 'lib::file_module' (file: [MODULES]/src/file_module.rs)
 INFO File root map: 1 files for 1 modules
 INFO Analyzing module: file_module (file: [MODULES]/src/file_module.rs)
 DEBUG Cache hit: [MODULES]/src/file_module.rs

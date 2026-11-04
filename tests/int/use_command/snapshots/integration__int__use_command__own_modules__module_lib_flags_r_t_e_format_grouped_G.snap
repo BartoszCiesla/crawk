@@ -44,6 +44,7 @@ lib
 analyzer
  - crate::cache::ParseCache
  - crate::constants::BIN_ROOT_PREFIX
+ - crate::constants::LIB_ROOT
  - crate::discover::CrateInfo
  - crate::discover::ModuleInfo
  - crate::discover::TargetInfo
@@ -88,7 +89,8 @@ cache::tests
 constants
 discover
  - crate::cache::ParseCache
- - crate::constants::BIN_ROOT_PREFIX
+ - crate::constants::LIB_ROOT
+ - crate::module_path::target_root
 discover::module_tree
  - crate::cache::ParseCache
  - crate::constants::BIN_ROOT_PREFIX
@@ -235,6 +237,7 @@ reference::tests
  - crate::reference::TypeReference
 resolve
  - crate::cache::ParseCache
+ - crate::constants::LIB_ROOT
  - crate::discover::CrateInfo
  - crate::module_path::is_in_subtree
  - crate::module_path::parent_module

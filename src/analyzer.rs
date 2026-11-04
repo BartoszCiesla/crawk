@@ -1,5 +1,5 @@
 use crate::cache::ParseCache;
-use crate::constants::BIN_ROOT_PREFIX;
+use crate::constants::{BIN_ROOT_PREFIX, LIB_ROOT};
 use crate::discover::{CrateInfo, ModuleInfo, TargetInfo, TargetKind};
 use crate::error::{AnalysisError, Result};
 use crate::graph::{self, DependencyGraph, DependencyGraphOptions};
@@ -172,11 +172,11 @@ impl Analyzer {
         module_path: &str,
         include_tests: bool,
     ) -> Result<Vec<ModuleInfo>> {
-        let module_path = self.resolve_module_name(module_path, include_tests)?;
+        let lookup = self.lookup_path(module_path, include_tests)?;
+        let module_path = self.lookup_name(&lookup);
         let module_path = module_path.as_str();
         let default_target = self.default_lib_target();
-        let modules = match self.discover_module(module_path, true, include_tests, &default_target)
-        {
+        let modules = match self.discover_module(&lookup, true, include_tests, &default_target) {
             Ok(mods) => mods,
             Err(ref e) if include_tests && e.is_module_not_found() => {
                 self.list_from_test_target(module_path, true)?
@@ -357,6 +357,11 @@ impl Analyzer {
     /// win over a binary or test named alike, which is reachable by its full
     /// name; in a package without a library they stand for its binary.
     ///
+    /// The name a library module goes by outranks an alias spelling its first
+    /// segment: in crate `my_crate` with a module `my_crate`, `my_crate` and
+    /// `my_crate::inner` are that module and its child, `lib::my_crate` reaches it
+    /// too, and `lib` alone is always the root.
+    ///
     /// Integration-test modules count when `include_tests` is set, as `smoke` for
     /// `test@smoke`. A path matching nothing comes back unchanged, for discovery
     /// to report.
@@ -371,32 +376,43 @@ impl Analyzer {
         module_path: &str,
         include_tests: bool,
     ) -> Result<String> {
+        let lookup = self.lookup_path(module_path, include_tests)?;
+        Ok(self.lookup_name(&lookup))
+    }
+
+    /// Reads a module path typed by a user, as
+    /// [`resolve_module_name`](Self::resolve_module_name) does, into the path
+    /// discovery looks it up by: under its target's root, so that discovery
+    /// reads a root alias once. A library module comes back led by an alias
+    /// (`lib::my_crate`, or as typed when one leads it already), a module of a
+    /// binary or test under its root (`bin@crawk::cli`).
+    fn lookup_path(&mut self, module_path: &str, include_tests: bool) -> Result<String> {
         if target_root(module_path).is_some() {
             return Ok(module_path.to_owned());
         }
         let (head, rest) = module_path.split_once("::").unwrap_or((module_path, ""));
         let aliased = self.crate_info.is_lib_root_alias(head);
-        if aliased && self.crate_info.has_library() {
-            return Ok(if rest.is_empty() { module_path } else { rest }.to_owned());
+        let library = self.crate_info.has_library();
+        if aliased && library && module_path == LIB_ROOT {
+            return Ok(module_path.to_owned());
         }
 
         // A failure surfaces, as itself, when the module is discovered.
         let Ok(all_modules) = self.list_all_modules(include_tests) else {
             return Ok(module_path.to_owned());
         };
-        let mut candidates = if aliased {
+        let named = aliased && Self::is_library_module(&all_modules, module_path);
+        if aliased && library && !named {
+            return Ok(module_path.to_owned());
+        }
+        let mut candidates = if aliased && !named {
             Self::modules_of_every_binary(&all_modules, rest)
         } else {
             Self::modules_named(&all_modules, module_path)
         };
         match candidates.len() {
             0 => self.reject_target_file_stem(module_path, include_tests)?,
-            1 => {
-                let only = candidates.remove(0);
-                if target_root(&only).is_some() {
-                    return Ok(only);
-                }
-            }
+            1 => return Ok(candidates.remove(0)),
             _ => {
                 return Err(AnalysisError::AmbiguousModule {
                     module_path: module_path.to_owned(),
@@ -405,6 +421,27 @@ impl Analyzer {
             }
         }
         Ok(module_path.to_owned())
+    }
+
+    /// The name the module at `lookup`, a [`lookup_path`](Self::lookup_path),
+    /// goes by: a library path drops the root alias leading it, while an alias
+    /// alone names the root as typed.
+    fn lookup_name(&self, lookup: &str) -> String {
+        match lookup.split_once("::") {
+            Some((head, rest))
+                if self.crate_info.has_library() && self.crate_info.is_lib_root_alias(head) =>
+            {
+                rest.to_owned()
+            }
+            _ => lookup.to_owned(),
+        }
+    }
+
+    /// Returns `true` if a module of the library goes by `path` among `modules`.
+    fn is_library_module(modules: &[ModuleInfo], path: &str) -> bool {
+        modules
+            .iter()
+            .any(|m| *m.target().kind() == TargetKind::Lib && m.path() == path)
     }
 
     /// Full paths of the modules among `modules` a bare `path` could mean.
@@ -580,11 +617,23 @@ impl Analyzer {
         module_path: impl Into<String>,
         options: &AnalysisOptions,
     ) -> Result<AnalysisResult> {
-        let module_path = self.resolve_module_name(&module_path.into(), options.include_tests)?;
+        let lookup = self.lookup_path(&module_path.into(), options.include_tests)?;
+        self.analyze_lookup(&lookup, options)
+    }
+
+    /// [`analyze_module`](Self::analyze_module) for a path already read by
+    /// [`lookup_path`](Self::lookup_path): read again, the name it goes by could
+    /// mean another module (`lib` for the module `lib::lib`).
+    fn analyze_lookup(
+        &mut self,
+        lookup: &str,
+        options: &AnalysisOptions,
+    ) -> Result<AnalysisResult> {
+        let module_path = self.lookup_name(lookup);
 
         let default_target = self.default_lib_target();
         let modules = match self.discover_module(
-            &module_path,
+            lookup,
             options.recursive,
             options.include_tests,
             &default_target,
@@ -610,7 +659,7 @@ impl Analyzer {
             Self::build_children_map(&modules)
         } else {
             let all_modules =
-                match self.discover_module(&module_path, true, options.include_tests, &target) {
+                match self.discover_module(lookup, true, options.include_tests, &target) {
                     Ok(mods) => mods,
                     // Fallback: for test targets the module tree is built from
                     // the source file directly, not via path resolution. Gated
@@ -786,14 +835,17 @@ impl Analyzer {
         }
     }
 
-    /// The path that locates `module` from outside its target: under its root
-    /// for a binary, where a bare path would be looked up from the library. A
+    /// The path that locates `module` from outside its target: under its root,
+    /// `lib::<path>` for the library, `bin@<name>::<path>` for a binary. Bare, a
+    /// binary's module would be looked up from the library, and a library module
+    /// named like a root alias would lose its first segment to the alias. A
     /// test's module stays relative: the resolver does not reach tests by root.
     fn resolvable_path(module: &ModuleInfo) -> String {
-        if *module.target().kind() == TargetKind::Bin {
-            Self::target_module_name(module.target(), module.path())
-        } else {
-            module.path().to_owned()
+        match module.target().kind() {
+            TargetKind::Lib if module.path().is_empty() => LIB_ROOT.to_owned(),
+            TargetKind::Lib => format!("{LIB_ROOT}::{}", module.path()),
+            TargetKind::Bin => Self::target_module_name(module.target(), module.path()),
+            TargetKind::Test => module.path().to_owned(),
         }
     }
 
@@ -1255,7 +1307,8 @@ impl Analyzer {
         target: &str,
         options: &AnalysisOptions,
     ) -> Result<BTreeMap<String, HashSet<TypeReference>>> {
-        let source = self.resolve_module_name(source, options.include_tests)?;
+        let source_lookup = self.lookup_path(source, options.include_tests)?;
+        let source = self.lookup_name(&source_lookup);
         let target = self.resolve_module_name(target, options.include_tests)?;
         let (source, target) = (source.as_str(), target.as_str());
         let all_modules = self.list_all_modules(options.include_tests)?;
@@ -1280,7 +1333,7 @@ impl Analyzer {
             expand_groups: true,
             resolve_globs: false,
         };
-        let result = self.analyze_module(source, &analysis_options)?;
+        let result = self.analyze_lookup(&source_lookup, &analysis_options)?;
         let source_root = target_root(source);
 
         let mut filtered: BTreeMap<String, HashSet<TypeReference>> = BTreeMap::new();

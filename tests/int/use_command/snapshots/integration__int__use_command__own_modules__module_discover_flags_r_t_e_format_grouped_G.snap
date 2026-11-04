@@ -17,7 +17,8 @@ exit_code: 0
 ----- stdout -----
 discover
  - crate::cache::ParseCache
- - crate::constants::BIN_ROOT_PREFIX
+ - crate::constants::LIB_ROOT
+ - crate::module_path::target_root
 discover::module_tree
  - crate::cache::ParseCache
  - crate::constants::BIN_ROOT_PREFIX

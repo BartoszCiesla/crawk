@@ -14,6 +14,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 crate::cache
+crate::constants
 crate::discover
 crate::module_path
 crate::reference

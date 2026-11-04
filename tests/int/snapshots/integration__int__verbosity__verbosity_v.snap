@@ -90,7 +90,8 @@ INFO Found submodule: 'baz' → [MODULES]/src/baz.rs
 INFO Found submodule: 'crate_root_reexport' → [MODULES]/src/crate_root_reexport.rs
 INFO Found submodule: 'app_only' (inline)
 INFO Listed 87 modules across 3 targets
-INFO Resolving module: 'file_module'
+INFO Resolving module: 'lib::file_module'
+INFO Resolved 'lib::file_module' via library root
 INFO Module tree: 'file_module' → [MODULES]/src/file_module.rs, recursive=false
 INFO Module tree: 'file_module' → [MODULES]/src/file_module.rs, recursive=true
 INFO File root map: 1 files for 1 modules
