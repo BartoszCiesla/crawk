@@ -1,6 +1,8 @@
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
+use crate::constants::LIB_ROOT;
 use crate::model::AnalysisResult;
+use crate::module_path::library_module_name;
 use crate::reference::{PathPrefix, TypeReference};
 
 /// A directed module dependency edge: `(source, target)`.
@@ -25,13 +27,19 @@ pub type AnnotatedEdges = BTreeMap<Edge, BTreeSet<String>>;
 /// This is the module-path counterpart of
 /// [`TypeReference::truncate_to_depth`], which counts **segments only** and
 /// ignores the `crate::`/`self::`/`super::` prefix. Module paths in the graph
-/// carry no prefix, so on that domain the two agree.
+/// carry no prefix, so on that domain the two agree. The root's name leading a
+/// module named `lib` ([`library_module_name`]) is no segment of it either:
+/// `lib::lib` is a top-level module, kept whole at depth 1.
 #[must_use]
 pub(crate) fn truncate_module_path(path: &str, depth: Option<usize>) -> &str {
     let Some(n) = depth else { return path };
     if n == 0 {
         return "";
     }
+    let led_by_root = path
+        .strip_prefix(LIB_ROOT)
+        .is_some_and(|rest| rest.starts_with("::"));
+    let n = n + usize::from(led_by_root);
     // `idx` is the start of the nth `::`, so it is always a char boundary and
     // `get` always yields `Some`; the fallback keeps the function total.
     path.match_indices("::")
@@ -50,16 +58,21 @@ pub(crate) fn truncate_module_path(path: &str, depth: Option<usize>) -> &str {
 /// - `["discover", "module_tree", "Node"]`  → `"discover::module_tree"`
 /// - `["reference", "TypeReference"]`       → `"reference"`
 ///
+/// `segments` are a path inside the library, so each prefix is looked up by
+/// the name the graph gives it ([`library_module_name`]): `["lib", "g"]` is
+/// `g` in the module `lib::lib`. Returns the module with the number of
+/// segments it spans.
+///
 /// Returns `None` when no prefix matches (e.g. a crate-root re-export with no
 /// corresponding module path).
 pub(crate) fn find_module_target<'a>(
     segments: &[String],
     known_modules: &'a HashSet<String>,
-) -> Option<&'a str> {
+) -> Option<(&'a str, usize)> {
     for len in (1..=segments.len()).rev() {
         let candidate = segments[..len].join("::");
-        if let Some(m) = known_modules.get(&candidate) {
-            return Some(m.as_str());
+        if let Some(m) = known_modules.get(library_module_name(&candidate).as_ref()) {
+            return Some((m.as_str(), len));
         }
     }
     None
@@ -99,9 +112,8 @@ pub(crate) fn resolve_reference_target<'a>(
         // e.g. `crate::Widget` re-exported in lib.rs).
         PathPrefix::Crate => Some(target_root.map_or_else(
             || {
-                find_module_target(segments, known_modules).map_or(("lib", segments), |m| {
-                    (m, &segments[m.split("::").count()..])
-                })
+                find_module_target(segments, known_modules)
+                    .map_or(("lib", segments), |(m, len)| (m, &segments[len..]))
             },
             |root| {
                 (1..=segments.len())
@@ -126,7 +138,7 @@ pub(crate) fn resolve_reference_target<'a>(
             let rest = &segments[1..];
             Some(
                 find_module_target(rest, known_modules)
-                    .map_or(("lib", rest), |m| (m, &rest[m.split("::").count()..])),
+                    .map_or(("lib", rest), |(m, len)| (m, &rest[len..])),
             )
         }
 
@@ -295,6 +307,14 @@ mod tests {
     }
 
     #[test]
+    fn truncate_module_path_does_not_count_the_root_leading_a_module_named_lib() {
+        assert_eq!(truncate_module_path("lib::lib::inner", Some(1)), "lib::lib");
+        assert_eq!(truncate_module_path("lib::lib", Some(1)), "lib::lib");
+        assert_eq!(truncate_module_path("lib", Some(1)), "lib");
+        assert_eq!(truncate_module_path("library::x", Some(1)), "library");
+    }
+
+    #[test]
     fn truncate_module_path_returns_slice_of_input() {
         let path = String::from("parser::visitor::inner");
         let truncated = truncate_module_path(&path, Some(2));
@@ -310,7 +330,7 @@ mod tests {
         let known = module_set(&["discover", "discover::module_tree", "reference"]);
         assert_eq!(
             find_module_target(&segments(&["discover", "CrateInfo"]), &known),
-            Some("discover")
+            Some(("discover", 1))
         );
     }
 
@@ -319,7 +339,7 @@ mod tests {
         let known = module_set(&["discover", "discover::module_tree"]);
         assert_eq!(
             find_module_target(&segments(&["discover", "module_tree", "Node"]), &known),
-            Some("discover::module_tree")
+            Some(("discover::module_tree", 2))
         );
     }
 
@@ -329,7 +349,20 @@ mod tests {
         let known = module_set(&["discover", "discover::module_tree"]);
         assert_eq!(
             find_module_target(&segments(&["discover", "module_tree"]), &known),
-            Some("discover::module_tree")
+            Some(("discover::module_tree", 2))
+        );
+    }
+
+    #[test]
+    fn finds_a_module_named_lib_under_its_graph_name() {
+        let known = module_set(&["lib", "lib::lib", "lib::lib::inner"]);
+        assert_eq!(
+            find_module_target(&segments(&["lib", "g"]), &known),
+            Some(("lib::lib", 1))
+        );
+        assert_eq!(
+            find_module_target(&segments(&["lib", "inner", "f"]), &known),
+            Some(("lib::lib::inner", 2))
         );
     }
 

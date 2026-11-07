@@ -15,7 +15,25 @@
 //! [`rules`]: crate::rules
 //! [`graph`]: crate::graph
 
-use crate::constants::{BIN_ROOT_PREFIX, TEST_ROOT_PREFIX};
+use std::borrow::Cow;
+
+use crate::constants::{BIN_ROOT_PREFIX, LIB_ROOT, TEST_ROOT_PREFIX};
+
+/// The name the library module at `path`, relative to the library root, goes
+/// by: the path itself, led by the root's own name when its first segment is
+/// `lib`, which alone names the root. An inline `mod lib` is `lib::lib`, its
+/// child `lib::lib::inner`; every other module keeps its bare path.
+///
+/// - `"foo::bar"`   → `"foo::bar"`
+/// - `"lib"`        → `"lib::lib"`
+/// - `"lib::inner"` → `"lib::lib::inner"`
+pub(crate) fn library_module_name(path: &str) -> Cow<'_, str> {
+    if path.split_once("::").map_or(path, |(head, _)| head) == LIB_ROOT {
+        Cow::Owned(format!("{LIB_ROOT}::{path}"))
+    } else {
+        Cow::Borrowed(path)
+    }
+}
 
 /// The root of the binary or integration test `module` belongs to, when its name
 /// is led by one: `bin@crawk::cli` → `bin@crawk`, `test@it` → `test@it`. A library
@@ -176,5 +194,16 @@ mod tests {
     fn parent_is_an_ancestor_of_its_child() {
         let child = "foo::bar::baz";
         assert!(is_in_subtree(child, parent_module(child)));
+    }
+
+    // --- library_module_name ---
+
+    #[test]
+    fn library_module_name_leads_only_a_module_named_lib_with_the_root() {
+        assert_eq!(library_module_name("foo::bar"), "foo::bar");
+        assert_eq!(library_module_name("library"), "library");
+        assert_eq!(library_module_name("foo::lib"), "foo::lib");
+        assert_eq!(library_module_name("lib"), "lib::lib");
+        assert_eq!(library_module_name("lib::inner"), "lib::lib::inner");
     }
 }

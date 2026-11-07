@@ -4,7 +4,9 @@ use crate::discover::{CrateInfo, ModuleInfo, TargetInfo, TargetKind};
 use crate::error::{AnalysisError, Result};
 use crate::graph::{self, DependencyGraph, DependencyGraphOptions};
 use crate::model::{AnalysisOptions, AnalysisResult};
-use crate::module_path::{is_in_subtree, path_below, split_parent, target_root};
+use crate::module_path::{
+    is_in_subtree, library_module_name, path_below, split_parent, target_root,
+};
 use crate::parser::CrateAnalyzer;
 use crate::reference::{GroupItem, PathPrefix, PathSuffix, TypeReference};
 use crate::resolve::resolve_glob;
@@ -188,13 +190,11 @@ impl Analyzer {
         let mut modules: Vec<ModuleInfo> = modules
             .into_iter()
             .map(|m| {
-                if *m.target().kind() != TargetKind::Lib {
-                    let name = Self::target_module_name(m.target(), m.path());
-                    m.with_path(name)
-                } else if m.path().is_empty() {
+                if *m.target().kind() == TargetKind::Lib && m.path().is_empty() {
                     m.with_path(module_path.to_owned())
                 } else {
-                    m
+                    let name = Self::module_name(m.target(), m.path());
+                    m.with_path(name)
                 }
             })
             .collect();
@@ -286,13 +286,11 @@ impl Analyzer {
             // Rename root entry from "" to the root's name (e.g. "lib", "bin@crawk");
             // the modules of a binary or test are named under its root
             let modules = modules.into_iter().map(|m| {
-                if *target_info.kind() != TargetKind::Lib {
-                    let name = Self::target_module_name(target_info, m.path());
-                    m.with_path(name)
-                } else if m.path().is_empty() {
+                if *target_info.kind() == TargetKind::Lib && m.path().is_empty() {
                     m.with_path(target_info.to_string())
                 } else {
-                    m
+                    let name = Self::module_name(target_info, m.path());
+                    m.with_path(name)
                 }
             });
             all_modules.extend(modules);
@@ -424,16 +422,27 @@ impl Analyzer {
     }
 
     /// The name the module at `lookup`, a [`lookup_path`](Self::lookup_path),
-    /// goes by: a library path drops the root alias leading it, while an alias
-    /// alone names the root as typed.
+    /// goes by: a library path drops the root alias leading it (save for a
+    /// module named `lib`, see [`library_module_name`]), while an alias alone
+    /// names the root as typed.
     fn lookup_name(&self, lookup: &str) -> String {
         match lookup.split_once("::") {
             Some((head, rest))
                 if self.crate_info.has_library() && self.crate_info.is_lib_root_alias(head) =>
             {
-                rest.to_owned()
+                library_module_name(rest).into_owned()
             }
             _ => lookup.to_owned(),
+        }
+    }
+
+    /// The lookup path of the library module that goes by `name`: led by the
+    /// root alias, which leads the name of a module named `lib` already.
+    fn library_lookup(name: &str) -> String {
+        if is_in_subtree(name, LIB_ROOT) {
+            name.to_owned()
+        } else {
+            format!("{LIB_ROOT}::{name}")
         }
     }
 
@@ -453,7 +462,7 @@ impl Analyzer {
         modules
             .iter()
             .filter_map(|m| match m.target().kind() {
-                TargetKind::Lib => (m.path() == path).then(|| format!("lib::{path}")),
+                TargetKind::Lib => (m.path() == path).then(|| Self::library_lookup(path)),
                 TargetKind::Bin | TargetKind::Test => {
                     let below = path_below(m.path(), &m.target().to_string())?;
                     let by_name = m.target().name() == head && below == rest;
@@ -623,7 +632,8 @@ impl Analyzer {
 
     /// [`analyze_module`](Self::analyze_module) for a path already read by
     /// [`lookup_path`](Self::lookup_path): read again, the name it goes by could
-    /// mean another module (`lib` for the module `lib::lib`).
+    /// mean another module, or several (`shared` for `lib::shared`, when a binary
+    /// has a `shared` too).
     fn analyze_lookup(
         &mut self,
         lookup: &str,
@@ -802,19 +812,17 @@ impl Analyzer {
         let dependencies =
             self.collect_references(options, children_map, &module_filter, bin_root.as_deref());
         // The root keeps its empty key: `module_path` names it.
-        let dependencies = match &target {
-            Some(target) => dependencies
-                .into_iter()
-                .map(|(module, refs)| {
-                    if module.is_empty() {
-                        (module, refs)
-                    } else {
-                        (Self::target_module_name(target, &module), refs)
-                    }
-                })
-                .collect(),
-            None => dependencies,
-        };
+        let dependencies = dependencies
+            .into_iter()
+            .map(|(module, refs)| {
+                let name = match &target {
+                    _ if module.is_empty() => module,
+                    Some(target) => Self::target_module_name(target, &module),
+                    None => library_module_name(&module).into_owned(),
+                };
+                (name, refs)
+            })
+            .collect();
 
         Ok(AnalysisResult::new(module_path, dependencies, source_file))
     }
@@ -822,6 +830,16 @@ impl Analyzer {
     /// Returns a default `TargetInfo` for the library target.
     fn default_lib_target(&self) -> TargetInfo {
         TargetInfo::new(TargetKind::Lib, self.crate_info.lib_crate_name())
+    }
+
+    /// The name the module at `path`, relative to the root of `target`, goes by
+    /// below that root: bare for the library ([`library_module_name`]), under
+    /// its root for a binary or test ([`target_module_name`](Self::target_module_name)).
+    fn module_name(target: &TargetInfo, path: &str) -> String {
+        match target.kind() {
+            TargetKind::Lib => library_module_name(path).into_owned(),
+            TargetKind::Bin | TargetKind::Test => Self::target_module_name(target, path),
+        }
     }
 
     /// The name of the module at `path` inside a binary or test: `bin@<name>` for

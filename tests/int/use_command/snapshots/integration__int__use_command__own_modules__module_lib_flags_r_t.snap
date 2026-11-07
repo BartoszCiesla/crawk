@@ -20,8 +20,8 @@ crate::constants::LIB_ROOT
 crate::constants::PATH_QUALIFIER_SELF
 crate::constants::{ATTR_CFG, MODULE_NAME_TEST}
 crate::constants::{BIN_ROOT_PREFIX, LIB_FILE_NAME, MAIN_FILE_NAME, MODULE_FILE_NAME}
+crate::constants::{BIN_ROOT_PREFIX, LIB_ROOT, TEST_ROOT_PREFIX}
 crate::constants::{BIN_ROOT_PREFIX, LIB_ROOT}
-crate::constants::{BIN_ROOT_PREFIX, TEST_ROOT_PREFIX}
 crate::constants::{PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER}
 crate::discover::*
 crate::discover::CrateInfo
@@ -37,7 +37,6 @@ crate::error::Result
 crate::error::{AnalysisError, Result}
 crate::graph::*
 crate::graph::AnnotatedEdges
-crate::graph::Cycle
 crate::graph::DependencyGraphOptions
 crate::graph::Edge
 crate::graph::build_edges
@@ -62,16 +61,18 @@ crate::graph::truncate_module_path
 crate::graph::{AnnotatedEdges, Cycle, DependencyGraph, DependencyGraphOptions, Edge, ShortestPaths}
 crate::graph::{AnnotatedEdges, Cycle}
 crate::graph::{Cycle, DependencyGraph}
+crate::graph::{Cycle, truncate_module_path}
 crate::graph::{self, DependencyGraph, DependencyGraphOptions}
 crate::model::*
 crate::model::AnalysisResult
 crate::model::{AnalysisOptions, AnalysisResult}
 crate::module_path::*
 crate::module_path::is_in_subtree
+crate::module_path::library_module_name
 crate::module_path::split_parent
 crate::module_path::target_root
+crate::module_path::{is_in_subtree, library_module_name, path_below, split_parent, target_root}
 crate::module_path::{is_in_subtree, parent_module}
-crate::module_path::{is_in_subtree, path_below, split_parent, target_root}
 crate::parser::*
 crate::parser::CrateAnalyzer
 crate::parser::visitor

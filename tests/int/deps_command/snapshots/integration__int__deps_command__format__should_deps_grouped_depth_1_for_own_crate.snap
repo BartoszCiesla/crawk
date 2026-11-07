@@ -38,9 +38,11 @@ discover (4)
 error (1)
   -> discover
 
-graph (3)
+graph (5)
+  -> constants
   -> error
   -> model
+  -> module_path
   -> reference
 
 lib (7)

@@ -63,6 +63,7 @@ analyzer
  - crate::model::AnalysisOptions
  - crate::model::AnalysisResult
  - crate::module_path::is_in_subtree
+ - crate::module_path::library_module_name
  - crate::module_path::path_below
  - crate::module_path::split_parent
  - crate::module_path::target_root
@@ -134,7 +135,9 @@ graph::cycles
 graph::cycles::tests
  - crate::graph::cycles
 graph::edges
+ - crate::constants::LIB_ROOT
  - crate::model::AnalysisResult
+ - crate::module_path::library_module_name
  - crate::reference::PathPrefix
  - crate::reference::TypeReference
 graph::edges::tests
@@ -168,9 +171,11 @@ model::tests
  - crate::reference::TypeReference
 module_path
  - crate::constants::BIN_ROOT_PREFIX
+ - crate::constants::LIB_ROOT
  - crate::constants::TEST_ROOT_PREFIX
 module_path::tests
  - crate::module_path::is_in_subtree
+ - crate::module_path::library_module_name
  - crate::module_path::parent_module
  - crate::module_path::path_below
  - crate::module_path::split_parent
@@ -255,6 +260,7 @@ rules::load
  - crate::error::AnalysisError
  - crate::error::Result
  - crate::graph::Cycle
+ - crate::graph::truncate_module_path
  - crate::rules::AllowedCycle
  - crate::rules::DenyRule
  - crate::rules::InitOutcome

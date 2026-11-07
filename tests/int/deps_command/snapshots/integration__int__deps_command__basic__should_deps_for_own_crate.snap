@@ -62,7 +62,9 @@ graph -> graph::edges
 graph -> graph::orphans
 graph -> graph::paths
 graph::cycles -> graph::edges
+graph::edges -> constants
 graph::edges -> model
+graph::edges -> module_path
 graph::edges -> reference
 graph::orphans -> graph::edges
 graph::paths -> graph::edges

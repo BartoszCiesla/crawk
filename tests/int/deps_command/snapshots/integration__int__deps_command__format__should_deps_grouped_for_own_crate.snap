@@ -98,8 +98,10 @@ graph (5)
 graph::cycles (1)
   -> graph::edges
 
-graph::edges (2)
+graph::edges (4)
+  -> constants
   -> model
+  -> module_path
   -> reference
 
 graph::orphans (1)

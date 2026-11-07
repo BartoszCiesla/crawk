@@ -10,7 +10,7 @@ use toml::Spanned;
 use tracing::warn;
 
 use crate::error::{AnalysisError, Result};
-use crate::graph::Cycle;
+use crate::graph::{Cycle, truncate_module_path};
 
 use super::{
     AllowedCycle, DenyRule, InitOutcome, LayerRule, ModulePattern, RestrictRule, RuleSet,
@@ -166,10 +166,11 @@ fn freezable_cycles(cycles: &[Cycle]) -> Vec<&BTreeSet<String>> {
 /// `[[check.allow-cycle]]` entry. The rule therefore starts green and ratchets
 /// from day one instead of drowning a new adopter in pre-existing tangles.
 pub(crate) fn scaffold(package_name: &str, modules: &BTreeSet<String>, cycles: &[Cycle]) -> String {
-    // Collapse to top-level segments; the BTreeSet dedups and sorts them.
+    // Collapse to top-level modules (`lib::lib` is one); the BTreeSet dedups
+    // and sorts them.
     let top: BTreeSet<&str> = modules
         .iter()
-        .filter_map(|m| m.split("::").next())
+        .map(|m| truncate_module_path(m, Some(1)))
         .collect();
     let order = toml_list(top.into_iter());
     // The `[check]` keys must precede the first `[[check.layers]]`: in TOML,

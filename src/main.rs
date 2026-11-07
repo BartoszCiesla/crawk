@@ -268,9 +268,14 @@ fn handle_list_command(crate_root: &Path, args: &ListArgs) -> anyhow::Result<()>
         }
     };
 
-    // Apply depth filter
+    // Apply depth filter. The root's name leading a library module named `lib`
+    // (`lib::lib`) is no segment of it, unlike a binary's or test's root.
     if let Some(depth) = args.depth {
-        modules.retain(|m| m.path().matches("::").count() < depth);
+        modules.retain(|m| {
+            let path = m.path();
+            let path = path.strip_prefix("lib::").unwrap_or(path);
+            path.matches("::").count() < depth
+        });
     }
 
     // Apply substring filter

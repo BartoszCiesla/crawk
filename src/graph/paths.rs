@@ -206,11 +206,11 @@ mod tests {
 
     #[test]
     fn truncated_dedup_removes_duplicates() {
-        let sp = shortest_paths(vec![vec!["lib::x", "a::y"], vec!["lib::z", "a::w"]]);
+        let sp = shortest_paths(vec![vec!["app::x", "a::y"], vec!["app::z", "a::w"]]);
         let result = sp.truncated(Some(1));
-        // Both truncate to ["lib", "a"].
+        // Both truncate to ["app", "a"].
         assert_eq!(result.len(), 1);
-        assert_eq!(result[0], vec!["lib", "a"]);
+        assert_eq!(result[0], vec!["app", "a"]);
     }
 
     #[test]

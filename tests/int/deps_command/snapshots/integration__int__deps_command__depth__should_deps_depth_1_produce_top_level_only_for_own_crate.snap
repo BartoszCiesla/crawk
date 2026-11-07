@@ -28,8 +28,10 @@ discover -> constants
 discover -> module_path
 discover -> utils
 error -> discover
+graph -> constants
 graph -> error
 graph -> model
+graph -> module_path
 graph -> reference
 lib -> analyzer
 lib -> discover

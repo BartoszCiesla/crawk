@@ -55,6 +55,15 @@ in the graph, even when two of them declare the same file. An integration test's
 modules go by `test@integration::common` likewise, so `tests/cli.rs` and a library
 module `cli` are two nodes. `list -T` shows which target each module belongs to.
 
+One library module is the exception: a top-level module named `lib` (an inline
+`mod lib` in `src/lib.rs`) would share its bare name with the root, so it goes by
+`lib::lib`, its child by `lib::lib::inner`. The root's name leading it is no
+segment of it: `--depth 1` keeps `lib::lib` whole, `list -d 1` shows it, and
+`check --init` gives it its own entry. Read as a path, though, `lib::lib` lies
+below `lib`, so `check` treats the two as parent and child: a loop between them
+is containment, a `restrict` rule exempts their edges, and a layer listing `lib`
+covers `lib::lib` too.
+
 `check` rules take these names literally. On the command line (`use`, `why`,
 `list`, `deps --path`) a bare path is accepted too:
 
@@ -73,10 +82,9 @@ module `cli` are two nodes. `list -T` shows which target each module belongs to.
 - A library module named like one of them goes by its own name first: in crate
   `my_crate` with a module `my_crate`, `my_crate` and `my_crate::inner` are that
   module and its child, and `lib::my_crate` reaches it as well. `lib` alone is
-  always the root. An inline `mod lib` in `src/lib.rs` is reachable as
-  `lib::lib`, its child as `lib::inner` or `lib::lib::inner`, but in the graph
-  the module shares the name `lib` with the root: `deps`, `list` and `check` show
-  the two as one node.
+  always the root. A module named `lib` goes by `lib::lib`, its child by
+  `lib::lib::inner` (or `<crate name>::lib::inner`); `lib::inner` is a top-level
+  `inner`.
 - The file stem of a binary or test is no name of it: `main` fails, pointing at
   the binaries, and with `-t` the tests, with that stem.
 
