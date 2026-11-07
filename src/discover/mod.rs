@@ -700,14 +700,25 @@ impl CrateInfo {
         );
 
         // Determine if this is an inline module and compute inline scope
-        let (_, inline_scope) = self.split_inline_scope(scope_path, &file_path, cache);
+        let (file_root, inline_scope) = self.split_inline_scope(scope_path, &file_path, cache);
+        // A target root keeps its submodules beside it, whatever the file is
+        // called. The file is the root's when nothing but the root leads the
+        // module to it: the root itself, or a module inline in the root file.
+        let backs_root =
+            file_root.is_empty() || (!file_root.contains("::") && self.is_root_segment(&file_root));
+        let base_dir = if backs_root {
+            Self::root_base_dir(&file_path)
+        } else {
+            Self::get_module_base_dir(&file_path)
+        };
 
         let root_visibility =
             self.compute_root_visibility(scope_path, &file_path, &inline_scope, cache)?;
 
         if recursive {
-            Self::collect_submodules_recursive(
+            Self::collect_submodules_with_base_dir(
                 &file_path,
+                &base_dir,
                 &normalized_path,
                 root_visibility,
                 &inline_scope,
@@ -718,6 +729,7 @@ impl CrateInfo {
         } else {
             Self::collect_submodules_shallow(
                 &file_path,
+                &base_dir,
                 &normalized_path,
                 root_visibility,
                 &inline_scope,
@@ -877,6 +889,70 @@ mod tests {
         fs::write(dir.path().join("src/lib.rs"), "pub mod foo;\n").unwrap();
         fs::write(dir.path().join("src/foo.rs"), "").unwrap();
         dir
+    }
+
+    /// A library root named otherwise than `lib.rs` (`[lib] path`) keeps its
+    /// children beside it, as every target root does, and so does an inline
+    /// module in it: `outer::deep` is `src/outer/deep.rs`. Read as a module file
+    /// by its name, the root was looked into under `src/root/` and none of its
+    /// file modules were found.
+    #[test_case(
+        "lib",
+        &["<root> -> src/root.rs", "foo -> src/foo.rs", "outer -> src/root.rs", "outer::deep -> src/outer/deep.rs"];
+        "from the root"
+    )]
+    #[test_case(
+        "lib::outer",
+        &["outer -> src/root.rs", "outer::deep -> src/outer/deep.rs"];
+        "from an inline module of the root"
+    )]
+    fn a_library_root_of_any_name_keeps_its_children_beside_it(
+        module_path: &str,
+        expected: &[&str],
+    ) {
+        let dir = tempfile::tempdir().unwrap();
+        write_scratch_package(
+            dir.path(),
+            "pkg",
+            "0.1.0",
+            "[lib]\npath = \"src/root.rs\"\n",
+        );
+        fs::write(
+            dir.path().join("src/root.rs"),
+            "pub mod foo;\npub mod outer {\n    pub mod deep;\n}\n",
+        )
+        .unwrap();
+        fs::write(dir.path().join("src/foo.rs"), "").unwrap();
+        fs::create_dir_all(dir.path().join("src/outer")).unwrap();
+        fs::write(dir.path().join("src/outer/deep.rs"), "").unwrap();
+
+        let info = CrateInfo::new(dir.path()).unwrap();
+        let mut cache = ParseCache::new();
+        let modules = info
+            .get_module_tree(
+                module_path,
+                true,
+                false,
+                &TargetInfo::new(TargetKind::Lib, "pkg"),
+                &mut cache,
+            )
+            .unwrap();
+
+        let root = dir.path().canonicalize().unwrap();
+        let found: Vec<String> = modules
+            .iter()
+            .map(|m| {
+                let module = if m.path().is_empty() {
+                    "<root>"
+                } else {
+                    m.path()
+                };
+                let source = m.source().canonicalize().unwrap();
+                let file = source.strip_prefix(&root).unwrap().display().to_string();
+                format!("{module} -> {file}")
+            })
+            .collect();
+        assert_eq!(found, expected);
     }
 
     /// The cached index must select the real root package that

@@ -15,9 +15,7 @@ exit_code: 0
 ----- stdout -----
 crate::cache::ParseCache
 crate::constants::BIN_ROOT_PREFIX
-crate::constants::LIB_FILE_NAME
 crate::constants::LIB_ROOT
-crate::constants::MAIN_FILE_NAME
 crate::constants::MODULE_FILE_NAME
 crate::discover::CrateInfo
 crate::discover::CrateInfoError
@@ -27,6 +25,7 @@ crate::discover::ModuleVisibility
 crate::discover::Result
 crate::discover::TargetInfo
 crate::discover::TargetKind
+crate::discover::TargetKind::Lib
 crate::discover::is_library_target
 crate::module_path::split_parent
 crate::module_path::target_root

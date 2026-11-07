@@ -97,8 +97,6 @@ discover
 discover::module_tree
  - crate::cache::ParseCache
  - crate::constants::BIN_ROOT_PREFIX
- - crate::constants::LIB_FILE_NAME
- - crate::constants::MAIN_FILE_NAME
  - crate::constants::MODULE_FILE_NAME
  - crate::discover::CrateInfo
  - crate::discover::CrateInfoError
@@ -112,6 +110,7 @@ discover::module_tree
  - crate::utils::has_cfg_test
  - crate::utils::read_source_file
 discover::module_tree::tests
+ - crate::discover::TargetKind
 discover::tests
  - crate::discover::CrateInfo
  - crate::discover::CrateInfoError

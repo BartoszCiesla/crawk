@@ -5,6 +5,7 @@ mod deps_command;
 mod error_cases;
 mod lib_names;
 mod list_command;
+mod module_dirs;
 mod non_lib_library;
 mod test_names;
 mod use_command;

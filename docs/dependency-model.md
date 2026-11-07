@@ -92,7 +92,13 @@ covers `lib::lib` too.
 
 Starting from each target root, crawk follows `mod` declarations:
 
-- `mod foo;` resolves to `foo.rs` or `foo/mod.rs` next to the declaring file.
+- `mod foo;` resolves to `foo.rs` or `foo/mod.rs` in the declaring file's
+  directory when that file is a target root, whatever it is called (a
+  `[lib] path` such as `src/root.rs` too), or a `mod.rs`; under `<stem>/` for any
+  other file, a `lib.rs` or `main.rs` below a root included (`mod x;` in
+  `src/a/lib.rs` is `src/a/lib/x.rs`). Inside an inline module, under that
+  module's name as well. A `mod` naming its own file, such as `mod lib;` in
+  `src/lib.rs` (which rustc rejects as circular), is skipped.
 - `mod foo { ... }` is an **inline module** — a module of its own, even though
   it shares a file with its parent. crawk tracks where inside the file it
   lives, so `self::` and `super::` resolve correctly there.

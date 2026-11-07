@@ -68,6 +68,7 @@ discover::module_tree -> constants
 discover::module_tree -> discover
 discover::module_tree -> module_path
 discover::module_tree -> utils
+discover::module_tree::tests -> discover
 discover::module_tree::tests -> discover::module_tree
 discover::tests -> discover
 error -> discover
@@ -173,6 +174,8 @@ test@integration::int::list_command::hyphenated -> test@integration::common
 test@integration::int::list_command::multi_target -> test@integration::common
 test@integration::int::list_command::overview -> test@integration::common
 test@integration::int::list_command::test_targets -> test@integration::common
+test@integration::int::module_dirs -> test@integration::common
+test@integration::int::module_dirs -> test@integration::int::bin_names
 test@integration::int::non_lib_library -> test@integration::common
 test@integration::int::test_names -> test@integration::common
 test@integration::int::test_names -> test@integration::int::bin_names

@@ -19,14 +19,15 @@ crate::cache::ParseCache
 crate::constants::LIB_ROOT
 crate::constants::PATH_QUALIFIER_SELF
 crate::constants::{ATTR_CFG, MODULE_NAME_TEST}
-crate::constants::{BIN_ROOT_PREFIX, LIB_FILE_NAME, MAIN_FILE_NAME, MODULE_FILE_NAME}
 crate::constants::{BIN_ROOT_PREFIX, LIB_ROOT, TEST_ROOT_PREFIX}
 crate::constants::{BIN_ROOT_PREFIX, LIB_ROOT}
+crate::constants::{BIN_ROOT_PREFIX, MODULE_FILE_NAME}
 crate::constants::{PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER}
 crate::discover::*
 crate::discover::CrateInfo
 crate::discover::CrateInfoError
 crate::discover::ModuleVisibility::Public
+crate::discover::TargetKind::Lib
 crate::discover::module_tree::*
 crate::discover::{CrateInfo, CrateInfoError, ModuleInfo, ModuleVisibility, Result, TargetInfo, is_library_target}
 crate::discover::{CrateInfo, ModuleInfo, TargetInfo, TargetKind}

@@ -48,6 +48,7 @@ test@integration::int::list_command::hyphenated
 test@integration::int::list_command::multi_target
 test@integration::int::list_command::overview
 test@integration::int::list_command::test_targets
+test@integration::int::module_dirs
 test@integration::int::non_lib_library
 test@integration::int::test_names
 test@integration::int::use_command

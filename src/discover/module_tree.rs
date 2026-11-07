@@ -26,7 +26,7 @@ use crate::cache::ParseCache;
 use cargo_metadata::Package;
 use syn::Item;
 
-use crate::constants::{BIN_ROOT_PREFIX, LIB_FILE_NAME, MAIN_FILE_NAME, MODULE_FILE_NAME};
+use crate::constants::{BIN_ROOT_PREFIX, MODULE_FILE_NAME};
 use crate::module_path::split_parent;
 use crate::utils::{ReadFileError, has_cfg_test, read_source_file};
 use tracing::{debug, info};
@@ -474,8 +474,12 @@ impl CrateInfo {
     /// already are the module's body). Without it, an inline module scans its
     /// *file's* top-level items rather than its own — so a query for an inline
     /// `#[cfg(test)] mod tests` would rediscover itself as `tests::tests`.
+    /// `base_dir` is the directory the submodules of `file_path` live in, as for
+    /// [`collect_submodules_with_base_dir`](Self::collect_submodules_with_base_dir).
+    #[allow(clippy::too_many_arguments)]
     pub(super) fn collect_submodules_shallow(
         file_path: &Path,
+        base_dir: &Path,
         current_module_path: &str,
         current_visibility: ModuleVisibility,
         inline_scope: &[String],
@@ -518,18 +522,16 @@ impl CrateInfo {
                             submodule_visibility,
                             target.clone(),
                         ));
-                    } else if let Some(sub_mod_file) = Self::resolve_module_parts(
+                    } else if let Some(sub_mod_file) = Self::resolve_child_file(
                         // External `#[cfg(test)] mod tests;` — resolve to its own
                         // file, extending the base dir by the inline ancestors so
                         // a test module declared inside an inline module resolves
                         // where rustc actually looks for it.
                         &inline_scope
                             .iter()
-                            .fold(Self::get_module_base_dir(file_path), |dir, segment| {
-                                dir.join(segment)
-                            }),
-                        &[&mod_name],
-                        None,
+                            .fold(base_dir.to_path_buf(), |dir, segment| dir.join(segment)),
+                        &mod_name,
+                        file_path,
                         cache,
                     )? {
                         result.push(ModuleInfo::new(
@@ -577,18 +579,17 @@ impl CrateInfo {
         )
     }
 
-    /// Gets the base directory for resolving submodules from a file.
+    /// Gets the base directory for resolving the submodules of a module file.
     ///
     /// For `module.rs` files, submodules are in a `module/` directory.
-    /// For `mod.rs` files, submodules are in the same directory.
-    fn get_module_base_dir(file_path: &Path) -> PathBuf {
-        let file_name = file_path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+    /// For `mod.rs` files, submodules are in the same directory. So are those of
+    /// a target root, whatever it is called ([`root_base_dir`](Self::root_base_dir)),
+    /// but only the caller knows a file is one: by its name, a `lib.rs` or
+    /// `main.rs` below a root is a module file like any other.
+    pub(super) fn get_module_base_dir(file_path: &Path) -> PathBuf {
         let parent = file_path.parent().unwrap_or_else(|| Path::new(""));
 
-        if file_name == MODULE_FILE_NAME
-            || file_name == LIB_FILE_NAME
-            || file_name == MAIN_FILE_NAME
-        {
+        if file_path.file_name().and_then(|n| n.to_str()) == Some(MODULE_FILE_NAME) {
             // Submodules are in the same directory
             parent.to_path_buf()
         } else {
@@ -596,6 +597,41 @@ impl CrateInfo {
             let stem = file_path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
             parent.join(stem)
         }
+    }
+
+    /// Gets the base directory for resolving the submodules of a target root:
+    /// the root file's own, whatever the file is called (`src/lib.rs`,
+    /// `src/bin/tool.rs`, a `[lib] path` such as `src/root.rs`).
+    pub(super) fn root_base_dir(file_path: &Path) -> PathBuf {
+        file_path
+            .parent()
+            .unwrap_or_else(|| Path::new(""))
+            .to_path_buf()
+    }
+
+    /// Resolves the file of the file-based `mod name;` written in
+    /// `declaring_file`, looked for in `dir`.
+    ///
+    /// A declaration naming its own file resolves to nothing: `mod lib;` in a
+    /// root `lib.rs`, which rustc rejects as a circular module, would otherwise
+    /// be walked into forever.
+    fn resolve_child_file(
+        dir: &Path,
+        name: &str,
+        declaring_file: &Path,
+        cache: &mut ParseCache,
+    ) -> Result<Option<PathBuf>> {
+        let found = Self::resolve_module_parts(dir, &[name], None, cache)?;
+        Ok(found.filter(|file| {
+            let own = file == declaring_file;
+            if own {
+                debug!(
+                    "Skipping mod '{name}': resolves to the file it is declared in, {}",
+                    file.display()
+                );
+            }
+            !own
+        }))
     }
 
     /// Collects the module tree for a crate root file (e.g., `tests/integration.rs`).
@@ -610,13 +646,9 @@ impl CrateInfo {
         target: &TargetInfo,
         cache: &mut ParseCache,
     ) -> Result<Vec<ModuleInfo>> {
-        let base_dir = file_path
-            .parent()
-            .unwrap_or_else(|| Path::new(""))
-            .to_path_buf();
         Self::collect_submodules_with_base_dir(
             file_path,
-            &base_dir,
+            &Self::root_base_dir(file_path),
             "",
             ModuleVisibility::Public,
             &[],
@@ -630,11 +662,17 @@ impl CrateInfo {
     ///
     /// Both [`collect_submodules_recursive`](Self::collect_submodules_recursive) and
     /// [`collect_submodules_recursive_crate_root`](Self::collect_submodules_recursive_crate_root)
-    /// delegate here. The only difference is how `base_dir` is computed:
+    /// delegate here, as does [`CrateInfo::get_module_tree`], which knows whether
+    /// `file_path` is a target root. The only difference is how `base_dir`, the
+    /// directory the submodules of `file_path` live in, is computed:
     /// - Regular modules use [`get_module_base_dir`](Self::get_module_base_dir)
-    /// - Crate roots use the file's parent directory
+    /// - Crate roots use [`root_base_dir`](Self::root_base_dir)
+    ///
+    /// Below an inline module (`inline_scope`), a file-based submodule is looked
+    /// for under the inline modules' names: `mod deep;` in an inline `outer` is
+    /// `<base_dir>/outer/deep.rs`.
     #[allow(clippy::too_many_arguments)]
-    fn collect_submodules_with_base_dir(
+    pub(super) fn collect_submodules_with_base_dir(
         file_path: &Path,
         base_dir: &Path,
         current_module_path: &str,
@@ -665,6 +703,10 @@ impl CrateInfo {
             // Inline module - navigate to the inline module and process its items
             Self::get_inline_module_items(&syntax.items, inline_scope)?
         };
+        // Where the submodules of the current module live.
+        let children_dir = inline_scope
+            .iter()
+            .fold(base_dir.to_path_buf(), |dir, segment| dir.join(segment));
 
         // Extract module declarations
         for item in items_to_process {
@@ -702,7 +744,7 @@ impl CrateInfo {
                         items,
                         &submodule_path,
                         file_path,
-                        base_dir,
+                        &children_dir,
                         std::slice::from_ref(&mod_name),
                         include_tests,
                         target,
@@ -711,7 +753,7 @@ impl CrateInfo {
                 } else {
                     // External module - find and parse its file
                     if let Some(sub_mod_file) =
-                        Self::resolve_module_parts(base_dir, &[&mod_name], None, cache)?
+                        Self::resolve_child_file(&children_dir, &mod_name, file_path, cache)?
                     {
                         info!(
                             "Found submodule: '{submodule_path}' \u{2192} {}",
@@ -797,9 +839,12 @@ impl CrateInfo {
                     let inline_base_dir = inline_path
                         .iter()
                         .fold(base_dir.to_path_buf(), |dir, segment| dir.join(segment));
-                    if let Some(sub_mod_file) =
-                        Self::resolve_module_parts(&inline_base_dir, &[&mod_name], None, cache)?
-                    {
+                    if let Some(sub_mod_file) = Self::resolve_child_file(
+                        &inline_base_dir,
+                        &mod_name,
+                        containing_file,
+                        cache,
+                    )? {
                         // File-based modules have empty inline scope
                         result.extend(Self::collect_submodules_recursive(
                             &sub_mod_file,
@@ -1058,19 +1103,15 @@ mod tests {
         );
     }
 
-    #[test]
-    fn base_dir_lib_rs_returns_parent() {
+    /// Only a target root owns its directory whatever it is called, and the
+    /// root is the caller's to know: by name, a `lib.rs` or `main.rs` is a
+    /// module file like any other, its children under `<stem>/`.
+    #[test_case("/src/a/lib.rs", "/src/a/lib"; "lib.rs")]
+    #[test_case("/src/a/main.rs", "/src/a/main"; "main.rs")]
+    fn base_dir_lib_or_main_rs_returns_stem_subdir(file: &str, expected: &str) {
         assert_eq!(
-            CrateInfo::get_module_base_dir(Path::new("/src/lib.rs")),
-            Path::new("/src")
-        );
-    }
-
-    #[test]
-    fn base_dir_main_rs_returns_parent() {
-        assert_eq!(
-            CrateInfo::get_module_base_dir(Path::new("/src/main.rs")),
-            Path::new("/src")
+            CrateInfo::get_module_base_dir(Path::new(file)),
+            Path::new(expected)
         );
     }
 
@@ -1079,6 +1120,124 @@ mod tests {
         assert_eq!(
             CrateInfo::get_module_base_dir(Path::new("/src/parser.rs")),
             Path::new("/src/parser")
+        );
+    }
+
+    // ── Tree walk: where a `mod x;` file is looked for ───────────────────────
+
+    /// Writes `files`, each a path relative to `dir` and its contents.
+    fn write_files(dir: &Path, files: &[(&str, &str)]) {
+        for (path, contents) in files {
+            let path = dir.join(path);
+            fs::create_dir_all(path.parent().unwrap()).unwrap();
+            fs::write(path, contents).unwrap();
+        }
+    }
+
+    /// `<module> -> <file relative to dir>` for each of `modules`, the root
+    /// shown as `<root>`.
+    fn module_files(dir: &Path, modules: &[ModuleInfo]) -> Vec<String> {
+        modules
+            .iter()
+            .map(|m| {
+                let module = if m.path().is_empty() {
+                    "<root>"
+                } else {
+                    m.path()
+                };
+                let file = m.source().strip_prefix(dir).unwrap().display();
+                format!("{module} -> {file}")
+            })
+            .collect()
+    }
+
+    fn scratch_lib_target() -> TargetInfo {
+        TargetInfo::new(crate::discover::TargetKind::Lib, "pkg")
+    }
+
+    /// The modules found walking down from `module_path`, the file-based
+    /// module `file` (relative to `dir`).
+    fn walk_from(dir: &Path, file: &str, module_path: &str) -> Vec<String> {
+        let mut cache = ParseCache::new();
+        let modules = CrateInfo::collect_submodules_recursive(
+            &dir.join(file),
+            module_path,
+            ModuleVisibility::Public,
+            &[],
+            false,
+            &scratch_lib_target(),
+            &mut cache,
+        )
+        .unwrap();
+        module_files(dir, &modules)
+    }
+
+    /// A `lib.rs` below a root is a module file: its children live in `lib/`.
+    /// The `x.rs` beside it is a decoy the walk used to take.
+    #[test]
+    fn walk_reads_the_children_of_a_nested_lib_rs_from_its_own_dir() {
+        let dir = tempfile::tempdir().unwrap();
+        write_files(
+            dir.path(),
+            &[
+                ("a.rs", "pub mod lib;\n"),
+                ("a/lib.rs", "pub mod x;\n"),
+                ("a/lib/x.rs", ""),
+                ("a/x.rs", ""),
+            ],
+        );
+        assert_eq!(
+            walk_from(dir.path(), "a.rs", "a"),
+            ["a -> a.rs", "a::lib -> a/lib.rs", "a::lib::x -> a/lib/x.rs"]
+        );
+    }
+
+    /// A `main.rs` below a root is a module file too. Read as a root, its
+    /// `mod main;` named the file itself and the walk recursed until the stack
+    /// overflowed, on a crate rustc compiles.
+    #[test]
+    fn walk_reads_the_children_of_a_nested_main_rs_from_its_own_dir() {
+        let dir = tempfile::tempdir().unwrap();
+        write_files(
+            dir.path(),
+            &[
+                ("a.rs", "pub mod main;\n"),
+                ("a/main.rs", "pub mod main;\n"),
+                ("a/main/main.rs", ""),
+            ],
+        );
+        assert_eq!(
+            walk_from(dir.path(), "a.rs", "a"),
+            [
+                "a -> a.rs",
+                "a::main -> a/main.rs",
+                "a::main::main -> a/main/main.rs"
+            ]
+        );
+    }
+
+    /// `mod lib;` in a root `lib.rs` names the root itself, which rustc rejects
+    /// as a circular module. The walk skips the declaration instead of
+    /// descending into the root forever.
+    #[test_case("lib.rs", "lib"; "library root")]
+    #[test_case("main.rs", "main"; "binary root")]
+    fn walk_skips_a_root_declaring_its_own_file(root: &str, name: &str) {
+        let dir = tempfile::tempdir().unwrap();
+        let source = format!("pub mod foo;\npub mod {name};\n");
+        write_files(dir.path(), &[(root, &source), ("foo.rs", "")]);
+
+        let mut cache = ParseCache::new();
+        let modules = CrateInfo::collect_submodules_recursive_crate_root(
+            &dir.path().join(root),
+            false,
+            &scratch_lib_target(),
+            &mut cache,
+        )
+        .unwrap();
+
+        assert_eq!(
+            module_files(dir.path(), &modules),
+            [format!("<root> -> {root}"), "foo -> foo.rs".to_owned()]
         );
     }
 
