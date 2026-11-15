@@ -21,6 +21,7 @@ test@integration::int::error_cases
 test@integration::int::lib_names
 test@integration::int::list_command
 test@integration::int::module_dirs
+test@integration::int::module_namesakes
 test@integration::int::non_lib_library
 test@integration::int::test_names
 test@integration::int::use_command

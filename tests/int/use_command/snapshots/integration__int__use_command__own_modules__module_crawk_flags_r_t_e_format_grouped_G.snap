@@ -125,7 +125,6 @@ graph
  - crate::error::Result
  - crate::graph::cycles::Cycle
  - crate::graph::cycles::detect_cycles
- - crate::graph::edges
  - crate::graph::edges::AnnotatedEdges
  - crate::graph::edges::Edge
  - crate::graph::edges::build_edges
@@ -194,7 +193,6 @@ module_path::tests
  - crate::module_path::target_root
 parser
  - crate::cache::ParseCache
- - crate::parser::visitor
  - crate::parser::visitor::ModuleVisitor
  - crate::reference::PathPrefix
  - crate::reference::TypeReference

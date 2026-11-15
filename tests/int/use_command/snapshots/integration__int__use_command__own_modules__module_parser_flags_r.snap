@@ -12,7 +12,6 @@ exit_code: 0
 ----- stdout -----
 crate::cache::ParseCache
 crate::constants::{PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER}
-crate::parser::visitor
 crate::parser::visitor::ModuleVisitor
 crate::reference::GroupItem::Aliased
 crate::reference::GroupItem::Glob

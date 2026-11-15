@@ -14,7 +14,6 @@ exit_code: 0
 crate::analyzer::expand_groups
 crate::cache::ParseCache
 crate::parser::*
-crate::parser::visitor
 crate::parser::visitor::ModuleVisitor
 crate::reference::GroupItem
 crate::reference::PathPrefix

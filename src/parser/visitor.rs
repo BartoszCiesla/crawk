@@ -236,18 +236,20 @@ impl ModuleVisitor {
     }
 
     /// Checks if a syn::Path is an internal crate reference.
-    /// Returns true if the path starts with `crate::`, `self::`, `super::`,
-    /// a known child module name, (when `include_root` is set) a crate-root
-    /// top-level module name qualifying a *multi-segment* path, or the
-    /// library's crate name qualifying a *multi-segment* path
-    /// (`crawk::ModuleInfo::target`).
+    /// Returns true if the path starts with `crate::`, `self::` or `super::`, or
+    /// if a *multi-segment* path is led by a known child module name, (when
+    /// `include_root` is set) a crate-root top-level module name, or the
+    /// library's crate name (`crawk::ModuleInfo::target`).
     ///
-    /// The root-children and crate-name checks require more than one segment
-    /// because a bare single-segment path is virtually always a local variable,
-    /// parameter, or field access (e.g. `cache` in `&mut cache`) rather than a
-    /// genuine reference to a same-named crate-root module or crate — modules
-    /// and crates aren't values. The crate-name check ignores `include_root`:
-    /// a multi-segment macro path (`crawk::my_macro!`) does name the library.
+    /// The name checks require more than one segment because modules and
+    /// crates aren't values, types or macros: a bare single-segment path is a
+    /// local variable, parameter, function or macro (`child` in `child.len()`,
+    /// `child()`, `format!`), never a reference to a same-named child module,
+    /// crate-root module or crate. A single-segment *import* (`use child as c;`)
+    /// does name the module, but use-trees do not come through here — they are
+    /// filtered when the references are collected. The crate-name check ignores
+    /// `include_root`: a multi-segment macro path (`crawk::my_macro!`) does name
+    /// the library.
     fn is_internal_path(&self, path: &syn::Path, include_root: bool) -> bool {
         path.segments.first().is_some_and(|first_segment| {
             self.is_internal_head(
@@ -268,9 +270,10 @@ impl ModuleVisitor {
         matches!(
             first,
             PATH_QUALIFIER_CRATE | PATH_QUALIFIER_SELF | PATH_QUALIFIER_SUPER
-        ) || self.children.contains(first)
-            || (include_root && len > 1 && self.root_children.contains(first))
-            || (len > 1 && self.crate_name.as_deref() == Some(first))
+        ) || (len > 1
+            && (self.children.contains(first)
+                || (include_root && self.root_children.contains(first))
+                || self.crate_name.as_deref() == Some(first)))
     }
 
     /// Builds a TypeReference from a syn::Path if it's an internal crate reference.
@@ -1034,6 +1037,60 @@ mod tests {
         let v = visitor_with_root_children(&["cache"]);
         let path: syn::Path = syn::parse_str("cache").expect("valid path");
         assert!(!v.is_internal_path(&path, true));
+    }
+
+    // --- children collision guard tests ---
+
+    #[test]
+    fn test_is_internal_path_child_requires_multi_segment() {
+        // A lone `child` is a value or a macro, never the module: modules
+        // aren't values. `child::f` does go through the module.
+        let v = visitor_with_children(&["child"]);
+        let lone: syn::Path = syn::parse_str("child").expect("valid path");
+        let qualified: syn::Path = syn::parse_str("child::f").expect("valid path");
+
+        assert!(!v.is_internal_path(&lone, true));
+        assert!(!v.is_internal_path(&lone, false));
+        assert!(v.is_internal_path(&qualified, true));
+        assert!(v.is_internal_path(&qualified, false));
+    }
+
+    #[test_case("fn f() -> usize { let child = vec![1]; child.len() }"; "local variable")]
+    #[test_case("fn f(child: u8) -> u8 { child }"; "parameter")]
+    #[test_case("struct S { child: u8 } fn f(child: u8) -> S { S { child } }"; "field init shorthand")]
+    #[test_case("fn child() {} fn f() { child() }"; "function call")]
+    #[test_case("fn f() -> String { child!() }"; "macro")]
+    fn lone_name_of_a_child_module_is_not_a_reference(code: &str) {
+        let syntax: syn::File = syn::parse_file(code).expect("parse");
+        let mut v = visitor_with_children(&["child"]);
+        v.visit_file(&syntax);
+
+        let paths: Vec<String> = v
+            .references
+            .into_all()
+            .map(|r| r.to_path_string())
+            .collect();
+        assert!(
+            paths.is_empty(),
+            "a lone name spelled like child module `child` became a reference: {paths:?}"
+        );
+    }
+
+    #[test]
+    fn single_segment_import_of_a_child_module_is_kept() {
+        // `use child as c;` imports the module itself — a real reference, and it
+        // comes through the use-tree, not through `is_internal_head`.
+        let syntax: syn::File = syn::parse_file("use child as c;").expect("parse");
+        let mut v = visitor_with_children(&["child"]);
+        v.visit_file(&syntax);
+
+        let uses: Vec<String> = v
+            .references
+            .use_statements
+            .iter()
+            .map(TypeReference::to_path_string)
+            .collect();
+        assert_eq!(uses, ["child as c"]);
     }
 
     #[test]

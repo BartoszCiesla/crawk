@@ -20,7 +20,6 @@ analyzer -> reference
 analyzer -> resolve
 analyzer -> rules
 bin@crawk -> bin@crawk::cli
-bin@crawk -> bin@crawk::format
 bin@crawk -> bin@crawk::format::check_cmd
 bin@crawk -> bin@crawk::format::cycles
 bin@crawk -> bin@crawk::format::deps_cmd

@@ -33,7 +33,6 @@ crate::graph::Edge
 crate::graph::build_edges
 crate::graph::cycles::Cycle
 crate::graph::cycles::detect_cycles
-crate::graph::edges
 crate::graph::edges::AnnotatedEdges
 crate::graph::edges::build_edges
 crate::graph::edges::resolve_reference_target
@@ -58,7 +57,6 @@ crate::module_path::target_root
 crate::module_path::{is_in_subtree, library_module_name, path_below, split_parent, target_root}
 crate::module_path::{is_in_subtree, parent_module}
 crate::parser::CrateAnalyzer
-crate::parser::visitor
 crate::parser::visitor::ModuleVisitor
 crate::reference::GroupItem::Aliased
 crate::reference::GroupItem::Glob

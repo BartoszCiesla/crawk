@@ -4,7 +4,7 @@ info:
   program: crawk
   args:
     - use
-    - "bin:crawk"
+    - bin@crawk
     - "-t"
     - "-e"
 ---
@@ -24,7 +24,6 @@ crate::cli::UseArgs
 crate::cli::UseOutputFormat
 crate::cli::WhyArgs
 crate::cli::WhyOutputFormat
-crate::format
 crate::format::check_cmd::render_plain
 crate::format::cycles::render_cycles_dot
 crate::format::cycles::render_cycles_dot_highlight

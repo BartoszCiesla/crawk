@@ -4,13 +4,12 @@ info:
   program: crawk
   args:
     - use
-    - "bin:crawk"
+    - bin@crawk
 ---
 success: true
 exit_code: 0
 ----- stdout -----
 crate::cli::{CheckArgs, CheckOutputFormat, CrawkArgs, CrawkCommands, CyclesMode, DepsArgs, DepsOutputFormat, ListArgs, ListOutputFormat, UseArgs, UseOutputFormat, WhyArgs, WhyOutputFormat}
-crate::format
 crate::format::check_cmd::render_plain
 crate::format::cycles::render_cycles_dot
 crate::format::cycles::render_cycles_dot_highlight

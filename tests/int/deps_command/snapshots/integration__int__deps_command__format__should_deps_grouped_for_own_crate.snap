@@ -23,9 +23,8 @@ analyzer (11)
   -> resolve
   -> rules
 
-bin@crawk (13)
+bin@crawk (12)
   -> bin@crawk::cli
-  -> bin@crawk::format
   -> bin@crawk::format::check_cmd
   -> bin@crawk::format::cycles
   -> bin@crawk::format::deps_cmd

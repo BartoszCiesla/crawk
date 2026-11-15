@@ -15,7 +15,6 @@ crate::analyzer::expand_groups
 crate::cache::ParseCache
 crate::constants::{PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER}
 crate::parser::*
-crate::parser::visitor
 crate::parser::visitor::*
 crate::parser::visitor::ModuleVisitor
 crate::reference::GroupItem

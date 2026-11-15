@@ -147,18 +147,22 @@ first segment is:
 - `crate`, `self` or `super`;
 - the name of a **direct child module** of the current module
   (`use child::Item`, the 2018-edition relative form);
-- the name of a **top-level module** of the crate, when the path has at least
-  two segments (`sibling::Item`, the 2015-edition form, which is common under
-  `use super::*;` in test modules). A lone identifier is never treated this
-  way, because it is almost always a local variable;
-- the **crate name of the library**, when the path has at least two segments.
-  That is how a binary or test target reaches into the library, in a `use`
-  item or in a path written out in place (`use crawk::Analyzer`,
-  `.map(crawk::ModuleInfo::target)`). It is the name of the lib target, not of
-  the package: `my-crate` is written `my_crate`, and a `[lib] name` setting
-  replaces it. Inside the library such a path compiles only under
-  `extern crate self as my_crate;`, and counts there too. A package without a
-  library has no such name, so a path led by its own name is external.
+- the name of a **top-level module** of the crate (`sibling::Item`, the
+  2015-edition form, which is common under `use super::*;` in test modules);
+- the **crate name of the library**. That is how a binary or test target
+  reaches into the library, in a `use` item or in a path written out in place
+  (`use crawk::Analyzer`, `.map(crawk::ModuleInfo::target)`). It is the name of
+  the lib target, not of the package: `my-crate` is written `my_crate`, and a
+  `[lib] name` setting replaces it. Inside the library such a path compiles
+  only under `extern crate self as my_crate;`, and counts there too. A package
+  without a library has no such name, so a path led by its own name is
+  external.
+
+Written out in place, these three names count only in a path of at least two
+segments. A lone identifier is a local variable, a parameter, a function or a
+macro — `let child = …; child.len()`, `child()`, `format!` — never a module,
+even when it is spelled like one. A `use` item is different: it names a module
+even with one segment, so `use child as c;` counts.
 
 Everything else — `std::`, `serde::`, other workspace crates — is dropped.
 
