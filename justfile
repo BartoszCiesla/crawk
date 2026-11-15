@@ -56,7 +56,7 @@ fmt:
     cargo fmt
 
 # Run insta snapshot tests
-insta: build
+insta:
     cargo insta test
 
 # Generate lcov coverage report and run cargo-crap

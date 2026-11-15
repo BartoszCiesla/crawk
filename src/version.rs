@@ -14,8 +14,8 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 /// The crate authors.
 pub const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
 
-/// The crate homepage URL.
-pub static HOMEPAGE: &str = env!("CARGO_PKG_HOMEPAGE");
+/// The crate repository URL.
+pub static REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
 
 /// Build timestamp in ISO 8601 format.
 pub static BUILD_TIMESTAMP: &str = env!("VERGEN_BUILD_TIMESTAMP");

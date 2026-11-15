@@ -19,7 +19,7 @@ pub(super) fn generate_after_help(long_help: bool) -> String {
         let target = version::BUILD_TARGET;
         let rustc = version::RUSTC_VERSION;
         let user = version::BUILD_USER;
-        let homepage = version::HOMEPAGE;
+        let homepage = version::REPOSITORY;
         let build_info = format!("Built on {timestamp}Z for {target} ({rustc}) by {user}");
 
         format!(
