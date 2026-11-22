@@ -204,7 +204,6 @@ parser::visitor
  - crate::reference::GroupItem
  - crate::reference::PathPrefix
  - crate::reference::TypeReference
- - crate::utils::has_cfg_test
 parser::visitor::tests
  - crate::parser::visitor
 reference

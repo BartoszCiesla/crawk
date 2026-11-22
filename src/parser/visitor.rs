@@ -8,7 +8,6 @@ use tracing::debug;
 
 use crate::constants::{PATH_QUALIFIER_CRATE, PATH_QUALIFIER_SELF, PATH_QUALIFIER_SUPER};
 use crate::reference::{GroupItem, PathPrefix, TypeReference};
-use crate::utils::has_cfg_test;
 
 /// Resolves relative paths (`self::`, `super::`) to absolute paths (`crate::`).
 ///
@@ -153,8 +152,8 @@ impl CollectedReferences {
 
 /// Visitor for extracting type references from module AST.
 pub(super) struct ModuleVisitor {
-    /// Module name for filtering and identification (e.g., "foo::bar").
-    /// Used to match against nested module declarations. Empty string means analyze all modules.
+    /// Module name relative to its target (e.g., "foo::bar"), for logging.
+    /// Empty for a target root.
     module_name: String,
 
     /// Module path as segments for resolving relative paths (e.g., `["foo", "bar"]`).
@@ -179,10 +178,6 @@ pub(super) struct ModuleVisitor {
     /// All relative paths are resolved to absolute paths before being added.
     pub(super) references: CollectedReferences,
 
-    /// Track if we're currently visiting inside a test module.
-    /// Updated as we traverse nested modules to filter test-only references.
-    in_test_module: bool,
-
     /// Crate name of the package's library, for recognising paths that reach
     /// it from another target: `use crawk::version`, `crawk::version::NAME`.
     /// `None` for a package without a library.
@@ -196,9 +191,9 @@ pub(super) struct ModuleVisitor {
 }
 
 impl ModuleVisitor {
-    /// Creates a new [`ModuleVisitor`] scoped to `module_name`.
+    /// Creates a new [`ModuleVisitor`] for the module `module_name`, relative to
+    /// its target: empty for a target root.
     ///
-    /// Pass an empty string to visit all modules without filtering.
     /// The module path for relative-reference resolution is derived from `module_name`
     /// by splitting on `::`.
     ///
@@ -229,7 +224,6 @@ impl ModuleVisitor {
             children,
             root_children,
             references: CollectedReferences::new(),
-            in_test_module: false,
             crate_name,
             imported_modules: HashMap::new(),
         }
@@ -642,9 +636,7 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
     /// where paths appear inside attribute token streams that `syn::Visit`
     /// normally treats as opaque.
     fn visit_attribute(&mut self, attr: &'ast syn::Attribute) {
-        if !self.in_test_module
-            && let syn::Meta::List(meta_list) = &attr.meta
-        {
+        if let syn::Meta::List(meta_list) = &attr.meta {
             self.extract_paths_from_tokens(&meta_list.tokens);
         }
         syn::visit::visit_attribute(self, attr);
@@ -652,9 +644,7 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
 
     /// Visit expression paths - captures paths in expressions like `crate::foo::bar()`
     fn visit_expr_path(&mut self, node: &'ast syn::ExprPath) {
-        if !self.in_test_module
-            && let Some(r) = self.build_reference(&node.path, true)
-        {
+        if let Some(r) = self.build_reference(&node.path, true) {
             self.references.value_refs.push(r);
         }
         syn::visit::visit_expr_path(self, node);
@@ -662,9 +652,7 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
 
     /// Visit struct expressions - captures struct literal construction
     fn visit_expr_struct(&mut self, node: &'ast syn::ExprStruct) {
-        if !self.in_test_module
-            && let Some(r) = self.build_reference(&node.path, true)
-        {
+        if let Some(r) = self.build_reference(&node.path, true) {
             self.references.value_refs.push(r);
         }
         syn::visit::visit_expr_struct(self, node);
@@ -672,56 +660,32 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
 
     /// Visit impl items - captures impl blocks
     fn visit_item_impl(&mut self, node: &'ast syn::ItemImpl) {
-        if !self.in_test_module {
-            // Check the trait being implemented (if any)
-            if let Some((trait_path, _)) = &node.trait_
-                && let Some(r) = self.build_reference(trait_path, true)
-            {
-                self.references.type_refs.push(r);
-            }
+        // Check the trait being implemented (if any)
+        if let Some((trait_path, _)) = &node.trait_
+            && let Some(r) = self.build_reference(trait_path, true)
+        {
+            self.references.type_refs.push(r);
         }
         syn::visit::visit_item_impl(self, node);
     }
 
+    /// Nested `mod x { ... }` items are not visited.
+    ///
+    /// The items visited are the analysed module's own body: a whole file for
+    /// a file module or a target root, or the body `descend_inline_module`
+    /// found for an inline module (see `parser/mod.rs`). Every nested inline
+    /// module in it is a child, discovered and parsed on its own — a
+    /// `#[cfg(test)]` one only with `-t` — so descending into it would credit
+    /// its references to this module as well.
     fn visit_item_mod(&mut self, i: &'ast ItemMod) {
-        let was_in_test = self.in_test_module;
-
-        // Check if this module is a test module (has #[cfg(test)] attribute)
-        if has_cfg_test(&i.attrs) {
-            self.in_test_module = true;
-        }
-
-        // Check if this module matches the target module or is on the path to it
-        let module_ident = i.ident.to_string();
-        // Navigation into the target inline module is performed externally by
-        // `descend_inline_module` (see `parser/mod.rs`); the items visited here
-        // are already the target module's own body. Every nested `mod x { ... }`
-        // is therefore a child submodule, discovered and parsed separately —
-        // descending into it here would misattribute the child's references to
-        // the parent. Only the unfiltered whole-file mode (empty module name,
-        // used by unit tests) descends into nested modules.
-        let should_visit = self.module_name.is_empty();
-
-        if !should_visit {
-            debug!(
-                "Skipping module '{module_ident}' (filter: '{}')",
-                self.module_name
-            );
-        }
-        if should_visit && let Some((_, items)) = &i.content {
-            for item in items {
-                self.visit_item(item);
-            }
-        }
-
-        // Restore previous test module state
-        self.in_test_module = was_in_test;
+        debug!(
+            "Skipping nested module '{}' of '{}'",
+            i.ident, self.module_name
+        );
     }
 
     fn visit_item_use(&mut self, node: &'ast ItemUse) {
-        if !self.in_test_module {
-            self.process_use_tree(&node.tree, Vec::new(), PathPrefix::None);
-        }
+        self.process_use_tree(&node.tree, Vec::new(), PathPrefix::None);
     }
 
     /// Visit macro invocations - captures macro paths and argument paths.
@@ -729,20 +693,16 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
     /// In addition to the macro's own path, scans the macro's token stream
     /// for internal crate paths (e.g. `info!("...", version::NAME)`).
     fn visit_macro(&mut self, node: &'ast syn::Macro) {
-        if !self.in_test_module {
-            if let Some(r) = self.build_reference(&node.path, false) {
-                self.references.macro_calls.push(r);
-            }
-            self.extract_paths_from_tokens(&node.tokens);
+        if let Some(r) = self.build_reference(&node.path, false) {
+            self.references.macro_calls.push(r);
         }
+        self.extract_paths_from_tokens(&node.tokens);
         syn::visit::visit_macro(self, node);
     }
 
     /// Visit pattern structs - captures struct patterns in match arms
     fn visit_pat_struct(&mut self, node: &'ast syn::PatStruct) {
-        if !self.in_test_module
-            && let Some(r) = self.build_reference(&node.path, true)
-        {
+        if let Some(r) = self.build_reference(&node.path, true) {
             self.references.value_refs.push(r);
         }
         syn::visit::visit_pat_struct(self, node);
@@ -750,9 +710,7 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
 
     /// Visit pattern tuple structs - captures tuple struct patterns
     fn visit_pat_tuple_struct(&mut self, node: &'ast syn::PatTupleStruct) {
-        if !self.in_test_module
-            && let Some(r) = self.build_reference(&node.path, true)
-        {
+        if let Some(r) = self.build_reference(&node.path, true) {
             self.references.value_refs.push(r);
         }
         syn::visit::visit_pat_tuple_struct(self, node);
@@ -760,9 +718,7 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
 
     /// Visit trait bounds - captures trait bounds in generics
     fn visit_trait_bound(&mut self, node: &'ast syn::TraitBound) {
-        if !self.in_test_module
-            && let Some(r) = self.build_reference(&node.path, true)
-        {
+        if let Some(r) = self.build_reference(&node.path, true) {
             self.references.type_refs.push(r);
         }
         syn::visit::visit_trait_bound(self, node);
@@ -770,9 +726,7 @@ impl<'ast> Visit<'ast> for ModuleVisitor {
 
     /// Visit type paths - captures type annotations like `let x: crate::Foo`
     fn visit_type_path(&mut self, node: &'ast syn::TypePath) {
-        if !self.in_test_module
-            && let Some(r) = self.build_reference(&node.path, true)
-        {
+        if let Some(r) = self.build_reference(&node.path, true) {
             self.references.type_refs.push(r);
         }
         // The default visit descends into `node.qself` (e.g. the `crate::Foo`

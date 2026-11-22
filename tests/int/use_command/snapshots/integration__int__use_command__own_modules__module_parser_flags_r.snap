@@ -20,7 +20,6 @@ crate::reference::PathPrefix::None
 crate::reference::PathPrefix::Super
 crate::reference::{GroupItem, PathPrefix, TypeReference}
 crate::reference::{PathPrefix, TypeReference}
-crate::utils::has_cfg_test
 crate::utils::{ReadFileError, descend_inline_module, read_source_file}
 
 ----- stderr -----

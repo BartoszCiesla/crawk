@@ -130,10 +130,9 @@ parser (4)
   -> reference
   -> utils
 
-parser::visitor (3)
+parser::visitor (2)
   -> constants
   -> reference
-  -> utils
 
 reference (1)
   -> constants

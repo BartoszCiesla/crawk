@@ -689,6 +689,37 @@ mod tests {
     }
 
     #[test]
+    fn parse_file_for_a_target_root_skips_its_inline_modules() {
+        // A target root is parsed as module `""`. Its inline modules (test
+        // module included) are children parsed on their own, so none of their
+        // references may land in the root's.
+        let mut f = NamedTempFile::new().unwrap();
+        writeln!(
+            f,
+            "use crate::top::Top;\n\
+             pub mod a {{ pub mod b {{ use crate::bar::Bar; }} }}\n\
+             #[cfg(test)]\nmod tests {{ use crate::baz::Baz; }}"
+        )
+        .unwrap();
+        f.flush().unwrap();
+        let mut analyzer = CrateAnalyzer::new(Some("test"));
+        let mut cache = ParseCache::new();
+        let refs = analyzer
+            .parse_file(
+                "",
+                f.path(),
+                &[],
+                HashSet::new(),
+                HashSet::new(),
+                &mut cache,
+            )
+            .unwrap();
+
+        let paths: Vec<String> = refs.iter().map(TypeReference::to_path_string).collect();
+        assert_eq!(paths, ["crate::top::Top"]);
+    }
+
+    #[test]
     fn parse_file_return_matches_stored_references() {
         let mut f = NamedTempFile::new().unwrap();
         writeln!(f, "use crate::a::B;\nuse crate::c::D;").unwrap();

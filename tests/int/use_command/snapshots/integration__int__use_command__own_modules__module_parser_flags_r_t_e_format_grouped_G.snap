@@ -48,7 +48,6 @@ parser::visitor
  - crate::reference::PathPrefix::None
  - crate::reference::PathPrefix::Super
  - crate::reference::TypeReference
- - crate::utils::has_cfg_test
 parser::visitor::tests
  - crate::parser::visitor::CollectedReferences
  - crate::parser::visitor::ModuleVisitor

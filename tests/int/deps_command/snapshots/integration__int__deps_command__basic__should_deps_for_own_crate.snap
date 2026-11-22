@@ -82,7 +82,6 @@ parser -> reference
 parser -> utils
 parser::visitor -> constants
 parser::visitor -> reference
-parser::visitor -> utils
 reference -> constants
 resolve -> cache
 resolve -> constants

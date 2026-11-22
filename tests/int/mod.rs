@@ -8,6 +8,7 @@ mod list_command;
 mod module_dirs;
 mod module_namesakes;
 mod non_lib_library;
+mod root_inline_modules;
 mod test_names;
 mod use_command;
 mod verbosity;

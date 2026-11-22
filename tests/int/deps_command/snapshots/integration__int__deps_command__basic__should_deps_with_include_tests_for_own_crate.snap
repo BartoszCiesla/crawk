@@ -110,7 +110,6 @@ parser::tests -> reference
 parser::tests -> utils
 parser::visitor -> constants
 parser::visitor -> reference
-parser::visitor -> utils
 parser::visitor::tests -> parser::visitor
 reference -> constants
 reference::tests -> reference
@@ -178,6 +177,8 @@ test@integration::int::module_dirs -> test@integration::int::bin_names
 test@integration::int::module_namesakes -> test@integration::common
 test@integration::int::module_namesakes -> test@integration::int::bin_names
 test@integration::int::non_lib_library -> test@integration::common
+test@integration::int::root_inline_modules -> test@integration::common
+test@integration::int::root_inline_modules -> test@integration::int::bin_names
 test@integration::int::test_names -> test@integration::common
 test@integration::int::test_names -> test@integration::int::bin_names
 test@integration::int::use_command::basic_output -> test@integration::common

@@ -112,7 +112,6 @@ crate::rules::{CheckOptions, CheckReport, InitOutcome, Violation, ViolationKind}
 crate::rules::{self, CheckOptions, CheckReport, InitOutcome, RuleSet}
 crate::utils::*
 crate::utils::ReadFileError::TooLarge
-crate::utils::has_cfg_test
 crate::utils::{MAX_FILE_BYTES, ReadFileError}
 crate::utils::{ReadFileError, descend_inline_module, read_source_file}
 crate::utils::{ReadFileError, has_cfg_test, read_source_file}
