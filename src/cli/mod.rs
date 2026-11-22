@@ -224,6 +224,15 @@ pub(crate) enum CrawkCommands {
     ///   from = "api"
     ///   to = "infra::*"
     ///
+    /// Category `restrict`: the complement of `deny` — a module matching `from`
+    /// may depend only on the `to` targets (same patterns as `deny`). Edges
+    /// inside the `from` scope, siblings included, are exempt; `to = []` is
+    /// legal, a missing `to` is an error; overlapping rules intersect.
+    ///
+    ///   [[check.restrict]]
+    ///   from = "cli"
+    ///   to = ["analyzer"]
+    ///
     /// Category `deny-cycles`: bans dependency loops, reporting one violation
     /// per edge of each loop. A loop between a module and its own submodules is
     /// containment, not a tangle, and stays exempt unless you also set
@@ -240,9 +249,9 @@ pub(crate) enum CrawkCommands {
     /// `--init` writes that baseline for you, so the rule starts green.
     ///
     /// Note: global options (-p, -v, -l) must appear before the subcommand.
-    // The `order = ["api", ...]` TOML example reads as an intra-doc link to
-    // clippy; it is a config snippet, and clap renders the doc verbatim so a
-    // fenced code block would leak backticks into `--help`.
+    // The `order = ["api", ...]` and `to = ["analyzer"]` TOML examples read as
+    // intra-doc links to clippy; they are config snippets, and clap renders the
+    // doc verbatim so a fenced code block would leak backticks into `--help`.
     #[allow(clippy::doc_link_with_quotes)]
     #[clap(verbatim_doc_comment, visible_alias = "c")]
     Check(CheckArgs),

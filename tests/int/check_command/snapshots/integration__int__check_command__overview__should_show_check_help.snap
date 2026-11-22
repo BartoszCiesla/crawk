@@ -38,6 +38,15 @@ name is exact, an explicit `::*` covers the subtree.
   from = "api"
   to = "infra::*"
 
+Category `restrict`: the complement of `deny` — a module matching `from`
+may depend only on the `to` targets (same patterns as `deny`). Edges
+inside the `from` scope, siblings included, are exempt; `to = []` is
+legal, a missing `to` is an error; overlapping rules intersect.
+
+  [[check.restrict]]
+  from = "cli"
+  to = ["analyzer"]
+
 Category `deny-cycles`: bans dependency loops, reporting one violation
 per edge of each loop. A loop between a module and its own submodules is
 containment, not a tangle, and stays exempt unless you also set
