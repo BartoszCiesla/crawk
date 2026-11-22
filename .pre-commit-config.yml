@@ -112,11 +112,22 @@ repos:
         args: ["machete"]
         types_or: [cargo, cargo-lock]
         pass_filenames: false
-      - id: cargo-deny
-        name: cargo deny check
+      # Advisories follow the RustSec database, not the repository: a new advisory
+      # lands against an unchanged Cargo.lock, so a file filter would skip it.
+      - id: cargo-deny-advisories
+        name: cargo deny check advisories
         entry: cargo
         language: system
-        args: ["deny", "check"]
+        args: ["deny", "check", "advisories"]
+        always_run: true
+        pass_filenames: false
+        stages: [pre-push]
+      # Bans, licenses and sources depend on the manifests alone.
+      - id: cargo-deny-policy
+        name: cargo deny check bans licenses sources
+        entry: cargo
+        language: system
+        args: ["deny", "check", "bans", "licenses", "sources"]
         files: '^(Cargo\.(toml|lock)|deny\.toml)$'
         pass_filenames: false
         stages: [pre-push]
