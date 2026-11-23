@@ -17,6 +17,7 @@ crate::cache::ParseCache
 crate::constants::BIN_ROOT_PREFIX
 crate::constants::LIB_ROOT
 crate::constants::MODULE_FILE_NAME
+crate::constants::TEST_ROOT_PREFIX
 crate::discover::CrateInfo
 crate::discover::CrateInfoError
 crate::discover::MetadataError

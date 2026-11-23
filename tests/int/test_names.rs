@@ -325,3 +325,38 @@ fn a_rule_on_a_test_needs_tests_to_be_included() {
     );
     crawk_failure(krate.path(), 2, &["check"]);
 }
+
+// ---- a test's module resolves under its root ----
+
+/// `tests/it.rs` declares `support`, whose file holds an inline module `inner`:
+/// the file's own items use the library's `foo`, `inner` uses `bar`.
+fn inline_module_in_a_test_file() -> TempDir {
+    scratch_crate(
+        "pkg",
+        &[
+            ("src/lib.rs", "pub mod foo;\npub mod bar;\n"),
+            ("src/foo.rs", "pub struct Foo;\n"),
+            ("src/bar.rs", "pub struct Bar;\n"),
+            ("tests/it.rs", "mod support;\n"),
+            (
+                "tests/support/mod.rs",
+                "use pkg::foo::Foo;\n\n\
+                 pub mod inner {\n    use pkg::bar::Bar;\n    pub fn make() -> Bar { Bar }\n}\n\n\
+                 pub fn foo() -> Foo { Foo }\n",
+            ),
+        ],
+    )
+}
+
+// Found by its root, a test's module is still out of reach without `-t`.
+#[test_case(&["use", "test@it::support"]; "with use")]
+#[test_case(&["why", "test@it::support", "foo"]; "with why")]
+#[test_case(&["list", "test@it::support"]; "with list")]
+fn a_module_of_a_test_needs_tests_to_be_included(args: &[&str]) {
+    let krate = inline_module_in_a_test_file();
+    let stderr = crawk_failure(krate.path(), 1, args);
+    assert!(
+        stderr.contains("Module 'test@it::support' not found"),
+        "{stderr}"
+    );
+}

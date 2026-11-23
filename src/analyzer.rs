@@ -1,6 +1,6 @@
 use crate::cache::ParseCache;
-use crate::constants::{BIN_ROOT_PREFIX, LIB_ROOT};
-use crate::discover::{CrateInfo, ModuleInfo, TargetInfo, TargetKind};
+use crate::constants::{BIN_ROOT_PREFIX, LIB_ROOT, TEST_ROOT_PREFIX};
+use crate::discover::{CrateInfo, CrateInfoError, ModuleInfo, TargetInfo, TargetKind};
 use crate::error::{AnalysisError, Result};
 use crate::graph::{self, DependencyGraph, DependencyGraphOptions};
 use crate::model::{AnalysisOptions, AnalysisResult};
@@ -556,7 +556,9 @@ impl Analyzer {
     ///
     /// A binary's subtree is cut from the tree of the whole target, read from
     /// its cargo entry point: only that knows where the root's `mod` declarations
-    /// point, whatever the entry file is called.
+    /// point, whatever the entry file is called. A test's module is not found
+    /// here: the callers cut it from its target's tree, with `-t` only
+    /// ([`list_from_test_target`](Self::list_from_test_target)).
     fn discover_module(
         &mut self,
         module_path: &str,
@@ -564,6 +566,13 @@ impl Analyzer {
         include_tests: bool,
         default_target: &TargetInfo,
     ) -> Result<Vec<ModuleInfo>> {
+        // Looked up by its root, a test's module would be found without `-t`.
+        if module_path.starts_with(TEST_ROOT_PREFIX) {
+            return Err(CrateInfoError::ModuleNotFound {
+                module_path: module_path.to_owned(),
+            }
+            .into());
+        }
         let binary = self.binary_of_path(module_path);
         let target = binary.as_ref().map_or(default_target, |(t, ..)| t);
         if recursive && let Some((target, src_path, relative)) = &binary {

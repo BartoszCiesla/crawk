@@ -9,8 +9,9 @@
 //!
 //! - **Path resolution**: mapping `crate::foo::bar` paths to `.rs` files, handling
 //!   both `foo.rs` (2018+ style) and `foo/mod.rs` (legacy style) layouts
-//! - **Binary target support**: resolving paths rooted at binary targets by their
-//!   cargo target name (e.g., `bin@my-tool` → `src/bin/my-tool/main.rs`)
+//! - **Binary and test target support**: resolving paths rooted at binary and
+//!   integration-test targets by their cargo target name (e.g., `bin@my-tool` →
+//!   `src/bin/my-tool/main.rs`, `test@it` → `tests/it.rs`)
 //! - **Inline module detection**: identifying when a module path resolves to an
 //!   inline `mod { ... }` block rather than a separate file
 //! - **Tree collection**: recursively or shallowly enumerating submodules, with
@@ -26,8 +27,8 @@ use crate::cache::ParseCache;
 use cargo_metadata::Package;
 use syn::Item;
 
-use crate::constants::{BIN_ROOT_PREFIX, MODULE_FILE_NAME};
-use crate::module_path::split_parent;
+use crate::constants::{BIN_ROOT_PREFIX, MODULE_FILE_NAME, TEST_ROOT_PREFIX};
+use crate::module_path::{split_parent, target_root};
 use crate::utils::{ReadFileError, has_cfg_test, read_source_file};
 use tracing::{debug, info};
 
@@ -158,7 +159,8 @@ impl CrateInfo {
     ///
     /// E.g., `crawk::analysis::collect` or just `analysis::collect`
     /// Also treats "lib" as an alias for the library root (same as crate name).
-    /// Also matches binary targets by their root, `bin@<cargo target name>`.
+    /// Also matches binary and test targets by their root, `bin@<cargo target
+    /// name>` and `test@<cargo target name>`.
     fn resolve_module_path_with_crate(
         &self,
         package: &Package,
@@ -188,21 +190,21 @@ impl CrateInfo {
             return result;
         }
 
-        // A binary's root addresses that binary and nothing else: an unknown
-        // one must not fall through to a lookup from the library.
-        if parts[0].starts_with(BIN_ROOT_PREFIX) {
-            let bin_root = Self::find_binary_by_root(package, parts[0]).ok_or_else(|| {
+        // A binary's or test's root addresses that target and nothing else: an
+        // unknown one must not fall through to a lookup from the library.
+        if let Some(root) = target_root(module_path) {
+            let root_file = Self::find_target_by_root(package, root).ok_or_else(|| {
                 CrateInfoError::ModuleNotFound {
                     module_path: module_path.to_owned(),
                 }
             })?;
             let result = if parts.len() > 1 {
                 let remaining = parts[1..].join("::");
-                self.resolve_module_path_from_binary(package, &bin_root, &remaining, cache)
+                self.resolve_module_path_from_target(package, &root_file, &remaining, cache)
             } else {
-                Ok(bin_root)
+                Ok(root_file)
             };
-            info!("Resolved '{module_path}' via binary target '{}'", parts[0]);
+            info!("Resolved '{module_path}' via target root '{root}'");
             return result;
         }
 
@@ -236,25 +238,36 @@ impl CrateInfo {
             .map(|t| t.src_path.as_std_path().to_path_buf())
     }
 
-    /// Finds the entry point of the binary whose root is `segment`: `bin@<name>`.
+    /// Finds the entry point of the binary or integration test whose root is
+    /// `segment`: `bin@<name>` or `test@<name>`.
     ///
-    /// Cargo keeps binary names unique within a package, so at most one matches.
-    pub(super) fn find_binary_by_root(package: &Package, segment: &str) -> Option<PathBuf> {
-        let name = segment.strip_prefix(BIN_ROOT_PREFIX)?;
+    /// Cargo keeps target names unique per kind within a package, so at most
+    /// one matches.
+    pub(super) fn find_target_by_root(package: &Package, segment: &str) -> Option<PathBuf> {
         package
             .targets
             .iter()
-            .find(|t| t.is_bin() && t.name == name)
+            .find(|t| {
+                let prefix = if t.is_bin() {
+                    BIN_ROOT_PREFIX
+                } else if t.is_test() {
+                    TEST_ROOT_PREFIX
+                } else {
+                    return false;
+                };
+                segment.strip_prefix(prefix) == Some(t.name.as_str())
+            })
             .map(|t| t.src_path.as_std_path().to_path_buf())
     }
 
-    /// Resolves a module path relative to the binary with entry point `bin_root`.
+    /// Resolves a module path relative to the binary or test with entry point
+    /// `root_file`.
     ///
-    /// Similar to `resolve_module_path`, but uses the specified binary as the root.
-    fn resolve_module_path_from_binary(
+    /// Similar to `resolve_module_path`, but uses the specified target as the root.
+    fn resolve_module_path_from_target(
         &self,
         package: &Package,
-        bin_root: &Path,
+        root_file: &Path,
         module_path: &str,
         cache: &mut ParseCache,
     ) -> Result<PathBuf> {
@@ -264,15 +277,15 @@ impl CrateInfo {
 
         let parts: Vec<&str> = module_path.split("::").collect();
 
-        let bin_root_dir = bin_root
+        let root_dir = root_file
             .parent()
             .ok_or_else(|| CrateInfoError::NoCrateRoot(package.name.to_string()))?;
 
-        let resolved = Self::resolve_module_parts(bin_root_dir, &parts, Some(bin_root), cache)?
+        let resolved = Self::resolve_module_parts(root_dir, &parts, Some(root_file), cache)?
             .ok_or_else(|| CrateInfoError::ModuleNotFound {
                 module_path: module_path.to_owned(),
             })?;
-        Self::check_within_canonical_root(&resolved, &self.canonical_dir(bin_root_dir)?)?;
+        Self::check_within_canonical_root(&resolved, &self.canonical_dir(root_dir)?)?;
         Ok(resolved)
     }
 
@@ -957,9 +970,10 @@ impl CrateInfo {
     /// top-level `mod baz`. Shortest-first stops at `foo` and correctly reports
     /// `["bar", "baz"]`.
     ///
-    /// A root alias or a binary's root leading `module_path` (`lib::foo::bar`,
-    /// `bin@tool::cli`) is the target, never part of the scope: led by one, a
-    /// library module named like an alias keeps its name (`lib::my_crate::inner`).
+    /// A root alias or a binary's or test's root leading `module_path`
+    /// (`lib::foo::bar`, `bin@tool::cli`, `test@it::support`) is the target,
+    /// never part of the scope: led by one, a library module named like an
+    /// alias keeps its name (`lib::my_crate::inner`).
     pub(crate) fn split_inline_scope(
         &self,
         module_path: &str,
@@ -1778,10 +1792,12 @@ mod tests {
 
     /// Each input reaches the empty-path guard of a different resolver: the
     /// entry point itself, the library-root branch with nothing after `lib::`,
-    /// and the binary-root branch with nothing after `bin@modules::`.
+    /// and the target-root branch with nothing after `bin@modules::` or
+    /// `test@integration::`.
     #[test_case("" ; "entry point")]
     #[test_case("lib::" ; "library root remainder")]
     #[test_case("bin@modules::" ; "binary root remainder")]
+    #[test_case("test@integration::" ; "test root remainder")]
     fn resolve_module_rejects_empty_path(module_path: &str) {
         let info = fixture_crate_info();
         let mut cache = ParseCache::new();
@@ -1792,6 +1808,34 @@ mod tests {
             matches!(err, CrateInfoError::EmptyModulePath),
             "{module_path:?}: {err:?}"
         );
+    }
+
+    /// A binary's or test's root addresses that target: the root itself is its
+    /// entry point, a module below it is looked for beside that file.
+    #[test_case("bin@modules-cli", "src/app.rs" ; "binary root")]
+    #[test_case("test@integration", "tests/integration.rs" ; "test root")]
+    #[test_case("test@integration::helpers", "tests/helpers.rs" ; "module of a test")]
+    fn resolve_module_reaches_a_target_by_its_root(module_path: &str, expected: &str) {
+        let info = fixture_crate_info();
+        let mut cache = ParseCache::new();
+
+        let file = info.resolve_module(module_path, &mut cache).unwrap();
+
+        assert!(file.ends_with(expected), "{module_path}: {file:?}");
+    }
+
+    /// A root matches a target of its own kind only: `fixtures/modules` has a
+    /// binary `modules` and a test `integration`, but no test `modules` and no
+    /// binary `integration`.
+    #[test_case("test@modules" ; "test root named like a binary")]
+    #[test_case("bin@integration" ; "binary root named like a test")]
+    fn resolve_module_does_not_take_a_root_for_another_kind(module_path: &str) {
+        let info = fixture_crate_info();
+        let mut cache = ParseCache::new();
+
+        let err = info.resolve_module(module_path, &mut cache).unwrap_err();
+
+        assert!(err.is_module_not_found(), "{module_path}: {err:?}");
     }
 
     /// Regression: a module path resolved twice must hit the memo instead of

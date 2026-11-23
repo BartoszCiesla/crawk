@@ -774,8 +774,8 @@ impl CrateInfo {
 
     /// Normalizes a module path by removing the crate name prefix if present.
     /// Also normalizes "lib" alias to the crate name.
-    /// Also strips a binary target's root (`bin@<name>`).
-    /// If the module path is just the crate name/lib/binary, returns empty string.
+    /// Also strips a binary's or test's root (`bin@<name>`, `test@<name>`).
+    /// If the module path is just the crate name/lib/target root, returns empty string.
     fn normalize_module_path(&self, module_path: &str) -> String {
         let parts: Vec<&str> = module_path.split("::").collect();
         // `split` yields at least one segment (`""` for an empty path).
@@ -791,15 +791,15 @@ impl CrateInfo {
             };
         }
 
-        // Check if first part is a binary target's root (`bin@<name>`)
+        // Check if first part is a binary's or test's root (`bin@<name>`, `test@<name>`)
         if let Some(package) = self.root_package()
-            && Self::find_binary_by_root(package, first_part).is_some()
+            && Self::find_target_by_root(package, first_part).is_some()
         {
             return if parts.len() == 1 {
-                // Just the binary target name - return empty (analyzing binary root)
+                // Just the target root - return empty (analyzing that root)
                 String::new()
             } else {
-                // Strip the binary target prefix
+                // Strip the target root
                 parts[1..].join("::")
             };
         }
@@ -1111,6 +1111,19 @@ mod tests {
             info.resolve_module_path_to_file("my_crate::foo", &mut cache)
                 .is_err()
         );
+    }
+
+    /// A binary's or test's root is stripped like a library alias; a root no
+    /// target of its kind goes by is not one.
+    #[test_case("bin@modules", ""; "binary root")]
+    #[test_case("bin@modules::cli", "cli"; "module of a binary")]
+    #[test_case("test@integration", ""; "test root")]
+    #[test_case("test@integration::helpers", "helpers"; "module of a test")]
+    #[test_case("test@modules::helpers", "test@modules::helpers"; "unknown test root")]
+    fn normalize_module_path_strips_a_target_root(module_path: &str, expected: &str) {
+        let info = CrateInfo::new(Path::new("fixtures/modules")).unwrap();
+
+        assert_eq!(info.normalize_module_path(module_path), expected);
     }
 
     /// `[lib]` sections that leave cargo's plain `lib` kind out of the
