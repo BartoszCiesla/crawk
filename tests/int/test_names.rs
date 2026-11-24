@@ -360,3 +360,32 @@ fn a_module_of_a_test_needs_tests_to_be_included(args: &[&str]) {
         "{stderr}"
     );
 }
+
+#[test_case("support::inner"; "bare")]
+#[test_case("test@it::support::inner"; "full name")]
+fn use_reads_an_inline_module_of_a_test_file_alone(query: &str) {
+    let krate = inline_module_in_a_test_file();
+    let stdout = crawk_stdout(krate.path(), 0, &["use", query, "-t"]);
+    assert_eq!(stdout, "pkg::bar::Bar\n");
+}
+
+#[test_case("support::inner"; "bare")]
+#[test_case("test@it::support::inner"; "full name")]
+fn why_sees_only_what_an_inline_module_of_a_test_file_uses(query: &str) {
+    let krate = inline_module_in_a_test_file();
+    let stdout = crawk_stdout(krate.path(), 0, &["why", query, "foo", "-t"]);
+    assert_eq!(stdout, "");
+    let stdout = crawk_stdout(krate.path(), 0, &["why", query, "bar", "-t"]);
+    assert!(stdout.contains("pkg::bar::Bar"), "{stdout}");
+}
+
+// The whole target is analysed, so the file's own module sets the scope.
+#[test]
+fn deps_keeps_an_inline_module_of_a_test_file_apart() {
+    let krate = inline_module_in_a_test_file();
+    let stdout = crawk_stdout(krate.path(), 0, &["deps", "-t"]);
+    assert_eq!(
+        lines(&stdout),
+        ["test@it::support -> foo", "test@it::support::inner -> bar"]
+    );
+}

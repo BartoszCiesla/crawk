@@ -863,16 +863,17 @@ impl Analyzer {
     }
 
     /// The path that locates `module` from outside its target: under its root,
-    /// `lib::<path>` for the library, `bin@<name>::<path>` for a binary. Bare, a
-    /// binary's module would be looked up from the library, and a library module
-    /// named like a root alias would lose its first segment to the alias. A
-    /// test's module stays relative: the resolver does not reach tests by root.
+    /// `lib::<path>` for the library, `bin@<name>::<path>` for a binary,
+    /// `test@<name>::<path>` for a test. Bare, a binary's or test's module would
+    /// be looked up from the library, and a library module named like a root
+    /// alias would lose its first segment to the alias.
     fn resolvable_path(module: &ModuleInfo) -> String {
         match module.target().kind() {
             TargetKind::Lib if module.path().is_empty() => LIB_ROOT.to_owned(),
             TargetKind::Lib => format!("{LIB_ROOT}::{}", module.path()),
-            TargetKind::Bin => Self::target_module_name(module.target(), module.path()),
-            TargetKind::Test => module.path().to_owned(),
+            TargetKind::Bin | TargetKind::Test => {
+                Self::target_module_name(module.target(), module.path())
+            }
         }
     }
 
