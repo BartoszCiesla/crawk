@@ -280,12 +280,13 @@ fn extract_use_names(tree: &UseTree, items: &mut Vec<String>) {
 ///
 /// `caller_module` is the crawk-internal path of the module performing the
 /// glob-import (empty string for the crate root). It is used to decide
-/// visibility of `pub(super)` items in the target module. `bin_root` is the
-/// caller's binary (`bin@<name>`), if any: there, `crate::` means that binary.
+/// visibility of `pub(super)` items in the target module. `target_root` is the
+/// root of the caller's binary or test (`bin@<name>`, `test@<name>`), if any:
+/// there, `crate::` means that target.
 pub(crate) fn resolve_glob(
     reference: &TypeReference,
     caller_module: &str,
-    bin_root: Option<&str>,
+    target_root: Option<&str>,
     crate_info: &CrateInfo,
     cache: &mut ParseCache,
 ) -> Vec<TypeReference> {
@@ -332,11 +333,11 @@ pub(crate) fn resolve_glob(
         module_path.clone()
     };
 
-    // The path only resolves under its target's root. Bare, a binary's would be
-    // looked up from the library, which may hold a namesake, and a library
-    // module named like a root alias (`crate::my_crate::*`) would lose its first
-    // segment to the alias.
-    let module_path = match bin_root {
+    // The path only resolves under its target's root. Bare, a binary's or test's
+    // would be looked up from the library, which may hold a namesake, and a
+    // library module named like a root alias (`crate::my_crate::*`) would lose
+    // its first segment to the alias.
+    let module_path = match target_root {
         Some(root) if is_crate_prefix => format!("{root}::{module_path}"),
         _ if target_module.is_empty() => LIB_ROOT.to_owned(),
         _ => format!("{LIB_ROOT}::{target_module}"),

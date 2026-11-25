@@ -812,14 +812,14 @@ impl Analyzer {
         // overlapping or differently-rooted module paths).
         let module_filter: HashSet<String> = modules.iter().map(|m| m.path().to_owned()).collect();
         self.parse_all_modules(modules, &file_root, children_map)?;
-        // The resolver reaches binaries by root but not tests yet, so a glob in a
-        // test is still looked up from the library.
-        let bin_root = target
-            .as_ref()
-            .filter(|target| *target.kind() == TargetKind::Bin)
-            .map(ToString::to_string);
-        let dependencies =
-            self.collect_references(options, children_map, &module_filter, bin_root.as_deref());
+        // In a binary or test, a glob's `crate::` is that target's root.
+        let target_root = target.as_ref().map(ToString::to_string);
+        let dependencies = self.collect_references(
+            options,
+            children_map,
+            &module_filter,
+            target_root.as_deref(),
+        );
         // The root keeps its empty key: `module_path` names it.
         let dependencies = dependencies
             .into_iter()
@@ -953,7 +953,7 @@ impl Analyzer {
         options: &AnalysisOptions,
         children_map: &HashMap<String, HashSet<String>>,
         module_filter: &HashSet<String>,
-        bin_root: Option<&str>,
+        target_root: Option<&str>,
     ) -> HashMap<String, HashSet<TypeReference>> {
         let mut dependencies = HashMap::new();
         for (module, module_references) in self
@@ -1004,7 +1004,7 @@ impl Analyzer {
                         let resolved = resolve_glob(
                             &r,
                             module,
-                            bin_root,
+                            target_root,
                             &self.crate_info,
                             &mut self.parse_cache,
                         );

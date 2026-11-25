@@ -379,6 +379,30 @@ fn why_sees_only_what_an_inline_module_of_a_test_file_uses(query: &str) {
     assert!(stdout.contains("pkg::bar::Bar"), "{stdout}");
 }
 
+// `crate::util` in the test is the test's own `util`, not the library's.
+#[test_case("user"; "bare")]
+#[test_case("test@it::user"; "full name")]
+fn a_glob_in_a_test_lists_the_items_of_the_tests_module(query: &str) {
+    let krate = scratch_crate(
+        "pkg",
+        &[
+            ("src/lib.rs", "pub mod util;\n"),
+            ("src/util.rs", "pub struct LibOnly;\n"),
+            (
+                "tests/it.rs",
+                "mod util {\n    pub struct TestOnly;\n    pub fn helper() {}\n}\n\
+                 mod user {\n    use crate::util::*;\n    \
+                 pub fn f() -> TestOnly { helper(); TestOnly }\n}\n",
+            ),
+        ],
+    );
+    let stdout = crawk_stdout(krate.path(), 0, &["use", query, "-t", "-G"]);
+    assert_eq!(
+        lines(&stdout),
+        ["crate::util::TestOnly", "crate::util::helper"]
+    );
+}
+
 // The whole target is analysed, so the file's own module sets the scope.
 #[test]
 fn deps_keeps_an_inline_module_of_a_test_file_apart() {
