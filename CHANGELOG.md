@@ -2,6 +2,54 @@
 
 ## [Unreleased]
 
+## [0.7.2](https://github.com/BartoszCiesla/crawk/compare/v0.7.1...v0.7.2)
+
+### 🐛 Bug Fixes
+
+
+- *(analyzer)* Read a test file's inline module, not the whole file - ([dc09f78](https://github.com/BartoszCiesla/crawk/commit/dc09f78eddb0f5d80ba815a72c731e5cec89863a))
+- *(analyzer)* Give a module named lib its own node - ([b744f94](https://github.com/BartoszCiesla/crawk/commit/b744f944bb627f1d00257cc236844311cfb6962a))
+- *(analyzer)* Read a root alias once - ([9230973](https://github.com/BartoszCiesla/crawk/commit/92309732f59f3bc553c31ef18252437e5e8dcec8))
+- *(analyzer)* Name integration test roots like binaries - ([dce8a1b](https://github.com/BartoszCiesla/crawk/commit/dce8a1be64614cb67f7bd19b9ad1b35e54ca6b49))
+- *(analyzer)* Discover binaries from their cargo entry point - ([157837b](https://github.com/BartoszCiesla/crawk/commit/157837b58182598ac9ad17fbf49bdd97e5bda460))
+- *(analyzer)* Honour a non-recursive use of a test module - ([4fb8549](https://github.com/BartoszCiesla/crawk/commit/4fb8549bf8fa4f07edca4fa44a6907b83075f374))
+- *(analyzer)* Address a test target by its root name - ([44247d6](https://github.com/BartoszCiesla/crawk/commit/44247d6518d2dafc97b749247324d56b050a7a1a))
+- *(analyzer)* Take target roots from cargo metadata - ([531975e](https://github.com/BartoszCiesla/crawk/commit/531975e1e80fab73d178642dc175465cab81b8bb))
+- *(build)* Declare the real MSRV and verify it in CI - ([98a8968](https://github.com/BartoszCiesla/crawk/commit/98a896847397ffd1dbd603260b4c406aba49abf8))
+- *(check)* Create the --init config atomically - ([50664bc](https://github.com/BartoszCiesla/crawk/commit/50664bcb5d29e4ed404fc9c693efa5e3dc70c558))
+- *(discover)* Look for a mod's file where rustc does - ([b7e80cb](https://github.com/BartoszCiesla/crawk/commit/b7e80cb644fb05dffe4368672e4501f9d32f6c10))
+- *(discover)* Skip the entry file when probing its namesake - ([68bbf19](https://github.com/BartoszCiesla/crawk/commit/68bbf1932480a05eb40f2da70b48233454d5dbda))
+- *(discover)* Name binaries and their modules by cargo target - ([eb1b4e2](https://github.com/BartoszCiesla/crawk/commit/eb1b4e2ce28f9a72b28a67c1f80c17e2b3c1b8dd))
+- *(discover)* Split scope by a target entry point's own declarations - ([43f29bb](https://github.com/BartoszCiesla/crawk/commit/43f29bb91384433639703987df23544f2f4fae5a))
+- *(discover)* Export CrateInfoError from the library root - ([5fe3c5e](https://github.com/BartoszCiesla/crawk/commit/5fe3c5eed43c9d01c0758fc7b6224e1fd9d06d96))
+- *(discover)* Treat a library of any crate type as the library - ([d0fa938](https://github.com/BartoszCiesla/crawk/commit/d0fa93885318b73df4f568a2bb4102f4db39b2aa))
+- *(parser)* Stop crediting a target root with its inline modules - ([e3847b9](https://github.com/BartoszCiesla/crawk/commit/e3847b91388baafcc1abcb954ff0d7ac81a10675))
+- *(parser)* Ignore a lone name spelled like a child module - ([1f7f898](https://github.com/BartoszCiesla/crawk/commit/1f7f89833db686a0746f0fa371d116b43741358f))
+- *(parser)* Recognise crate-name paths outside use items - ([8f8d654](https://github.com/BartoszCiesla/crawk/commit/8f8d654a18edfa0be00c09baf821384e88685709))
+- *(resolve)* Expand a glob in a test from the test, not the library - ([98bedb6](https://github.com/BartoszCiesla/crawk/commit/98bedb65a08da3242c5d7c8461e60d94555104b9))
+
+### 🚜 Refactor
+
+
+- *(discover)* Resolve a test's modules under its test@ root - ([de019d4](https://github.com/BartoszCiesla/crawk/commit/de019d4acf6ec02dd114a72a92893a9a5c9423ab))
+- *(discover)* Drop unreachable empty-split guards - ([4d5cafe](https://github.com/BartoszCiesla/crawk/commit/4d5cafed5523c2f5fa389c6056a5111300819e69))
+
+### 📚 Documentation
+
+
+- *(cli)* Explain why validate_module_path accepts hyphens - ([ee37f36](https://github.com/BartoszCiesla/crawk/commit/ee37f361efc48c760cbe99bda53548f55289608c))
+- *(cli)* Document restrict rules in check help - ([9ab1c16](https://github.com/BartoszCiesla/crawk/commit/9ab1c1693f4a69e9783ae9a9dafcaca66edfe90f))
+- Name integration test roots as valid use targets - ([b8bbff5](https://github.com/BartoszCiesla/crawk/commit/b8bbff5964b129ffc184f054bb19b6e11b8b9455))
+- Enforce missing_docs and document remaining gaps - ([0be305c](https://github.com/BartoszCiesla/crawk/commit/0be305c7b4c53843c7d98e4d5e53d62217771997))
+
+### ⚙️ Miscellaneous Tasks
+
+
+- Always check deny advisories and run them daily - ([fe35c80](https://github.com/BartoszCiesla/crawk/commit/fe35c80d5f51debf82d6055267b98e5cddf733e6))
+- Bump toolchain, CI actions and crate dependencies - ([843173d](https://github.com/BartoszCiesla/crawk/commit/843173d717fe5ed23b139b734d4648e77e150b16))
+- Bump CI actions, const_format and libz-sys - ([e7d7a9f](https://github.com/BartoszCiesla/crawk/commit/e7d7a9ff53e5279b82adb168b01bff1d173cec6e))
+
+
 ## [0.7.1](https://github.com/BartoszCiesla/crawk/compare/v0.7.0...v0.7.1)
 
 ### 🐛 Bug Fixes
