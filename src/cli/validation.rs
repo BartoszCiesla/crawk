@@ -1,7 +1,12 @@
 const MAX_MODULE_PATH_LEN: usize = 512;
 
 /// Validate that the module path contains only legal Rust identifier characters,
-/// `::` separators and a leading `bin@<name>` or `test@<name>`.
+/// `-`, `::` separators and a leading `bin@<name>` or `test@<name>`.
+///
+/// `-` is not a Rust identifier character. It is accepted for two names that
+/// cargo allows to contain it: a hyphenated package name as the first segment
+/// (`my-crate::module`, see `CrateInfo::is_lib_root_alias`) and a cargo target
+/// name in `bin@<name>` / `test@<name>` (`bin@my-tool`).
 ///
 /// # Errors
 ///
